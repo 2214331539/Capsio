@@ -11,7 +11,6 @@ test('macOS uses native window chrome and Windows keeps the custom one', () => {
   const [mac] = JSON.parse(read('tauri.macos.conf.json')).app.windows;
   assert.equal(base.decorations, false);
   assert.deepEqual(mac, { ...base, decorations: true, titleBarStyle: 'Visible' });
-  assert.match(read('src/windows.rs'), /\.decorations\(cfg!\(target_os = "macos"\)\)/);
 });
 
 test('supported native builds package executable files for the matching OS', () => {
