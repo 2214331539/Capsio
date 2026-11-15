@@ -1,0 +1,3592 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scientify · 实验页原型</title>
+<style>
+/* Scientify experiment workspace prototype: an IDE layout inside the app shell. */
+:root,
+[data-theme='graphite'] {
+  --chrome: #f4f4f5;
+  --canvas: #ffffff;
+  --raised: #ffffff;
+  --sunken: #fafafa;
+  --hover: rgba(24, 24, 27, 0.045);
+  --selected: rgba(24, 24, 27, 0.075);
+  --focus-row: rgba(59, 91, 219, 0.1);
+  --line: rgba(24, 24, 27, 0.08);
+  --line-strong: rgba(24, 24, 27, 0.15);
+  --text: #18181b;
+  --text-2: #52525b;
+  --text-3: #71717a;
+  --text-4: #a1a1aa;
+  --accent: #18181b;
+  --on-accent: #ffffff;
+  --link: #2f5bd3;
+  --ok: #2f7d4f;
+  --warn: #a5650e;
+  --bad: #c0392b;
+  --info: #3b5bdb;
+  --git-m: #a5650e;
+  --git-a: #2f7d4f;
+  --git-d: #c0392b;
+  --add-bg: rgba(47, 125, 79, 0.09);
+  --del-bg: rgba(192, 57, 43, 0.08);
+  --shadow-pop: 0 0 0 1px rgba(0, 0, 0, 0.07), 0 10px 32px rgba(0, 0, 0, 0.12);
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #e87ba4;
+  --s6: #008300;
+  --code-kw: #7c3aed;
+  --code-str: #2f7d4f;
+  --code-num: #b45309;
+  --code-com: #8b8b93;
+  --note: #e8590c;
+  color-scheme: light;
+}
+[data-theme='night'] {
+  --chrome: #0e0e10;
+  --canvas: #151517;
+  --raised: #1c1c1f;
+  --sunken: #121214;
+  --hover: rgba(255, 255, 255, 0.05);
+  --selected: rgba(255, 255, 255, 0.085);
+  --focus-row: rgba(123, 147, 240, 0.16);
+  --line: rgba(255, 255, 255, 0.075);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --text: #ededef;
+  --text-2: #a3a3ab;
+  --text-3: #85858e;
+  --text-4: #5b5b63;
+  --accent: #ededef;
+  --on-accent: #111113;
+  --link: #8aa4ff;
+  --ok: #4fae73;
+  --warn: #d49a3a;
+  --bad: #e5675a;
+  --info: #7b93f0;
+  --git-m: #d49a3a;
+  --git-a: #4fae73;
+  --git-d: #e5675a;
+  --add-bg: rgba(79, 174, 115, 0.11);
+  --del-bg: rgba(229, 103, 90, 0.11);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 32px rgba(0, 0, 0, 0.5);
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #c98500;
+  --s5: #d55181;
+  --s6: #008300;
+  --code-kw: #b197fc;
+  --code-str: #69db7c;
+  --code-num: #ffa94d;
+  --code-com: #6f6f78;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  font: 13px/1.5 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
+  color: var(--text);
+  background: var(--chrome);
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+svg.i {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mono {
+  font-family: 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+}
+.muted {
+  color: var(--text-3);
+}
+.spacer {
+  flex: 1;
+}
+
+/* Shell */
+.app {
+  display: grid;
+  grid-template-rows: 44px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  height: 100vh;
+  min-width: 1100px;
+  min-height: 680px;
+}
+.titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 8px 0 12px;
+}
+.logo {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+.ib {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.ib:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.ib[aria-pressed='true'] {
+  background: var(--selected);
+  color: var(--text);
+}
+.ib:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: transparent;
+}
+.ib.sm {
+  height: 22px;
+  min-width: 22px;
+  padding: 0 3px;
+}
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  color: var(--text-3);
+}
+.crumbs b {
+  color: var(--text);
+  font-weight: 500;
+}
+.tb-search {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 400px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--text-3);
+  text-align: left;
+}
+.tb-search kbd {
+  margin-left: auto;
+  font-size: 11px;
+}
+.tb-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--line-strong);
+}
+.body {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 8px 8px 0;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 248px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 6px 8px 8px;
+}
+.uplink {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  padding: 0 8px 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin: 2px 0 6px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+}
+.mark {
+  width: 18px;
+  height: 24px;
+  flex: none;
+  border-radius: 2px 4px 4px 2px;
+  background: #4f5866;
+  box-shadow: inset 3px 0 0 rgba(0, 0, 0, 0.22);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  text-align: left;
+}
+.nav-item:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.nav-item[aria-current] {
+  background: var(--selected);
+  color: var(--text);
+  font-weight: 500;
+}
+.views {
+  display: flex;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 8px 0 6px;
+  border-top: 1px solid var(--line);
+}
+.views .ib {
+  position: relative;
+  flex: 1;
+  height: 30px;
+}
+.views .ib[aria-pressed='true'] {
+  color: var(--text);
+}
+.views .ib[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  left: 28%;
+  right: 28%;
+  bottom: -3px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.views .badge {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--info);
+  color: #fff;
+  font: 600 10px/15px 'Segoe UI', sans-serif;
+}
+.view-title {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  padding: 0 2px 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+}
+.view {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0 -8px;
+  padding: 0 8px 8px;
+}
+.sec {
+  margin-top: 4px;
+}
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  height: 24px;
+  padding: 0 2px 0 2px;
+  border: 0;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-align: left;
+}
+.sec-head .t {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sec-head .n {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--selected);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--text-2);
+}
+.sec-head .acts {
+  display: none;
+}
+.sec:hover .sec-head .acts {
+  display: inline-flex;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12.5px;
+  text-align: left;
+  white-space: nowrap;
+}
+.row:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.row[aria-current] {
+  background: var(--focus-row);
+  color: var(--text);
+}
+.row .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row .dir {
+  color: var(--text-4);
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row .end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.row .hov {
+  display: none;
+}
+.row:hover .hov {
+  display: inline-flex;
+}
+.row:hover .unhov {
+  display: none;
+}
+.row svg.i {
+  color: var(--text-3);
+}
+.git {
+  width: 12px;
+  text-align: center;
+  font: 600 11px 'Cascadia Code', Consolas, monospace;
+}
+.git.M,
+.name.M {
+  color: var(--git-m);
+}
+.git.A,
+.git.U,
+.name.A,
+.name.U {
+  color: var(--git-a);
+}
+.git.D {
+  color: var(--git-d);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--text-4);
+}
+.dot.run {
+  background: var(--info);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--info) 22%, transparent);
+}
+.dot.done {
+  background: var(--ok);
+}
+.dot.fail {
+  background: var(--bad);
+}
+.inputbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin: 4px 0;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text-3);
+}
+.inputbox input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12.5px;
+}
+.inputbox .opt {
+  padding: 0 3px;
+  border-radius: 3px;
+  font: 11px 'Cascadia Code', Consolas, monospace;
+  color: var(--text-3);
+}
+textarea.msg-input {
+  width: 100%;
+  min-height: 52px;
+  margin: 2px 0 6px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  outline: 0;
+  resize: vertical;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--hover);
+}
+.btn.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: none;
+}
+.btn.primary:hover {
+  filter: brightness(1.15);
+}
+.btn.sm {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+.btn.block {
+  width: 100%;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--link);
+  font-size: 12.5px;
+}
+.link:hover {
+  text-decoration: underline;
+}
+.side-foot {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.account {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+}
+.avatar {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--selected);
+  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 600;
+}
+.avatar.ai {
+  background: color-mix(in srgb, var(--info) 14%, transparent);
+  color: var(--info);
+}
+.avatar.lj {
+  background: color-mix(in srgb, var(--s2) 16%, transparent);
+  color: var(--s2);
+}
+
+/* Main workspace */
+.main-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+}
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  border-radius: 10px;
+  background: var(--canvas);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 40px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line);
+}
+.widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.widget:hover {
+  background: var(--hover);
+}
+.widget .sub {
+  color: var(--text-3);
+  font-weight: 400;
+}
+.widget svg.i {
+  color: var(--text-3);
+}
+.run-btn {
+  color: var(--ok);
+}
+.stop-btn {
+  color: var(--bad);
+}
+.editor-tabs {
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  height: 34px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--sunken);
+  border-bottom: 1px solid var(--line);
+}
+.etab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 0 12px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.etab:hover {
+  color: var(--text);
+}
+.etab[aria-current] {
+  background: var(--canvas);
+  color: var(--text);
+  box-shadow: inset 0 -1px 0 var(--canvas), inset 0 2px 0 var(--accent);
+}
+.etab .x {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  opacity: 0;
+}
+.etab[aria-current] .x,
+.etab:hover .x {
+  opacity: 0.7;
+}
+.etab .x:hover {
+  background: var(--hover);
+}
+.etab .mod {
+  width: 7px;
+  height: 7px;
+  margin: 0 5px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.etab svg.i {
+  color: var(--text-3);
+}
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  height: 28px;
+  padding: 0 8px 0 14px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.workbench {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.editor {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+}
+.code {
+  padding: 2px 0 60px;
+  font: 12.5px/1.7 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+}
+.ln {
+  display: flex;
+}
+.ln .no {
+  position: relative;
+  width: 56px;
+  flex: none;
+  padding-right: 16px;
+  text-align: right;
+  color: var(--text-4);
+  user-select: none;
+}
+.ln.cur {
+  background: var(--hover);
+}
+.ln.cur .no {
+  color: var(--text-2);
+}
+.ln.add .no::after,
+.ln.mod .no::after {
+  content: '';
+  position: absolute;
+  right: 5px;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  background: var(--git-a);
+}
+.ln.mod .no::after {
+  background: var(--git-m);
+}
+.ln .tx {
+  white-space: pre;
+  padding-right: 24px;
+}
+.ln.dadd {
+  background: var(--add-bg);
+}
+.ln.ddel {
+  background: var(--del-bg);
+}
+.ln .wavy {
+  text-decoration: underline wavy var(--warn);
+  text-underline-offset: 3px;
+}
+.tk-kw {
+  color: var(--code-kw);
+}
+.tk-str {
+  color: var(--code-str);
+}
+.tk-num {
+  color: var(--code-num);
+}
+.tk-com {
+  color: var(--code-com);
+  font-style: italic;
+}
+.inline-chat {
+  margin: 4px 24px 6px 56px;
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  font: 12.5px/1.5 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+}
+.inline-chat .q {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+}
+.inline-chat .a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--line);
+}
+.codelens {
+  height: 18px;
+  padding-left: 56px;
+  font: 11.5px 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  color: var(--text-3);
+}
+.codelens button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text-3);
+}
+.codelens button:hover {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+/* Panel and status bar */
+.panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  height: 220px;
+  border-top: 1px solid var(--line);
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 32px;
+  padding: 0 6px 0 6px;
+}
+.ptab {
+  position: relative;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ptab:hover {
+  color: var(--text);
+}
+.ptab[aria-current] {
+  color: var(--text);
+  font-weight: 500;
+}
+.ptab[aria-current]::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 3px;
+  height: 1.5px;
+  background: var(--accent);
+}
+.ptab .n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--selected);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.panel-list {
+  width: 200px;
+  flex: none;
+  overflow: auto;
+  padding: 2px 6px;
+  border-right: 1px solid var(--line);
+}
+.console {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 2px 14px 12px;
+  font: 12px/1.65 'Cascadia Code', Consolas, monospace;
+  color: var(--text-2);
+  white-space: pre-wrap;
+}
+.console .err {
+  color: var(--bad);
+}
+.console a {
+  color: var(--link);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 24px;
+  padding: 0 6px;
+  border-top: 1px solid var(--line);
+  background: var(--sunken);
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.sb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  white-space: nowrap;
+}
+.sb:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.sb.live {
+  color: var(--info);
+}
+
+/* Tables */
+.grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.grid-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 30px;
+  padding: 0 10px;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+.grid-table thead tr:first-child th.grp {
+  height: 22px;
+  border-bottom: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-4);
+}
+.grid-table thead tr + tr th {
+  top: 22px;
+}
+.grid-table td {
+  height: 30px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.grid-table tr.r:hover td {
+  background: var(--hover);
+}
+.grid-table tr.r.sel td {
+  background: var(--focus-row);
+}
+.grid-table td:first-child,
+.grid-table th:first-child {
+  padding-left: 14px;
+}
+.grid-table .num {
+  text-align: right;
+}
+.grid-table .best {
+  color: var(--text);
+  font-weight: 650;
+}
+.grid-table .sep {
+  border-left: 1px solid var(--line);
+}
+.grid-table .nm {
+  color: var(--text);
+}
+.grid-table tr.grp-row td {
+  height: 28px;
+  background: var(--sunken);
+  font-size: 12px;
+  cursor: pointer;
+}
+.hist {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 16px;
+  margin: 2px 0 4px;
+}
+.hist i {
+  width: 6px;
+  background: color-mix(in srgb, var(--s1) 55%, transparent);
+}
+.check {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.progress {
+  display: inline-block;
+  width: 56px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--selected);
+  overflow: hidden;
+  vertical-align: middle;
+}
+.progress i {
+  display: block;
+  height: 100%;
+  background: var(--info);
+}
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ver {
+  font: 12px 'Cascadia Code', Consolas, monospace;
+  color: var(--text-2);
+}
+.ver em {
+  font-style: normal;
+  color: var(--warn);
+}
+.subbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 7px;
+  background: var(--hover);
+}
+.seg button {
+  height: 22px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.seg button[aria-pressed='true'] {
+  background: var(--canvas);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 240px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text-3);
+}
+.filter input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12px;
+}
+.pane-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.pane {
+  min-width: 0;
+  padding: 12px 16px 10px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.pane:nth-child(2n) {
+  border-right: 0;
+}
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.chart svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.chart .grid line {
+  stroke: var(--line);
+}
+.chart .axis text {
+  fill: var(--text-3);
+  font-size: 11px;
+}
+.chart .label {
+  fill: var(--text-2);
+  font-size: 11px;
+}
+.chart .hover-line {
+  stroke: var(--text-4);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.legend button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+}
+.legend button:hover {
+  background: var(--hover);
+}
+.legend button.off {
+  color: var(--text-4);
+}
+.legend i {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+.legend button.off i {
+  background: var(--text-4) !important;
+}
+.tooltip {
+  position: fixed;
+  z-index: 100;
+  min-width: 140px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  font-size: 12px;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.tooltip b {
+  display: block;
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+.tooltip div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tooltip div span:last-child {
+  margin-left: auto;
+  padding-left: 12px;
+}
+.tooltip i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Documents inside editors */
+.doc {
+  max-width: 1000px;
+  padding: 16px 24px 40px;
+}
+.doc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.doc-head h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.doc h2 {
+  margin: 20px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.kv {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 5px 14px;
+  margin: 0;
+  font-size: 12.5px;
+}
+.kv dt {
+  color: var(--text-3);
+}
+.kv dd {
+  margin: 0;
+}
+.subnav {
+  display: flex;
+  gap: 2px;
+  margin-top: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.subnav button {
+  position: relative;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+}
+.subnav button[aria-current] {
+  color: var(--text);
+  font-weight: 500;
+}
+.subnav button[aria-current]::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+}
+.note-area {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+  outline: 0;
+  resize: vertical;
+  line-height: 1.6;
+}
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--bad);
+  background: color-mix(in srgb, var(--bad) 7%, transparent);
+  font-size: 12.5px;
+}
+.welcome-head {
+  padding: 64px 56px 28px;
+}
+.welcome-head h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.welcome {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 340px);
+  gap: 56px;
+  padding: 0 56px 40px;
+}
+.welcome h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.welcome h2 {
+  margin: 26px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.welcome .lk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--link);
+  font-size: 13px;
+}
+.welcome .lk:hover {
+  text-decoration: underline;
+}
+.welcome .recent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 26px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.welcome .recent .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.welcome .recent .muted {
+  font-size: 12px;
+}
+
+/* Notebook */
+.nb-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 34px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+.cell {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  margin-right: 20px;
+  padding: 6px 0;
+}
+.cell .gutter {
+  padding: 8px 10px 0 0;
+  text-align: right;
+  font: 11.5px 'Cascadia Code', Consolas, monospace;
+  color: var(--text-4);
+}
+.cell .src {
+  border-radius: 6px;
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+  padding: 8px 12px;
+  font: 12.5px/1.65 'Cascadia Code', Consolas, monospace;
+  white-space: pre;
+  overflow-x: auto;
+}
+.cell.md .src {
+  background: transparent;
+  box-shadow: none;
+  font: 13px/1.6 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  white-space: normal;
+}
+.cell.md h3 {
+  margin: 4px 0;
+  font-size: 15px;
+}
+.cell.active .src {
+  box-shadow: inset 0 0 0 1px var(--info);
+}
+.cell .out {
+  grid-column: 2;
+  margin-top: 6px;
+  padding: 2px 12px;
+  font: 12px/1.6 'Cascadia Code', Consolas, monospace;
+  color: var(--text-2);
+}
+.cell .out table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.cell .out th,
+.cell .out td {
+  padding: 3px 14px 3px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+.cell .out th {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+/* Git graph */
+.log-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 90px 80px 76px;
+  align-items: center;
+  min-height: 32px;
+  padding-right: 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+  cursor: default;
+}
+.log-row:hover {
+  background: var(--hover);
+}
+.log-row.sel {
+  background: var(--focus-row);
+}
+.log-row .rail {
+  position: relative;
+  align-self: stretch;
+}
+.log-row .rail::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--s1);
+}
+.log-row .rail.side::after {
+  content: '';
+  position: absolute;
+  left: 31px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--s2);
+}
+.log-row .rail.first::before {
+  top: 16px;
+}
+.log-row .rail i {
+  position: absolute;
+  left: 15px;
+  top: 11px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 2px var(--s1);
+}
+.log-row .rail i.b {
+  left: 27px;
+  box-shadow: inset 0 0 0 2px var(--s2);
+}
+.log-row .msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.log-detail {
+  padding: 10px 16px 12px 58px;
+  border-bottom: 1px solid var(--line);
+  background: var(--sunken);
+  font-size: 12.5px;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font: 11px 'Cascadia Code', Consolas, monospace;
+  color: var(--text-2);
+}
+.tag.run {
+  box-shadow: none;
+  background: var(--selected);
+  font-family: inherit;
+  cursor: pointer;
+}
+.diff2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font: 12.5px/1.7 'Cascadia Code', Consolas, monospace;
+}
+.diff2 > div + div {
+  border-left: 1px solid var(--line);
+}
+
+/* Overlays */
+.quick {
+  position: fixed;
+  left: 50%;
+  top: 52px;
+  z-index: 60;
+  width: 580px;
+  transform: translateX(-50%);
+  border-radius: 9px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+.quick .qin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  margin: 6px;
+  padding: 0 10px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  color: var(--text-3);
+}
+.quick .qin input {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+.quick .ql {
+  padding: 6px 14px 2px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.quick .qi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.quick .qi:hover {
+  background: var(--focus-row);
+}
+.quick .qi small {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.quick .qi .mono {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.quick .list {
+  max-height: 380px;
+  overflow: auto;
+  padding-bottom: 6px;
+}
+.quick-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+}
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: start center;
+  padding-top: 10vh;
+  background: rgba(12, 12, 14, 0.24);
+}
+.dialog {
+  width: 560px;
+  border-radius: 10px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+}
+.dialog-head {
+  display: flex;
+  align-items: center;
+  padding: 14px 12px 4px 20px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.dialog-body {
+  padding: 10px 20px;
+}
+.dialog-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 14px 20px;
+  font-size: 12.5px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+}
+.form-row > label {
+  color: var(--text-2);
+}
+.field {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  outline: 0;
+}
+.field:focus {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.ptable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.ptable th {
+  padding: 4px 6px 4px 0;
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--text-3);
+  font-weight: 500;
+  font-size: 12px;
+  text-align: left;
+}
+.ptable td {
+  padding: 4px 6px 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ptable td:first-child {
+  width: 80px;
+  font: 12px 'Cascadia Code', Consolas, monospace;
+}
+.ptable .field {
+  height: 26px;
+  font: 12px 'Cascadia Code', Consolas, monospace;
+}
+.menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 230px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+}
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  text-align: left;
+  font-size: 12.5px;
+}
+.menu button:hover {
+  background: var(--focus-row);
+}
+.menu button kbd {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.menu hr {
+  height: 1px;
+  margin: 4px 6px;
+  border: 0;
+  background: var(--line);
+}
+.menu .ml {
+  padding: 5px 10px 2px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 60px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 440px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  font-size: 12.5px;
+}
+.toast svg.i {
+  color: var(--info);
+}
+
+/* AI dock */
+.dock {
+  width: 340px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: var(--canvas);
+  box-shadow: 0 0 0 1px var(--line);
+  overflow: hidden;
+}
+.dock-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 6px 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+.dock-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.msg.me {
+  align-self: flex-end;
+  max-width: 90%;
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: var(--selected);
+}
+.ctx {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  background: var(--hover);
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.codeblock {
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  overflow: hidden;
+  font: 12px/1.65 'Cascadia Code', Consolas, monospace;
+}
+.codeblock .h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--sunken);
+  font: 12px 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+}
+.codeblock .a,
+.codeblock .d {
+  padding: 0 10px;
+  white-space: pre;
+}
+.codeblock .a {
+  background: var(--add-bg);
+  color: var(--git-a);
+}
+.codeblock .d {
+  background: var(--del-bg);
+  color: var(--git-d);
+}
+.composer {
+  margin: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text-3);
+}
+
+/* Prototype controls and notes */
+.proto {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 9px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  font-size: 12px;
+}
+.proto strong {
+  padding: 0 8px;
+  font-weight: 600;
+}
+.proto .btn {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+  box-shadow: none;
+  font-weight: 400;
+}
+.proto .btn[aria-pressed='true'] {
+  background: var(--note);
+  color: #fff;
+}
+.note-badge {
+  position: fixed;
+  z-index: 85;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--note);
+  color: #fff;
+  font: 600 11px 'Segoe UI', sans-serif;
+  box-shadow: 0 0 0 2px var(--canvas);
+  pointer-events: none;
+}
+.note-outline {
+  position: fixed;
+  z-index: 69;
+  border: 1.5px dashed color-mix(in srgb, var(--note) 70%, transparent);
+  border-radius: 6px;
+  pointer-events: none;
+}
+.notes {
+  position: fixed;
+  right: 16px;
+  bottom: 56px;
+  z-index: 80;
+  width: 380px;
+  max-height: 68vh;
+  overflow: auto;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+}
+.notes h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.notes ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.notes li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.notes li b {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--note);
+  color: #fff;
+  font-size: 11px;
+}
+.notes li em {
+  display: block;
+  font-style: normal;
+  font-weight: 600;
+}
+.notes .ref {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: 11.5px;
+}
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+/* Scientify experiment workspace prototype (IDE layout). Sample data only. */
+(() => {
+  'use strict';
+
+  // ---------- Icons ----------
+  const P = {
+    play: '<polygon points="7 4 20 12 7 20 7 4"/>',
+    down: '<path d="m6 9 6 6 6-6"/>',
+    right: '<path d="m9 18 6-6-6-6"/>',
+    left: '<path d="m15 18-6-6 6-6"/>',
+    more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    plus: '<path d="M5 12h14M12 5v14"/>',
+    minus: '<path d="M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+    files: '<path d="M15 2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 7v13a2 2 0 0 0 2 2h9"/>',
+    folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    branch: '<line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+    scm: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7M6 9v12"/>',
+    flask: '<path d="M10 2v7.31M14 9.3V2M8.5 2h7M14 9.3a6.5 6.5 0 1 1-4 0M5.52 16h12.96"/>',
+    book: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+    note: '<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><path d="M21.38 5.62a1 1 0 0 0-3-3l-5 5a2 2 0 0 0-.51.86l-.84 2.87a.5.5 0 0 0 .62.62l2.87-.84a2 2 0 0 0 .86-.51z"/>',
+    pen: '<path d="M12 20h9"/><path d="M16.38 3.62a1 1 0 0 1 3 3L7.37 18.64a2 2 0 0 1-.86.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.86z"/>',
+    terminal: '<polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/>',
+    sparkles: '<path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/><path d="M19 3v4M17 5h4"/>',
+    chart: '<path d="M3 3v18h18"/><path d="m7 15 4-5 4 3 5-7"/>',
+    table: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
+    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+    user: '<circle cx="12" cy="8" r="4.5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77"/>',
+    help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>',
+    sidebar: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/>',
+    back: '<path d="m12 19-7-7 7-7M19 12H5"/>',
+    fwd: '<path d="M5 12h14m-7-7 7 7-7 7"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    box: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>',
+    alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/>',
+    error: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/>',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="1.5"/>',
+    history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+    columns: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/>',
+    rerun: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    bug: '<path d="m8 2 1.88 1.88M14.12 3.88 16 2M9 7.13v-1a3 3 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6M12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M20.97 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M17.2 17c2.1.1 3.8 1.9 3.8 4"/>',
+    cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
+    sync: '<path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/>',
+    collapse: '<path d="m7 20 5-5 5 5M7 4l5 5 5-5"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+    newfolder: '<path d="M12 10v6M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    newfile: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M12 12v6M9 15h6"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+    open: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+    git: '<circle cx="12" cy="12" r="3"/><path d="M3 12h6M15 12h6"/>',
+    up: '<path d="m6 11 6-6 6 6M12 19V5"/>',
+    dn: '<path d="M12 5v14M18 13l-6 6-6-6"/>',
+  };
+  const icon = (name, size = 16) =>
+    `<svg class="i" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${P[name] || ''}</svg>`;
+  const esc = (s) =>
+    String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  // ---------- Sample data ----------
+  const METRICS = [
+    { key: 'f1', label: 'f1', dir: 'up', fmt: (v) => v.toFixed(3) },
+    { key: 'ft', label: 'false_trigger', dir: 'down', fmt: (v) => v.toFixed(1) + '%' },
+    { key: 'lat', label: 'latency', dir: 'down', fmt: (v) => v.toFixed(2) + 's' },
+  ];
+  const PARAMS = ['window', 'audio', 'state', 'lr', 'seed'];
+  const PEOPLE = { me: ['我', ''], ai: ['AI', 'ai'], lj: ['李', 'lj'] };
+  const ENVS = {
+    venv: { label: '3.11.9', kind: '.venv', path: '.venv\\Scripts\\python.exe' },
+    proagent: { label: '3.10.14', kind: "conda: proagent", path: 'C:\\Miniconda3\\envs\\proagent\\python.exe' },
+    base: { label: '3.11.5', kind: 'conda: base', path: 'C:\\Miniconda3\\python.exe' },
+    sys: { label: '3.12.4', kind: '全局', path: 'C:\\Python312\\python.exe' },
+  };
+  const PACKAGES = [
+    ['numpy', '2.1.1', ''],
+    ['pandas', '2.2.2', ''],
+    ['pyyaml', '6.0.2', ''],
+    ['scientify', '0.1.0', ''],
+    ['scikit-learn', '1.5.2', '1.5.3'],
+    ['torch', '2.4.1', '2.5.1'],
+    ['matplotlib', '3.9.2', ''],
+  ];
+
+  const curve = (final, ep, seed) => {
+    const pts = [];
+    for (let e = 1; e <= ep; e++) pts.push([e, +(final * (1 - 0.62 * Math.exp(-(e - 1) / 2.2)) + Math.sin(e * 1.7 + seed) * 0.004).toFixed(4)]);
+    return pts;
+  };
+  const lossCurve = (final, ep, seed) => {
+    const pts = [];
+    for (let e = 1; e <= ep; e++) pts.push([e, +(0.18 + (0.72 - final) * 0.9 + 0.7 * Math.exp(-(e - 1) / 2.4) + Math.cos(e * 1.3 + seed) * 0.006).toFixed(4)]);
+    return pts;
+  };
+  const mkRun = (o) => {
+    const ep = o.status === 'running' ? Math.floor(o.epoch) : o.status === 'done' ? 10 : 0;
+    const final = o.m?.f1 ?? o.target ?? 0.66;
+    return { star: false, dirty: false, notes: '', config: 'train', ...o, curves: ep ? { f1: curve(final, ep, o.seedv || 1), loss: lossCurve(final, ep, o.seedv || 1) } : { f1: [], loss: [] } };
+  };
+
+  const fresh = () => ({
+    theme: 'graphite',
+    annotate: false,
+    folder: 'timing',
+    view: 'explorer',
+    folders: [
+      { id: 'timing', name: 'timing', path: 'D:\\AScience\\Proactive\\timing', env: 'venv', branch: 'main', ahead: 1 },
+      { id: 'repro', name: 'proagent-repro', path: 'D:\\AScience\\Proactive\\proagent-repro', env: 'proagent', branch: 'main', ahead: 0, remote: 'github.com/proagent-lab/ProAgent' },
+      { id: 'audio', name: 'timing-audio-free', path: 'D:\\AScience\\Proactive\\timing-audio-free', env: 'venv', branch: 'ablation/audio-free', ahead: 0, worktreeOf: 'timing' },
+    ],
+    tabs: {
+      timing: { list: ['f:train.py', 'f:notebooks/explore.ipynb', 'runs'], active: 'f:train.py' },
+      repro: { list: ['f:README.md'], active: 'f:README.md' },
+      audio: { list: ['welcome'], active: 'welcome' },
+    },
+    collapsed: ['.venv', 'outputs', 'scripts'],
+    panel: { open: true, tab: 'run', run: 'r7' },
+    config: 'train',
+    runsMode: 'table',
+    runsGroup: 'group',
+    runFilter: '',
+    selected: [],
+    compare: false,
+    visible: ['r1', 'r2', 'r3', 'r7'],
+    slots: { r1: 1, r2: 2, r3: 3, r7: 4 },
+    runTab: {},
+    groupsOpen: { g1: true },
+    openCommit: null,
+    staged: [],
+    changes: [
+      { path: 'src/model.py', kind: 'M' },
+      { path: 'train.py', kind: 'M' },
+      { path: 'configs/ablation.yaml', kind: 'U' },
+    ],
+    commitMsg: '',
+    nb: { ran: false },
+    inline: false,
+    dock: false,
+    ai: null,
+    quick: null,
+    dialog: null,
+    menu: null,
+    toast: null,
+    nextRun: 8,
+    runs: [
+      mkRun({ id: 'r1', folder: 'timing', name: 'timing-abl-01', status: 'done', params: { window: 8, audio: 'on', state: 'on', lr: '3e-4', seed: 0 }, m: { f1: 0.684, ft: 12.4, lat: 0.82 }, ver: 'a1f3c2e', by: 'me', when: '11-11 14:20', dur: '38m', seedv: 1 }),
+      mkRun({ id: 'r2', folder: 'timing', name: 'timing-abl-02', status: 'done', params: { window: 8, audio: 'off', state: 'on', lr: '3e-4', seed: 0 }, m: { f1: 0.651, ft: 15.1, lat: 0.61 }, ver: 'a1f3c2e', by: 'me', when: '11-11 15:02', dur: '31m', seedv: 2 }),
+      mkRun({ id: 'r3', folder: 'timing', name: 'timing-abl-03', status: 'done', params: { window: 8, audio: 'on', state: 'off', lr: '3e-4', seed: 0 }, m: { f1: 0.623, ft: 17.9, lat: 0.79 }, ver: 'a1f3c2e', dirty: true, by: 'me', when: '11-12 09:40', dur: '36m', seedv: 3, notes: '去掉状态上下文后误触发明显增加，支持假设。' }),
+      mkRun({ id: 'r4', folder: 'timing', group: 'g1', name: 'lr=1e-4', status: 'done', params: { window: 8, audio: 'on', state: 'on', lr: '1e-4', seed: 0 }, m: { f1: 0.671, ft: 13.2, lat: 0.83 }, ver: '7d2a4f1', by: 'ai', when: '11-13 21:05', dur: '40m', seedv: 4 }),
+      mkRun({ id: 'r5', folder: 'timing', group: 'g1', name: 'lr=3e-4', status: 'done', params: { window: 8, audio: 'on', state: 'on', lr: '3e-4', seed: 0 }, m: { f1: 0.702, ft: 11.6, lat: 0.81 }, ver: '7d2a4f1', by: 'ai', when: '11-13 21:05', dur: '39m', seedv: 5, star: true }),
+      mkRun({ id: 'r6', folder: 'timing', group: 'g1', name: 'lr=1e-3', status: 'done', params: { window: 8, audio: 'on', state: 'on', lr: '1e-3', seed: 0 }, m: { f1: 0.655, ft: 14.8, lat: 0.82 }, ver: '7d2a4f1', by: 'ai', when: '11-13 21:05', dur: '38m', seedv: 6 }),
+      mkRun({ id: 'r7', folder: 'timing', name: 'timing-abl-07', status: 'running', epoch: 6, params: { window: 4, audio: 'on', state: 'on', lr: '3e-4', seed: 0 }, m: null, target: 0.694, ver: 'c9e1b07', dirty: true, by: 'me', when: '11-15 10:12', dur: '24m', seedv: 7 }),
+      mkRun({ id: 'r8', folder: 'timing', name: 'baseline-r2', status: 'failed', params: { window: 16, audio: 'on', state: 'on', lr: '3e-4', seed: 1 }, m: null, ver: '5be0913', by: 'lj', when: '11-12 16:30', dur: '2m', error: 'RuntimeError: CUDA out of memory' }),
+      mkRun({ id: 'p1', folder: 'repro', name: 'repro-seed0', status: 'done', config: 'train', params: { window: 8, audio: 'on', state: 'on', lr: '2e-4', seed: 0 }, m: { f1: 0.661, ft: 13.9, lat: 0.88 }, ver: '3e8d0c1', by: 'me', when: '11-08 10:00', dur: '52m', seedv: 8 }),
+      mkRun({ id: 'p2', folder: 'repro', name: 'repro-seed1', status: 'done', config: 'train', params: { window: 8, audio: 'on', state: 'on', lr: '2e-4', seed: 1 }, m: { f1: 0.668, ft: 13.4, lat: 0.87 }, ver: '3e8d0c1', by: 'me', when: '11-08 11:00', dur: '51m', seedv: 9 }),
+    ],
+    groups: { g1: { name: 'lr 扫描', by: 'ai' } },
+    commits: [
+      { id: 'c9e1b07', msg: '去掉音频分支，观察窗口改为可配置', by: 'me', when: '11-15 09:58', refs: ['main'], files: ['src/model.py', 'train.py'] },
+      { id: '7d2a4f1', msg: '添加学习率扫描脚本', by: 'ai', when: '11-13 20:51', refs: [], files: ['scripts/sweep.py'] },
+      { id: '4e2d9a0', msg: '去掉音频编码器', by: 'me', when: '11-12 18:20', refs: ['ablation/audio-free'], side: true, files: ['src/model.py'] },
+      { id: 'a1f3c2e', msg: '时机模型加入状态上下文', by: 'me', when: '11-11 13:47', refs: ['origin/main'], files: ['src/model.py', 'src/dataset.py', 'configs/base.yaml'] },
+      { id: '5be0913', msg: '基线训练循环', by: 'lj', when: '11-10 17:02', refs: [], files: ['train.py', 'src/model.py'] },
+      { id: '0f3d2aa', msg: '初始化项目', by: 'lj', when: '11-09 11:30', refs: [], files: ['README.md', 'requirements.txt'] },
+    ],
+  });
+  let S = fresh();
+
+  const TREES = {
+    timing: [
+      ['.venv', 'dir', 'ignored'],
+      ['configs', 'dir'],
+      ['configs/base.yaml'],
+      ['configs/ablation.yaml', '', 'U'],
+      ['data', 'dir'],
+      ['data/events.csv'],
+      ['notebooks', 'dir'],
+      ['notebooks/explore.ipynb'],
+      ['outputs', 'dir', 'ignored'],
+      ['outputs/figures/pr_curve.png'],
+      ['scripts', 'dir'],
+      ['scripts/sweep.py'],
+      ['src', 'dir', 'M'],
+      ['src/dataset.py'],
+      ['src/model.py', '', 'M'],
+      ['eval.py'],
+      ['README.md'],
+      ['requirements.txt'],
+      ['train.py', '', 'M'],
+    ],
+    repro: [
+      ['proagent', 'dir'],
+      ['proagent/model.py'],
+      ['proagent/data.py'],
+      ['scripts', 'dir'],
+      ['scripts/train.sh'],
+      ['environment.yml'],
+      ['README.md'],
+      ['train.py'],
+    ],
+    audio: [],
+  };
+  // A worktree of timing: same files, its own branch.
+  TREES.audio = TREES.timing.map(([p, k, f]) => [p, k, f === 'ignored' ? f : '']);
+  const CODE = {
+    'train.py': {
+      lang: 'py',
+      marks: { 16: 'mod', 22: 'add', 23: 'add', 24: 'add' },
+      text: `import argparse
+import scientify
+from src.dataset import load_events
+from src.model import TimingModel
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--window", type=int, default=8)
+    parser.add_argument("--audio", default="on")
+    parser.add_argument("--state", default="on")
+    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--seed", type=int, default=0)
+    args = parser.parse_args()
+
+    data = load_events("data/events.csv", window=args.window)
+    model = TimingModel(audio=args.audio == "on", state=args.state == "on")
+
+    for epoch in range(1, 11):
+        loss = model.train_epoch(data.train, lr=args.lr)
+        f1, false_trigger, latency = model.evaluate(data.valid)
+        # 指标写进本次运行的 metrics.jsonl，运行记录和图表会实时更新
+        scientify.log(step=epoch, loss=loss, f1=f1,
+                      false_trigger=false_trigger, latency=latency)
+
+
+if __name__ == "__main__":
+    main()`,
+    },
+    'src/model.py': {
+      lang: 'py',
+      marks: { 10: 'add', 11: 'add', 13: 'mod', 14: 'mod' },
+      text: `import torch
+from torch import nn
+
+
+class TimingModel(nn.Module):
+    """决策模型：判断要不要介入、何时介入。"""
+
+    def __init__(self, audio=True, state=True, hidden=256):
+        super().__init__()
+        self.use_audio = audio
+        self.use_state = state
+        self.video = nn.GRU(512, hidden, batch_first=True)
+        self.audio = nn.GRU(128, hidden, batch_first=True) if audio else None
+        self.head = nn.Linear(hidden * (1 + audio + state), 2)
+
+    def forward(self, frames, sound=None, context=None):
+        h, _ = self.video(frames)
+        parts = [h[:, -1]]
+        if self.use_audio:
+            parts.append(self.audio(sound)[0][:, -1])
+        if self.use_state:
+            parts.append(context)
+        return self.head(torch.cat(parts, dim=-1))`,
+    },
+    'src/dataset.py': {
+      lang: 'py',
+      marks: {},
+      warn: 2,
+      text: `import csv
+import pandas as pd
+from dataclasses import dataclass
+
+
+@dataclass
+class Split:
+    train: list
+    valid: list
+
+
+def load_events(path, window=8):
+    with open(path, encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    cut = int(len(rows) * 0.8)
+    return Split(train=rows[:cut], valid=rows[cut:])`,
+    },
+    'configs/base.yaml': { lang: 'yaml', marks: {}, text: `# 默认配置；运行时的参数会覆盖这里\nwindow: 8\naudio: on\nstate: on\nlr: 3.0e-4\nbatch_size: 64\nepochs: 10\nseed: 0` },
+    'configs/ablation.yaml': { lang: 'yaml', marks: { 1: 'add', 2: 'add', 3: 'add', 4: 'add', 5: 'add', 6: 'add' }, text: `# 消融组合\nvariants:\n  - {audio: off}\n  - {state: off}\n  - {window: 4}\nseeds: [0, 1, 2]` },
+    'scripts/sweep.py': { lang: 'py', marks: {}, text: `import itertools\nimport subprocess\n\n# 也可以直接用“以不同参数运行”，结果会合成一个运行组\nfor lr in ["1e-4", "3e-4", "1e-3"]:\n    subprocess.run(["python", "train.py", "--lr", lr], check=True)` },
+    'eval.py': { lang: 'py', marks: {}, text: `import argparse\nfrom src.model import TimingModel\n\nparser = argparse.ArgumentParser()\nparser.add_argument("--checkpoint", default="outputs/best.pt")\nargs = parser.parse_args()\nprint("evaluating", args.checkpoint)` },
+    'requirements.txt': { lang: 'txt', marks: {}, text: `torch==2.4.1\nnumpy>=2.0\npandas==2.2.2\npyyaml\nscikit-learn\nmatplotlib\nscientify` },
+    'README.md': { lang: 'md', marks: {}, text: `# 时机模型\n\n训练：python train.py --window 8 --audio on --state on\n扫参：python scripts/sweep.py\n\n指标通过 scientify.log() 写入运行目录的 metrics.jsonl。` },
+    'repro:README.md': { lang: 'md', marks: {}, text: `# ProAgent\n\nOfficial implementation of "ProAgent: Proactive Assistance from Activity Trajectories".\n\n## Setup\nconda env create -f environment.yml\n\n## Train\nbash scripts/train.sh --seed 0` },
+    'repro:environment.yml': { lang: 'yaml', marks: {}, text: `name: proagent\nchannels:\n  - pytorch\n  - conda-forge\ndependencies:\n  - python=3.10\n  - pytorch=2.2\n  - numpy\n  - pip:\n      - transformers==4.40.0` },
+    'repro:train.py': { lang: 'py', marks: {}, text: `import argparse\nfrom proagent.model import ProAgent\n\nparser = argparse.ArgumentParser()\nparser.add_argument("--seed", type=int, default=0)\nargs = parser.parse_args()\nProAgent().fit(seed=args.seed)` },
+  };
+  const CSV = {
+    cols: [
+      ['t', 'float', [2, 4, 6, 7, 6, 5, 4]],
+      ['speaker', 'str', null],
+      ['event', 'str', null],
+      ['gaze', 'float', [1, 2, 2, 3, 5, 8, 6]],
+      ['label', 'category', [9, 3, 2]],
+    ],
+    rows: [
+      [0.4, 'user', 'look_screen', 0.82, 'wait'],
+      [1.1, 'user', 'sigh', 0.65, 'wait'],
+      [1.9, 'user', 'look_away', 0.21, 'wait'],
+      [2.6, 'user', 'look_screen', 0.88, 'intervene'],
+      [3.3, 'agent', 'speak', 0.9, 'respond'],
+      [4.0, 'user', 'nod', 0.77, 'wait'],
+      [4.8, 'user', 'type', 0.93, 'wait'],
+      [5.5, 'user', 'pause', 0.71, 'intervene'],
+      [6.1, 'agent', 'speak', 0.86, 'respond'],
+      [7.0, 'user', 'look_away', 0.18, 'wait'],
+      [7.6, 'user', 'look_screen', 0.84, 'wait'],
+      [8.3, 'user', 'frown', 0.62, 'intervene'],
+    ],
+  };
+  const DIFFS = {
+    'src/model.py': [
+      ['', '    def __init__(self, audio=True, state=True, hidden=256):', '    def __init__(self, audio=True, state=True, hidden=256):'],
+      ['', '        super().__init__()', '        super().__init__()'],
+      ['a', '', '        self.use_audio = audio'],
+      ['a', '', '        self.use_state = state'],
+      ['', '        self.video = nn.GRU(512, hidden, batch_first=True)', '        self.video = nn.GRU(512, hidden, batch_first=True)'],
+      ['m', '        self.audio = nn.GRU(128, hidden, batch_first=True)', '        self.audio = nn.GRU(128, hidden, batch_first=True) if audio else None'],
+      ['m', '        self.head = nn.Linear(hidden * 3, 2)', '        self.head = nn.Linear(hidden * (1 + audio + state), 2)'],
+    ],
+    'train.py': [
+      ['m', '    data = load_events("data/events.csv")', '    data = load_events("data/events.csv", window=args.window)'],
+      ['', '    model = TimingModel(audio=args.audio == "on", state=args.state == "on")', '    model = TimingModel(audio=args.audio == "on", state=args.state == "on")'],
+      ['a', '', '        # 指标写进本次运行的 metrics.jsonl'],
+      ['a', '', '        scientify.log(step=epoch, loss=loss, f1=f1,'],
+      ['a', '', '                      false_trigger=false_trigger, latency=latency)'],
+    ],
+    'configs/ablation.yaml': [
+      ['a', '', '# 消融组合'],
+      ['a', '', 'variants:'],
+      ['a', '', '  - {audio: off}'],
+      ['a', '', '  - {state: off}'],
+      ['a', '', '  - {window: 4}'],
+      ['a', '', 'seeds: [0, 1, 2]'],
+    ],
+    'configs/base.yaml': [
+      ['m', 'batch_size: 64', 'batch_size: 32'],
+      ['a', '', 'grad_accum: 2'],
+    ],
+  };
+  DIFFS['scripts/sweep.py'] = DIFFS['configs/ablation.yaml'];
+  DIFFS['src/dataset.py'] = DIFFS['src/model.py'];
+  DIFFS['README.md'] = [['a', '', '# 时机模型']];
+  DIFFS['requirements.txt'] = [['a', '', 'torch==2.4.1']];
+
+  // ---------- Helpers ----------
+  const folder = () => S.folders.find((f) => f.id === S.folder);
+  const env = (f = folder()) => ENVS[f.env];
+  const envText = (f = folder()) => `${env(f).label} (${env(f).kind})`;
+  const runsOf = () => S.runs.filter((r) => r.folder === S.folder);
+  const runById = (id) => S.runs.find((r) => r.id === id);
+  const tabsOf = () => S.tabs[S.folder];
+  const active = () => tabsOf().active;
+  const codeKey = (p) => (S.folder === 'timing' || S.folder === 'audio' ? p : `${S.folder}:${p}`);
+  const metricOf = (k) => METRICS.find((m) => m.key === k);
+  const fmt = (k, v) => (v === null || v === undefined ? '—' : metricOf(k).fmt(v));
+  const person = (k) => {
+    const [l, c] = PEOPLE[k] || ['?', ''];
+    return `<span class="avatar ${c}">${l}</span>`;
+  };
+  const personName = (k) => ({ me: '我', ai: 'AI', lj: '李嘉' })[k] || k;
+  const latestF1 = (r) => r.m?.f1 ?? (r.curves.f1.length ? r.curves.f1.at(-1)[1] : null);
+  const statusDot = (r) => ({ running: 'run', done: 'done', failed: 'fail' })[r.status] || '';
+  const statusText = (r) => ({ running: '运行中', done: '已完成', failed: '失败', queued: '排队中', stopped: '已停止' })[r.status] || r.status;
+  const best = (runs, key) => {
+    const dir = metricOf(key).dir;
+    let b = null;
+    for (const r of runs) {
+      const v = r.m?.[key];
+      if (v == null || r.status !== 'done') continue;
+      if (!b || (dir === 'up' ? v > b.m[key] : v < b.m[key])) b = r;
+    }
+    return b;
+  };
+  const color = (id) => (S.slots[id] ? `var(--s${S.slots[id]})` : 'var(--text-4)');
+  const ensureSlot = (id) => {
+    if (S.slots[id]) return true;
+    const used = new Set(Object.values(S.slots));
+    const free = [1, 2, 3, 4, 5, 6].find((n) => !used.has(n));
+    if (!free) return false;
+    S.slots[id] = free;
+    return true;
+  };
+  const toast = (text) => {
+    S.toast = { text, at: Date.now() };
+    setTimeout(() => {
+      if (S.toast && Date.now() - S.toast.at >= 2800) {
+        S.toast = null;
+        render();
+      }
+    }, 2900);
+  };
+  const tabTitle = (k) => {
+    if (k === 'runs') return ['运行记录', 'list'];
+    if (k === 'graph') return ['Git 图', 'scm'];
+    if (k === 'welcome') return ['开始', 'sparkles'];
+    if (k.startsWith('run:')) return [runById(k.slice(4))?.name || '运行', 'play'];
+    if (k.startsWith('diff:')) return [`${k.slice(5).split('/').at(-1)}（工作树）`, 'columns'];
+    const p = k.slice(2);
+    const name = p.split('/').at(-1);
+    return [name, p.endsWith('.ipynb') ? 'book' : p.endsWith('.csv') ? 'table' : p.endsWith('.png') ? 'image' : 'file'];
+  };
+  const openTab = (k) => {
+    const t = tabsOf();
+    if (!t.list.includes(k)) {
+      const i = t.list.indexOf(t.active);
+      t.list.splice(i + 1, 0, k);
+    }
+    t.active = k;
+  };
+
+  // ---------- Syntax colouring ----------
+  function highlight(text, lang) {
+    const safe = text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+    if (lang === 'py')
+      return safe.replace(
+        /(#.*$)|("[^"\n]*"|'[^'\n]*')|\b(import|from|def|class|return|for|in|if|else|with|as|None|True|False|and|or|not|self|super)\b|\b(\d+(?:\.\d+)?(?:e-?\d+)?)\b/gm,
+        (m, com, str, kw, num) => (com ? `<span class="tk-com">${com}</span>` : str ? `<span class="tk-str">${str}</span>` : kw ? `<span class="tk-kw">${kw}</span>` : `<span class="tk-num">${num}</span>`),
+      );
+    if (lang === 'yaml')
+      return safe.replace(/(#.*$)|^(\s*-?\s*[\w_]+)(:)|\b(\d+(?:\.\d+)?(?:e-?\d+)?)\b/gm, (m, com, key, colon, num) => (com ? `<span class="tk-com">${com}</span>` : key ? `<span class="tk-kw">${key}</span>${colon}` : `<span class="tk-num">${num}</span>`));
+    if (lang === 'md') return safe.replace(/^(#.*)$/gm, '<span class="tk-kw">$1</span>');
+    return safe;
+  }
+
+  // ---------- Charts ----------
+  const CHARTS = new Map();
+  function niceTicks(min, max, count = 4) {
+    const span = max - min || 1;
+    const step0 = span / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= step0) || step0;
+    const lo = Math.floor(min / step) * step;
+    const hi = Math.ceil(max / step) * step;
+    const ticks = [];
+    for (let v = lo; v <= hi + step / 2; v += step) ticks.push(+v.toFixed(6));
+    return { lo, hi, ticks };
+  }
+  const tickLabel = (v) => (Math.abs(v) < 10 ? (+v.toFixed(3)).toString() : Math.round(v).toString());
+  function lineChart(id, input, { w = 560, h = 200, xMin = 1, xMax = 10, xLabel = 'step', labels = true } = {}) {
+    const series = input.filter((s) => s.pts.length);
+    const direct = labels && series.length <= 4;
+    const pad = { l: 42, r: direct ? 92 : 14, t: 8, b: 24 };
+    const all = series.flatMap((s) => s.pts.map((p) => p[1]));
+    if (!all.length) return `<div class="muted" style="height:${h}px;display:grid;place-items:center">所选运行还没有记录这个指标</div>`;
+    const { lo, hi, ticks } = niceTicks(Math.min(...all), Math.max(...all));
+    const X = (x) => pad.l + ((x - xMin) / (xMax - xMin || 1)) * (w - pad.l - pad.r);
+    const Y = (y) => pad.t + (1 - (y - lo) / (hi - lo || 1)) * (h - pad.t - pad.b);
+    const xs = [...new Set(series.flatMap((s) => s.pts.map((p) => p[0])))].sort((a, b) => a - b);
+    let out = `<svg viewBox="0 0 ${w} ${h}" role="img"><g class="grid">`;
+    for (const t of ticks) out += `<line x1="${pad.l}" x2="${w - pad.r}" y1="${Y(t)}" y2="${Y(t)}"/>`;
+    out += '</g><g class="axis">';
+    for (const t of ticks) out += `<text x="${pad.l - 8}" y="${Y(t) + 4}" text-anchor="end">${tickLabel(t)}</text>`;
+    for (let x = Math.ceil(xMin); x <= xMax; x += xMax - xMin > 10 ? 2 : 1) out += `<text x="${X(x)}" y="${h - 6}" text-anchor="middle">${x}</text>`;
+    out += '</g>';
+    for (const s of series) {
+      const d = s.pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)} ${Y(p[1]).toFixed(1)}`).join(' ');
+      out += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      const last = s.pts.at(-1);
+      out += `<circle cx="${X(last[0])}" cy="${Y(last[1])}" r="3.5" fill="${s.color}" stroke="var(--canvas)" stroke-width="2"/>`;
+    }
+    if (direct) {
+      const ls = series.map((s) => ({ s, y: Y(s.pts.at(-1)[1]) })).sort((a, b) => a.y - b.y);
+      for (let i = 1; i < ls.length; i++) ls[i].y = Math.max(ls[i].y, ls[i - 1].y + 13);
+      for (const l of ls) out += `<text class="label" x="${X(xMax) + 10}" y="${l.y + 4}">${esc(l.s.name)}</text>`;
+    }
+    out += `<line class="hover-line" x1="0" x2="0" y1="${pad.t}" y2="${h - pad.b}" visibility="hidden"/>`;
+    out += `<rect x="${pad.l}" y="${pad.t}" width="${w - pad.l - pad.r}" height="${h - pad.t - pad.b}" fill="transparent" data-hover="${id}"/></svg>`;
+    CHARTS.set(id, { series, X, w, xs, xLabel });
+    return out;
+  }
+  const short = (r) => r.name.replace('timing-', '');
+
+  // ---------- Title bar ----------
+  function titlebar() {
+    return `<header class="titlebar">
+      <svg class="logo" viewBox="0 0 24 24"><path d="M12 2.5 3.5 7v10l8.5 4.5 8.5-4.5V7z" fill="var(--text)"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10" stroke="var(--chrome)" stroke-width="1.4" fill="none"/><circle cx="12" cy="6.2" r="1.6" fill="var(--chrome)"/></svg>
+      <button class="ib" aria-pressed="true">${icon('sidebar')}</button>
+      <button class="ib">${icon('back')}</button><button class="ib">${icon('fwd')}</button>
+      <div class="crumbs">Proactive <span>/</span> 实验 <span>/</span> <b>${esc(folder().name)}</b></div>
+      <button class="tb-search" data-act="quick" data-kind="files">${icon('search', 14)}搜索文件、运行和命令<kbd>Ctrl P</kbd></button>
+      <span class="spacer"></span>
+      <button class="ib">${icon('users', 15)}共享</button><span class="tb-sep"></span>
+      <button class="ib">${icon('bell', 15)}</button>
+      <button class="ib">${icon('note', 15)}笔记</button>
+      <button class="ib" data-act="dock" aria-pressed="${!!S.dock}">${icon('sparkles', 15)}AI</button>
+    </header>`;
+  }
+
+  // ---------- Sidebar ----------
+  const VIEWS = [
+    ['explorer', 'files', '资源管理器', 'Ctrl+Shift+E'],
+    ['search', 'search', '搜索', 'Ctrl+Shift+F'],
+    ['scm', 'scm', '源代码管理', 'Ctrl+Shift+G'],
+    ['runs', 'play', '运行', 'Ctrl+Shift+D'],
+    ['env', 'box', 'Python 环境', ''],
+  ];
+  function sidebar() {
+    const changes = S.folder === 'timing' ? S.changes.length + S.staged.length : 0;
+    const running = runsOf().filter((r) => r.status === 'running').length;
+    const views = VIEWS.map(([id, ic, label, key]) => `<button class="ib" data-act="view" data-id="${id}" aria-pressed="${S.view === id}" title="${label}${key ? ' (' + key + ')' : ''}">${icon(ic, 17)}${id === 'scm' && changes ? `<span class="badge">${changes}</span>` : ''}${id === 'runs' && running ? `<span class="badge">${running}</span>` : ''}</button>`).join('');
+    const body = { explorer: explorerView, search: searchView, scm: scmView, runs: runsView, env: envView }[S.view]();
+    return `<aside class="sidebar">
+      <button class="uplink">${icon('left', 14)}我的项目</button>
+      <button class="switcher"><span class="mark"></span><b style="flex:1">Proactive</b>${icon('down', 14)}</button>
+      <nav>
+        <button class="nav-item">${icon('book')}文献</button>
+        <button class="nav-item">${icon('note')}笔记</button>
+        <button class="nav-item" aria-current="page">${icon('flask')}实验</button>
+        <button class="nav-item">${icon('pen')}写作</button>
+      </nav>
+      <div class="views" data-note="1">${views}</div>
+      <div class="view" data-scroll="side">${body}</div>
+      <div class="side-foot"><button class="account"><span class="avatar">${icon('user', 11)}</span>潘子禾</button><button class="ib">${icon('help', 15)}</button><button class="ib">${icon('gear', 15)}</button></div>
+    </aside>`;
+  }
+  const viewTitle = (t, acts = '') => `<div class="view-title"><span style="flex:1">${t}</span>${acts}</div>`;
+
+  function explorerView() {
+    const f = folder();
+    const tree = TREES[S.folder] || [];
+    const act = active();
+    const rows = [];
+    for (const [p, kind, flag] of tree) {
+      const parts = p.split('/');
+      if (parts.slice(0, -1).some((_, i) => S.collapsed.includes(parts.slice(0, i + 1).join('/')))) continue;
+      const depth = parts.length - 1;
+      const name = parts.at(-1);
+      const dir = kind === 'dir';
+      const open = dir && !S.collapsed.includes(p);
+      const ignored = flag === 'ignored';
+      const gitflag = flag && !ignored ? flag : '';
+      rows.push(`<button class="row" style="padding-left:${6 + depth * 12}px;${ignored ? 'opacity:.55' : ''}" data-act="${dir ? 'toggle-dir' : 'open-file'}" data-path="${p}" ${act === 'f:' + p ? 'aria-current="true"' : ''}>
+        ${dir ? icon(open ? 'down' : 'right', 13) : `<span style="width:13px"></span>`}${icon(dir ? 'folder' : p.endsWith('.ipynb') ? 'book' : p.endsWith('.csv') ? 'table' : p.endsWith('.png') ? 'image' : 'file', 14)}
+        <span class="name ${gitflag}">${esc(name)}</span>${gitflag ? `<span class="end"><span class="git ${gitflag}">${dir ? '•' : gitflag}</span></span>` : ''}
+      </button>`);
+    }
+    const acts = `<span style="display:flex"><button class="ib sm" title="新建文件" data-act="toast" data-text="新建文件：在选中的文件夹里输入文件名">${icon('newfile', 14)}</button><button class="ib sm" title="新建文件夹" data-act="toast" data-text="新建文件夹">${icon('newfolder', 14)}</button><button class="ib sm" title="刷新">${icon('refresh', 14)}</button><button class="ib sm" title="全部折叠" data-act="collapse-all">${icon('collapse', 14)}</button></span>`;
+    return `${viewTitle('资源管理器')}
+      <div class="sec"><div class="sec-head"><span class="t">${icon('down', 12)}${esc(f.name.toUpperCase())}</span><span class="acts">${acts}</span></div>
+      ${rows.length ? rows.join('') : `<div style="padding:8px 6px;font-size:12.5px" class="muted">文件夹是空的。<br><button class="link" data-act="open-tab" data-k="welcome">新建文件或从模板开始</button></div>`}</div>
+      <div class="sec"><button class="sec-head" data-act="toast" data-text="大纲：当前文件里的类和函数">${icon('right', 12)}<span class="t">大纲</span></button></div>`;
+  }
+
+  function searchView() {
+    const hits = [
+      ['train.py', [[22, 'scientify.log(step=epoch, loss=loss, f1=f1,']]],
+      ['scripts/sweep.py', [[4, '# 也可以直接用“以不同参数运行”']]],
+      ['README.md', [[6, '指标通过 scientify.log() 写入']]],
+    ];
+    return `${viewTitle('搜索')}
+      <div class="inputbox">${icon('search', 13)}<input value="scientify.log" aria-label="搜索"><span class="opt">Aa</span><span class="opt">ab</span><span class="opt">.*</span></div>
+      <div class="inputbox" style="opacity:.75"><input placeholder="替换"></div>
+      <div class="muted" style="font-size:12px;padding:4px 4px 2px">3 个文件中有 3 个结果</div>
+      ${hits.map(([p, ls]) => `<div class="sec"><button class="row" data-act="open-file" data-path="${p}">${icon('down', 12)}${icon('file', 14)}<span class="name">${p.split('/').at(-1)}</span><span class="dir">${p.includes('/') ? p.split('/').slice(0, -1).join('/') : ''}</span><span class="end">${ls.length}</span></button>
+        ${ls.map(([n, t]) => `<button class="row" style="padding-left:34px" data-act="open-file" data-path="${p}"><span class="name mono" style="font-size:12px">${esc(t)}</span></button>`).join('')}</div>`).join('')}`;
+  }
+
+  function scmView() {
+    const f = folder();
+    if (S.folder !== 'timing')
+      return `${viewTitle('源代码管理')}<div class="muted" style="padding:8px 6px;font-size:12.5px">${f.worktreeOf ? `这是 <b>timing</b> 的工作树，分支 <span class="mono">${esc(f.branch)}</span>。` : ''}没有更改。</div>`;
+    const changeRow = (c, staged) => `<button class="row" data-act="open-diff" data-path="${c.path}">
+      ${icon('file', 14)}<span class="name ${c.kind}">${c.path.split('/').at(-1)}</span><span class="dir">${c.path.includes('/') ? c.path.split('/').slice(0, -1).join('/') : ''}</span>
+      <span class="end"><span class="hov"><span class="ib sm" title="打开文件" data-act="open-file" data-path="${c.path}">${icon('open', 13)}</span>${staged ? `<span class="ib sm" title="取消暂存更改" data-act="unstage" data-path="${c.path}">${icon('minus', 13)}</span>` : `<span class="ib sm" title="放弃更改" data-act="discard" data-path="${c.path}">${icon('undo', 13)}</span><span class="ib sm" title="暂存更改" data-act="stage" data-path="${c.path}">${icon('plus', 13)}</span>`}</span><span class="git ${c.kind}">${c.kind}</span></span>
+    </button>`;
+    const staged = S.changes.filter((c) => S.staged.includes(c.path));
+    const unstaged = S.changes.filter((c) => !S.staged.includes(c.path));
+    const total = S.changes.length;
+    return `${viewTitle('源代码管理', `<button class="ib sm" title="Git 图" data-act="open-tab" data-k="graph">${icon('history', 14)}</button><button class="ib sm" title="更多" data-act="menu" data-kind="scm">${icon('more', 14)}</button>`)}
+      <div style="position:relative"><textarea class="msg-input" data-input="commitMsg" placeholder="消息（Ctrl+Enter 在“${esc(f.branch)}”上提交）">${esc(S.commitMsg)}</textarea>
+        <button class="ib sm" style="position:absolute;right:4px;bottom:10px" title="用 AI 生成提交消息" data-act="ai-msg">${icon('sparkles', 13)}</button></div>
+      <button class="btn primary block" data-act="commit" ${total ? '' : 'disabled'}>${icon('check', 13)}提交${staged.length ? '' : total ? '所有更改' : ''}</button>
+      ${staged.length ? `<div class="sec" style="margin-top:8px"><div class="sec-head"><span class="t">${icon('down', 12)}暂存的更改</span><span class="n">${staged.length}</span></div>${staged.map((c) => changeRow(c, true)).join('')}</div>` : ''}
+      <div class="sec" style="margin-top:8px"><div class="sec-head"><span class="t">${icon('down', 12)}更改</span><span class="acts"><button class="ib sm" title="暂存所有更改" data-act="stage-all">${icon('plus', 13)}</button></span><span class="n">${unstaged.length}</span></div>
+      ${unstaged.length ? unstaged.map((c) => changeRow(c, false)).join('') : '<div class="muted" style="padding:4px 8px;font-size:12px">没有更改</div>'}</div>
+      <div class="sec" style="margin-top:10px"><div class="sec-head"><span class="t">${icon('down', 12)}提交</span><span class="acts"><button class="ib sm" title="在 Git 图中查看" data-act="open-tab" data-k="graph">${icon('open', 13)}</button></span></div>
+      ${S.commits.filter((c) => !c.side).slice(0, 4).map((c) => `<button class="row" data-act="open-commit" data-id="${c.id}">${icon('git', 13)}<span class="name">${esc(c.msg)}</span><span class="end">${S.runs.some((r) => r.ver === c.id) ? icon('play', 11) : ''}</span></button>`).join('')}</div>`;
+  }
+
+  function runsView() {
+    const rs = runsOf();
+    const configs = S.folder === 'repro' ? [['train', '训练', 'scripts/train.sh']] : [['train', '训练', 'train.py'], ['eval', '评测', 'eval.py']];
+    const runRow = (r) => `<button class="row" data-act="open-run" data-id="${r.id}" ${active() === 'run:' + r.id ? 'aria-current="true"' : ''}>
+      <span class="dot ${statusDot(r)}" style="margin:0 3px"></span><span class="name">${esc(r.name)}</span>
+      <span class="end">${r.status === 'running' ? `<span class="progress" style="width:36px"><i style="width:${r.epoch * 10}%"></i></span>` : r.status === 'queued' ? '排队' : r.m?.f1 != null ? 'f1 ' + r.m.f1.toFixed(3) : r.status === 'failed' ? '失败' : ''}</span></button>`;
+    const running = rs.filter((r) => r.status === 'running' || r.status === 'queued');
+    const recent = rs.filter((r) => !['running', 'queued'].includes(r.status)).slice(0, 6);
+    return `${viewTitle('运行', `<button class="ib sm" title="以不同参数运行" data-act="dialog" data-kind="params">${icon('plus', 14)}</button>`)}
+      <div class="sec"><div class="sec-head"><span class="t">${icon('down', 12)}运行配置</span><span class="acts"><button class="ib sm" title="编辑配置" data-act="toast" data-text="编辑运行配置：入口文件、参数、工作目录、环境变量">${icon('gear', 13)}</button></span></div>
+        ${configs.map(([id, l, p]) => `<button class="row" data-act="set-config" data-id="${id}" ${S.config === id ? 'aria-current="true"' : ''}>${icon('file', 14)}<span class="name">${l}</span><span class="dir mono">${p}</span><span class="end"><span class="hov"><span class="ib sm run-btn" title="运行" data-act="run-now" data-id="${id}">${icon('play', 12)}</span></span></span></button>`).join('')}
+        <button class="row" data-act="toast" data-text="当前文件：运行编辑器里打开的 .py 文件，同样会记一次运行">${icon('file', 14)}<span class="name">当前文件</span></button></div>
+      ${running.length ? `<div class="sec" style="margin-top:8px"><div class="sec-head"><span class="t">${icon('down', 12)}正在运行</span><span class="n">${running.length}</span></div>${running.map(runRow).join('')}</div>` : ''}
+      <div class="sec" style="margin-top:8px"><div class="sec-head"><span class="t">${icon('down', 12)}最近</span><span class="acts"><button class="ib sm" title="打开运行记录" data-act="open-tab" data-k="runs">${icon('open', 13)}</button></span></div>${recent.map(runRow).join('') || '<div class="muted" style="padding:4px 8px;font-size:12px">还没有运行</div>'}
+        <button class="row" data-act="open-tab" data-k="runs" style="color:var(--link)">${icon('list', 14)}全部运行记录（${rs.length}）</button></div>`;
+  }
+
+  function envView() {
+    const f = folder();
+    const cur = ENVS[f.env];
+    return `${viewTitle('Python 环境', `<button class="ib sm" title="创建环境" data-act="toast" data-text="创建环境：venv 或 Conda，可以按 requirements.txt / environment.yml 安装依赖">${icon('plus', 14)}</button><button class="ib sm" title="刷新">${icon('refresh', 14)}</button>`)}
+      <div class="sec"><div class="sec-head"><span class="t">${icon('down', 12)}当前文件夹使用</span></div>
+        <button class="row" aria-current="true" data-act="quick" data-kind="interp">${icon('box', 14)}<span class="name">Python ${cur.label}</span><span class="dir">${esc(cur.kind)}</span><span class="end">${icon('check', 13)}</span></button>
+        <div class="muted mono" style="font-size:11.5px;padding:0 8px 4px 28px;overflow:hidden;text-overflow:ellipsis">${esc(cur.path)}</div></div>
+      <div class="sec" style="margin-top:6px"><div class="sec-head"><span class="t">${icon('down', 12)}本机其他环境</span></div>
+        ${Object.entries(ENVS).filter(([id]) => id !== f.env).map(([id, e]) => `<button class="row" data-act="set-env" data-id="${id}">${icon('box', 14)}<span class="name">Python ${e.label}</span><span class="dir">${esc(e.kind)}</span><span class="end"><span class="hov">使用</span></span></button>`).join('')}</div>
+      ${f.id === 'timing' ? `<div class="sec" style="margin-top:6px"><div class="sec-head"><span class="t">${icon('down', 12)}依赖</span></div>
+        <button class="row" data-act="open-file" data-path="requirements.txt">${icon('alert', 14)}<span class="name">requirements.txt 有 1 个包未安装</span><span class="end"><span class="link" data-act="toast" data-text="正在按 requirements.txt 安装（日志在面板“终端”里）">安装</span></span></button></div>
+      <div class="sec" style="margin-top:6px"><div class="sec-head"><span class="t">${icon('down', 12)}已安装的包</span><span class="acts"><button class="ib sm" title="安装包" data-act="toast" data-text="安装包：输入包名，可选版本">${icon('plus', 13)}</button></span><span class="n">38</span></div>
+        <div class="inputbox" style="margin:2px 0 4px">${icon('search', 13)}<input placeholder="搜索包"></div>
+        ${PACKAGES.map(([n, v, up]) => `<button class="row">${icon('box', 13)}<span class="name mono" style="font-size:12px">${n}</span><span class="end mono">${v}${up ? `<span style="color:var(--info);margin-left:6px" title="可升级到 ${up}">↑${up}</span>` : ''}</span></button>`).join('')}</div>` : f.id === 'repro' ? `<div class="sec" style="margin-top:6px"><div class="sec-head"><span class="t">${icon('down', 12)}依赖</span></div><button class="row" data-act="open-file" data-path="environment.yml">${icon('check', 14)}<span class="name">与 environment.yml 一致</span></button></div>` : ''}`;
+  }
+
+  // ---------- Toolbar ----------
+  function toolbar() {
+    const f = folder();
+    const running = runsOf().filter((r) => r.status === 'running');
+    const cfg = { train: ['训练', S.folder === 'repro' ? 'scripts/train.sh' : 'train.py'], eval: ['评测', 'eval.py'] }[S.config];
+    return `<div class="toolbar">
+      <span data-note="2" style="display:inline-flex;gap:2px">
+        <button class="widget" data-act="quick" data-kind="folder" title="切换文件夹">${icon('folder', 15)}${esc(f.name)}${icon('down', 13)}</button>
+        <button class="widget" data-act="quick" data-kind="branch" title="切换分支">${icon('branch', 15)}<span class="sub" style="color:var(--text)">${esc(f.branch)}</span>${icon('down', 13)}</button>
+      </span>
+      <span class="spacer"></span>
+      <span data-note="3" style="display:inline-flex;align-items:center;gap:2px">
+        <button class="widget" data-act="menu" data-kind="config" title="运行配置">${icon('file', 14)}${cfg[0]}<span class="sub">${cfg[1]}</span>${icon('down', 13)}</button>
+        <button class="ib run-btn" data-act="run-now" title="运行 (Ctrl+F5)">${icon('play', 15)}</button>
+        <button class="ib" data-act="toast" data-text="调试 (F5)：断点、单步、变量和调用栈（第 4 期，基于 debugpy）" title="调试 (F5)">${icon('bug', 15)}</button>
+        <button class="ib stop-btn" data-act="stop-all" title="停止" ${running.length ? '' : 'disabled'}>${icon('stop', 14)}</button>
+      </span>
+      <button class="ib" data-act="menu" data-kind="more" title="更多">${icon('more')}</button>
+    </div>`;
+  }
+
+  // ---------- Editors ----------
+  function editorTabs() {
+    const t = tabsOf();
+    return `<div class="editor-tabs" data-note="4">${t.list
+      .map((k) => {
+        const [title, ic] = tabTitle(k);
+        const dirty = k.startsWith('f:') && (S.inlineDirty?.[k] || false);
+        const r = k.startsWith('run:') ? runById(k.slice(4)) : null;
+        return `<button class="etab" data-act="tab" data-k="${k}" ${t.active === k ? 'aria-current="true"' : ''}>${r ? `<span class="dot ${statusDot(r)}"></span>` : icon(ic, 14)}<span style="${k.startsWith('diff:') ? 'font-style:italic' : ''}">${esc(title)}</span>${dirty ? '<span class="mod"></span>' : `<span class="x" data-act="close-tab" data-k="${k}">${icon('x', 12)}</span>`}</button>`;
+      })
+      .join('')}</div>`;
+  }
+
+  function editorBody() {
+    const k = active();
+    if (!k) return welcome();
+    if (k === 'welcome') return welcome();
+    if (k === 'runs') return runsEditor();
+    if (k === 'graph') return graphEditor();
+    if (k.startsWith('run:')) return runEditor(runById(k.slice(4)));
+    if (k.startsWith('diff:')) return diffEditor(k.slice(5));
+    const p = k.slice(2);
+    if (p.endsWith('.ipynb')) return notebookEditor(p);
+    if (p.endsWith('.csv')) return dataEditor(p);
+    if (p.endsWith('.png')) return imageEditor(p);
+    return codeEditor(p);
+  }
+
+  function crumb(p, extra = '') {
+    return `<div class="breadcrumb">${esc(folder().name)}${p.split('/').map((s) => ` ${icon('right', 11)} ${esc(s)}`).join('')}<span class="spacer"></span>${extra}</div>`;
+  }
+
+  function codeEditor(p) {
+    const file = CODE[codeKey(p)];
+    if (!file) return `${crumb(p)}<div class="editor"><div class="muted" style="padding:40px;text-align:center">这个文件在原型里没有内容</div></div>`;
+    const isTrain = p === 'train.py' && S.folder === 'timing';
+    const lines = file.text.split('\n');
+    let html = '';
+    lines.forEach((line, i) => {
+      const n = i + 1;
+      if (isTrain && n === 7) html += `<div class="codelens"><button data-act="run-now">运行</button> | <button data-act="toast" data-text="调试（第 4 期）">调试</button> | <button data-act="open-tab" data-k="runs">8 次运行 · 最好 f1 0.702</button></div>`;
+      const cls = [file.marks[n] || '', isTrain && n === 23 ? 'cur' : ''].join(' ');
+      let tx = highlight(line, file.lang) || ' ';
+      if (file.warn === n) tx = tx.replace('pandas', '<span class="wavy" title="ruff F401: pandas 已导入但未使用">pandas</span>');
+      html += `<div class="ln ${cls}"><span class="no">${n}</span><span class="tx">${tx}</span></div>`;
+      if (isTrain && S.inline && n === 21) {
+        html += `<div class="inline-chat"><div class="q">${icon('sparkles', 14)}<span style="flex:1">每 100 步记录一次 loss，并加上验证集 loss</span><span class="muted" style="font-size:12px">train.py · 第 19–24 行</span></div></div>`;
+        html += [
+          ['dadd', '        for step, batch_loss in model.steps(data.train, lr=args.lr):'],
+          ['dadd', '            if step % 100 == 0:'],
+          ['dadd', '                scientify.log(step=step, loss=batch_loss)'],
+          ['dadd', '        val_loss, f1, false_trigger, latency = model.evaluate(data.valid)'],
+        ]
+          .map(([c, t]) => `<div class="ln ${c}"><span class="no">+</span><span class="tx">${highlight(t, 'py')}</span></div>`)
+          .join('');
+        html += `<div class="inline-chat" style="margin-top:2px"><div class="a"><button class="btn sm primary" data-act="inline-accept">接受 <span style="opacity:.6">Ctrl+Enter</span></button><button class="btn sm" data-act="inline-reject">拒绝</button><button class="btn sm" data-act="toast" data-text="重新生成">重新生成</button><span class="muted" style="margin-left:auto;font-size:12px">+4 −2</span></div></div>`;
+      }
+    });
+    const extra = p.endsWith('.py')
+      ? `<button class="ib sm" style="padding:0 6px;font-size:12px" data-act="inline" title="让 AI 就地修改 (Ctrl+I)">${icon('sparkles', 13)}编辑</button><button class="ib sm run-btn" data-act="run-now" title="运行此文件">${icon('play', 13)}</button>`
+      : '';
+    return `${crumb(p, extra)}<div class="editor" data-scroll="ed-${p}" data-note="5"><div class="code">${html}</div></div>`;
+  }
+
+  function notebookEditor(p) {
+    const ran = S.nb.ran;
+    const plot = (() => {
+      const pts = CSV.rows.map((r) => [r[0], r[3]]);
+      return lineChart('nb-plot', [{ name: 'gaze', color: 'var(--s1)', pts }], { w: 640, h: 180, xMin: 0, xMax: 9, labels: false, xLabel: 't' });
+    })();
+    const hist = `<svg viewBox="0 0 640 150" style="max-width:640px;display:block">${[['wait', 7], ['intervene', 3], ['respond', 2]].map(([l, n], i) => `<text x="88" y="${32 + i * 40}" text-anchor="end" fill="var(--text-2)" font-size="11">${l}</text><rect x="96" y="${20 + i * 40}" width="${n * 60}" height="18" rx="3" fill="var(--s1)"/><text x="${104 + n * 60}" y="${33 + i * 40}" fill="var(--text-2)" font-size="11">${n}</text>`).join('')}</svg>`;
+    const cell = (n, src, out, opts = {}) => `<div class="cell ${opts.md ? 'md' : ''} ${opts.active ? 'active' : ''}"><div class="gutter">${opts.md ? '' : `[${n}]`}</div><div class="src">${src}</div>${out ? `<div class="out">${out}</div>` : ''}</div>`;
+    const describe = `<table><tr><th></th><th>t</th><th>gaze</th></tr>${[['count', '1200', '1200'], ['mean', '4.21', '0.69'], ['std', '2.37', '0.22'], ['min', '0.40', '0.12'], ['max', '8.30', '0.97']].map((r) => `<tr><th style="text-align:left">${r[0]}</th><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</table>`;
+    return `<div class="nb-bar">
+        <button class="ib sm" style="padding:0 6px;font-size:12px">${icon('plus', 13)}代码</button><button class="ib sm" style="padding:0 6px;font-size:12px">${icon('plus', 13)}Markdown</button>
+        <span class="tb-sep"></span>
+        <button class="ib sm" style="padding:0 6px;font-size:12px" data-act="nb-run">${icon('play', 12)}全部运行</button>
+        <button class="ib sm" style="padding:0 6px;font-size:12px">${icon('rerun', 13)}重启</button>
+        <button class="ib sm" style="padding:0 6px;font-size:12px">清除输出</button>
+        <button class="ib sm" style="padding:0 6px;font-size:12px" data-act="ptab" data-id="vars">${icon('table', 13)}变量</button>
+        <span class="spacer"></span>
+        <button class="widget" style="height:24px;font-size:12px" data-act="quick" data-kind="interp" title="选择内核">${icon('box', 13)}Python ${env().label} (${esc(env().kind)})</button>
+      </div>
+      <div class="editor" data-scroll="nb" data-note="5" style="padding-top:8px">
+        ${cell('', '<h3>事件数据概览</h3>看一下注视强度的分布，以及三类标签的比例。', '', { md: true })}
+        ${cell(1, highlight('import pandas as pd\ndf = pd.read_csv("../data/events.csv")\ndf.describe()', 'py'), describe)}
+        ${cell(2, highlight('df.plot(x="t", y="gaze", figsize=(8, 2.5))', 'py'), `<div class="chart" style="max-width:660px">${plot}</div>`)}
+        ${cell(ran ? 3 : ' ', highlight('# 每类标签有多少条\ndf["label"].value_counts().plot.barh()', 'py'), ran ? hist : '', { active: !ran })}
+        ${ran ? '' : `<div style="padding:0 0 0 64px"><button class="btn sm" data-act="nb-run">${icon('play', 12)}运行此单元格 <span class="muted">Shift+Enter</span></button></div>`}
+      </div>`;
+  }
+
+  function dataEditor(p) {
+    const head = CSV.cols
+      .map(([c, t, h]) => `<th style="vertical-align:top;padding-top:6px;height:auto">${c} <span class="muted mono" style="font-weight:400;font-size:11px">${t}</span>${h ? `<div class="hist">${h.map((v) => `<i style="height:${v * 2}px"></i>`).join('')}</div>` : '<div class="hist"></div>'}</th>`)
+      .join('');
+    return `${crumb(p, `<span class="muted" style="font-size:12px;margin-right:6px">1,200 行 × 5 列</span><button class="ib sm" style="padding:0 6px;font-size:12px" data-act="open-file" data-path="notebooks/explore.ipynb">${icon('book', 13)}在笔记本中打开</button>`)}
+      <div class="subbar" style="height:34px"><div class="filter">${icon('search', 13)}<input placeholder="筛选，例如 label == 'intervene'"></div><span class="muted" style="font-size:12px">点列名排序</span></div>
+      <div class="editor" data-scroll="data" data-note="5"><table class="grid-table"><thead><tr><th style="width:44px">#</th>${head}</tr></thead><tbody>${CSV.rows.map((r, i) => `<tr class="r"><td class="muted">${i}</td>${r.map((v) => `<td class="mono" style="font-size:12px">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+
+  function imageEditor(p) {
+    return `${crumb(p)}<div class="editor" data-note="5" style="display:grid;place-items:center;background:var(--sunken)"><svg viewBox="0 0 520 300" style="width:520px;background:#fff;box-shadow:0 0 0 1px var(--line)"><path d="M50 40 C 160 46, 250 80, 330 140 S 450 240, 490 250" stroke="#2a78d6" stroke-width="2.5" fill="none"/><line x1="50" y1="260" x2="490" y2="260" stroke="#999"/><line x1="50" y1="30" x2="50" y2="260" stroke="#999"/><text x="270" y="288" font-size="12" fill="#555" text-anchor="middle">recall</text><text x="20" y="150" font-size="12" fill="#555">P</text><text x="270" y="22" font-size="13" fill="#222" text-anchor="middle">PR curve · timing-abl-03</text></svg></div>`;
+  }
+
+  function welcome() {
+    const f = folder();
+    return `<div class="editor" data-note="5"><div class="welcome-head"><h1>${esc(f.name)}</h1><div class="muted">${esc(f.path)}${f.worktreeOf ? ` · timing 的工作树，分支 ${esc(f.branch)}` : ''}</div></div><div class="welcome">
+      <div><h2 style="margin-top:0">开始</h2>
+        <button class="lk" data-act="toast" data-text="新建文件">${icon('newfile', 15)}新建文件…</button>
+        <button class="lk" data-act="toast" data-text="新建 Jupyter 笔记本：内核默认用这个文件夹的 Python 环境">${icon('book', 15)}新建 Jupyter 笔记本</button>
+        <button class="lk" data-act="toast" data-text="打开文件夹：选择本机已有的代码目录，原地使用">${icon('folder', 15)}打开文件夹…</button>
+        <button class="lk" data-act="quick" data-kind="clone">${icon('branch', 15)}克隆 Git 仓库…</button>
+        <h2>最近</h2>
+        ${S.folders.filter((x) => x.id !== f.id).map((x) => `<div class="recent"><button class="link" data-act="folder" data-id="${x.id}">${esc(x.name)}</button><span class="muted">${esc(x.path)}</span></div>`).join('')}
+      </div>
+      <div><h2 style="margin-top:0">了解</h2>
+        <button class="lk" data-act="toast" data-text="通过运行配置或“运行此文件”启动的程序都会留下一条运行记录">${icon('play', 15)}运行和运行记录</button>
+        <button class="lk" data-act="toast" data-text="import scientify; scientify.log(step=..., loss=...) 把指标写进 metrics.jsonl">${icon('chart', 15)}记录指标：scientify.log()</button>
+        <button class="lk" data-act="toast" data-text="为每个文件夹选择解释器，创建 venv 或 Conda 环境">${icon('box', 15)}Python 环境</button>
+        <button class="lk" data-act="toast" data-text="Ctrl+I 在编辑器里就地修改；Ctrl+J 打开 AI 对话">${icon('sparkles', 15)}和 AI 一起写代码</button>
+      </div></div></div>`;
+  }
+
+  // Runs: table, charts and compare inside one editor.
+  function runsEditor() {
+    const rs = runsOf();
+    if (S.compare) return compareView();
+    const filtered = S.runFilter ? rs.filter((r) => (r.name + ' ' + JSON.stringify(r.params)).includes(S.runFilter)) : rs;
+    const bestBy = Object.fromEntries(METRICS.map((m) => [m.key, best(rs, m.key)?.id]));
+    const sel = S.selected.length;
+    const sub = `<div class="subbar">
+      <div class="seg"><button data-act="runs-mode" data-id="table" aria-pressed="${S.runsMode === 'table'}">${icon('table', 12)} 表格</button><button data-act="runs-mode" data-id="charts" aria-pressed="${S.runsMode === 'charts'}">${icon('chart', 12)} 图表</button></div>
+      <div class="filter">${icon('search', 13)}<input data-input="runFilter" placeholder="筛选，例如 lr=3e-4" value="${esc(S.runFilter)}"></div>
+      <button class="ib sm" style="padding:0 6px;font-size:12px" data-act="menu" data-kind="group">分组：${{ group: '运行组', commit: '提交', none: '不分组' }[S.runsGroup]}${icon('down', 12)}</button>
+      <button class="ib sm" style="padding:0 6px;font-size:12px" data-act="toast" data-text="列：选择显示哪些参数和指标">${icon('columns', 13)}列</button>
+      <span class="spacer"></span>
+      ${sel ? `<span class="muted" style="font-size:12px">已选 ${sel}</span><button class="btn sm" data-act="compare" ${sel < 2 ? 'disabled' : ''}>${icon('columns', 12)}比较</button>` : ''}
+      <button class="ib sm" title="导出 CSV" data-act="toast" data-text="已导出 runs.csv">${icon('download', 14)}</button>
+    </div>`;
+    if (S.runsMode === 'charts') return sub + runsCharts(rs);
+    const row = (r, indent) => {
+      const live = r.status === 'running';
+      return `<tr class="r ${S.selected.includes(r.id) ? 'sel' : ''}" data-act="open-run" data-id="${r.id}">
+        <td style="width:34px"><input type="checkbox" class="check" data-act="select" data-id="${r.id}" ${S.selected.includes(r.id) ? 'checked' : ''}></td>
+        <td style="padding-left:${indent ? 26 : 10}px"><span class="state"><span class="dot ${statusDot(r)}"></span><span class="nm">${esc(r.name)}</span>${r.star ? '<span style="color:var(--s4)">★</span>' : ''}</span></td>
+        <td>${live ? `<span class="progress"><i style="width:${r.epoch * 10}%"></i></span> <span class="muted">${Math.floor(r.epoch)}/10</span>` : statusText(r)}</td>
+        ${PARAMS.map((p, i) => `<td class="mono ${i === 0 ? 'sep' : ''}" style="font-size:12px">${r.params[p] ?? '—'}</td>`).join('')}
+        ${METRICS.map((m, i) => {
+          const v = live && m.key === 'f1' ? latestF1(r) : r.m?.[m.key];
+          return `<td class="num mono ${i === 0 ? 'sep' : ''} ${bestBy[m.key] === r.id ? 'best' : ''}" style="font-size:12px">${v == null ? '<span class="muted">—</span>' : fmt(m.key, v)}</td>`;
+        }).join('')}
+        <td class="sep"><span class="ver">${r.ver}${r.dirty ? '<em>*</em>' : ''}</span></td>
+        <td>${person(r.by)}</td><td class="muted mono" style="font-size:12px">${r.when}</td><td class="muted num mono" style="font-size:12px">${r.dur}</td>
+      </tr>`;
+    };
+    let body = '';
+    if (S.runsGroup === 'commit') {
+      const byVer = {};
+      for (const r of filtered) (byVer[r.ver] ||= []).push(r);
+      for (const [ver, list] of Object.entries(byVer)) {
+        const c = S.commits.find((x) => x.id === ver);
+        body += `<tr class="grp-row"><td colspan="${3 + PARAMS.length + METRICS.length + 4}">${icon('git', 13)} <span class="ver">${ver}</span> ${esc(c?.msg || '')} <span class="muted">· ${list.length} 次</span></td></tr>`;
+        body += list.map((r) => row(r, true)).join('');
+      }
+    } else {
+      const seen = new Set();
+      for (const r of filtered) {
+        if (S.runsGroup === 'group' && r.group) {
+          if (seen.has(r.group)) continue;
+          seen.add(r.group);
+          const g = S.groups[r.group];
+          const members = filtered.filter((x) => x.group === r.group);
+          const b = best(members, 'f1');
+          body += `<tr class="grp-row" data-act="toggle-group" data-id="${r.group}"><td colspan="${3 + PARAMS.length + METRICS.length + 4}">${icon(S.groupsOpen[r.group] ? 'down' : 'right', 12)} ${esc(g.name)} <span class="muted">· ${members.length} 次${b ? ` · 最好 f1 ${b.m.f1.toFixed(3)}` : ''}</span> ${person(g.by)}</td></tr>`;
+          if (S.groupsOpen[r.group]) body += members.map((m) => row(m, true)).join('');
+        } else body += row(r, false);
+      }
+    }
+    return `${sub}<div class="editor" data-scroll="runs" data-note="5"><table class="grid-table">
+      <thead><tr><th class="grp" colspan="3"></th><th class="grp sep" colspan="${PARAMS.length}">参数</th><th class="grp sep" colspan="${METRICS.length}">指标（最后一步）</th><th class="grp sep" colspan="4"></th></tr>
+      <tr><th></th><th>名称</th><th>状态</th>${PARAMS.map((p, i) => `<th class="mono ${i === 0 ? 'sep' : ''}" style="font-weight:400">${p}</th>`).join('')}${METRICS.map((m, i) => `<th class="num mono ${i === 0 ? 'sep' : ''}" style="font-weight:400">${m.label} ${m.dir === 'up' ? '↑' : '↓'}</th>`).join('')}<th class="sep">提交</th><th>发起</th><th>开始</th><th class="num">用时</th></tr></thead>
+      <tbody>${body || `<tr><td colspan="16" class="muted" style="text-align:center;height:80px">还没有运行。点工具栏的 ${icon('play', 12)} 运行，或在运行视图里选一个配置。</td></tr>`}</tbody></table></div>`;
+  }
+
+  function runsCharts(rs) {
+    const shown = S.visible.map(runById).filter((r) => r && r.folder === S.folder);
+    shown.forEach((r) => ensureSlot(r.id));
+    const legend = `<div class="legend"><span class="muted" style="margin-right:4px">显示</span>${rs
+      .filter((r) => r.curves.f1.length)
+      .map((r) => `<button class="${S.visible.includes(r.id) ? '' : 'off'}" data-act="toggle-visible" data-id="${r.id}"><i style="background:${color(r.id)}"></i>${esc(short(r))}</button>`)
+      .join('')}</div>`;
+    const series = (k) => shown.map((r) => ({ name: short(r), color: color(r.id), pts: r.curves[k] }));
+    const table = `<table class="grid-table"><thead><tr><th>运行</th>${METRICS.map((m) => `<th class="num mono" style="font-weight:400">${m.label}</th>`).join('')}<th class="num">最好 f1 出现在</th></tr></thead><tbody>${shown.map((r) => `<tr class="r"><td><span class="state"><i style="width:10px;height:2px;background:${color(r.id)}"></i>${esc(short(r))}</span></td>${METRICS.map((m) => `<td class="num mono" style="font-size:12px">${fmt(m.key, m.key === 'f1' ? latestF1(r) : r.m?.[m.key])}</td>`).join('')}<td class="num mono" style="font-size:12px">${r.curves.f1.length ? 'step ' + r.curves.f1.reduce((a, b) => (b[1] > a[1] ? b : a))[0] : '—'}</td></tr>`).join('')}</tbody></table>`;
+    return `${legend}<div class="editor" data-scroll="charts" data-note="5"><div class="pane-grid">
+      <div class="pane"><div class="pane-head">f1<span class="spacer"></span><button class="ib sm" title="更多" data-act="menu" data-kind="chart">${icon('more', 13)}</button></div><div class="chart">${lineChart('ch-f1', series('f1'), { w: 520, h: 200 })}</div></div>
+      <div class="pane"><div class="pane-head">loss<span class="spacer"></span><button class="ib sm" title="更多" data-act="menu" data-kind="chart">${icon('more', 13)}</button></div><div class="chart">${lineChart('ch-loss', series('loss'), { w: 520, h: 200 })}</div></div>
+      <div class="pane" style="grid-column:1/-1;border-right:0;padding:0"><div class="pane-head" style="padding:12px 16px 4px">汇总</div>${table}</div>
+    </div></div>`;
+  }
+
+  function compareView() {
+    const rs = S.selected.map(runById).filter(Boolean);
+    rs.forEach((r) => ensureSlot(r.id));
+    const series = rs.map((r) => ({ name: short(r), color: color(r.id), pts: r.curves.f1 }));
+    const paramRows = PARAMS.map((p) => {
+      const vals = rs.map((r) => r.params[p] ?? '—');
+      const diff = new Set(vals.map(String)).size > 1;
+      return `<tr class="r"><td class="mono">${p}</td>${vals.map((v) => `<td class="mono" style="${diff ? 'font-weight:650;color:var(--text);background:color-mix(in srgb, var(--s4) 10%, transparent)' : ''}">${v}</td>`).join('')}</tr>`;
+    }).join('');
+    const metricRows = METRICS.map((m) => {
+      const vals = rs.map((r) => r.m?.[m.key] ?? null);
+      const valid = vals.filter((v) => v != null);
+      const b = valid.length > 1 ? (m.dir === 'up' ? Math.max(...valid) : Math.min(...valid)) : null;
+      return `<tr class="r"><td class="mono">${m.label}</td>${vals.map((v) => `<td class="mono ${v === b ? 'best' : ''}">${fmt(m.key, v)}</td>`).join('')}</tr>`;
+    }).join('');
+    const vers = [...new Set(rs.map((r) => r.ver))];
+    return `<div class="subbar"><button class="ib sm" data-act="compare-off" title="返回">${icon('back', 14)}</button><b style="font-weight:600">比较 ${rs.length} 次运行</b><span class="spacer"></span><button class="btn sm" data-act="ai" data-topic="summary">${icon('sparkles', 12)}让 AI 总结</button><button class="btn sm" data-act="toast" data-text="已插入到当前笔记：图表、参数差异和指标表">${icon('note', 12)}插入到笔记</button></div>
+      <div class="editor" data-scroll="cmp" data-note="5">
+        <div class="pane" style="border-right:0"><div class="pane-head">f1</div><div class="chart">${lineChart('cmp', series, { w: 1060, h: 220 })}</div></div>
+        <div class="pane-grid">
+          <div class="pane" style="padding:0"><div class="pane-head" style="padding:12px 14px 4px">参数 <span class="muted" style="font-weight:400">高亮的是不同的值</span></div><table class="grid-table"><thead><tr><th></th>${rs.map((r) => `<th><span class="state"><i style="width:10px;height:2px;background:${color(r.id)}"></i>${esc(short(r))}</span></th>`).join('')}</tr></thead><tbody>${paramRows}</tbody></table></div>
+          <div class="pane" style="padding:0"><div class="pane-head" style="padding:12px 14px 4px">指标</div><table class="grid-table"><thead><tr><th></th>${rs.map((r) => `<th>${esc(short(r))}</th>`).join('')}</tr></thead><tbody>${metricRows}</tbody></table>
+            <div style="padding:10px 14px;font-size:12.5px;display:flex;align-items:center;gap:8px">${icon('git', 14)}${vers.length > 1 ? `代码来自不同提交：${vers.map((v) => `<span class="ver">${v}</span>`).join(' / ')} <button class="link" data-act="open-diff" data-path="src/model.py">查看差异</button>` : `<span class="muted">代码来自同一提交 ${vers[0]}</span>`}</div></div>
+        </div>
+      </div>`;
+  }
+
+  function runEditor(r) {
+    if (!r) return '<div class="editor"></div>';
+    ensureSlot(r.id);
+    const t = S.runTab[r.id] || 'overview';
+    const commit = S.commits.find((c) => c.id === r.ver);
+    const cmd = `python ${r.config === 'eval' ? 'eval.py' : 'train.py'} ${Object.entries(r.params).map(([k, v]) => `--${k} ${v}`).join(' ')}`;
+    let body = '';
+    if (t === 'overview') {
+      body = `${r.status === 'failed' ? `<div class="alert" style="margin-top:14px">${icon('error', 15)}<span class="mono" style="font-size:12px">${esc(r.error)}</span><span class="spacer"></span><button class="btn sm" data-act="ai" data-topic="debug">${icon('sparkles', 12)}让 AI 排查</button></div>` : ''}
+        <h2>运行</h2><dl class="kv">
+          <dt>配置</dt><dd>${r.config === 'eval' ? '评测' : '训练'} · <span class="mono">${r.config === 'eval' ? 'eval.py' : 'train.py'}</span></dd>
+          <dt>命令</dt><dd class="mono" style="font-size:12px">${esc(cmd)}</dd>
+          <dt>提交</dt><dd><button class="link mono" data-act="open-commit" data-id="${r.ver}">${r.ver}</button> ${esc(commit?.msg || '')}${r.dirty ? ` <span style="color:var(--warn)">+ 当时未提交的更改 2 个文件</span> <button class="link" data-act="open-diff" data-path="src/model.py">查看</button>` : ''}</dd>
+          <dt>解释器</dt><dd>Python ${envText()} · 依赖 38 个（已记录）</dd>
+          <dt>数据</dt><dd class="mono" style="font-size:12px">data/events.csv · sha256 3f2a9c…</dd>
+          <dt>开始</dt><dd>${r.when} · 用时 ${r.dur} · ${person(r.by)} ${personName(r.by)}${r.by === 'ai' ? '（AI 对话“学习率怎么选”）' : ''}</dd>
+        </dl>
+        <h2>参数</h2><table class="grid-table" style="max-width:420px"><tbody>${Object.entries(r.params).map(([k, v]) => `<tr><td class="mono" style="width:120px">${k}</td><td class="mono">${v}</td></tr>`).join('')}</tbody></table>
+        <h2>指标（最后一步）</h2><table class="grid-table" style="max-width:420px"><tbody>${METRICS.map((m) => `<tr><td class="mono" style="width:120px">${m.label}</td><td class="mono">${fmt(m.key, m.key === 'f1' ? latestF1(r) : r.m?.[m.key])}</td></tr>`).join('')}</tbody></table>
+        <h2>备注</h2><textarea class="note-area" data-input="notes" data-id="${r.id}" placeholder="这次运行说明了什么">${esc(r.notes)}</textarea>`;
+    } else if (t === 'log') {
+      body = `<div class="console" style="padding:12px 0;max-height:none">${runLog(r)}</div>`;
+    } else if (t === 'metrics') {
+      body = r.curves.f1.length
+        ? `<div class="pane-grid" style="margin-top:12px;border-top:1px solid var(--line)"><div class="pane"><div class="pane-head">f1</div><div class="chart">${lineChart('r-f1', [{ name: short(r), color: color(r.id), pts: r.curves.f1 }], { w: 460, h: 180, labels: false })}</div></div><div class="pane"><div class="pane-head">loss</div><div class="chart">${lineChart('r-loss', [{ name: short(r), color: color(r.id), pts: r.curves.loss }], { w: 460, h: 180, labels: false })}</div></div></div>`
+        : `<div class="muted" style="padding:30px 0">这次运行没有写入 metrics.jsonl</div>`;
+    } else {
+      body = r.status === 'failed'
+        ? `<div class="muted" style="padding:30px 0">没有产物</div>`
+        : `<table class="grid-table" style="margin-top:12px"><thead><tr><th>文件</th><th class="num">大小</th></tr></thead><tbody>${[
+            ['metrics.jsonl', r.status === 'running' ? '写入中' : '12 KB', ''],
+            ['summary.json', '1 KB', ''],
+            ['checkpoints/best.pt', '48.2 MB', ''],
+            ['figures/pr_curve.png', '86 KB', 'outputs/figures/pr_curve.png'],
+          ].map(([n, s, open]) => `<tr class="r" ${open ? `data-act="open-file" data-path="${open}"` : ''}><td class="mono" style="font-size:12px">${icon(n.endsWith('.png') ? 'image' : 'file', 13)} ${n}</td><td class="num muted">${s}</td></tr>`).join('')}</tbody></table>`;
+    }
+    return `<div class="editor" data-scroll="run-${r.id}" data-note="5"><div class="doc">
+      <div class="doc-head"><span class="dot ${statusDot(r)}"></span><h1>${esc(r.name)}</h1><span class="muted">${statusText(r)}</span><span class="spacer"></span>
+        ${r.status === 'running' ? `<button class="btn sm" data-act="stop" data-id="${r.id}">${icon('stop', 12)}停止</button>` : `<button class="btn sm" data-act="rerun" data-id="${r.id}">${icon('rerun', 12)}重新运行</button><button class="btn sm" data-act="rerun-orig" data-id="${r.id}" title="检出当时的提交和未提交的更改，在临时工作树里运行">${icon('history', 12)}用原代码运行</button>`}
+        <button class="btn sm" data-act="toast" data-text="已插入到当前笔记：参数、指标和曲线（随运行记录更新）">${icon('note', 12)}插入到笔记</button>
+        <button class="ib sm" data-act="star" data-id="${r.id}" title="收藏" style="color:${r.star ? 'var(--s4)' : ''}">★</button></div>
+      <div class="subnav">${[['overview', '概览'], ['log', '日志'], ['metrics', '指标'], ['files', '产物']].map(([id, l]) => `<button data-act="run-tab" data-id="${id}" data-run="${r.id}" ${t === id ? 'aria-current="true"' : ''}>${l}</button>`).join('')}</div>
+      ${body}</div></div>`;
+  }
+
+  function graphEditor() {
+    const rows = S.commits
+      .map((c, i) => {
+        const runs = S.runs.filter((r) => r.ver === c.id);
+        const open = S.openCommit === c.id;
+        return `<div class="log-row ${open ? 'sel' : ''}" data-act="toggle-commit" data-id="${c.id}">
+          <div class="rail ${i === 0 ? 'first' : ''} ${i >= 1 && i <= 2 ? 'side' : ''}"><i class="${c.side ? 'b' : ''}"></i></div>
+          <div class="msg">${c.refs.map((b) => `<span class="tag">${icon('branch', 11)}${b}</span>`).join('')}<span>${esc(c.msg)}</span>${runs.map((r) => `<span class="tag run" data-act="open-run" data-id="${r.id}"><span class="dot ${statusDot(r)}"></span>${esc(short(r))}${r.m?.f1 != null ? ' · f1 ' + r.m.f1.toFixed(3) : ''}</span>`).join('')}</div>
+          <div>${person(c.by)} <span class="muted">${personName(c.by)}</span></div><div class="muted mono" style="font-size:12px">${c.when}</div><div class="ver">${c.id}</div></div>
+          ${open ? `<div class="log-detail">${c.files.map((f) => `<div><button class="link mono" style="font-size:12px" data-act="open-diff" data-path="${f}">${f}</button></div>`).join('')}
+            <div style="display:flex;gap:6px;margin-top:8px"><button class="btn sm" data-act="toast" data-text="已检出 ${c.id}（分离头指针）">检出</button><button class="btn sm" data-act="toast" data-text="从 ${c.id} 创建分支">${icon('branch', 12)}从此处创建分支</button><button class="btn sm" data-act="toast" data-text="在新文件夹中检出 ${c.id}（工作树），作为新的文件夹加入实验">在新文件夹中检出</button><button class="btn sm" data-act="run-commit" data-id="${c.id}">${icon('play', 11)}用此提交运行</button></div></div>` : ''}`;
+      })
+      .join('');
+    return `<div class="subbar"><button class="widget" style="height:24px;font-size:12px">${icon('branch', 13)}全部分支${icon('down', 12)}</button><div class="filter">${icon('search', 13)}<input placeholder="搜索提交"></div><span class="spacer"></span><button class="btn sm" data-act="toast" data-text="推送和拉取在后续版本加入；现在代码通过项目同步共享给团队">${icon('sync', 12)}同步更改 ${folder().ahead}${icon('up', 11)}</button></div>
+      <div class="editor" data-scroll="graph" data-note="5">${rows}</div>`;
+  }
+
+  function diffEditor(p) {
+    const lines = DIFFS[p] || DIFFS['src/model.py'];
+    const side = (which) =>
+      lines
+        .map(([k, a, b], i) => {
+          const t = which === 'l' ? a : b;
+          const cls = which === 'l' ? (k === 'm' ? 'ddel' : k === 'a' ? '' : '') : k === 'a' || k === 'm' ? 'dadd' : '';
+          const blank = which === 'l' && k === 'a';
+          return `<div class="ln ${cls}" style="${blank ? 'background:repeating-linear-gradient(45deg,transparent 0 4px,var(--hover) 4px 8px)' : ''}"><span class="no">${blank ? '' : i + 8}</span><span class="tx">${highlight(t, p.endsWith('.yaml') ? 'yaml' : 'py') || ' '}</span></div>`;
+        })
+        .join('');
+    return `${crumb(p, `<span class="muted" style="font-size:12px">HEAD ↔ 工作树</span>`)}<div class="editor" data-note="5"><div class="diff2"><div class="code">${side('l')}</div><div class="code">${side('r')}</div></div></div>`;
+  }
+
+  // ---------- Panel ----------
+  function runLog(r) {
+    if (!r) return '';
+    const lines = [`<span class="muted">$ python train.py ${Object.entries(r.params).map(([k, v]) => `--${k} ${v}`).join(' ')}</span>`, `<span class="muted">[Scientify] 运行 ${esc(r.name)} · 提交 ${r.ver}${r.dirty ? ' + 未提交的更改（已保存快照）' : ''} · Python ${envText()}</span>`];
+    for (const [e, f] of r.curves.f1) lines.push(`epoch ${String(e).padStart(2)} | loss ${(r.curves.loss.find((p) => p[0] === e)?.[1] ?? 0).toFixed(3)} | f1 ${f.toFixed(3)}`);
+    if (r.status === 'running') lines.push(`<span class="muted">…</span>`);
+    if (r.status === 'failed') lines.push(`<span class="err">Traceback (most recent call last):\n  File "<a data-act="open-file" data-path="train.py">train.py</a>", line 20, in main\n    loss = model.train_epoch(data.train, lr=args.lr)\n${esc(r.error)}. Tried to allocate 2.00 GiB</span>`);
+    if (r.status === 'done') lines.push(`<span class="muted">[Scientify] 进程以退出码 0 结束 · 用时 ${r.dur} · 记录了 3 个指标</span>`);
+    return lines.join('\n');
+  }
+  function panel() {
+    if (!S.panel.open) return '';
+    const rs = runsOf();
+    const shownRuns = rs.filter((r) => ['running', 'queued'].includes(r.status)).concat(rs.filter((r) => !['running', 'queued'].includes(r.status)).slice(0, 3));
+    const cur = runById(S.panel.run) && runById(S.panel.run).folder === S.folder ? runById(S.panel.run) : shownRuns[0];
+    const problems = S.folder === 'timing' ? 2 : 0;
+    let body = '';
+    if (S.panel.tab === 'run') {
+      body = `<div class="panel-list">${shownRuns.map((r) => `<button class="row" data-act="panel-run" data-id="${r.id}" ${cur?.id === r.id ? 'aria-current="true"' : ''}><span class="dot ${statusDot(r)}" style="margin:0 3px"></span><span class="name">${esc(r.name)}</span></button>`).join('') || '<div class="muted" style="padding:6px;font-size:12px">还没有运行</div>'}</div>
+        <div class="console" data-scroll="console">${cur ? runLog(cur) : ''}</div>
+        ${cur ? `<div style="display:flex;flex-direction:column;gap:2px;padding:4px">${cur.status === 'running' ? `<button class="ib sm stop-btn" title="停止" data-act="stop" data-id="${cur.id}">${icon('stop', 13)}</button>` : `<button class="ib sm" title="重新运行" data-act="rerun" data-id="${cur.id}">${icon('rerun', 13)}</button>`}<button class="ib sm" title="打开运行记录" data-act="open-run" data-id="${cur.id}">${icon('open', 13)}</button></div>` : ''}`;
+    } else if (S.panel.tab === 'terminal') {
+      body = `<div class="console">${`<span class="muted">(.venv) PS ${esc(folder().path)}&gt;</span> python -c "import torch; print(torch.cuda.is_available())"\nTrue\n<span class="muted">(.venv) PS ${esc(folder().path)}&gt;</span> ▍`}</div>`;
+    } else if (S.panel.tab === 'problems') {
+      body = problems
+        ? `<div class="console" style="font-family:inherit;font-size:12.5px;white-space:normal">
+            <div class="row" data-act="open-file" data-path="src/dataset.py">${icon('down', 12)}${icon('file', 14)}<span class="name">dataset.py</span><span class="dir">src</span><span class="end">1</span></div>
+            <div class="row" style="padding-left:30px" data-act="open-file" data-path="src/dataset.py"><span style="color:var(--warn)">${icon('alert', 13)}</span><span class="name">"pandas" 已导入但未使用</span><span class="dir">ruff(F401) [2, 8]</span></div>
+            <div class="row" data-act="open-file" data-path="train.py">${icon('down', 12)}${icon('file', 14)}<span class="name">train.py</span><span class="end">1</span></div>
+            <div class="row" style="padding-left:30px" data-act="open-file" data-path="train.py"><span style="color:var(--warn)">${icon('alert', 13)}</span><span class="name">"train_epoch" 的返回值可能为 None</span><span class="dir">pyright [20, 16]</span></div></div>`
+        : `<div class="console muted">没有问题</div>`;
+    } else {
+      const ran = S.nb.ran;
+      body = `<div style="flex:1;overflow:auto"><table class="grid-table"><thead><tr><th>名称</th><th>类型</th><th>大小</th><th>值</th></tr></thead><tbody>
+        <tr class="r" data-act="open-file" data-path="data/events.csv"><td class="mono">df</td><td class="mono">DataFrame</td><td class="mono">(1200, 5)</td><td class="muted">点击在数据查看器中打开</td></tr>
+        <tr class="r"><td class="mono">pd</td><td class="mono">module</td><td></td><td class="muted mono">pandas 2.2.2</td></tr>
+        ${ran ? `<tr class="r"><td class="mono">counts</td><td class="mono">Series</td><td class="mono">(3,)</td><td class="mono muted">wait 7, intervene 3, respond 2</td></tr>` : ''}
+        </tbody></table><div class="muted" style="padding:8px 14px;font-size:12px">内核：explore.ipynb · Python ${envText()}</div></div>`;
+    }
+    const tabs = [
+      ['terminal', '终端'],
+      ['run', '运行'],
+      ['problems', '问题', problems],
+      ['vars', '变量'],
+    ];
+    return `<div class="panel" data-note="6"><div class="panel-head">${tabs.map(([id, l, n]) => `<button class="ptab" data-act="ptab" data-id="${id}" ${S.panel.tab === id ? 'aria-current="true"' : ''}>${l}${n ? `<span class="n">${n}</span>` : ''}</button>`).join('')}<span class="spacer"></span><button class="ib sm" title="新建终端">${icon('plus', 13)}</button><button class="ib sm" title="收起面板" data-act="panel-toggle">${icon('down', 13)}</button></div><div class="panel-body">${body}</div></div>`;
+  }
+
+  function statusbar() {
+    const f = folder();
+    const running = runsOf().filter((r) => r.status === 'running').length;
+    const problems = S.folder === 'timing' ? 2 : 0;
+    const k = active() || '';
+    const lang = k.endsWith('.py') ? 'Python' : k.endsWith('.ipynb') ? 'Jupyter' : k.endsWith('.yaml') ? 'YAML' : k.endsWith('.md') ? 'Markdown' : k.endsWith('.csv') ? 'CSV' : '';
+    return `<div class="statusbar" data-note="7">
+      <button class="sb" data-act="quick" data-kind="branch">${icon('branch', 12)}${esc(f.branch)}${S.folder === 'timing' && S.changes.length ? '*' : ''}</button>
+      <button class="sb" data-act="toast" data-text="同步更改：推送和拉取在后续版本加入">${icon('sync', 12)}0${icon('dn', 11)} ${f.ahead}${icon('up', 11)}</button>
+      <button class="sb" data-act="ptab" data-id="problems">${icon('error', 12)}0 ${icon('alert', 12)}${problems}</button>
+      ${running ? `<button class="sb live" data-act="ptab" data-id="run">${icon('play', 11)}${running} 个运行中</button>` : ''}
+      <span class="spacer"></span>
+      ${k.startsWith('f:') && k.endsWith('.py') ? '<button class="sb">行 23，列 9</button><button class="sb">空格: 4</button>' : ''}
+      ${lang ? `<button class="sb">${lang}</button>` : ''}
+      <button class="sb" data-act="quick" data-kind="interp" title="选择解释器">${icon('box', 12)}${env().label} (${esc(env().kind)})</button>
+      <button class="sb" title="项目同步">${icon('cloud', 12)}已同步</button>
+    </div>`;
+  }
+
+  // ---------- AI dock ----------
+  function dock() {
+    if (!S.dock) return '';
+    let c = '';
+    if (S.ai === 'debug')
+      c = `<div class="msg me">为什么 baseline-r2 失败了？</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="ctx">${icon('play', 11)}baseline-r2 · 日志</span><span class="ctx">${icon('file', 11)}configs/base.yaml</span><span class="ctx">${icon('box', 11)}torch 2.4.1 · RTX 4070 12 GB</span></div>
+        <div>显存不够：window=16 时序列长度翻倍，batch_size=64 需要约 14 GB，这张卡只有 12 GB。把 batch_size 改成 32 并开 2 步梯度累积，等效批大小不变。</div>
+        <div class="codeblock"><div class="h">${icon('file', 12)}configs/base.yaml<span class="spacer"></span><button class="btn sm" data-act="open-diff" data-path="configs/base.yaml">查看差异</button><button class="btn sm primary" data-act="apply-ai">应用</button></div><div class="d">- batch_size: 64</div><div class="a">+ batch_size: 32</div><div class="a">+ grad_accum: 2</div></div>
+        <div><button class="btn sm" data-act="apply-run">应用并重新运行 baseline-r2</button></div>`;
+    else if (S.ai === 'summary') {
+      const rs = (S.compare ? S.selected : S.visible).map(runById).filter(Boolean);
+      c = `<div class="msg me">总结这几次运行</div><div style="display:flex;gap:6px;flex-wrap:wrap">${rs.map((r) => `<span class="ctx">${icon('play', 11)}${esc(short(r))}</span>`).join('')}</div>
+        <div>同为 lr=3e-4、seed=0：去掉状态上下文（abl-03）f1 降得最多，0.684 → 0.623，误触发率 12.4% → 17.9%；去掉音频（abl-02）f1 0.651，但延迟从 0.82s 降到 0.61s。只有一个随机种子，结论还不稳。</div>
+        <div><button class="btn sm" data-act="ai-seeds">${icon('play', 11)}每组再跑 seed 1、2（6 次）</button></div>`;
+    } else
+      c = `<div class="muted">AI 会带上当前文件夹、打开的文件、选中的代码和最近的运行。</div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><button class="link" data-act="ai" data-topic="debug">为什么 baseline-r2 失败了？</button><button class="link" data-act="ai" data-topic="summary">总结最近的消融运行</button><button class="link" data-act="inline">在 train.py 里按步记录 loss（Ctrl+I）</button></div>`;
+    return `<aside class="dock"><div class="dock-head"><b style="font-weight:600">AI 助手</b><span class="muted" style="font-size:12px;margin-left:6px">${esc(folder().name)}</span><span class="spacer"></span><button class="ib" data-act="dock">${icon('x', 15)}</button></div><div class="dock-body">${c}</div><div class="composer">提问，或描述要改的代码…</div></aside>`;
+  }
+
+  // ---------- Overlays ----------
+  function quick() {
+    const q = S.quick;
+    if (!q) return '';
+    let label = '';
+    let items = '';
+    if (q.kind === 'folder') {
+      label = '切换文件夹';
+      items = S.folders.map((f) => `<button class="qi" data-act="folder" data-id="${f.id}">${icon('folder', 15)}<span>${esc(f.name)}</span><span class="mono">${esc(f.path)}</span><small>${f.id === S.folder ? '当前' : f.worktreeOf ? '工作树' : f.remote ? '克隆' : ''}</small></button>`).join('') + `<div class="ql">添加</div><button class="qi" data-act="toast" data-text="打开文件夹：选择本机的代码目录，原地使用，不复制">${icon('folder', 15)}打开文件夹…</button><button class="qi" data-act="quick" data-kind="clone">${icon('branch', 15)}克隆 Git 仓库…</button><button class="qi" data-act="new-folder">${icon('newfolder', 15)}新建空文件夹…</button>`;
+    } else if (q.kind === 'branch') {
+      label = '选择要检出的分支';
+      items = ['main', 'ablation/audio-free', 'exp/lr-sweep'].map((b) => `<button class="qi" data-act="branch" data-id="${b}">${icon('branch', 15)}<span class="mono" style="color:var(--text);font-size:12.5px">${b}</span><small>${b === folder().branch ? '当前' : b === 'ablation/audio-free' ? '已在 timing-audio-free 中检出' : ''}</small></button>`).join('') + `<div class="ql">操作</div><button class="qi" data-act="toast" data-text="创建新分支：从当前提交创建并检出">${icon('plus', 15)}创建新分支…</button><button class="qi" data-act="toast" data-text="在新文件夹中检出分支（Git 工作树）：两个分支可以同时打开、同时运行">${icon('folder', 15)}在新文件夹中检出分支…</button>`;
+    } else if (q.kind === 'interp') {
+      label = `为“${folder().name}”选择 Python 解释器`;
+      items = Object.entries(ENVS).map(([id, e]) => `<button class="qi" data-act="set-env" data-id="${id}">${icon('box', 15)}<span>Python ${e.label} (${esc(e.kind)})</span><span class="mono">${esc(e.path)}</span><small>${id === folder().env ? '当前' : id === 'venv' ? '推荐' : ''}</small></button>`).join('') + `<div class="ql">操作</div><button class="qi" data-act="toast" data-text="创建环境：venv 或 Conda；检测到 requirements.txt 时可以一起安装">${icon('plus', 15)}创建环境…</button><button class="qi" data-act="toast" data-text="输入解释器路径">${icon('file', 15)}输入解释器路径…</button>`;
+    } else if (q.kind === 'clone') {
+      label = '提供仓库 URL';
+      items = `<button class="qi" data-act="clone-ok">${icon('branch', 15)}<span>克隆 https://github.com/proagent-lab/ProAgent</span><small>选择保存位置</small></button><div class="ql" style="padding-bottom:8px">克隆后自动识别 requirements.txt / environment.yml，询问是否创建环境</div>`;
+    } else {
+      label = '转到文件、运行或命令';
+      items = [['file', 'train.py', ''], ['book', 'notebooks/explore.ipynb', ''], ['play', 'timing-abl-03', '运行'], ['play', 'lr=3e-4', '运行 · f1 0.702'], ['gear', '> 选择解释器', '命令'], ['gear', '> 以不同参数运行', '命令']].map(([ic, t, s]) => `<button class="qi" data-act="${ic === 'play' ? 'open-run' : ic === 'gear' ? (t.includes('解释器') ? 'quick' : 'dialog') : 'open-file'}" data-id="${t === 'timing-abl-03' ? 'r3' : 'r5'}" data-kind="${t.includes('解释器') ? 'interp' : 'params'}" data-path="${t}">${icon(ic, 15)}<span>${esc(t)}</span><small>${s}</small></button>`).join('');
+    }
+    return `<div class="quick-scrim" data-act="quick-close"></div><div class="quick"><div class="qin">${icon('search', 14)}<input placeholder="${esc(label)}" ${q.kind === 'clone' ? 'value="https://github.com/proagent-lab/ProAgent"' : ''}></div><div class="ql">${esc(label)}</div><div class="list">${items}</div></div>`;
+  }
+
+  function dialog() {
+    const d = S.dialog;
+    if (!d) return '';
+    if (d.kind === 'params') {
+      const n = PARAMS.reduce((acc, p) => acc * (d.multi[p] ? Math.max(1, d.values[p].split(',').filter((s) => s.trim()).length) : 1), 1);
+      return `<div class="scrim" data-act="scrim"><div class="dialog">
+        <div class="dialog-head">以不同参数运行<span class="spacer"></span><button class="ib" data-act="dialog-close">${icon('x', 15)}</button></div>
+        <div class="dialog-body">
+          <div class="form-row"><label>运行配置</label><select class="field"><option>训练 · train.py</option><option>评测 · eval.py</option></select></div>
+          <div class="form-row"><label>名称</label><input class="field" data-input="d-name" value="${esc(d.name)}"></div>
+          <table class="ptable"><thead><tr><th>参数</th><th>值</th><th style="width:70px">多个值</th></tr></thead><tbody>
+          ${PARAMS.map((p) => `<tr><td>--${p}</td><td><input class="field" data-input="d-val" data-p="${p}" value="${esc(d.values[p])}" placeholder="${d.multi[p] ? '用逗号分开，例如 0, 1, 2' : ''}"></td><td><input type="checkbox" class="check" data-act="d-multi" data-p="${p}" ${d.multi[p] ? 'checked' : ''}></td></tr>`).join('')}
+          </tbody></table>
+          <div class="muted" style="font-size:12px;margin-top:8px">参数从 train.py 的 argparse 读出。提交前未提交的更改会随运行保存快照。</div>
+        </div>
+        <div class="dialog-foot"><span class="muted">${n > 1 ? `将运行 ${n} 次，合成一个运行组；同时最多 4 次` : '将运行 1 次'}</span><span class="spacer"></span><button class="btn" data-act="dialog-close">取消</button><button class="btn primary" data-act="start-runs">${icon('play', 12)}运行${n > 1 ? `（${n}）` : ''}</button></div>
+      </div></div>`;
+    }
+    if (d.kind === 'confirm')
+      return `<div class="scrim" data-act="scrim"><div class="dialog" style="width:420px"><div class="dialog-head">${esc(d.title)}</div><div class="dialog-body">${esc(d.text)}</div><div class="dialog-foot"><span class="spacer"></span><button class="btn" data-act="dialog-close">取消</button><button class="btn primary" data-act="confirm-ok">${esc(d.ok)}</button></div></div></div>`;
+    return '';
+  }
+
+  function menu() {
+    const m = S.menu;
+    if (!m) return '';
+    let items = '';
+    if (m.kind === 'config')
+      items = `<div class="ml">运行配置</div><button data-act="set-config" data-id="train">${S.config === 'train' ? icon('check', 13) : '<span style="width:13px"></span>'}训练 · train.py</button>${S.folder === 'repro' ? '' : `<button data-act="set-config" data-id="eval">${S.config === 'eval' ? icon('check', 13) : '<span style="width:13px"></span>'}评测 · eval.py</button>`}<button data-act="toast" data-text="当前文件：运行编辑器里的 .py 文件"><span style="width:13px"></span>当前文件</button><hr><button data-act="dialog" data-kind="params">${icon('columns', 13)}以不同参数运行…</button><button data-act="toast" data-text="编辑配置：入口、参数、工作目录、环境变量、运行前任务">${icon('gear', 13)}编辑配置…</button>`;
+    else if (m.kind === 'more')
+      items = `<button data-act="ptab" data-id="terminal">${icon('terminal', 13)}新建终端<kbd>Ctrl+\`</kbd></button><button data-act="quick" data-kind="folder">${icon('folder', 13)}打开文件夹…</button><button data-act="quick" data-kind="clone">${icon('branch', 13)}克隆 Git 仓库…</button><hr><button data-act="toast" data-text="后台任务：所有项目里正在运行的程序、环境任务和 AI 任务">${icon('list', 13)}后台任务</button><button data-act="toast" data-text="在资源管理器中显示">${icon('open', 13)}在资源管理器中显示</button>`;
+    else if (m.kind === 'scm')
+      items = `<button data-act="toast" data-text="拉取（后续版本）">拉取</button><button data-act="toast" data-text="推送（后续版本）">推送</button><hr><button data-act="toast" data-text="储藏：把未提交的更改先放到一边">储藏更改</button><button data-act="toast" data-text="合并分支">合并分支…</button><button data-act="quick" data-kind="branch">检出到…</button>`;
+    else if (m.kind === 'group')
+      items = [['group', '按运行组'], ['commit', '按提交'], ['none', '不分组']].map(([id, l]) => `<button data-act="runs-group" data-id="${id}">${S.runsGroup === id ? icon('check', 13) : '<span style="width:13px"></span>'}${l}</button>`).join('');
+    else if (m.kind === 'chart')
+      items = `<button data-act="toast" data-text="横轴可选 step、时间、相对时间">横轴…</button><button data-act="toast" data-text="平滑：指数移动平均">平滑…</button><hr><button data-act="toast" data-text="已导出 PNG / SVG / CSV">导出图片和数据</button><button data-act="toast" data-text="已插入到当前笔记">插入到笔记或稿件</button>`;
+    return `<div class="menu" style="left:${m.x}px;top:${m.y}px">${items}</div>`;
+  }
+
+  // ---------- Annotations ----------
+  const EDITOR_NOTES = {
+    file: ['代码编辑器', '语法高亮，行号旁标出未提交的修改，问题用波浪线标出。上方 CodeLens 显示这个入口文件跑过几次、最好结果。“编辑”（Ctrl+I）让 AI 就地修改，差异显示在代码里，接受后才写入。', 'VS Code 编辑器 + Copilot 内联对话'],
+    notebook: ['Jupyter 笔记本', '内核默认用这个文件夹的环境；单元格直接输出表格和图；变量在面板“变量”里看，DataFrame 可以在数据查看器打开。探索数据、画图都在这里完成，不需要单独的“数据分析”页面。', 'VS Code Jupyter、JupyterLab'],
+    data: ['数据查看器', '打开 CSV / Parquet 就是表格，列头显示类型和分布，可以筛选排序，或在笔记本中继续分析。', 'VS Code Data Wrangler、PyCharm 数据视图'],
+    image: ['图片预览', '运行产物里的图直接打开。', 'VS Code 图片预览'],
+    runs: ['运行记录', '每次通过 Scientify 启动的程序都自动记下命令、提交和当时未提交的更改、参数、环境、日志和指标。“表格”比参数和结果，可以按运行组或提交分组；“图表”把 metrics.jsonl 里的指标画成曲线；勾选后比较。这是通用 IDE 没有、做实验必需的部分。', 'W&B / MLflow 的运行表，DVC 扩展把实验表放在编辑器标签里'],
+    run: ['运行详情', '概览（配置、命令、提交、解释器、数据、参数、指标、备注）、日志、指标曲线、产物。“用原代码运行”检出当时的提交和未提交更改，在临时工作树里重跑。', 'PyCharm 运行配置 + W&B 运行页'],
+    graph: ['Git 图', '提交和分支的历史；每个提交旁边显示用它跑过的运行和结果，点开看改动的文件，可以检出、建分支、在新文件夹中检出（工作树）或用这个提交运行。', 'VS Code Git 图、PyCharm Git 日志'],
+    diff: ['差异编辑器', '左右对比 HEAD 和工作树。', 'VS Code 差异编辑器'],
+    welcome: ['开始页', '空文件夹或刚打开时显示：新建文件、新建笔记本、打开文件夹、克隆仓库、最近的文件夹。', 'VS Code 欢迎页'],
+  };
+  function editorKind() {
+    const k = active() || 'welcome';
+    if (k === 'runs' || k === 'graph' || k === 'welcome') return k;
+    if (k.startsWith('run:')) return 'run';
+    if (k.startsWith('diff:')) return 'diff';
+    if (k.endsWith('.ipynb')) return 'notebook';
+    if (k.endsWith('.csv')) return 'data';
+    if (k.endsWith('.png')) return 'image';
+    return 'file';
+  }
+  function notesList() {
+    return [
+      ['侧边视图', '资源管理器、搜索、源代码管理、运行、Python 环境五个视图，放在侧边栏顶部切换；当前是“' + VIEWS.find((v) => v[0] === S.view)[2] + '”。', 'VS Code 活动栏（顶部位置）'],
+      ['文件夹和分支', '一个项目可以有多个代码文件夹（自己的、克隆的、某个分支的工作树），各自有 Python 环境；点击切换或打开、克隆新的。分支在这里检出或新建。', 'PyCharm 新界面左上角的项目和 VCS 部件'],
+      ['运行部件', '选运行配置，运行（Ctrl+F5）、调试（F5）、停止；下拉里有“以不同参数运行”（参数可以填多个值，一次跑一组）。', 'PyCharm 运行配置部件、VS Code 运行和调试'],
+      ['编辑器标签', '所有内容都在标签页里打开：代码、笔记本、数据、图片、运行记录、运行详情、Git 图、差异。', 'VS Code 编辑器组'],
+      [...EDITOR_NOTES[editorKind()]],
+      ['面板', '终端、运行（正在跑和刚跑完的程序的输出，可以停止、重跑、打开记录）、问题（ruff / pyright 的提示）、变量（笔记本或控制台里的变量）。', 'VS Code 面板、PyCharm 运行工具窗口、Spyder 变量浏览器'],
+      ['状态栏', '分支和同步、问题数、正在运行、光标位置、语言、当前解释器（点击切换）、项目同步状态。', 'VS Code / PyCharm 状态栏'],
+    ];
+  }
+  function notesPanel() {
+    if (!S.annotate) return '';
+    return `<div class="notes"><h3>区域和参考的产品</h3><ol>${notesList().map(([t, d, ref], i) => `<li><b>${i + 1}</b><span><em>${t}</em>${d}<span class="ref">参考：${ref}</span></span></li>`).join('')}</ol></div>`;
+  }
+  function placeBadges() {
+    document.querySelectorAll('.note-badge,.note-outline').forEach((n) => n.remove());
+    if (!S.annotate) return;
+    const seen = new Set();
+    for (const el of document.querySelectorAll('[data-note]')) {
+      const n = +el.dataset.note;
+      if (seen.has(n)) continue;
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      seen.add(n);
+      const o = document.createElement('div');
+      o.className = 'note-outline';
+      Object.assign(o.style, { left: r.left - 2 + 'px', top: r.top - 2 + 'px', width: r.width + 4 + 'px', height: Math.min(r.height, window.innerHeight - r.top - 4) + 4 + 'px' });
+      const b = document.createElement('div');
+      b.className = 'note-badge';
+      b.textContent = n;
+      Object.assign(b.style, { left: r.left - 9 + 'px', top: r.top - 9 + 'px' });
+      document.body.append(o, b);
+    }
+  }
+
+  // ---------- Render ----------
+  function render() {
+    const scrolls = {};
+    document.querySelectorAll('[data-scroll]').forEach((el) => (scrolls[el.dataset.scroll] = el.scrollTop));
+    const focus = document.activeElement?.dataset?.input ? document.activeElement.dataset.input + (document.activeElement.dataset.p || '') : null;
+    const sel = focus && 'selectionStart' in document.activeElement ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
+    CHARTS.clear();
+    document.getElementById('root').innerHTML = `<div class="app" data-theme="${S.theme}">
+      ${titlebar()}
+      <div class="body">${sidebar()}<div class="main-wrap"><main class="main">${toolbar()}${editorTabs()}<div class="workbench">${editorBody()}</div>${panel()}${statusbar()}</main>${dock()}</div></div>
+      ${quick()}${dialog()}${menu()}
+      ${S.toast ? `<div class="toast">${icon('check', 14)}${esc(S.toast.text)}</div>` : ''}
+      ${notesPanel()}
+      <div class="proto"><strong>实验 · 原型</strong><button class="btn" data-act="annotate" aria-pressed="${S.annotate}">标注</button><button class="btn" data-act="theme">${S.theme === 'graphite' ? '夜' : '石墨'}</button><button class="btn" data-act="reset">重置</button></div>
+    </div>`;
+    document.body.dataset.theme = S.theme;
+    document.querySelectorAll('[data-scroll]').forEach((el) => {
+      if (scrolls[el.dataset.scroll] != null) el.scrollTop = scrolls[el.dataset.scroll];
+    });
+    if (focus) {
+      const el = [...document.querySelectorAll('[data-input]')].find((n) => n.dataset.input + (n.dataset.p || '') === focus);
+      if (el) {
+        el.focus();
+        if (sel && el.setSelectionRange) el.setSelectionRange(...sel);
+      }
+    }
+    if (S.inlineFresh) {
+      S.inlineFresh = false;
+      document.querySelector('.inline-chat')?.scrollIntoView({ block: 'start' });
+    }
+    placeBadges();
+  }
+
+  // ---------- Actions ----------
+  function startRun(params, name, group = null, extra = {}) {
+    const id = 'n' + S.nextRun++;
+    const r = mkRun({ id, folder: S.folder, name, status: 'running', epoch: 0, params, m: null, target: 0.66 + ((S.nextRun * 37) % 50) / 1000, ver: S.commits[0].id, dirty: S.changes.length > 0, by: 'me', when: '11-15 ' + new Date().toTimeString().slice(0, 5), dur: '0m', seedv: S.nextRun, group, config: S.config, ...extra });
+    S.runs.unshift(r);
+    return r;
+  }
+  function act(el, ev) {
+    const a = el.dataset.act;
+    const id = el.dataset.id;
+    const close = () => {
+      S.menu = null;
+      S.quick = null;
+    };
+    switch (a) {
+      case 'view':
+        S.view = id;
+        break;
+      case 'toggle-dir': {
+        const p = el.dataset.path;
+        S.collapsed = S.collapsed.includes(p) ? S.collapsed.filter((x) => x !== p) : [...S.collapsed, p];
+        break;
+      }
+      case 'collapse-all':
+        S.collapsed = (TREES[S.folder] || []).filter((x) => x[1] === 'dir').map((x) => x[0]);
+        break;
+      case 'open-file':
+        ev.stopPropagation();
+        close();
+        openTab('f:' + el.dataset.path);
+        break;
+      case 'open-tab':
+        close();
+        openTab(el.dataset.k);
+        break;
+      case 'open-diff':
+        ev.stopPropagation();
+        openTab('diff:' + el.dataset.path);
+        break;
+      case 'open-run':
+        if (ev.target.closest('[data-act="select"]')) return;
+        ev.stopPropagation();
+        close();
+        openTab('run:' + id);
+        break;
+      case 'open-commit':
+        close();
+        S.openCommit = id;
+        openTab('graph');
+        break;
+      case 'toggle-commit':
+        if (ev.target.closest('[data-act="open-run"]')) return;
+        S.openCommit = S.openCommit === id ? null : id;
+        break;
+      case 'tab':
+        tabsOf().active = el.dataset.k;
+        break;
+      case 'close-tab': {
+        ev.stopPropagation();
+        const t = tabsOf();
+        const i = t.list.indexOf(el.dataset.k);
+        t.list.splice(i, 1);
+        if (t.active === el.dataset.k) t.active = t.list[Math.max(0, i - 1)] || null;
+        break;
+      }
+      case 'run-tab':
+        S.runTab[el.dataset.run] = id;
+        break;
+      case 'ptab':
+        close();
+        S.panel.open = true;
+        S.panel.tab = id;
+        break;
+      case 'panel-toggle':
+        S.panel.open = !S.panel.open;
+        break;
+      case 'panel-run':
+        S.panel.run = id;
+        break;
+      case 'runs-mode':
+        S.runsMode = id;
+        break;
+      case 'runs-group':
+        S.runsGroup = id;
+        S.menu = null;
+        break;
+      case 'toggle-group':
+        S.groupsOpen[id] = !S.groupsOpen[id];
+        break;
+      case 'select': {
+        ev.stopPropagation();
+        S.selected = el.checked ? [...S.selected, id].slice(-6) : S.selected.filter((x) => x !== id);
+        break;
+      }
+      case 'compare':
+        S.compare = true;
+        break;
+      case 'compare-off':
+        S.compare = false;
+        break;
+      case 'toggle-visible':
+        if (S.visible.includes(id)) {
+          S.visible = S.visible.filter((x) => x !== id);
+          delete S.slots[id];
+        } else if (S.visible.length >= 6) toast('最多同时显示 6 次运行');
+        else {
+          S.visible.push(id);
+          ensureSlot(id);
+        }
+        break;
+      case 'star': {
+        const r = runById(id);
+        r.star = !r.star;
+        break;
+      }
+      case 'set-config':
+        if (ev.target.closest('[data-act="run-now"]')) return;
+        S.config = id;
+        S.menu = null;
+        break;
+      case 'run-now': {
+        ev.stopPropagation();
+        close();
+        if (id) S.config = id;
+        const r = startRun({ window: 8, audio: 'on', state: 'on', lr: '3e-4', seed: 0 }, `timing-abl-${String(S.nextRun).padStart(2, '0')}`);
+        S.panel = { open: true, tab: 'run', run: r.id };
+        toast(`已开始 ${r.name}，输出在面板“运行”里`);
+        break;
+      }
+      case 'run-commit': {
+        const r = startRun({ window: 8, audio: 'on', state: 'on', lr: '3e-4', seed: 0 }, `at-${id}`, null, { ver: id, dirty: false });
+        S.panel = { open: true, tab: 'run', run: r.id };
+        toast(`已在临时工作树里用 ${id} 开始运行`);
+        break;
+      }
+      case 'rerun':
+      case 'rerun-orig': {
+        const src = runById(id);
+        const r = startRun({ ...src.params }, `${src.name}-re`, null, a === 'rerun-orig' ? { ver: src.ver, dirty: false } : {});
+        S.panel = { open: true, tab: 'run', run: r.id };
+        toast(a === 'rerun-orig' ? `已检出 ${src.ver}${src.dirty ? ' 和当时的更改' : ''}，开始 ${r.name}` : `已用当前代码重新运行 ${src.name}`);
+        break;
+      }
+      case 'stop': {
+        const r = runById(id);
+        r.status = 'stopped';
+        toast(`已停止 ${r.name}`);
+        break;
+      }
+      case 'stop-all':
+        runsOf().filter((r) => r.status === 'running').forEach((r) => (r.status = 'stopped'));
+        toast('已停止正在运行的程序');
+        break;
+      case 'stage':
+        ev.stopPropagation();
+        S.staged.push(el.dataset.path);
+        break;
+      case 'stage-all':
+        S.staged = S.changes.map((c) => c.path);
+        break;
+      case 'unstage':
+        ev.stopPropagation();
+        S.staged = S.staged.filter((p) => p !== el.dataset.path);
+        break;
+      case 'discard':
+        ev.stopPropagation();
+        S.dialog = { kind: 'confirm', title: '放弃更改', text: `确定要放弃 ${el.dataset.path} 中的更改吗？此操作不可撤消。`, ok: '放弃文件', then: 'discard', path: el.dataset.path };
+        break;
+      case 'ai-msg':
+        S.commitMsg = '跳过音频编码器时不再构建 GRU；观察窗口改为参数；新增消融配置';
+        break;
+      case 'commit': {
+        const files = S.staged.length ? S.staged : S.changes.map((c) => c.path);
+        if (!S.commitMsg.trim()) {
+          toast('请输入提交消息（可以点 ✦ 让 AI 生成）');
+          break;
+        }
+        const hash = ['e41b9d2', 'f02c7a8', '9ab3e61'][S.commits.length % 3];
+        S.commits.unshift({ id: hash, msg: S.commitMsg.trim(), by: 'me', when: '11-15 ' + new Date().toTimeString().slice(0, 5), refs: ['main'], files });
+        S.commits[1].refs = S.commits[1].refs.filter((r) => r !== 'main');
+        S.changes = S.changes.filter((c) => !files.includes(c.path));
+        S.staged = [];
+        S.commitMsg = '';
+        folder().ahead += 1;
+        toast(`已提交 ${hash}（${files.length} 个文件）`);
+        break;
+      }
+      case 'branch':
+        close();
+        if (id === 'ablation/audio-free') {
+          S.folder = 'audio';
+          toast('这个分支已在 timing-audio-free 文件夹中检出，已切换过去');
+        } else if (id !== folder().branch) {
+          folder().branch = id;
+          toast(`已检出 ${id}`);
+        }
+        break;
+      case 'folder':
+        close();
+        S.folder = id;
+        S.compare = false;
+        S.selected = [];
+        if (!S.tabs[id]) S.tabs[id] = { list: ['welcome'], active: 'welcome' };
+        S.visible = runsOf().filter((r) => r.curves.f1.length).slice(0, 4).map((r) => r.id);
+        S.slots = {};
+        S.visible.forEach(ensureSlot);
+        break;
+      case 'new-folder': {
+        close();
+        const n = S.folders.length;
+        const nid = 'new' + n;
+        S.folders.push({ id: nid, name: 'untitled-' + n, path: 'D:\\AScience\\Proactive\\untitled-' + n, env: 'venv', branch: 'main', ahead: 0 });
+        TREES[nid] = [];
+        S.tabs[nid] = { list: ['welcome'], active: 'welcome' };
+        S.folder = nid;
+        toast('已新建空文件夹并初始化 Git 仓库');
+        break;
+      }
+      case 'clone-ok': {
+        close();
+        S.folder = 'repro';
+        toast('已克隆 ProAgent；检测到 environment.yml，已用 conda 创建环境 proagent');
+        break;
+      }
+      case 'set-env':
+        close();
+        folder().env = id;
+        toast(`“${folder().name}”改用 Python ${ENVS[id].label} (${ENVS[id].kind})`);
+        break;
+      case 'quick':
+        ev.stopPropagation();
+        S.menu = null;
+        S.quick = { kind: el.dataset.kind };
+        break;
+      case 'quick-close':
+        S.quick = null;
+        break;
+      case 'menu': {
+        ev.stopPropagation();
+        const r = el.getBoundingClientRect();
+        S.menu = { kind: el.dataset.kind, x: Math.min(r.left, window.innerWidth - 250), y: r.bottom + 4 };
+        break;
+      }
+      case 'dialog':
+        close();
+        S.dialog = { kind: 'params', name: 'seed 扫描', values: { window: '8', audio: 'on', state: 'off', lr: '3e-4', seed: '0, 1, 2' }, multi: { seed: true } };
+        break;
+      case 'dialog-close':
+        S.dialog = null;
+        break;
+      case 'scrim':
+        if (ev.target !== el) return;
+        S.dialog = null;
+        break;
+      case 'confirm-ok': {
+        const d = S.dialog;
+        S.dialog = null;
+        if (d.then === 'discard') {
+          S.changes = S.changes.filter((c) => c.path !== d.path);
+          S.staged = S.staged.filter((p) => p !== d.path);
+          toast(`已放弃 ${d.path} 的更改`);
+        }
+        break;
+      }
+      case 'd-multi':
+        S.dialog.multi[el.dataset.p] = el.checked;
+        if (el.checked && !S.dialog.values[el.dataset.p].includes(',')) S.dialog.values[el.dataset.p] = { lr: '1e-4, 3e-4', seed: '0, 1, 2', audio: 'on, off', state: 'on, off', window: '4, 8' }[el.dataset.p];
+        break;
+      case 'start-runs': {
+        const d = S.dialog;
+        const lists = PARAMS.map((p) => (d.multi[p] ? d.values[p].split(',').map((s) => s.trim()).filter(Boolean) : [d.values[p].trim()]));
+        const combos = lists.reduce((acc, list, i) => acc.flatMap((c) => list.map((v) => ({ ...c, [PARAMS[i]]: v }))), [{}]);
+        let group = null;
+        if (combos.length > 1) {
+          group = 'g' + (Object.keys(S.groups).length + 1);
+          S.groups[group] = { name: d.name || '参数组', by: 'me' };
+          S.groupsOpen[group] = true;
+        }
+        [...combos].reverse().forEach((c, ri) => {
+          const i = combos.length - 1 - ri;
+          const label = combos.length > 1 ? PARAMS.filter((p) => d.multi[p]).map((p) => `${p}=${c[p]}`).join(' ') : d.name;
+          const r = startRun(Object.fromEntries(Object.entries(c).map(([k, v]) => [k, k === 'window' || k === 'seed' ? Number(v) : v])), label, group);
+          if (i >= 4) r.status = 'queued';
+        });
+        S.dialog = null;
+        S.runsMode = 'table';
+        S.compare = false;
+        openTab('runs');
+        toast(combos.length > 1 ? `已开始 ${combos.length} 次运行（运行组“${d.name}”）` : `已开始 ${d.name}`);
+        break;
+      }
+      case 'nb-run':
+        S.nb.ran = true;
+        toast('单元格 [3] 已运行 · 内核 Python 3.11.9 (.venv)');
+        break;
+      case 'inline':
+        close();
+        if (S.folder !== 'timing') S.folder = 'timing';
+        openTab('f:train.py');
+        S.inline = true;
+        S.inlineFresh = true;
+        break;
+      case 'inline-accept':
+        S.inline = false;
+        toast('已应用到 train.py（Ctrl+Z 可撤消）');
+        break;
+      case 'inline-reject':
+        S.inline = false;
+        break;
+      case 'dock':
+        S.dock = !S.dock;
+        if (!S.dock) S.ai = null;
+        break;
+      case 'ai':
+        S.dock = true;
+        S.ai = el.dataset.topic;
+        break;
+      case 'apply-ai':
+      case 'apply-run': {
+        S.ai = null;
+        if (!S.changes.some((c) => c.path === 'configs/base.yaml')) S.changes.push({ path: 'configs/base.yaml', kind: 'M' });
+        if (a === 'apply-run') {
+          const r = startRun({ window: 16, audio: 'on', state: 'on', lr: '3e-4', seed: 1 }, 'baseline-r3');
+          S.panel = { open: true, tab: 'run', run: r.id };
+          toast('已修改 configs/base.yaml 并开始 baseline-r3');
+        } else toast('已修改 configs/base.yaml（在源代码管理里可以看到差异）');
+        break;
+      }
+      case 'ai-seeds': {
+        S.ai = null;
+        const group = 'g' + (Object.keys(S.groups).length + 1);
+        S.groups[group] = { name: '消融补种子', by: 'ai' };
+        S.groupsOpen[group] = true;
+        let i = 0;
+        for (const v of [{ audio: 'on', state: 'on' }, { audio: 'off', state: 'on' }, { audio: 'on', state: 'off' }])
+          for (const seed of [1, 2]) {
+            const r = startRun({ window: 8, ...v, lr: '3e-4', seed }, `${v.audio === 'off' ? 'no-audio' : v.state === 'off' ? 'no-state' : 'full'} seed=${seed}`, group, { by: 'ai' });
+            if (i++ >= 4) r.status = 'queued';
+          }
+        S.compare = false;
+        openTab('runs');
+        toast('AI 已开始 6 次运行（运行组“消融补种子”）');
+        break;
+      }
+      case 'annotate':
+        S.annotate = !S.annotate;
+        break;
+      case 'theme':
+        S.theme = S.theme === 'graphite' ? 'night' : 'graphite';
+        break;
+      case 'reset':
+        S = fresh();
+        break;
+      case 'toast':
+        ev.stopPropagation();
+        close();
+        toast(el.dataset.text);
+        break;
+      default:
+        return;
+    }
+    if (!['menu', 'quick'].includes(a) && !el.closest('.menu') && !el.closest('.quick')) S.menu = null;
+    render();
+  }
+
+  document.addEventListener('click', (ev) => {
+    const el = ev.target.closest('[data-act]');
+    if (!el) {
+      if (S.menu) {
+        S.menu = null;
+        render();
+      }
+      return;
+    }
+    if (el.disabled) return;
+    act(el, ev);
+  });
+  document.addEventListener('input', (ev) => {
+    const el = ev.target;
+    const k = el.dataset.input;
+    if (!k) return;
+    if (k === 'commitMsg') S.commitMsg = el.value;
+    else if (k === 'runFilter') {
+      S.runFilter = el.value;
+      render();
+    } else if (k === 'notes') runById(el.dataset.id).notes = el.value;
+    else if (k === 'd-name') S.dialog.name = el.value;
+    else if (k === 'd-val') {
+      S.dialog.values[el.dataset.p] = el.value;
+      render();
+    }
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      if (S.quick) S.quick = null;
+      else if (S.menu) S.menu = null;
+      else if (S.dialog) S.dialog = null;
+      else if (S.inline) S.inline = false;
+      else return;
+      render();
+    }
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'p') {
+      ev.preventDefault();
+      S.quick = { kind: 'files' };
+      render();
+    }
+  });
+
+  // Line-chart crosshair.
+  const tip = document.createElement('div');
+  tip.className = 'tooltip';
+  tip.hidden = true;
+  document.body.append(tip);
+  document.addEventListener('mousemove', (ev) => {
+    const hover = ev.target.closest?.('[data-hover]');
+    document.querySelectorAll('.hover-line').forEach((l) => {
+      if (!hover || !l.closest('svg').contains(hover)) l.setAttribute('visibility', 'hidden');
+    });
+    if (!hover) {
+      tip.hidden = true;
+      return;
+    }
+    const c = CHARTS.get(hover.dataset.hover);
+    const svg = hover.closest('svg');
+    if (!c) return;
+    const box = svg.getBoundingClientRect();
+    const vx = ((ev.clientX - box.left) / box.width) * c.w;
+    let bx = c.xs[0];
+    let dist = Infinity;
+    for (const x of c.xs) {
+      const d = Math.abs(c.X(x) - vx);
+      if (d < dist) [dist, bx] = [d, x];
+    }
+    const line = svg.querySelector('.hover-line');
+    line.setAttribute('x1', c.X(bx));
+    line.setAttribute('x2', c.X(bx));
+    line.setAttribute('visibility', 'visible');
+    const rows = c.series.map((s) => [s, s.pts.find((p) => p[0] === bx)]).filter(([, p]) => p).sort((a, b) => b[1][1] - a[1][1]);
+    tip.innerHTML = `<b>${c.xLabel} ${bx}</b>${rows.map(([s, p]) => `<div><i style="background:${s.color}"></i><span>${esc(s.name)}</span><span>${(+p[1]).toFixed(3)}</span></div>`).join('')}`;
+    tip.hidden = false;
+    tip.style.left = Math.min(ev.clientX + 14, window.innerWidth - tip.offsetWidth - 8) + 'px';
+    tip.style.top = ev.clientY + 14 + 'px';
+  });
+  window.addEventListener('resize', placeBadges);
+
+  // Simulated progress of running programs.
+  setInterval(() => {
+    let changed = false;
+    for (const r of S.runs.filter((x) => x.status === 'running')) {
+      const before = Math.floor(r.epoch);
+      r.epoch = Math.min(10, r.epoch + (r.id === 'r7' ? 0.25 : 0.5));
+      const now = Math.floor(r.epoch);
+      if (now > before && now >= 1) {
+        r.curves.f1.push([now, +(r.target * (1 - 0.62 * Math.exp(-(now - 1) / 2.2)) + Math.sin(now * 1.7 + r.seedv) * 0.004).toFixed(4)]);
+        r.curves.loss.push([now, +(0.18 + (0.72 - r.target) * 0.9 + 0.7 * Math.exp(-(now - 1) / 2.4)).toFixed(4)]);
+        r.dur = `${now * 4}m`;
+      }
+      if (r.epoch >= 10) {
+        r.status = 'done';
+        const f1 = r.curves.f1.at(-1)[1];
+        r.m = { f1, ft: +(30 - f1 * 26).toFixed(1), lat: r.params.audio === 'off' ? 0.62 : r.params.window === 4 ? 0.58 : 0.81 };
+        const next = S.runs.find((x) => x.status === 'queued' && x.folder === r.folder);
+        if (next) next.status = 'running';
+        toast(`${r.name} 已完成 · f1 ${f1.toFixed(3)}`);
+      }
+      changed = true;
+    }
+    if (changed && !S.dialog && !S.menu && !S.quick) render();
+  }, 4000);
+
+  render();
+})();
+
+</script>
+</body>
+</html>
