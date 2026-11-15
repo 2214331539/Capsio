@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-writing-import-zip"
+description = "Enables the writing_import_zip command without any pre-configured scope."
+commands.allow = ["writing_import_zip"]
+
+[[permission]]
+identifier = "deny-writing-import-zip"
+description = "Denies the writing_import_zip command without any pre-configured scope."
+commands.deny = ["writing_import_zip"]

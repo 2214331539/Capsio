@@ -128,6 +128,61 @@ pub(crate) fn keeps_binding(old: &Value, next: &Value, id: Option<&str>) -> bool
     }
 }
 
+/// Accepts the addresses `git clone` takes from a person, but no transport helpers
+/// (`ext::`, `fd::`) and nothing Git could read as an option.
+pub(crate) fn clone_url(url: &str) -> Result<(), String> {
+    if url.is_empty() {
+        return Err("请输入仓库地址。".into());
+    }
+    if url.starts_with('-') || url.contains("::") || url.chars().any(char::is_control) {
+        return Err("仓库地址无效。".into());
+    }
+    Ok(())
+}
+
+/// The folder name `git clone` would choose: the last path segment without `.git`.
+fn repository_name(url: &str) -> Result<String, String> {
+    clone_url(url)?;
+    let path = url.trim_end_matches(['/', '\\']);
+    let last = path
+        .rsplit(['/', '\\', ':'])
+        .next()
+        .unwrap_or_default()
+        .trim_end_matches(".git");
+    let name: String = last
+        .chars()
+        .map(|c| if r#"<>:"|?*"#.contains(c) { '-' } else { c })
+        .collect();
+    let name = name.trim_matches(['.', ' ']);
+    Ok(if name.is_empty() { "repository" } else { name }.to_owned())
+}
+
+fn clone_repository(target: &Path, url: &str) -> Result<(), String> {
+    clone_url(url)?;
+    let mut command = crate::research::git_command(target.parent().ok_or("目录无效。")?)?;
+    command
+        .args([
+            "-c",
+            "protocol.ext.allow=never",
+            "clone",
+            "--quiet",
+            "--",
+            url,
+        ])
+        .arg(target);
+    let (status, _, error) =
+        crate::research::bounded_git_within(command, std::time::Duration::from_secs(30 * 60))?;
+    if !status.success() {
+        return Err(format!(
+            "克隆失败：{}",
+            String::from_utf8_lossy(&error)
+                .trim()
+                .trim_start_matches("fatal: ")
+        ));
+    }
+    Ok(())
+}
+
 #[derive(Serialize)]
 pub struct Prepared {
     id: String,
@@ -142,6 +197,7 @@ pub async fn experiment_prepare<R: tauri::Runtime>(
     project_id: String,
     source: String,
     directory: Option<String>,
+    url: Option<String>,
 ) -> Result<Prepared, String> {
     crate::library::trusted(&view)?;
     crate::collaboration::permissions::require_write(&state.storage, &project_id, "code")?;
@@ -166,6 +222,33 @@ pub async fn experiment_prepare<R: tauri::Runtime>(
                 std::fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
                 std::fs::create_dir(&path).map_err(|e| e.to_string())?;
                 checked_root(&storage, path.to_str().ok_or("目录编码无效。")?)?
+            }
+            "clone" => {
+                let url = url.as_deref().map(str::trim).unwrap_or_default();
+                let target = match directory.as_deref() {
+                    Some(parent) => checked_root(&storage, parent)?.join(repository_name(url)?),
+                    None => storage
+                        .directory()
+                        .join("projects")
+                        .join(format!("experiment-{id}")),
+                };
+                if target.exists() {
+                    return Err(format!("目标文件夹已存在：{}", target.display()));
+                }
+                std::fs::create_dir_all(target.parent().ok_or("目录无效。")?)
+                    .map_err(|e| e.to_string())?;
+                clone_repository(&target, url)?;
+                let root = checked_root(&storage, target.to_str().ok_or("目录编码无效。")?)?;
+                if let Err(error) = check_overlap(&storage, &files, &data, &root, None) {
+                    // The folder was created by this clone, so nothing of the user's is lost.
+                    let _ = std::fs::remove_dir_all(&root);
+                    return Err(error);
+                }
+                return Ok(Prepared {
+                    id,
+                    root: root.display().to_string(),
+                    source: "existing".into(),
+                });
             }
             _ => return Err("请选择已有目录或创建空目录。".into()),
         };
@@ -237,5 +320,61 @@ mod tests {
         assert!(keeps_binding(&next, &renamed, Some("e2")));
         renamed["experiments"] = json!([]);
         assert!(!keeps_binding(&next, &renamed, Some("e2")));
+    }
+
+    #[test]
+    fn clone_names_follow_git_and_reject_transport_helpers_and_options() {
+        for (url, name) in [
+            ("https://github.com/org/timing.git", "timing"),
+            ("https://github.com/org/timing/", "timing"),
+            ("git@github.com:org/timing.git", "timing"),
+            ("ssh://git@host:22/team/model", "model"),
+            (r"D:\code\baseline", "baseline"),
+        ] {
+            assert_eq!(repository_name(url).unwrap(), name, "{url}");
+        }
+        for url in ["", "--upload-pack=touch x", "ext::sh -c touch% x", "a\nb"] {
+            assert!(repository_name(url).is_err(), "{url:?}");
+        }
+    }
+
+    #[test]
+    fn clones_a_repository_into_a_new_folder() {
+        let temp = tempfile::tempdir().unwrap();
+        let source = temp.path().join("source");
+        std::fs::create_dir(&source).unwrap();
+        let git = |dir: &Path, args: &[&str]| {
+            let status = std::process::Command::new("git")
+                .args([
+                    "-c",
+                    "user.name=Fixture",
+                    "-c",
+                    "user.email=fixture@example.test",
+                ])
+                .args(args)
+                .current_dir(dir)
+                .output()
+                .unwrap()
+                .status;
+            assert!(status.success(), "{args:?}");
+        };
+        git(&source, &["init", "-b", "main"]);
+        std::fs::write(source.join("train.py"), "print(1)\n").unwrap();
+        git(&source, &["add", "train.py"]);
+        git(&source, &["commit", "-m", "baseline"]);
+        let target = temp.path().join("clones").join("timing");
+        std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+        clone_repository(&target, source.to_str().unwrap()).unwrap();
+        // core.autocrlf may change the line ending on checkout.
+        assert_eq!(
+            std::fs::read_to_string(target.join("train.py"))
+                .unwrap()
+                .trim_end(),
+            "print(1)"
+        );
+        let missing = temp.path().join("clones").join("missing");
+        let error = clone_repository(&missing, temp.path().join("nope").to_str().unwrap());
+        assert!(error.unwrap_err().starts_with("克隆失败"));
+        assert!(!missing.exists());
     }
 }

@@ -17,3 +17,8 @@ export function isMacOS() {
 export function platformClass() {
   return `platform-${operatingSystem()}`;
 }
+
+/** A local path as people write it, without Windows' `\\?\` long-path prefix. */
+export function displayPath(path: string) {
+  return path.replace(/^\\\\\?\\UNC\\/, '\\\\').replace(/^\\\\\?\\/, '');
+}

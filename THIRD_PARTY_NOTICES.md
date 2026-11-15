@@ -12,6 +12,16 @@ Scientify's Apache-2.0 license applies to original project content. It does not 
 
 The executable is not committed to this repository. A binary distribution containing it must include the upstream license and notice. Changing `SCIENTIFY_CODEX_VERSION` requires reviewing the new release's notices; the files here cover only the pinned version above.
 
+## Bundled LaTeX engine
+
+- Project: [Tectonic](https://github.com/tectonic-typesetting/tectonic).
+- Pinned upstream release: [`tectonic@0.17.0`](https://github.com/tectonic-typesetting/tectonic/releases/tag/tectonic%400.17.0); the archive digests are in [tectonic-assets.json](scripts/tectonic-assets.json).
+- Integration: an unmodified upstream executable, downloaded and checksum-verified by [prepare-tectonic.mjs](scripts/prepare-tectonic.mjs) and run as a separate process to compile manuscripts.
+- License: [upstream MIT text](docs/licenses/tectonic-LICENSE).
+- TeX packages and fonts: release builds include `tectonic-cache/`, the files Tectonic fetched from its upstream TeX Live–based bundle while compiling the [warm-up documents](scripts/tectonic-warmup/). They are unmodified and each keeps its own free license, as recorded by TeX Live (mostly LPPL, GPL and, for fonts, OFL or GUST). Other packages are downloaded on first use under the same terms.
+
+The executable is not committed to this repository. Changing the pinned version requires reviewing the new release's license.
+
 ## Main application dependencies
 
 | Project                                                     | Use                                 | Upstream license                             |

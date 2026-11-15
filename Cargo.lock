@@ -3569,6 +3569,7 @@ dependencies = [
  "chrono",
  "dirs",
  "eventsource-stream",
+ "flate2",
  "futures-util",
  "libc",
  "notify",

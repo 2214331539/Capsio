@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { zstdDecompressSync } from 'node:zlib';
+import { download } from './download.mjs';
 
 // Codex is redistributed as an unmodified upstream release artifact. This version
 // is the single source of truth; bump it together with THIRD_PARTY_NOTICES.
@@ -50,32 +51,6 @@ function stampedVersion(file = stamp) {
   } catch {
     return '';
   }
-}
-
-/**
- * Node's fetch ignores the WinINET proxy that many Windows networks require, and
- * curl only reads proxy environment variables. PowerShell's Invoke-WebRequest is
- * the one downloader that honours the system proxy, so prefer it on Windows.
- * The URL travels through the environment to keep it out of the command string.
- */
-function download(url, destination) {
-  const env = { ...process.env, SCIENTIFY_DL_URL: url, SCIENTIFY_DL_OUT: destination };
-  const command =
-    process.platform === 'win32'
-      ? [
-          'powershell.exe',
-          [
-            '-NoProfile',
-            '-NonInteractive',
-            '-Command',
-            "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri $env:SCIENTIFY_DL_URL -OutFile $env:SCIENTIFY_DL_OUT -MaximumRedirection 5",
-          ],
-        ]
-      : ['curl', ['-fsSL', '--retry', '3', '-o', destination, url]];
-  const result = spawnSync(command[0], command[1], { stdio: 'inherit', env });
-  if (result.error) throw new Error(`${command[0]} unavailable: ${result.error.message}`);
-  if (result.status !== 0) throw new Error(`${command[0]} exited with status ${result.status}`);
-  if (!existsSync(destination)) throw new Error(`${command[0]} produced no file`);
 }
 
 /** Node has zstd from 22.15; bsdtar ships with zstd support on Windows 10+. */

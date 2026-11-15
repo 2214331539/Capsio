@@ -34,6 +34,39 @@ fn creates_reads_updates_and_preserves_external_edits() {
 }
 
 #[test]
+fn creates_folders_inside_the_project_only() {
+    let temp = tempdir().unwrap();
+    let files = ResearchFiles::new(temp.path().join("data"));
+    let root = files.project_root("p1", None).unwrap();
+    assert_eq!(
+        files.create_directory(&root, "实验/configs").unwrap(),
+        "实验/configs"
+    );
+    assert!(root.join("实验/configs").is_dir());
+    assert!(files.create_directory(&root, "实验/configs").is_err());
+    files.write(&root, "notes.md", "", None).unwrap();
+    assert!(files.create_directory(&root, "notes.md").is_err());
+    assert!(files.create_directory(&root, "../outside").is_err());
+    assert!(!root.parent().unwrap().join("outside").exists());
+}
+
+#[test]
+fn reads_images_and_other_binary_files_inside_the_project_only() {
+    let temp = tempdir().unwrap();
+    let files = ResearchFiles::new(temp.path().join("data"));
+    let root = files.project_root("p1", None).unwrap();
+    fs::create_dir_all(root.join("figures")).unwrap();
+    let png = [0x89, b'P', b'N', b'G', 0, 1, 2, 3];
+    fs::write(root.join("figures/loss.png"), png).unwrap();
+    assert_eq!(files.read_bytes(&root, "figures/loss.png").unwrap(), png);
+    assert!(files.read(&root, "figures/loss.png").is_err());
+    assert!(files.locate(&root, "figures/loss.png").unwrap().is_file());
+    assert!(files.read_bytes(&root, "figures").is_err());
+    assert!(files.read_bytes(&root, "missing.png").is_err());
+    assert!(files.read_bytes(&root, "../secret.png").is_err());
+}
+
+#[test]
 fn code_tree_omits_python_environment_dependencies_but_keeps_project_sources() {
     let fixture = tempdir().unwrap();
     let files = ResearchFiles::new(fixture.path().join("data"));

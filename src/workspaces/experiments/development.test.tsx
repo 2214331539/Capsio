@@ -2,14 +2,17 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createWorkspaceStore } from '../../stores/workspace';
 import { desktop } from '../../platform/desktop';
+import { confirmAction } from '../../components/prompts';
 import {
   developmentApi,
   developmentStore,
+  endBackgroundTasks,
   useDevelopmentRuntime,
   type TerminalInfo,
   type EnvironmentTask,
 } from './development';
 
+vi.mock('../../components/prompts', () => ({ confirmAction: vi.fn(async () => true) }));
 const events = vi.hoisted(() => new Map<string, () => void>());
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(async (name: string, callback: () => void) => {
@@ -96,4 +99,26 @@ it('does not republish unchanged snapshots while still observing task completion
   expect(developmentStore.getState().terminals[0].status).toBe('completed');
   expect(changed).toHaveBeenCalledOnce();
   unsubscribe();
+});
+
+it('ends terminals and environment tasks on close after one confirmation, but not AI tasks', async () => {
+  const store = createWorkspaceStore(desktop);
+  developmentStore.setState({
+    terminals: [{ id: 't1', project: 'p1', status: 'running' } as TerminalInfo],
+    tasks: [{ id: 'env', project: 'p1', experimentId: 'e1', status: 'running' } as EnvironmentTask],
+  });
+  store.getState().setAgentTask('terminal:t1', 'p1');
+  store.getState().setAgentTask('python:env', 'p1');
+  const terminal = vi.spyOn(developmentApi, 'terminal').mockResolvedValue(undefined);
+  const python = vi.spyOn(developmentApi, 'python').mockResolvedValue(undefined);
+  vi.mocked(confirmAction).mockResolvedValueOnce(false);
+  expect(await endBackgroundTasks(store)).toBe('');
+  expect(terminal).not.toHaveBeenCalled();
+  expect(await endBackgroundTasks(store)).toBeNull();
+  expect(terminal).toHaveBeenCalledWith('p1', { action: 'close', id: 't1' });
+  expect(python).toHaveBeenCalledWith('p1', 'e1', { action: 'stop', id: 'env' });
+  expect(store.getState().agentTasks).toEqual({});
+  store.getState().setAgentTask('p1:chat', 'p1');
+  expect(await endBackgroundTasks(store)).toContain('AI 助手');
+  expect(store.getState().agentTasks).toEqual({ 'p1:chat': 'p1' });
 });

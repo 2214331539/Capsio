@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
-import { canEditProject } from '../../platform/collaboration';
 import {
   ArrowUpRight,
   Archive,
@@ -19,14 +18,15 @@ import {
 import { Button, Dropdown, Input, Textarea } from '../../components/primitives';
 import { Modal } from '../../components/Modal';
 import { confirmAction } from '../../components/prompts';
-import { directorySessions, reloadDirectorySessions } from '../../editor/sessions';
 import { gitApi, type GitAction, type GitCommit } from '../../platform/git';
 import type { ResearchBackend, GitChange } from '../../platform/research';
 import type { WorkspaceStore } from '../../stores/workspace';
 import { t, translateError } from '../../i18n';
+import { displayPath } from '../../platform/os';
 import { clearCodeRoot, selectCodeRoot, type useCodeWorkspace } from './code-context';
 import { splitPatch } from './git-diff';
-import { beginGitOperation, gitDraftKey, gitDrafts, setGitMessage } from './git-drafts';
+import { gitDrafts } from './git-drafts';
+import { useGitActions } from './git-actions';
 import { errorMessage } from '../../domain/errors';
 import './git.css';
 
@@ -35,8 +35,8 @@ const tabs = [
   { id: 'changes', label: '更改', icon: GitCommitHorizontal },
   { id: 'history', label: '提交历史', icon: History },
   { id: 'branches', label: '分支', icon: GitBranch },
-  { id: 'stashes', label: 'Stash', icon: Archive },
-  { id: 'worktrees', label: 'Worktree', icon: FolderGit2 },
+  { id: 'stashes', label: '储藏', icon: Archive },
+  { id: 'worktrees', label: '工作树', icon: FolderGit2 },
 ] as const;
 export function changeSides(change: GitChange) {
   const conflict = change.status.includes('U') || ['AA', 'DD'].includes(change.status);
@@ -53,6 +53,7 @@ export function GitWorkspace({
   code,
   onOpen,
   view: controlledView,
+  views,
   onView,
   onSelectRoot,
 }: {
@@ -62,6 +63,8 @@ export function GitWorkspace({
   code: ReturnType<typeof useCodeWorkspace>;
   onOpen(path: string): void;
   view?: GitView;
+  /** The views offered in the header; all of them by default. */
+  views?: GitView[];
   onView?: (view: GitView) => void;
   onSelectRoot?: (root: string) => void;
 }) {
@@ -78,14 +81,9 @@ export function GitWorkspace({
   const [patchError, setPatchError] = useState('');
   const [commit, setCommit] = useState<GitCommit | null>(null);
   const [search, setSearch] = useState('');
-  const binding = gitDraftKey(projectId, root ?? '');
-  const drafts = gitDrafts(store);
-  const message = useStore(drafts, (state) => state.messages[binding] ?? '');
-  const pending = useStore(drafts, (state) => !!state.pending[binding]);
-  const project = useStore(store, (state) => state.data?.projects.find((p) => p.id === projectId));
-  const blocked = pending || !!code.error || !canEditProject(project, 'code');
-  const [error, setError] = useState('');
-  const [result, setResult] = useState('');
+  const git = useGitActions({ projectId, backend, store, code });
+  const { binding, message, blocked, error, setError, result } = git;
+  const pending = useStore(gitDrafts(store), (state) => !!state.pending[binding]);
   const [dialog, setDialog] = useState<'branch' | 'stash' | 'worktree' | null>(null);
   const [name, setName] = useState('');
   const [revision, setRevision] = useState('HEAD');
@@ -100,20 +98,9 @@ export function GitWorkspace({
       revision !== dialogDefaults.revision ||
       includeUntracked ||
       !newBranch);
-  const current = useRef(binding);
-  current.current = binding;
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
   useEffect(() => {
     setSelected(null);
     setCommit(null);
-    setError('');
-    setResult('');
     setDialog(null);
   }, [binding]);
   useEffect(() => {
@@ -165,51 +152,7 @@ export function GitWorkspace({
       setSelected(null);
   }, [snapshot, selected]);
   async function execute(request: GitAction) {
-    if (!root || blocked) return false;
-    const dirtyRoot = request.kind === 'worktree-remove' ? request.target : root;
-    const sessions = directorySessions(backend, projectId, dirtyRoot, true);
-    if (
-      sessions.some(
-        (session) =>
-          session.getSnapshot().dirty ||
-          ['loading', 'saving'].includes(session.getSnapshot().phase),
-      )
-    ) {
-      setError(t('此目录有未保存或正在读写的文件，请先保存后再执行 Git 操作。'));
-      return false;
-    }
-    const finish = beginGitOperation(store, binding);
-    if (!finish) return false;
-    setError('');
-    setResult('');
-    const operationBinding = binding;
-    try {
-      const output = await gitApi.action(projectId, root, request);
-      await reloadDirectorySessions(backend, projectId, dirtyRoot);
-      if (
-        request.kind === 'commit' &&
-        drafts.getState().messages[operationBinding] === request.message
-      )
-        setGitMessage(store, operationBinding, '');
-      refresh();
-      if (mounted.current && current.current === operationBinding) {
-        setResult(
-          request.kind === 'commit'
-            ? `Commit ${output.trim().slice(0, 12)}`
-            : output.trim() || t('操作完成'),
-        );
-        setDialog(null);
-      }
-      return true;
-    } catch (e) {
-      if (mounted.current && current.current === operationBinding) {
-        setError(errorMessage(e));
-        refresh();
-      }
-      return false;
-    } finally {
-      finish();
-    }
+    if (await git.execute(request)) setDialog(null);
   }
   function openDialog(value: 'branch' | 'stash' | 'worktree') {
     const defaults = {
@@ -314,12 +257,19 @@ export function GitWorkspace({
         <GitBranch size={15} />
         <strong>{snapshot?.branch ?? (snapshot?.head ? snapshot.head.slice(0, 8) : 'Git')}</strong>
         <nav aria-label={t('Git 视图')}>
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <Button key={id} variant="ghost" aria-pressed={view === id} onClick={() => setView(id)}>
-              <Icon size={13} />
-              {t(label)}
-            </Button>
-          ))}
+          {tabs
+            .filter(({ id }) => !views || views.includes(id))
+            .map(({ id, label, icon: Icon }) => (
+              <Button
+                key={id}
+                variant="ghost"
+                aria-pressed={view === id}
+                onClick={() => setView(id)}
+              >
+                <Icon size={13} />
+                {t(label)}
+              </Button>
+            ))}
         </nav>
         <Button
           variant="ghost"
@@ -379,7 +329,7 @@ export function GitWorkspace({
                     rows={3}
                     placeholder={t('提交说明')}
                     value={message}
-                    onChange={(e) => setGitMessage(store, binding, e.target.value)}
+                    onChange={(e) => git.setMessage(e.target.value)}
                   />
                   <Button
                     type="submit"
@@ -526,7 +476,7 @@ export function GitWorkspace({
               <header>
                 <Button disabled={blocked} onClick={() => openDialog('stash')}>
                   <Archive size={14} />
-                  {t('保存到 Stash')}
+                  {t('储藏更改')}
                 </Button>
               </header>
               {snapshot.stashes.map((stash) => (
@@ -543,7 +493,7 @@ export function GitWorkspace({
                       onClick={async () => {
                         if (
                           await confirmAction(
-                            t('将 {name} 应用到当前 worktree？可能产生需要手动解决的冲突。', {
+                            t('将 {name} 应用到当前工作树？可能产生需要手动解决的冲突。', {
                               name: stash.id,
                             }),
                           )
@@ -560,7 +510,7 @@ export function GitWorkspace({
                   ))}
                 </div>
               ))}
-              {!snapshot.stashes.length && <p className="sf-git-empty">{t('暂无 Stash')}</p>}
+              {!snapshot.stashes.length && <p className="sf-git-empty">{t('暂无储藏')}</p>}
             </div>
           )}
           {view === 'worktrees' && (
@@ -568,7 +518,7 @@ export function GitWorkspace({
               <header>
                 <Button disabled={blocked} onClick={() => openDialog('worktree')}>
                   <Plus size={14} />
-                  {t('创建 Worktree')}
+                  {t('创建工作树')}
                 </Button>
               </header>
               {snapshot.worktrees.map((tree, index) => (
@@ -576,7 +526,7 @@ export function GitWorkspace({
                   <FolderGit2 size={16} />
                   <span>
                     <strong>{tree.branch ?? tree.head.slice(0, 8)}</strong>
-                    <small>{tree.root}</small>
+                    <small>{displayPath(tree.root)}</small>
                   </span>
                   {tree.busy && <small>{t('运行中')}</small>}
                   {tree.changes !== null && (
@@ -602,8 +552,8 @@ export function GitWorkspace({
                     <Button
                       variant="ghost"
                       iconOnly
-                      tooltip={t('移除 Worktree')}
-                      aria-label={t('移除 Worktree {name}', { name: tree.branch ?? tree.root })}
+                      tooltip={t('移除工作树')}
+                      aria-label={t('移除工作树 {name}', { name: tree.branch ?? tree.root })}
                       disabled={blocked || tree.busy || tree.locked || tree.missing}
                       onClick={async () => {
                         if (
@@ -629,11 +579,7 @@ export function GitWorkspace({
       {dialog && (
         <Modal
           title={t(
-            dialog === 'branch'
-              ? '创建分支'
-              : dialog === 'stash'
-                ? '保存到 Stash'
-                : '创建 Worktree',
+            dialog === 'branch' ? '创建分支' : dialog === 'stash' ? '储藏更改' : '创建工作树',
           )}
           onClose={() => setDialog(null)}
           busy={pending}
@@ -699,7 +645,7 @@ export function GitWorkspace({
               )}
               {dialog === 'worktree' && (
                 <label>
-                  {t('Worktree 目录（新的绝对路径）')}
+                  {t('工作树目录（新的绝对路径）')}
                   <Input
                     required
                     value={target}
@@ -744,7 +690,7 @@ export function GitWorkspace({
     </div>
   );
 }
-function Patch({ patch, staged }: { patch: string; staged: boolean }) {
+export function Patch({ patch, staged }: { patch: string; staged: boolean }) {
   const rows = splitPatch(patch);
   return (
     <div className="sf-diff-scroll">

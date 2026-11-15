@@ -46,12 +46,14 @@ jobs:
         run: pnpm prepare:translation
       - name: Prepare assets and build frontend
         run: pnpm run build
+        env:
+          SCIENTIFY_TEX_WARMUP: skip # bundled TeX packages are for release builds
       - name: Formatting
         run: pnpm format:check
       - name: Type checking
         run: pnpm check
       - name: Release platform mapping and development data
-        run: node --test scripts/platform.test.mjs scripts/dev-data.test.mjs
+        run: node --test scripts/platform.test.mjs scripts/dev-data.test.mjs scripts/prepare-tectonic.test.mjs
       - name: Frontend tests
         run: pnpm test --maxWorkers=2
       - name: Install UI test browser

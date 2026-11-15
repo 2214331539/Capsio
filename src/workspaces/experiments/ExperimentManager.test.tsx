@@ -72,27 +72,27 @@ it('registers a new isolated root and retains it when renaming, archiving and re
   const opened = vi.fn();
   const user = userEvent.setup();
   render(<ExperimentManager project={project} store={store} executions={[]} onOpen={opened} />);
-  await user.click(screen.getByRole('button', { name: '新建实验' }));
-  await user.type(screen.getByLabelText('实验名称'), 'Ablation');
-  await user.selectOptions(screen.getByLabelText('代码来源'), 'existing');
+  await user.click(screen.getByRole('button', { name: '添加文件夹' }));
+  await user.type(screen.getByLabelText('名称'), 'Ablation');
+  await user.selectOptions(screen.getByLabelText('来源'), 'existing');
   await user.click(screen.getByRole('button', { name: '选择目录' }));
-  await user.click(screen.getByRole('button', { name: '创建实验' }));
+  await user.click(screen.getByRole('button', { name: '添加' }));
   await waitFor(() =>
     expect(opened).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'e2', root: 'F:/fixture/ablation' }),
     ),
   );
-  await user.click(screen.getAllByRole('button', { name: '重命名实验' })[1]);
+  await user.click(screen.getAllByRole('button', { name: '重命名文件夹' })[1]);
   await waitFor(() => expect(store.getState().data?.experiments?.[1].name).toBe('Renamed'));
-  await user.click(screen.getAllByRole('button', { name: '归档实验' })[1]);
+  await user.click(screen.getAllByRole('button', { name: '归档文件夹' })[1]);
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Renamed' })).toBeNull());
   await user.click(screen.getByRole('button', { name: '已归档' }));
   expect((screen.getByRole('button', { name: 'Renamed' }) as HTMLButtonElement).disabled).toBe(
     true,
   );
-  await user.click(screen.getByRole('button', { name: '恢复实验' }));
+  await user.click(screen.getByRole('button', { name: '恢复文件夹' }));
   await waitFor(() => expect(store.getState().data?.experiments?.[1].archived).toBe(false));
-  await user.click(screen.getAllByRole('button', { name: '移除实验' })[1]);
+  await user.click(screen.getAllByRole('button', { name: '从项目中移除' })[1]);
   await waitFor(() => expect(store.getState().data?.experiments).toHaveLength(1));
 });
 it('saves configurations to the selected experiment and preserves the sibling configuration', async () => {
@@ -136,7 +136,7 @@ it('prevents removing an experiment with a running chat while other experiments 
   });
   store.getState().setAgentTask('p1:chat', 'p1');
   render(<ExperimentManager project={project} store={store} executions={[]} onOpen={() => {}} />);
-  await userEvent.setup().click(screen.getByRole('button', { name: '移除实验' }));
+  await userEvent.setup().click(screen.getByRole('button', { name: '从项目中移除' }));
   expect(screen.getByRole('alert').textContent).toContain('请先停止');
   expect(store.getState().data?.experiments).toHaveLength(1);
 });

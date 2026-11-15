@@ -6,6 +6,7 @@ import { listen } from '@tauri-apps/api/event';
 import { Columns2, Plus, Square, Trash2 } from 'lucide-react';
 import { Button, Dropdown } from '../../components/primitives';
 import { t } from '../../i18n';
+import { displayPath } from '../../platform/os';
 import { developmentApi, developmentStore, openTerminal, type TerminalInfo } from './development';
 import { errorMessage } from '../../domain/errors';
 import '@xterm/xterm/css/xterm.css';
@@ -225,7 +226,7 @@ export function TerminalPanel({
               variant="ghost"
               aria-selected={current?.id === info.id}
               onClick={() => onActive(info.id)}
-              title={info.environment?.executable || info.root}
+              title={displayPath(info.environment?.executable || info.root)}
             >
               {info.name} {index + 1}
               {info.status !== 'running' ? ` (${info.exitCode ?? '—'})` : ''}
@@ -292,16 +293,7 @@ export function TerminalPanel({
       </header>
       <div className={'sf-terminal-panes' + (split ? ' is-split' : '')}>
         {split && <TerminalSurface info={split} onError={onError} />}
-        {current ? (
-          <TerminalSurface key={current.id} info={current} onError={onError} />
-        ) : (
-          <div className="sf-terminal-empty">
-            <Button disabled={busy || !developmentApi.available()} onClick={() => void create()}>
-              <Plus size={15} />
-              {t('新建终端')}
-            </Button>
-          </div>
-        )}
+        {current ? <TerminalSurface key={current.id} info={current} onError={onError} /> : null}
       </div>
     </section>
   );

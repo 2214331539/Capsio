@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { flushSync } from 'react-dom';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { ChevronRight, ListTree, MoreHorizontal, Pin, Search, X } from 'lucide-react';
+import { ChevronRight, ListTree, MoreHorizontal, Pin, Search } from 'lucide-react';
 import { Button, Input } from '../components/primitives';
 import { Menu, menuAnchor, type MenuAnchor } from '../components/primitives/Menu';
 import { confirmAction, requestText } from '../components/prompts';
@@ -316,40 +316,36 @@ export function PdfOutlinePanel({
         inert={!open}
         aria-hidden={!open || undefined}
       >
-        <div className="pdf-outline-heading">
-          <strong>{t('标题目录')}</strong>
-          <span className="spacer" />
+        {/* One row: search, then the pin. The options menu opens on right-click. */}
+        <div
+          className="pdf-outline-top"
+          onContextMenu={(event) => {
+            if ((event.target as HTMLElement).closest('input')) return;
+            event.preventDefault();
+            setMenu({ anchor: menuAnchor(event) });
+          }}
+        >
+          <label className="pdf-outline-search">
+            <Input
+              aria-label={t('搜索标题')}
+              placeholder={t('搜索标题')}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <Search size={14} aria-hidden="true" />
+          </label>
           <Button
             variant="ghost"
             iconOnly
-            title={t('固定目录')}
+            className="pdf-outline-pin"
+            title={t(pinned ? '取消固定目录' : '固定目录')}
             aria-label={t('固定目录')}
             aria-pressed={pinned}
-            onClick={() => setPinned((value) => !value)}
+            onClick={() => (pinned ? close() : setPinned(true))}
           >
             <Pin size={14} />
           </Button>
-          <Button
-            variant="ghost"
-            iconOnly
-            aria-label={t('目录选项')}
-            onClick={(event) => setMenu({ anchor: menuAnchor(event) })}
-          >
-            <MoreHorizontal size={15} />
-          </Button>
-          <Button variant="ghost" iconOnly aria-label={t('关闭目录')} onClick={close}>
-            <X size={15} />
-          </Button>
         </div>
-        <label className="pdf-outline-search">
-          <Search size={14} />
-          <Input
-            aria-label={t('搜索标题')}
-            placeholder={t('搜索标题')}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
         {error && (
           <div role="alert" className="pdf-outline-message">
             {translateError(error)}
@@ -363,7 +359,15 @@ export function PdfOutlinePanel({
             {t('正在识别标题…')} {progress > 0 ? `${progress} / ${pdf.numPages}` : ''}
           </div>
         ) : null}
-        <nav className="pdf-outline-items" aria-label={t('章节导航')}>
+        <nav
+          className="pdf-outline-items"
+          aria-label={t('章节导航')}
+          onContextMenu={(event) => {
+            if ((event.target as HTMLElement).closest('.pdf-outline-row')) return;
+            event.preventDefault();
+            setMenu({ anchor: menuAnchor(event) });
+          }}
+        >
           {shown.map((entry) => {
             const folds = hasChildren(entry);
             return (
@@ -429,20 +433,18 @@ export function PdfOutlinePanel({
               {query
                 ? t('没有匹配的标题')
                 : entries.length
-                  ? t('标题都已隐藏，可在目录选项里恢复。')
+                  ? t('标题都已隐藏，右键空白处可以恢复。')
                   : t('未识别到标题。可选中原文后手动加入目录；扫描件需要 OCR。')}
             </div>
           ) : null}
         </nav>
-        <div className="pdf-outline-footer">
-          {outline?.source === 'bookmarks' ? t('来自 PDF 书签') : t('本地标题识别')}
-          {outline?.customized ? ` · ${t('已修正')}` : ''}
-          {scanning
-            ? ` · ${t('正在识别标题…')} ${progress ? `${progress} / ${pdf.numPages}` : ''}`
-            : busy && outline
-              ? ` · ${t('保存中…')}`
-              : ''}
-        </div>
+        {(scanning && outline) || (busy && outline) ? (
+          <div className="pdf-outline-footer" role="status">
+            {scanning
+              ? `${t('正在识别标题…')} ${progress ? `${progress} / ${pdf.numPages}` : ''}`
+              : t('保存中…')}
+          </div>
+        ) : null}
       </aside>
       <Menu anchor={menu?.anchor ?? null} label={t('目录选项')} onClose={() => setMenu(null)}>
         {menu?.entry ? (

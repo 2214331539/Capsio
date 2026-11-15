@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from 'vitest';
-import { isMacOS, operatingSystem, platformClass } from './os';
+import { displayPath, isMacOS, operatingSystem, platformClass } from './os';
 
 const originalNavigator = globalThis.navigator;
 
@@ -25,4 +25,10 @@ it('does not classify Windows as macOS', () => {
   setNavigator('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Win32');
   expect(operatingSystem()).toBe('windows');
   expect(isMacOS()).toBe(false);
+});
+
+it('shows Windows paths without the long-path prefix', () => {
+  expect(displayPath(String.raw`\\?\F:\Project\实验`)).toBe(String.raw`F:\Project\实验`);
+  expect(displayPath(String.raw`\\?\UNC\server\share\code`)).toBe(String.raw`\\server\share\code`);
+  expect(displayPath('/home/researcher/code')).toBe('/home/researcher/code');
 });

@@ -105,20 +105,21 @@ it('switches experiment configurations and files while preserving the previous d
     ).toContain('"A"'),
   );
   await user.type(screen.getByRole('textbox', { name: '代码编辑' }), '# A draft');
-  await user.selectOptions(screen.getByLabelText('当前实验'), 'e2');
+  await user.click(screen.getByRole('button', { name: /^代码文件夹/ }));
+  await user.click(screen.getByRole('menuitemradio', { name: 'Ablation' }));
   await user.click(await screen.findByRole('treeitem', { name: 'train.py' }));
   await waitFor(() =>
     expect((screen.getByRole('textbox', { name: '代码编辑' }) as HTMLTextAreaElement).value).toBe(
       'print("B")',
     ),
   );
-  expect((screen.getByLabelText('运行配置') as HTMLSelectElement).textContent).toContain(
-    'Ablation config',
-  );
-  expect((screen.getByLabelText('运行配置') as HTMLSelectElement).textContent).not.toContain(
-    'Baseline',
-  );
-  await user.selectOptions(screen.getByLabelText('当前实验'), 'p1');
+  await user.click(screen.getByRole('button', { name: /^运行配置/ }));
+  const configurations = screen.getByRole('menu', { name: '运行配置' });
+  expect(configurations.textContent).toContain('Ablation config');
+  expect(configurations.textContent).not.toContain('Baseline');
+  await user.keyboard('{Escape}');
+  await user.click(screen.getByRole('button', { name: /^代码文件夹/ }));
+  await user.click(screen.getAllByRole('menuitemradio')[0]);
   await waitFor(() =>
     expect(
       (screen.getByRole('textbox', { name: '代码编辑' }) as HTMLTextAreaElement).value,
@@ -285,6 +286,7 @@ it('preserves code draft across Runs and blocks execution when saving fails', as
   const start = vi.spyOn(experimentApi, 'start').mockResolvedValue(run);
   function Harness() {
     const [view, setView] = useState('files');
+    const [path, setPath] = useState<string | null>('train.py');
     return (
       <ExperimentWorkspace
         project={project}
@@ -294,8 +296,8 @@ it('preserves code draft across Runs and blocks execution when saving fails', as
         runtimeError=""
         view={view}
         onView={setView}
-        activePath="train.py"
-        onOpen={vi.fn()}
+        activePath={path}
+        onOpen={setPath}
         onSelect={vi.fn()}
         onContext={vi.fn()}
         sidebarOpen
@@ -307,8 +309,10 @@ it('preserves code draft across Runs and blocks execution when saving fails', as
   }
   render(<Harness />);
   await user.type(await screen.findByRole('textbox', { name: '代码编辑' }), '\n# draft');
-  await user.click(screen.getByRole('button', { name: '实验记录' }));
-  await user.click(screen.getByRole('button', { name: '代码' }));
+  await user.click(screen.getByRole('button', { name: '更多操作' }));
+  await user.click(screen.getByRole('menuitem', { name: '打开 Git 图' }));
+  expect(screen.getByRole('tab', { name: 'Git 图' }).getAttribute('aria-selected')).toBe('true');
+  await user.click(screen.getByRole('tab', { name: /^train.py/ }));
   expect(
     (screen.getByRole('textbox', { name: '代码编辑' }) as HTMLTextAreaElement).value,
   ).toContain('# draft');

@@ -5,6 +5,7 @@ import {
   eventToShortcut,
   isEditableTarget,
   normalizeShortcut,
+  shortcutToCodeMirror,
 } from './shortcuts';
 
 describe('shortcuts', () => {
@@ -12,6 +13,12 @@ describe('shortcuts', () => {
     expect(normalizeShortcut('shift + ctrl + k')).toBe('Ctrl+Shift+K');
     expect(normalizeShortcut('cmd+shift+p')).toBe('Mod+Shift+P');
     expect(normalizeShortcut('escape')).toBe('Escape');
+  });
+
+  it('writes CodeMirror key names with the key last', () => {
+    expect(shortcutToCodeMirror('Mod+S')).toBe('Mod-s');
+    expect(shortcutToCodeMirror('shift+mod+f')).toBe('Mod-shift-f');
+    expect(shortcutToCodeMirror('')).toBe('');
   });
 
   it('converts keyboard events to the cross-platform Mod form', () => {

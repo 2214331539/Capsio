@@ -10,7 +10,6 @@
   ],
   "固定目录": ["固定目录", "Pin outline"],
   "目录选项": ["目录选项", "Outline options"],
-  "关闭目录": ["关闭目录", "Close outline"],
   "搜索标题": ["搜索标题", "Search headings"],
   "正在识别标题…": ["正在识别标题…", "Recognizing headings…"],
   "章节导航": ["章节导航", "Chapter navigation"],
@@ -21,9 +20,6 @@
     "未识别到标题。可选中原文后手动加入目录；扫描件需要 OCR。",
     "No headings found. Select text to add a heading. Scanned pages require OCR."
   ],
-  "来自 PDF 书签": ["来自 PDF 书签", "PDF bookmarks"],
-  "本地标题识别": ["本地标题识别", "Local heading detection"],
-  "已修正": ["已修正", "Edited"],
   "提升层级": ["提升层级", "Promote heading"],
   "降低层级": ["降低层级", "Demote heading"],
   "隐藏此标题": ["隐藏此标题", "Hide heading"],
@@ -136,36 +132,14 @@
     "技能已移除、停用或不属于当前工作区，请重新选择：{name}",
     "This skill was removed, disabled, or is unavailable in this workspace. Select it again: {name}"
   ],
-  "实验管理": ["实验管理", "Experiments"],
-  "当前实验": ["当前实验", "Current experiment"],
   "实验": ["实验", "Experiment"],
   "Python": ["Python", "Python"],
   "操作": ["操作", "Actions"],
   "未配置": ["未配置", "Not configured"],
   "最近运行": ["最近运行", "Latest run"],
-  "搜索实验": ["搜索实验", "Search experiments"],
   "显示归档": ["显示归档", "Show archived"],
-  "新建实验": ["新建实验", "New experiment"],
   "打开实验": ["打开实验", "Open experiment"],
-  "重命名实验": ["重命名实验", "Rename experiment"],
-  "归档实验": ["归档实验", "Archive experiment"],
-  "恢复实验": ["恢复实验", "Restore experiment"],
-  "移除实验": ["移除实验", "Remove experiment"],
-  "暂无实验": ["暂无实验", "No experiments"],
-  "实验目的": ["实验目的", "Purpose"],
-  "代码来源": ["代码来源", "Code source"],
-  "新建空目录": ["新建空目录", "Create empty folder"],
-  "关联已有目录 / worktree": ["关联已有目录 / worktree", "Link existing folder / worktree"],
-  "创建实验": ["创建实验", "Create experiment"],
   "已结束": ["已结束", "Finished"],
-  "请先停止此实验的 AI 和运行任务。": [
-    "请先停止此实验的 AI 和运行任务。",
-    "Stop this experiment's AI and runs first."
-  ],
-  "移除实验登记？磁盘文件、Git 提交、AI 对话和运行记录会保留。": [
-    "移除实验登记？磁盘文件、Git 提交、AI 对话和运行记录会保留。",
-    "Remove the experiment registration? Files, Git commits, chats and run history will be kept."
-  ],
   "实验不存在。": ["实验不存在。", "Experiment not found."],
   "此材料的实验已移除或归档，请先恢复实验登记。": [
     "此材料的实验已移除或归档，请先恢复实验登记。",
@@ -249,21 +223,14 @@
     "运行本地程序 {program}？参数：{args}。程序具有当前用户权限，多次运行共享项目文件。",
     "Run {program} locally with arguments {args}? The program uses your user permissions. Runs share project files."
   ],
-  "后台任务仍在运行或有结果未保存。请在实验任务入口或 AI 助手中停止任务、保存结果后再关闭窗口。": [
-    "后台任务仍在运行或有结果未保存。请在实验任务入口或 AI 助手中停止任务、保存结果后再关闭窗口。",
-    "Background tasks are running or have unsaved results. Stop tasks in Experiments or the AI assistant and save results before closing."
-  ],
   "运行配置": ["运行配置", "Run configuration"],
-  "选择运行配置": ["选择运行配置", "Select configuration"],
   "新建运行配置": ["新建运行配置", "New run configuration"],
-  "环境与依赖": ["环境与依赖", "Environment & dependencies"],
   "保存当前文件": ["保存当前文件", "Save current file"],
   "编辑运行配置": ["编辑运行配置", "Edit run configuration"],
   "本地执行仅在桌面应用可用": [
     "本地执行仅在桌面应用可用",
     "Local execution requires the desktop app"
   ],
-  "查看运行输出": ["查看运行输出", "Select run output"],
   "尚无本地运行": ["尚无本地运行", "No local runs yet"],
   "应用托管目录": ["应用托管目录", "App-managed directory"],
   "可执行程序": ["可执行程序", "Executable"],
@@ -665,7 +632,6 @@
   "未关联项目": ["未关联项目", "No linked project"],
   "来源项目不存在": ["来源项目不存在", "Source project no longer exists"],
   "文献": ["文献", "Literature"],
-  "搜索工作区": ["搜索工作区", "Search workspace"],
   "搜索项目、文献和笔记": ["搜索项目、文献和笔记", "Search projects, papers and notes"],
   "输入关键词": ["输入关键词", "Enter a search term"],
   "仅显示前 30 项，请缩小关键词范围。": [
@@ -814,7 +780,6 @@
   "进行中": ["进行中", "Running"],
   "已完成": ["已完成", "Completed"],
   "未成功": ["未成功", "Failed"],
-  "实验记录": ["实验记录", "Experiment records"],
   "未填写": ["未填写", "Not set"],
   "实验记录工作区": ["实验记录工作区", "Experiment records workspace"],
   "新建记录": ["新建记录", "New record"],
@@ -866,8 +831,6 @@
   "取消": ["取消", "Cancel"],
   "保存中…": ["保存中…", "Saving…"],
   "保存实验记录": ["保存实验记录", "Save experiment record"],
-  "Git 版本变更": ["Git 版本变更", "Git changes"],
-  "项目引用": ["项目引用", "Project references"],
   "请输入项目内相对路径，例如 notes/idea.md。": [
     "请输入项目内相对路径，例如 notes/idea.md。",
     "Enter a project-relative path, such as notes/idea.md."
@@ -878,9 +841,6 @@
   "打开的文件": ["打开的文件", "Open files"],
   "新建文件": ["新建文件", "New file"],
   "副本路径": ["副本路径", "Copy path"],
-  "文件路径": ["文件路径", "File path"],
-  "paper.md 或 main.tex": ["paper.md 或 main.tex", "paper.md or main.tex"],
-  "创建中…": ["创建中…", "Creating…"],
   "创建": ["创建", "Create"],
   "保存并关闭": ["保存并关闭", "Save and close"],
   "关闭标签，保留草稿": ["关闭标签，保留草稿", "Close tab, keep draft"],
@@ -937,20 +897,10 @@
   "没有匹配的文件": ["没有匹配的文件", "No matching files"],
   "暂无文件": ["暂无文件", "No files yet"],
   "本机项目目录": ["本机项目目录", "Local project directory"],
-  "版本变更": ["版本变更", "Changes"],
   "刷新": ["刷新", "Refresh"],
-  "正在读取 Git 状态…": ["正在读取 Git 状态…", "Reading Git status…"],
-  "当前 MVP 提供 Git 状态查看；初始化仓库和提交请使用现有 Git 工具。": [
-    "当前 MVP 提供 Git 状态查看；初始化仓库和提交请使用现有 Git 工具。",
-    "Git status is available. Use your existing Git tools to initialize repositories and commit changes."
-  ],
   "工作区干净，没有未提交变更。": [
     "工作区干净，没有未提交变更。",
     "Working tree clean. No uncommitted changes."
-  ],
-  "还没有关联文献。请先到文献区添加论文。": [
-    "还没有关联文献。请先到文献区添加论文。",
-    "No linked papers. Add papers in Literature first."
   ],
   "Markdown 预览": ["Markdown 预览", "Markdown preview"],
   "未命名": ["未命名", "Untitled"],
@@ -2045,18 +1995,9 @@
     "删除分支“{name}”？Git 将保护尚未合并的提交。",
     "Delete branch {name}? Git will protect unmerged commits."
   ],
-  "保存到 Stash": ["保存到 Stash", "Save to stash"],
-  "将 {name} 应用到当前 worktree？可能产生需要手动解决的冲突。": [
-    "将 {name} 应用到当前 worktree？可能产生需要手动解决的冲突。",
-    "Apply {name} to this worktree? Conflicts may require manual resolution."
-  ],
-  "暂无 Stash": ["暂无 Stash", "No stashes"],
-  "创建 Worktree": ["创建 Worktree", "Create worktree"],
   "当前 worktree": ["当前 worktree", "Current worktree"],
   "{count} 项更改": ["{count} 项更改", "{count} changes"],
   "干净": ["干净", "Clean"],
-  "移除 Worktree": ["移除 Worktree", "Remove worktree"],
-  "移除 Worktree {name}": ["移除 Worktree {name}", "Remove worktree {name}"],
   "移除 worktree“{path}”？将删除该工作目录，保留分支和提交；未提交更改会阻止移除。": [
     "移除 worktree“{path}”？将删除该工作目录，保留分支和提交；未提交更改会阻止移除。",
     "Remove worktree {path}? Its directory will be deleted, while its branch and commits remain. Uncommitted changes block removal."
@@ -2066,10 +2007,6 @@
   "分支名称": ["分支名称", "Branch name"],
   "已有分支": ["已有分支", "Existing branch"],
   "起始 Branch / Commit": ["起始 Branch / Commit", "Starting branch / commit"],
-  "Worktree 目录（新的绝对路径）": [
-    "Worktree 目录（新的绝对路径）",
-    "Worktree directory (new absolute path)"
-  ],
   "包含未跟踪文件": ["包含未跟踪文件", "Include untracked files"],
   "收起运行日志": ["收起运行日志", "Collapse run output"],
   "展开运行日志": ["展开运行日志", "Expand run output"],
@@ -2119,7 +2056,6 @@
     "Git 操作超时，请检查仓库状态后重试。",
     "The Git operation timed out. Check the repository state before retrying."
   ],
-  "代码工具": ["代码工具", "Code tools"],
   "撤销": ["撤销", "Undo"],
   "重做": ["重做", "Redo"],
   "行 {line}，列 {column}": ["行 {line}，列 {column}", "Ln {line}, Col {column}"],
@@ -2136,11 +2072,7 @@
   "搜索达到上限": ["搜索达到上限", "Search limit reached"],
   "{count} 个文件未读取": ["{count} 个文件未读取", "{count} files not read"],
   "没有匹配的内容": ["没有匹配的内容", "No matching content"],
-  "管理 worktree": ["管理 worktree", "Manage worktrees"],
   "保存全部": ["保存全部", "Save all"],
-  "停止当前运行": ["停止当前运行", "Stop current run"],
-  "最大化输出面板": ["最大化输出面板", "Maximize output panel"],
-  "还原输出面板": ["还原输出面板", "Restore output panel"],
   "关闭输出面板": ["关闭输出面板", "Close output panel"],
   "查找文件内容": ["查找文件内容", "Find in file"],
   "替换文件内容": ["替换文件内容", "Replace in file"],
@@ -2158,7 +2090,6 @@
   ],
   "终端": ["终端", "Terminal"],
   "新建终端": ["新建终端", "New terminal"],
-  "打开终端": ["打开终端", "Open terminal"],
   "拆分终端": ["拆分终端", "Split terminal"],
   "中断命令": ["中断命令", "Interrupt command"],
   "终止终端": ["终止终端", "Terminate terminal"],
@@ -2168,43 +2099,12 @@
     "较早的终端输出已截断。",
     "Earlier terminal output has been truncated."
   ],
-  "Python 环境": ["Python 环境", "Python environments"],
-  "Python 工具": ["Python 工具", "Python tools"],
   "选择 Python 解释器": ["选择 Python 解释器", "Select Python interpreter"],
-  "刷新解释器": ["刷新解释器", "Refresh interpreters"],
-  "当前解释器": ["当前解释器", "Current interpreter"],
-  "解释器路径": ["解释器路径", "Interpreter path"],
-  "使用解释器": ["使用解释器", "Use interpreter"],
-  "创建环境": ["创建环境", "Create environment"],
-  "环境类型": ["环境类型", "Environment manager"],
-  "基础 Python": ["基础 Python", "Base Python"],
-  "Python 版本": ["Python 版本", "Python version"],
-  "环境目录（相对实验根）": [
-    "环境目录（相对实验根）",
-    "Environment directory (relative to experiment)"
-  ],
-  "环境": ["环境", "Environment"],
   "依赖": ["依赖", "Packages"],
   "任务": ["任务", "Tasks"],
-  "包名称": ["包名称", "Package names"],
-  "安装": ["安装", "Install"],
-  "升级": ["升级", "Upgrade"],
-  "卸载": ["卸载", "Uninstall"],
-  "刷新依赖": ["刷新依赖", "Refresh packages"],
-  "安装 requirements": ["安装 requirements", "Install requirements"],
-  "安装当前项目（editable）": ["安装当前项目（editable）", "Install project (editable)"],
-  "从 environment.yml 更新": ["从 environment.yml 更新", "Update from environment.yml"],
-  "停止环境任务": ["停止环境任务", "Stop environment task"],
-  "使用此环境": ["使用此环境", "Use this environment"],
-  "在终端运行当前 Python 文件": ["在终端运行当前 Python 文件", "Run Python file in terminal"],
-  "信任目录并检测 Python": ["信任目录并检测 Python", "Trust directory and detect Python"],
   "信任此实验目录？终端、Python 和手动运行将使用本机用户权限，可访问本机文件与网络。": [
     "信任此实验目录？终端、Python 和手动运行将使用本机用户权限，可访问本机文件与网络。",
     "Trust this experiment directory? Terminals, Python and manual runs will use your local user permissions and can access local files and the network."
-  ],
-  "从当前 Python 环境卸载这些包？": [
-    "从当前 Python 环境卸载这些包？",
-    "Uninstall these packages from the current Python environment?"
   ],
   "当前选择的是系统 Python，安装或删除包将影响其他使用此环境的项目。继续？": [
     "当前选择的是系统 Python，安装或删除包将影响其他使用此环境的项目。继续？",
@@ -3139,10 +3039,6 @@
     "这个旧对话不能读论文，新建对话后可以读全文。",
     "This older chat cannot read papers. Start a new chat to read whole papers."
   ],
-  "标题都已隐藏，可在目录选项里恢复。": [
-    "标题都已隐藏，可在目录选项里恢复。",
-    "All headings are hidden. Restore them from the outline options."
-  ],
   "PDF 指纹无效。": ["PDF 指纹无效。", "The PDF fingerprint is invalid."],
   "PDF 目录格式无效。": ["PDF 目录格式无效。", "The PDF outline format is invalid."],
   "PDF 目录数据超过大小限制。": [
@@ -3356,7 +3252,6 @@
   "大小": ["大小", "Size"],
   "有笔记": ["有笔记", "Has notes"],
   "第 {page} 页": ["第 {page} 页", "Page {page}"],
-  "版本": ["版本", "Versions"],
   "全部笔记": ["全部笔记", "All notes"],
   "写一篇笔记": ["写一篇笔记", "Write a note"],
   "搜索论文、笔记，或跳转": ["搜索论文、笔记，或跳转", "Search papers and notes, or jump to"],
@@ -3368,11 +3263,463 @@
     "文献、笔记、实验和写作，在一个本地工作区里。",
     "Literature, notes, experiments and writing in one local workspace."
   ],
-  "全部实验": ["全部实验", "All experiments"],
-  "实验状态": ["实验状态", "Experiment status"],
   "更新": ["更新", "Updated"],
   "{count} 个任务运行中": ["{count} 个任务运行中", "{count} running"],
-  "没有匹配的实验": ["没有匹配的实验", "No matching experiments"],
-  "记录": ["记录", "Records"],
-  "没有打开的文件": ["没有打开的文件", "No open file"]
+  "没有打开的文件": ["没有打开的文件", "No open file"],
+  "取消固定目录": ["取消固定目录", "Unpin outline"],
+  "文件夹名称": ["文件夹名称", "Folder name"],
+  "名称不能包含 \\ / : * ? \" < > |": [
+    "名称不能包含 \\ / : * ? \" < > |",
+    "A name can't contain \\ / : * ? \" < > |"
+  ],
+  "此位置已存在文件或文件夹“{name}”。": [
+    "此位置已存在文件或文件夹“{name}”。",
+    "A file or folder named “{name}” already exists here."
+  ],
+  "标题都已隐藏，右键空白处可以恢复。": [
+    "标题都已隐藏，右键空白处可以恢复。",
+    "All headings are hidden. Right-click empty space to restore them."
+  ],
+  "新分支名称": ["新分支名称", "New branch name"],
+  "Git 图": ["Git 图", "Git Graph"],
+  "管理文件夹": ["管理文件夹", "Manage folders"],
+  "此标签已不可用": ["此标签已不可用", "This tab is no longer available"],
+  "侧边视图": ["侧边视图", "Side views"],
+  "新建文件…": ["新建文件…", "New File…"],
+  "打开文件夹…": ["打开文件夹…", "Open Folder…"],
+  "克隆 Git 仓库…": ["克隆 Git 仓库…", "Clone Git Repository…"],
+  "面板": ["面板", "Panel"],
+  "还没有代码文件夹": ["还没有代码文件夹", "No code folder yet"],
+  "储藏更改": ["储藏更改", "Stash changes"],
+  "将 {name} 应用到当前工作树？可能产生需要手动解决的冲突。": [
+    "将 {name} 应用到当前工作树？可能产生需要手动解决的冲突。",
+    "Apply {name} to the current worktree? This may cause conflicts you need to resolve by hand."
+  ],
+  "暂无储藏": ["暂无储藏", "No stashes"],
+  "创建工作树": ["创建工作树", "Create worktree"],
+  "移除工作树": ["移除工作树", "Remove worktree"],
+  "移除工作树 {name}": ["移除工作树 {name}", "Remove worktree {name}"],
+  "工作树目录（新的绝对路径）": [
+    "工作树目录（新的绝对路径）",
+    "Worktree folder (a new absolute path)"
+  ],
+  "编辑运行配置…": ["编辑运行配置…", "Edit Run Configuration…"],
+  "添加运行配置…": ["添加运行配置…", "Add Run Configuration…"],
+  "尚无运行": ["尚无运行", "No runs yet"],
+  "此文件夹不是 Git 仓库。": ["此文件夹不是 Git 仓库。", "This folder is not a Git repository."],
+  "初始化仓库": ["初始化仓库", "Initialize Repository"],
+  "放弃“{path}”中的更改？此操作无法撤消。": [
+    "放弃“{path}”中的更改？此操作无法撤消。",
+    "Discard changes in “{path}”? This cannot be undone."
+  ],
+  "打开文件 {path}": ["打开文件 {path}", "Open file {path}"],
+  "放弃更改 {path}": ["放弃更改 {path}", "Discard changes in {path}"],
+  "放弃更改": ["放弃更改", "Discard Changes"],
+  "提交消息": ["提交消息", "Commit message"],
+  "消息（Ctrl+Enter 在“{branch}”上提交）": [
+    "消息（Ctrl+Enter 在“{branch}”上提交）",
+    "Message (Ctrl+Enter to commit on “{branch}”)"
+  ],
+  "暂存的更改": ["暂存的更改", "Staged Changes"],
+  "取消暂存所有更改": ["取消暂存所有更改", "Unstage All Changes"],
+  "暂存所有更改": ["暂存所有更改", "Stage All Changes"],
+  "没有更改": ["没有更改", "No changes"],
+  "提交": ["提交", "Commit"],
+  "提交所有更改": ["提交所有更改", "Commit all changes"],
+  "打开 Git 图": ["打开 Git 图", "Open Git Graph"],
+  "状态栏": ["状态栏", "Status bar"],
+  "{count} 个运行中": ["{count} 个运行中", "{count} running"],
+  "选择解释器": ["选择解释器", "Select Interpreter"],
+  "代码文件夹：{name}": ["代码文件夹：{name}", "Code folder: {name}"],
+  "代码文件夹": ["代码文件夹", "Code folder"],
+  "新建空文件夹…": ["新建空文件夹…", "New Empty Folder…"],
+  "Git": ["Git", "Git"],
+  "无提交": ["无提交", "No commits"],
+  "分支：{name}": ["分支：{name}", "Branch: {name}"],
+  "工作树": ["工作树", "Worktree"],
+  "创建新分支…": ["创建新分支…", "Create New Branch…"],
+  "在新文件夹中检出分支…": ["在新文件夹中检出分支…", "Check Out Branch in New Folder…"],
+  "运行配置：{name}": ["运行配置：{name}", "Run configuration: {name}"],
+  "在终端运行 {name}": ["在终端运行 {name}", "Run {name} in Terminal"],
+  "新建运行配置…": ["新建运行配置…", "New Run Configuration…"],
+  "停止运行": ["停止运行", "Stop"],
+  "克隆 Git 仓库": ["克隆 Git 仓库", "Clone Git Repository"],
+  "仓库地址": ["仓库地址", "Repository URL"],
+  "保存位置": ["保存位置", "Location"],
+  "Scientify 数据目录": ["Scientify 数据目录", "Scientify data folder"],
+  "克隆": ["克隆", "Clone"],
+  "正在克隆…": ["正在克隆…", "Cloning…"],
+  "运行 (Ctrl+F5)": ["运行 (Ctrl+F5)", "Run (Ctrl+F5)"],
+  "储藏": ["储藏", "Stashes"],
+  "暂存更改": ["暂存更改", "Stage Changes"],
+  "取消暂存更改": ["取消暂存更改", "Unstage Changes"],
+  "还原面板大小": ["还原面板大小", "Restore Panel Size"],
+  "最大化面板大小": ["最大化面板大小", "Maximize Panel Size"],
+  "收起面板": ["收起面板", "Hide Panel"],
+  "展开面板": ["展开面板", "Show Panel"],
+  "无": ["无", "None"],
+  "搜索": ["搜索", "Search"],
+  "请先停止此文件夹的 AI 和运行任务。": [
+    "请先停止此文件夹的 AI 和运行任务。",
+    "Stop this folder's AI and run tasks first."
+  ],
+  "重命名文件夹": ["重命名文件夹", "Rename folder"],
+  "从项目中移除此文件夹？磁盘上的文件、Git 提交、AI 对话和运行记录都会保留。": [
+    "从项目中移除此文件夹？磁盘上的文件、Git 提交、AI 对话和运行记录都会保留。",
+    "Remove this folder from the project? Files on disk, Git commits, AI conversations and run records are kept."
+  ],
+  "文件夹状态": ["文件夹状态", "Folder status"],
+  "搜索文件夹": ["搜索文件夹", "Search folders"],
+  "添加文件夹": ["添加文件夹", "Add folder"],
+  "打开文件夹": ["打开文件夹", "Open folder"],
+  "从项目中移除": ["从项目中移除", "Remove from project"],
+  "没有匹配的文件夹": ["没有匹配的文件夹", "No matching folders"],
+  "暂无代码文件夹": ["暂无代码文件夹", "No code folders"],
+  "用途": ["用途", "Purpose"],
+  "新建空文件夹": ["新建空文件夹", "New empty folder"],
+  "打开已有文件夹": ["打开已有文件夹", "Open an existing folder"],
+  "文件夹位置": ["文件夹位置", "Folder location"],
+  "恢复文件夹": ["恢复文件夹", "Restore folder"],
+  "归档文件夹": ["归档文件夹", "Archive folder"],
+  "创建环境失败。": ["创建环境失败。", "Couldn't create the environment."],
+  "待开发": ["待开发", "Coming soon"],
+  "输入解释器路径…": ["输入解释器路径…", "Enter Interpreter Path…"],
+  "创建虚拟环境…": ["创建虚拟环境…", "Create Virtual Environment…"],
+  "安装 requirements.txt 中的依赖": [
+    "安装 requirements.txt 中的依赖",
+    "Install dependencies from requirements.txt"
+  ],
+  "以可编辑模式安装此文件夹（pip install -e .）": [
+    "以可编辑模式安装此文件夹（pip install -e .）",
+    "Install this folder in editable mode (pip install -e .)"
+  ],
+  "按 environment.yml 更新环境": [
+    "按 environment.yml 更新环境",
+    "Update the environment from environment.yml"
+  ],
+  "解释器": ["解释器", "Interpreters"],
+  "在当前文件夹创建 .venv": ["在当前文件夹创建 .venv", "Creates .venv in the current folder"],
+  "在当前文件夹创建 .conda": ["在当前文件夹创建 .conda", "Creates .conda in the current folder"],
+  "选择创建环境所用的 Python": [
+    "选择创建环境所用的 Python",
+    "Select a Python to create the environment"
+  ],
+  "选择 Python 版本": ["选择 Python 版本", "Select a Python version"],
+  "输入 Python 可执行文件的路径": [
+    "输入 Python 可执行文件的路径",
+    "Enter the path to a Python executable"
+  ],
+  "当前：{path}": ["当前：{path}", "Current: {path}"],
+  "正在查找解释器…": ["正在查找解释器…", "Looking for interpreters…"],
+  "当前": ["当前", "Current"],
+  "没有匹配的项目": ["没有匹配的项目", "No matching items"],
+  "正在准备环境…": ["正在准备环境…", "Preparing environment…"],
+  "Python 解释器：{name}": ["Python 解释器：{name}", "Python interpreter: {name}"],
+  "保存副本": ["保存副本", "Save copy"],
+  "新建文件夹…": ["新建文件夹…", "New Folder…"],
+  "文件名称": ["文件名称", "File name"],
+  "扩展": ["扩展", "Extensions"],
+  "AI 助手仍在执行任务。请在 AI 助手中停止，或等它完成后再关闭窗口。": [
+    "AI 助手仍在执行任务。请在 AI 助手中停止，或等它完成后再关闭窗口。",
+    "The AI assistant is still working. Stop it in the assistant, or wait for it to finish, before closing the window."
+  ],
+  "还有 {count} 个终端或环境任务在运行。全部结束并退出？": [
+    "还有 {count} 个终端或环境任务在运行。全部结束并退出？",
+    "{count} terminals or environment tasks are still running. End them all and quit?"
+  ],
+  "还有 {count} 个终端在运行。结束终端并退出？": [
+    "还有 {count} 个终端在运行。结束终端并退出？",
+    "{count} terminals are still running. End them and quit?"
+  ],
+  "停止正在进行的环境任务": ["停止正在进行的环境任务", "Stop the running environment task"],
+  "显示方式": ["显示方式", "View"],
+  "预览此文件需要桌面应用。": [
+    "预览此文件需要桌面应用。",
+    "Previewing this file needs the desktop app."
+  ],
+  "图片大小": ["图片大小", "Image size"],
+  "适应窗口": ["适应窗口", "Fit"],
+  "实际大小": ["实际大小", "Actual size"],
+  "此文件不是文本，不能在编辑器中打开。": [
+    "此文件不是文本，不能在编辑器中打开。",
+    "This file isn't text and can't be opened in the editor."
+  ],
+  "文件是空的": ["文件是空的", "The file is empty"],
+  "{rows} 行 × {columns} 列": ["{rows} 行 × {columns} 列", "{rows} rows × {columns} columns"],
+  "显示前 {count} 行": ["显示前 {count} 行", "showing the first {count} rows"],
+  "输出": ["输出", "Output"],
+  "这不是有效的 Jupyter 笔记本，可以在“源码”里查看。": [
+    "这不是有效的 Jupyter 笔记本，可以在“源码”里查看。",
+    "This isn't a valid Jupyter notebook. You can view it in Source."
+  ],
+  "笔记本": ["笔记本", "Notebook"],
+  "新建稿件需要桌面应用。": [
+    "新建稿件需要桌面应用。",
+    "Creating a manuscript needs the desktop app."
+  ],
+  "PDF 预览": ["PDF 预览", "PDF preview"],
+  "编译需要桌面应用。": ["编译需要桌面应用。", "Compiling needs the desktop app."],
+  "文件保存失败，请处理冲突后再编译。": [
+    "文件保存失败，请处理冲突后再编译。",
+    "Some files could not be saved. Resolve the conflict, then compile again."
+  ],
+  "先编译一次，才能在 PDF 中定位。": [
+    "先编译一次，才能在 PDF 中定位。",
+    "Compile once before locating in the PDF."
+  ],
+  "这一行在 PDF 里没有对应的位置。": [
+    "这一行在 PDF 里没有对应的位置。",
+    "This line has no matching place in the PDF."
+  ],
+  "内置引擎": ["内置引擎", "Built-in engine"],
+  "没有 TeX": ["没有 TeX", "No TeX"],
+  "大纲": ["大纲", "Outline"],
+  "这个文件没有章节": ["这个文件没有章节", "No sections in this file"],
+  "缺失": ["缺失", "Missing"],
+  "已引用": ["已引用", "Cited"],
+  "还没有引用": ["还没有引用", "No citations yet"],
+  "未使用": ["未使用", "Unused"],
+  "打开主文档": ["打开主文档", "Open main document"],
+  "重新编译": ["重新编译", "Recompile"],
+  "{seconds} 秒": ["{seconds} 秒", "{seconds} s"],
+  "返回 PDF": ["返回 PDF", "Back to PDF"],
+  "没有错误和警告": ["没有错误和警告", "No errors or warnings"],
+  "原始日志": ["原始日志", "Raw log"],
+  "清除缓存后重新编译": ["清除缓存后重新编译", "Clear cache and recompile"],
+  "正在编译…": ["正在编译…", "Compiling…"],
+  "在 PDF 中定位": ["在 PDF 中定位", "Locate in PDF"],
+  "稿件：{name}": ["稿件：{name}", "Manuscript: {name}"],
+  "停止编译": ["停止编译", "Stop compiling"],
+  "重新编译 (Ctrl+Enter)": ["重新编译 (Ctrl+Enter)", "Recompile (Ctrl+Enter)"],
+  "编译选项": ["编译选项", "Compile options"],
+  "日志和输出文件": ["日志和输出文件", "Logs and output files"],
+  "下载 PDF": ["下载 PDF", "Download PDF"],
+  "布局": ["布局", "Layout"],
+  "保存时编译": ["保存时编译", "Compile on save"],
+  "编译成功 · {seconds} 秒": ["编译成功 · {seconds} 秒", "Compiled · {seconds} s"],
+  "已停止编译": ["已停止编译", "Compiling stopped"],
+  "编译失败 · {count} 个错误": ["编译失败 · {count} 个错误", "Failed · {count} errors"],
+  "{count} 词": ["{count} 词", "{count} words"],
+  "还没有稿件": ["还没有稿件", "No manuscripts yet"],
+  "新建稿件…": ["新建稿件…", "New manuscript…"],
+  "使用项目里的 LaTeX 文件夹…": [
+    "使用项目里的 LaTeX 文件夹…",
+    "Use a LaTeX folder in the project…"
+  ],
+  "编译设置…": ["编译设置…", "Compile settings…"],
+  "从写作中移除“{name}”？文件夹和文件都会保留。": [
+    "从写作中移除“{name}”？文件夹和文件都会保留。",
+    "Remove “{name}” from Writing? The folder and its files are kept."
+  ],
+  "从写作中移除": ["从写作中移除", "Remove from Writing"],
+  "保存时自动编译": ["保存时自动编译", "Compile automatically on save"],
+  "草稿模式（不渲染图片，更快）": [
+    "草稿模式（不渲染图片，更快）",
+    "Draft mode (faster, no images)"
+  ],
+  "遇到第一个错误就停止": ["遇到第一个错误就停止", "Stop at the first error"],
+  "字数统计": ["字数统计", "Word count"],
+  "正文": ["正文", "Body"],
+  "tex 文件": ["tex 文件", "tex files"],
+  "新建稿件": ["新建稿件", "New manuscript"],
+  "模板": ["模板", "Template"],
+  "使用项目里的 LaTeX 文件夹": ["使用项目里的 LaTeX 文件夹", "Use a LaTeX folder in the project"],
+  "正在查找主文档…": ["正在查找主文档…", "Looking for main documents…"],
+  "项目里没有找到包含 \\documentclass 的 .tex 文件。": [
+    "项目里没有找到包含 \\documentclass 的 .tex 文件。",
+    "No .tex file with \\documentclass in this project."
+  ],
+  "已在写作中": ["已在写作中", "Already in Writing"],
+  "编译设置": ["编译设置", "Compile settings"],
+  "编译器": ["编译器", "Compiler"],
+  "主文档": ["主文档", "Main document"],
+  "把 PDF 写回稿件文件夹": ["把 PDF 写回稿件文件夹", "Write the PDF back to the manuscript folder"],
+  "TeX 环境": ["TeX 环境", "TeX environment"],
+  "审阅": ["审阅", "Review"],
+  "历史": ["历史", "History"],
+  "空白论文": ["空白论文", "Blank paper"],
+  "article": ["article", "article"],
+  "会议论文": ["会议论文", "Conference paper"],
+  "分章节、图表和参考文献": ["分章节、图表和参考文献", "Sections, figures and references"],
+  "中文论文": ["中文论文", "Chinese paper"],
+  "ctexart · XeLaTeX": ["ctexart · XeLaTeX", "ctexart · XeLaTeX"],
+  "报告幻灯片": ["报告幻灯片", "Slides"],
+  "beamer": ["beamer", "beamer"],
+  "警告": ["警告", "Warnings"],
+  "排版": ["排版", "Typesetting"],
+  "只看源码": ["只看源码", "Source only"],
+  "源码和 PDF": ["源码和 PDF", "Source and PDF"],
+  "只看 PDF": ["只看 PDF", "PDF only"],
+  "编译成功": ["编译成功", "Compiled"],
+  "编译失败": ["编译失败", "Compile failed"],
+  "未定义的命令：检查拼写，或在导言区引入定义它的宏包。": [
+    "未定义的命令：检查拼写，或在导言区引入定义它的宏包。",
+    "Undefined command: check the spelling, or load the package that defines it in the preamble."
+  ],
+  "找不到文件：检查文件名和路径，或宏包是否已安装。": [
+    "找不到文件：检查文件名和路径，或宏包是否已安装。",
+    "File not found: check the name and path, or whether the package is installed."
+  ],
+  "数学符号写在了数学环境外，或 $ 不配对。": [
+    "数学符号写在了数学环境外，或 $ 不配对。",
+    "A math symbol is outside math mode, or a $ is unmatched."
+  ],
+  "正文写在了 \\begin{document} 之前，或导言区有多余的文字。": [
+    "正文写在了 \\begin{document} 之前，或导言区有多余的文字。",
+    "Text comes before \\begin{document}, or the preamble has stray text."
+  ],
+  "环境的 \\begin 和 \\end 不配对。": [
+    "环境的 \\begin 和 \\end 不配对。",
+    "An environment's \\begin and \\end don't match."
+  ],
+  "编译在这里停止了，先修正上面的第一个错误。": [
+    "编译在这里停止了，先修正上面的第一个错误。",
+    "Compiling stopped here. Fix the first error above first."
+  ],
+  "参考文献里没有这个条目，或者需要再编译一次。": [
+    "参考文献里没有这个条目，或者需要再编译一次。",
+    "The bibliography has no such entry, or another compile is needed."
+  ],
+  "没有找到这个 \\label，或者需要再编译一次。": [
+    "没有找到这个 \\label，或者需要再编译一次。",
+    "This \\label was not found, or another compile is needed."
+  ],
+  "有未定义的引用，再编译一次通常就好；仍然存在时检查 \\label 和 \\cite。": [
+    "有未定义的引用，再编译一次通常就好；仍然存在时检查 \\label 和 \\cite。",
+    "Some references are undefined. Another compile usually fixes it; if not, check \\label and \\cite."
+  ],
+  "同一个 \\label 用了不止一次。": [
+    "同一个 \\label 用了不止一次。",
+    "The same \\label is used more than once."
+  ],
+  "这一行太宽，超出了版心。可以改写句子，或允许断行。": [
+    "这一行太宽，超出了版心。可以改写句子，或允许断行。",
+    "This line is too wide for the text block. Rephrase it or allow a break."
+  ],
+  "这一行太松，单词间距被拉大了。": [
+    "这一行太松，单词间距被拉大了。",
+    "This line is too loose; the word spacing is stretched."
+  ],
+  "已导入到“{folder}”，但没有找到包含 \\documentclass 的 .tex 文件。": [
+    "已导入到“{folder}”，但没有找到包含 \\documentclass 的 .tex 文件。",
+    "Imported into “{folder}”, but no .tex file with \\documentclass was found."
+  ],
+  "导入需要桌面应用。": ["导入需要桌面应用。", "Importing needs the desktop app."],
+  "没有找到内置引擎": ["没有找到内置引擎", "Built-in engine not found"],
+  "请重新安装 Scientify，或者安装 TeX Live、MiKTeX。": [
+    "请重新安装 Scientify，或者安装 TeX Live、MiKTeX。",
+    "Reinstall Scientify, or install TeX Live or MiKTeX."
+  ],
+  "导入 zip…": ["导入 zip…", "Import zip…"],
+  "从 Overleaf 导入…": ["从 Overleaf 导入…", "Import from Overleaf…"],
+  "导出源码包…": ["导出源码包…", "Export source package…"],
+  "导出需要桌面应用。": ["导出需要桌面应用。", "Exporting needs the desktop app."],
+  "自动（有本机 TeX 时用本机）": [
+    "自动（有本机 TeX 时用本机）",
+    "Automatic (this computer's TeX when available)"
+  ],
+  "内置引擎 Tectonic {version}（XeTeX）": [
+    "内置引擎 Tectonic {version}（XeTeX）",
+    "Built-in engine Tectonic {version} (XeTeX)"
+  ],
+  "本机 {name}": ["本机 {name}", "This computer's {name}"],
+  "本机 TeX（没有找到）": ["本机 TeX（没有找到）", "This computer's TeX (not found)"],
+  "从 Overleaf 导入": ["从 Overleaf 导入", "Import from Overleaf"],
+  "下载的源码包": ["下载的源码包", "Downloaded source zip"],
+  "选择 zip…": ["选择 zip…", "Choose zip…"],
+  "Git 克隆": ["Git 克隆", "Git clone"],
+  "Git 地址": ["Git 地址", "Git address"],
+  "Git 令牌": ["Git 令牌", "Git token"],
+  "导出源码包": ["导出源码包", "Export source package"],
+  "用到的文件": ["用到的文件", "Used files"],
+  "没用到的文件": ["没用到的文件", "Unused files"],
+  "附上编译生成的 .bbl（arXiv 需要）": [
+    "附上编译生成的 .bbl（arXiv 需要）",
+    "Include the compiled .bbl (arXiv needs it)"
+  ],
+  "{count} 个文件": ["{count} 个文件", "{count} files"],
+  "导出…": ["导出…", "Export…"],
+  "TeX 环境必须是自动、本机或内置引擎。": [
+    "TeX 环境必须是自动、本机或内置引擎。",
+    "The TeX environment must be automatic, local or built-in."
+  ],
+  "没有找到内置引擎，请重新安装 Scientify。": [
+    "没有找到内置引擎，请重新安装 Scientify。",
+    "The built-in engine was not found. Reinstall Scientify."
+  ],
+  "没有找到本机 TeX，请在编译设置里改用内置引擎。": [
+    "没有找到本机 TeX，请在编译设置里改用内置引擎。",
+    "No TeX found on this computer. Switch to the built-in engine in compile settings."
+  ],
+  "本机的 {distribution} 没有 {compiler}，请换一个编译器。": [
+    "本机的 {distribution} 没有 {compiler}，请换一个编译器。",
+    "This computer's {distribution} has no {compiler}. Choose another compiler."
+  ],
+  "压缩包已损坏。": ["压缩包已损坏。", "The zip file is damaged."],
+  "不是有效的 zip 文件。": ["不是有效的 zip 文件。", "This is not a valid zip file."],
+  "不支持 ZIP64 格式的压缩包。": [
+    "不支持 ZIP64 格式的压缩包。",
+    "ZIP64 archives are not supported."
+  ],
+  "压缩包里的文件太多。": ["压缩包里的文件太多。", "The zip file has too many files."],
+  "不支持加密的压缩包。": ["不支持加密的压缩包。", "Encrypted zip files are not supported."],
+  "{name} 使用了不支持的压缩方式。": [
+    "{name} 使用了不支持的压缩方式。",
+    "{name} uses an unsupported compression method."
+  ],
+  "压缩包里的 {name} 已损坏。": [
+    "压缩包里的 {name} 已损坏。",
+    "{name} in the zip file is damaged."
+  ],
+  "源码包超过 4 GB，或者文件太多。": [
+    "源码包超过 4 GB，或者文件太多。",
+    "The source package is over 4 GB or has too many files."
+  ],
+  "压缩包里有不安全的路径：{name}": [
+    "压缩包里有不安全的路径：{name}",
+    "The zip file has an unsafe path: {name}"
+  ],
+  "压缩包解压后超过 1 GB。": ["压缩包解压后超过 1 GB。", "The zip file unpacks to more than 1 GB."],
+  "压缩包里没有文件。": ["压缩包里没有文件。", "The zip file has no files."],
+  "压缩包里有重名的文件：{name}": [
+    "压缩包里有重名的文件：{name}",
+    "The zip file has files with the same name: {name}"
+  ],
+  "压缩包超过 512 MB。": ["压缩包超过 512 MB。", "The zip file is over 512 MB."],
+  "地址里不要带密码或令牌，把令牌填在下面。": [
+    "地址里不要带密码或令牌，把令牌填在下面。",
+    "Leave passwords and tokens out of the address; enter the token below."
+  ],
+  "令牌只能用于 https 地址。": [
+    "令牌只能用于 https 地址。",
+    "Tokens work only with https addresses."
+  ],
+  "令牌无效。": ["令牌无效。", "The token is not valid."],
+  "令牌不对或已过期，请在 Overleaf 的账户设置里重新生成。": [
+    "令牌不对或已过期，请在 Overleaf 的账户设置里重新生成。",
+    "The token is wrong or expired. Generate a new one in your Overleaf account settings."
+  ],
+  "克隆失败：{message}": ["克隆失败：{message}", "Clone failed: {message}"],
+  "找不到 {file}。": ["找不到 {file}。", "{file} was not found."],
+  "还没有 .bbl，请先编译一次。": [
+    "还没有 .bbl，请先编译一次。",
+    "There is no .bbl yet. Compile once first."
+  ],
+  "没有选中文件。": ["没有选中文件。", "No files are selected."],
+  "本机 TeX 缺少 {files}，已改用内置引擎编译": [
+    "本机 TeX 缺少 {files}，已改用内置引擎编译",
+    "Local TeX is missing {files}; compiled with the built-in engine instead"
+  ],
+  "本机 TeX 缺少 {files}": ["本机 TeX 缺少 {files}", "Local TeX is missing {files}"],
+  "{files} 需要联网下载": [
+    "{files} 需要联网下载",
+    "{files} must be downloaded; connect to the internet"
+  ],
+  "缺少的宏包需要联网下载": [
+    "缺少的宏包需要联网下载",
+    "Missing packages must be downloaded; connect to the internet"
+  ],
+  "以后都用内置引擎": ["以后都用内置引擎", "Always use the built-in engine"],
+  "用内置引擎下载并编译": ["用内置引擎下载并编译", "Download with the built-in engine and compile"],
+  "重新下载": ["重新下载", "Download again"]
 }

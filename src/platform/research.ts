@@ -62,6 +62,12 @@ export interface ResearchBackend {
     expectedVersion: string | null,
     workspaceRoot?: string,
   ): Promise<FileContent>;
+  /** The bytes of a project file (images, PDFs); desktop only. */
+  readBinary?(projectId: string, path: string, workspaceRoot?: string): Promise<Uint8Array>;
+  /** Shows a project file in the system file manager; desktop only. */
+  reveal?(projectId: string, path: string, workspaceRoot?: string): Promise<void>;
+  /** Creates a folder in the project; returns its project-relative path. */
+  createDirectory?(projectId: string, path: string, workspaceRoot?: string): Promise<string>;
   importPdf(): Promise<ImportedPdf | null>;
   readPdf(assetId: string): Promise<Uint8Array>;
   gitStatus(projectId: string): Promise<GitChange[]>;
@@ -82,6 +88,14 @@ export const nativeResearch: ResearchBackend = {
     invoke('research_read_file', { projectId, path, workspaceRoot }),
   writeFile: (projectId, path, content, expectedVersion, workspaceRoot) =>
     invoke('research_write_file', { projectId, path, content, expectedVersion, workspaceRoot }),
+  readBinary: async (projectId, path, workspaceRoot) =>
+    new Uint8Array(
+      await invoke<ArrayBuffer>('research_read_binary', { projectId, path, workspaceRoot }),
+    ),
+  reveal: (projectId, path, workspaceRoot) =>
+    invoke('research_reveal', { projectId, path, workspaceRoot }),
+  createDirectory: (projectId, path, workspaceRoot) =>
+    invoke('research_create_directory', { projectId, path, workspaceRoot }),
   importPdf: () => invoke('research_import_pdf'),
   readPdf: async (assetId) =>
     new Uint8Array(await invoke<ArrayBuffer>('research_read_pdf', { assetId })),

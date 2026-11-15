@@ -79,13 +79,15 @@ if args.bundle:
         raise SystemExit('Unexpected minimum macOS version')
     binary = app / 'Contents/MacOS' / metadata['CFBundleExecutable']
     engine = app / 'Contents/MacOS/codex'
-    for executable in [binary, engine]:
+    latex = app / 'Contents/MacOS/tectonic'
+    for executable in [binary, engine, latex]:
         arch = run('lipo', '-archs', str(executable), capture_output=True).stdout.strip()
         if arch != 'arm64':
             raise SystemExit(f'Wrong architecture in {executable}: {arch}')
         run('codesign', '--verify', '--strict', '--verbose=2', str(executable))
     run('codesign', '--verify', '--deep', '--strict', '--verbose=2', str(app))
     run(str(engine), '--version')
+    run(str(latex), '--version')
     if os.environ.get('MACOS_SIGNING') == 'developer-id':
         run('xcrun', 'stapler', 'validate', str(app))
         run('spctl', '--assess', '--type', 'execute', '--verbose=2', str(app))

@@ -1,0 +1,647 @@
+/* The experiment workbench: VS Code's side views and status bar, PyCharm's widgets. */
+
+/* Side views: a row of view icons, the view's title, then the view. */
+.sf-ide-side {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.sf-side-resources > .sf-ide-side {
+  margin-top: -2px;
+}
+.sf-ide-views {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 0 2px 8px;
+}
+.sf-ide-views > .sf-button {
+  position: relative;
+  flex: 1;
+  height: 30px;
+  min-height: 30px;
+  max-width: 44px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--sf-text-muted);
+}
+.sf-ide-views > .sf-button:hover:not(:disabled) {
+  background: var(--sf-surface-hover);
+  color: var(--sf-text-primary);
+}
+.sf-ide-views > .sf-button[aria-selected='true'] {
+  background: var(--sf-surface-selected);
+  color: var(--sf-text-primary);
+}
+.sf-ide-views > .sf-button[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 30%;
+  right: 30%;
+  bottom: -5px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--sf-text-primary);
+}
+.sf-ide-views .sf-code-badge {
+  top: 1px;
+  right: 3px;
+  bottom: auto;
+  min-width: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 9.5px;
+  line-height: 15px;
+  text-align: center;
+}
+.sf-ide-view-title {
+  flex: none;
+  padding: 0 8px 6px;
+  color: var(--sf-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.sf-ide-side > .sf-code-resource-content {
+  flex: 1;
+  min-height: 0;
+}
+.sf-ide-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--sf-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.sf-ide-empty > p {
+  margin: 0;
+}
+.sf-ide-hint {
+  margin: 0;
+  padding: 4px 12px 6px 28px;
+  color: var(--sf-text-muted);
+  font-size: 11.5px;
+}
+
+/* A collapsible group inside a side view. */
+.sf-side-section > header {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding-right: 4px;
+}
+.sf-side-section > header > button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text-secondary);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sf-side-section > header > button > svg {
+  flex: none;
+  transition: transform 120ms ease;
+}
+.sf-side-section[data-open='true'] > header > button > svg {
+  transform: rotate(90deg);
+}
+.sf-side-section-actions {
+  display: flex;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.sf-side-section > header:hover .sf-side-section-actions,
+.sf-side-section > header:focus-within .sf-side-section-actions {
+  opacity: 1;
+}
+.sf-side-section-actions .sf-button,
+.sf-scm-actions .sf-button {
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text-muted);
+}
+.sf-side-section-actions .sf-button:hover:not(:disabled),
+.sf-scm-actions .sf-button:hover:not(:disabled) {
+  background: var(--sf-surface-hover);
+  color: var(--sf-text-primary);
+}
+.sf-side-section-count {
+  min-width: 18px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--sf-surface-hover);
+  color: var(--sf-text-secondary);
+  font-size: 10.5px;
+  line-height: 17px;
+  text-align: center;
+}
+.sf-side-section + .sf-side-section {
+  margin-top: 4px;
+}
+
+/* Source Control. */
+.sf-scm {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.sf-scm-commit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 4px 8px;
+}
+.sf-scm-commit textarea {
+  min-height: 52px;
+  resize: vertical;
+  font-size: 12px;
+}
+.sf-scm-commit > .sf-button {
+  width: 100%;
+  justify-content: center;
+  gap: 6px;
+}
+.sf-scm-feedback {
+  margin: 0 4px 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--sf-surface-hover);
+  color: var(--sf-text-secondary);
+  font-size: 11.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.sf-scm-feedback[role='alert'] {
+  background: color-mix(in srgb, var(--sf-status-danger) 9%, transparent);
+  color: var(--sf-status-danger);
+}
+.sf-scm-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.sf-scm-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding-right: 6px;
+  border-radius: 5px;
+}
+.sf-scm-row:hover {
+  background: var(--sf-surface-hover);
+}
+.sf-scm-file.sf-button,
+.sf-scm-commit-row.sf-button {
+  display: flex;
+  flex: 1;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 0;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 4px 0 22px;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text-primary);
+  font-size: 12px;
+  font-weight: 400;
+}
+.sf-scm-file.sf-button:hover:not(:disabled),
+.sf-scm-commit-row.sf-button:hover:not(:disabled) {
+  background: transparent;
+}
+.sf-scm-file > svg,
+.sf-scm-commit-row > svg {
+  flex: none;
+  color: var(--sf-text-muted);
+}
+.sf-scm-name,
+.sf-scm-commit-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sf-scm-name[data-tone='modified'] {
+  color: color-mix(in srgb, var(--sf-status-warning) 75%, var(--sf-text-primary));
+}
+.sf-scm-name[data-tone='added'] {
+  color: color-mix(in srgb, var(--sf-status-success) 75%, var(--sf-text-primary));
+}
+.sf-scm-name[data-tone='deleted'] {
+  color: var(--sf-status-danger);
+  text-decoration: line-through;
+}
+.sf-scm-folder,
+.sf-scm-commit-row > small {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sf-text-muted);
+  font-size: 11px;
+}
+.sf-scm-commit-row > small {
+  flex: none;
+  margin-left: auto;
+}
+.sf-scm-actions {
+  display: none;
+  gap: 1px;
+}
+.sf-scm-row:is(:hover, :focus-within) .sf-scm-actions {
+  display: flex;
+}
+.sf-scm-letter {
+  flex: none;
+  width: 14px;
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+.sf-scm-letter[data-tone='modified'] {
+  color: var(--sf-status-warning);
+}
+.sf-scm-letter[data-tone='added'] {
+  color: var(--sf-status-success);
+}
+.sf-scm-letter[data-tone='deleted'],
+.sf-scm-letter[data-tone='conflict'] {
+  color: var(--sf-status-danger);
+}
+
+/* Run view and the panel's Run tab share one status dot. */
+.sf-run-panel .sf-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--sf-text-muted);
+}
+.sf-run-panel .sf-status-dot[data-status='running'] {
+  background: var(--sf-status-info);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-status-info) 18%, transparent);
+}
+.sf-run-panel .sf-status-dot[data-status='completed'] {
+  background: var(--sf-status-success);
+}
+.sf-run-panel .sf-status-dot[data-status='failed'] {
+  background: var(--sf-status-danger);
+}
+
+/* The command bar: folder and branch widgets on the left, the run widget on the right. */
+.workspace-frame:has(.sf-ide-toolbar) > .workspace-commandbar {
+  gap: 8px;
+  padding: 0 8px 0 10px;
+}
+.sf-ide-toolbar {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.sf-ide-widget.sf-button {
+  gap: 6px;
+  max-width: 240px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 7px 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--sf-text-primary);
+  font-size: 12.5px;
+}
+.sf-ide-widget.sf-button:hover:not(:disabled),
+.sf-ide-widget.sf-button[aria-expanded='true'] {
+  background: var(--sf-surface-hover);
+}
+.sf-ide-widget.is-folder.sf-button {
+  font-weight: 600;
+}
+.sf-ide-widget > svg:first-child {
+  flex: none;
+  color: var(--sf-text-secondary);
+}
+.sf-ide-widget > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sf-ide-widget-caret {
+  flex: none;
+  color: var(--sf-text-muted);
+}
+.sf-ide-run {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.sf-ide-run > .sf-button-icon {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--sf-text-secondary);
+}
+.sf-ide-run > .sf-button-icon:hover:not(:disabled) {
+  background: var(--sf-surface-hover);
+}
+.sf-ide-run-start:not(:disabled) {
+  color: var(--sf-status-success);
+}
+.sf-ide-run-stop:not(:disabled) {
+  color: var(--sf-status-danger);
+}
+.sf-ide-run > .sf-button-icon:disabled {
+  opacity: 0.4;
+}
+.sf-ide-menu-check {
+  display: inline-flex;
+  flex: none;
+  width: 14px;
+}
+.sf-ide-menu-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sf-ide-menu-trailing {
+  flex: none;
+  color: var(--sf-text-muted);
+}
+
+/* Editor tabs that are not files fill the editor area. */
+.sf-file-custom {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.sf-file-custom > * {
+  flex: 1;
+  min-height: 0;
+}
+.sf-file-custom > .sf-experiment-git {
+  display: flex;
+  flex-direction: column;
+}
+.sf-diff-view {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.sf-diff-view > header {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--sf-border-subtle);
+  font-size: 12.5px;
+}
+.sf-diff-view > header > span:not(.spacer),
+.sf-diff-view > header > small {
+  color: var(--sf-text-muted);
+  font-size: 11.5px;
+}
+.sf-diff-view > header > .sf-button {
+  align-self: center;
+}
+.sf-diff-view > .sf-diff-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The start page of a folder with no open tab. */
+.sf-ide-welcome {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 12vh 32px 32px;
+  overflow: auto;
+}
+.sf-ide-welcome h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sf-ide-welcome h3 {
+  margin: 0 0 4px;
+  color: var(--sf-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.sf-ide-welcome-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.sf-ide-welcome .sf-button {
+  justify-content: flex-start;
+  gap: 8px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text-primary);
+  font-size: 13px;
+}
+.sf-ide-welcome .sf-button:hover:not(:disabled) {
+  background: var(--sf-surface-hover);
+}
+.sf-ide-welcome section {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+.sf-ide-welcome section .sf-button {
+  gap: 12px;
+  width: 100%;
+}
+.sf-ide-welcome section .sf-button[aria-current='true'] {
+  font-weight: 600;
+}
+.sf-ide-welcome section small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sf-text-muted);
+  font-size: 11.5px;
+}
+
+/* Panel: Terminal and Run. */
+.sf-experiment-bottom > header {
+  gap: 2px;
+  padding: 0 6px 0 8px;
+  min-height: 32px;
+}
+.sf-ide-panel-tabs {
+  display: flex;
+  align-self: stretch;
+  gap: 2px;
+}
+.sf-ide-panel-tabs > .sf-button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--sf-text-muted);
+  font-size: 12px;
+}
+.sf-ide-panel-tabs > .sf-button:hover:not(:disabled) {
+  background: transparent;
+  color: var(--sf-text-primary);
+}
+.sf-ide-panel-tabs > .sf-button[aria-selected='true'] {
+  color: var(--sf-text-primary);
+  border-bottom-color: var(--sf-text-primary);
+}
+.sf-experiment-bottom > header > .sf-button-icon {
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  color: var(--sf-text-muted);
+}
+.sf-experiment-bottom.is-collapsed {
+  height: 33px;
+  min-height: 33px;
+}
+.sf-run-panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.sf-run-panel > nav {
+  display: flex;
+  flex: 0 0 200px;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px;
+  border-right: 1px solid var(--sf-border-subtle);
+  overflow: auto;
+}
+.sf-run-panel > nav > .sf-button {
+  justify-content: flex-start;
+  gap: 8px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+}
+.sf-run-panel > nav > .sf-button > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sf-run-panel > nav > .sf-button[aria-current='true'] {
+  background: var(--sf-surface-selected);
+}
+.sf-run-panel-output {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.sf-run-panel-output > .sf-execution-panel {
+  flex: 1;
+}
+
+/* Status bar. */
+.sf-ide-status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 6px;
+  border-top: 1px solid var(--sf-border-subtle);
+  background: var(--sf-surface-chrome);
+  color: var(--sf-text-secondary);
+  font-size: 11.5px;
+}
+.sf-ide-status > .spacer {
+  flex: 1;
+}
+.sf-ide-status-item,
+.sf-ide-status-item.sf-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 11.5px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.sf-ide-status-item.sf-button:hover:not(:disabled) {
+  background: var(--sf-surface-hover);
+  color: var(--sf-text-primary);
+}
+
+@container experiment-workspace (max-width: 720px) {
+  .sf-ide-widget.sf-button {
+    max-width: 150px;
+  }
+  .sf-run-panel > nav {
+    flex-basis: 140px;
+  }
+}

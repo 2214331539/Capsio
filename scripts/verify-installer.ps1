@@ -14,11 +14,15 @@ function Install-Package {
     if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode)" }
 }
 Install-Package
-foreach ($relative in @('scientify.exe', 'codex.exe', 'licenses\Scientify-LICENSE', 'licenses\codex-LICENSE', 'licenses\codex-NOTICE', 'licenses\THIRD_PARTY_LICENSES.txt')) {
+foreach ($relative in @('scientify.exe', 'codex.exe', 'tectonic.exe', 'licenses\Scientify-LICENSE', 'licenses\codex-LICENSE', 'licenses\codex-NOTICE', 'licenses\tectonic-LICENSE', 'licenses\THIRD_PARTY_LICENSES.txt')) {
     if (-not (Test-Path -LiteralPath (Join-Path $installDirectory $relative))) { throw "Missing payload: $relative" }
 }
 & (Join-Path $installDirectory 'codex.exe') --version
 if ($LASTEXITCODE -ne 0) { throw 'Installed Agent cannot start.' }
+& (Join-Path $installDirectory 'tectonic.exe') --version
+if ($LASTEXITCODE -ne 0) { throw 'Installed LaTeX engine cannot start.' }
+$seed = Get-Content -Raw -LiteralPath (Join-Path $installDirectory 'tectonic-cache\seed.json') | ConvertFrom-Json
+if (-not $seed.complete) { throw "Common TeX packages are not bundled: $($seed.reason)" }
 Install-Package
 if ((Get-Content -LiteralPath $marker -Raw).Trim() -ne 'preserve-research-data') { throw 'Reinstall changed application data.' }
 $uninstallers = @(Get-ChildItem -LiteralPath $installDirectory -File | Where-Object { $_.Name -match '^uninstall.*\.exe$' })

@@ -209,11 +209,11 @@ export function detectShortcutConflicts(bindings: ShortcutBinding[]) {
   return conflicts;
 }
 
+/** CodeMirror wants modifiers first and the key last, like "Mod-Shift-f". */
 export function shortcutToCodeMirror(value: string) {
   return normalizeShortcut(value)
     .split('+')
     .map((part) => (part === 'Mod' ? 'Mod' : part.toLowerCase()))
-    .reverse()
     .join('-');
 }
 

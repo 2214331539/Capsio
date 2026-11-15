@@ -150,6 +150,40 @@ export function useDevelopmentRuntime(store: WorkspaceStore, enabled: boolean) {
   }, [enabled, store]);
 }
 
+/**
+ * Before the window closes. Terminals and environment tasks end after one confirmation;
+ * AI tasks must be stopped in the assistant because they may still write results.
+ * Returns an error to show, '' when the person cancels, or null when closing may go on.
+ */
+export async function endBackgroundTasks(store: WorkspaceStore): Promise<string | null> {
+  const keys = Object.keys(store.getState().agentTasks);
+  if (keys.some((key) => !key.startsWith('terminal:') && !key.startsWith('python:')))
+    return t('AI 助手仍在执行任务。请在 AI 助手中停止，或等它完成后再关闭窗口。');
+  const { terminals, tasks } = developmentStore.getState();
+  const open = terminals.filter((item) => keys.includes(`terminal:${item.id}`));
+  const running = tasks.filter((item) => keys.includes(`python:${item.id}`));
+  if (
+    !(await confirmAction(
+      running.length
+        ? t('还有 {count} 个终端或环境任务在运行。全部结束并退出？', {
+            count: open.length + running.length,
+          })
+        : t('还有 {count} 个终端在运行。结束终端并退出？', { count: open.length }),
+    ))
+  )
+    return '';
+  try {
+    for (const item of open)
+      await developmentApi.terminal(item.project, { action: 'close', id: item.id });
+    for (const item of running)
+      await developmentApi.python(item.project, item.experimentId, { action: 'stop', id: item.id });
+  } catch (reason) {
+    return errorMessage(reason);
+  }
+  for (const key of keys) store.getState().setAgentTask(key, null);
+  return null;
+}
+
 export async function openTerminal(
   project: string,
   experiment: string,

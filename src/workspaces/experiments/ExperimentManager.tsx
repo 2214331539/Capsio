@@ -8,6 +8,7 @@ import { Button, Dropdown, Input, Textarea } from '../../components/primitives';
 import { Modal } from '../../components/Modal';
 import { confirmAction, requestText } from '../../components/prompts';
 import { t, translateError } from '../../i18n';
+import { displayPath } from '../../platform/os';
 import { relativeTime } from '../../features/projects/model';
 import { statusLabel } from './status';
 import { experimentsFor, experimentCatalog, registerExperiment } from './catalog';
@@ -16,11 +17,7 @@ import { developmentStore } from './development';
 import { errorMessage } from '../../domain/errors';
 
 /** Runs that belong to an experiment, newest first. */
-export function runsOfExperiment(
-  project: Project,
-  experiment: Experiment,
-  executions: Execution[],
-) {
+function runsOfExperiment(project: Project, experiment: Experiment, executions: Execution[]) {
   return executions
     .filter(
       (run) =>
@@ -73,14 +70,16 @@ export function ExperimentManager({
         ) ||
         chats.some((chat) => store.getState().agentTasks[`${project.id}:${chat.id}`]))
     ) {
-      setError(t('请先停止此实验的 AI 和运行任务。'));
+      setError(t('请先停止此文件夹的 AI 和运行任务。'));
       return;
     }
-    const name = action === 'rename' ? await requestText(t('重命名实验'), experiment.name) : null;
+    const name = action === 'rename' ? await requestText(t('重命名文件夹'), experiment.name) : null;
     if (action === 'rename' && !name?.trim()) return;
     if (
       action === 'remove' &&
-      !(await confirmAction(t('移除实验登记？磁盘文件、Git 提交、AI 对话和运行记录会保留。')))
+      !(await confirmAction(
+        t('从项目中移除此文件夹？磁盘上的文件、Git 提交、AI 对话和运行记录都会保留。'),
+      ))
     )
       return;
     setBusy(true);
@@ -109,15 +108,15 @@ export function ExperimentManager({
       `${e.name} ${e.purpose}`.toLowerCase().includes(query.toLowerCase()),
   );
   return (
-    <section className="sf-page sf-experiment-manager" aria-label={t('实验管理')}>
+    <section className="sf-page sf-experiment-manager" aria-label={t('管理文件夹')}>
       <header className="sf-page-head">
         <h1 className="sf-page-title">
-          {t('全部实验')}
+          {t('代码文件夹')}
           <span className="sf-page-count">{visible.length}</span>
         </h1>
         <span className="spacer" />
         {archivedCount ? (
-          <div className="sf-segmented" role="group" aria-label={t('实验状态')}>
+          <div className="sf-segmented" role="group" aria-label={t('文件夹状态')}>
             <Button variant="ghost" aria-pressed={!archived} onClick={() => setArchivedView(false)}>
               {t('进行中')}
             </Button>
@@ -129,10 +128,10 @@ export function ExperimentManager({
         <label className="sf-search-field">
           <Search />
           <Input
-            aria-label={t('搜索实验')}
+            aria-label={t('搜索文件夹')}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={t('搜索实验')}
+            placeholder={t('搜索文件夹')}
           />
         </label>
         <Button
@@ -141,7 +140,7 @@ export function ExperimentManager({
           onClick={() => setCreating(true)}
         >
           <Plus size={15} />
-          {t('新建实验')}
+          {t('添加文件夹')}
         </Button>
       </header>
       {error && (
@@ -162,7 +161,7 @@ export function ExperimentManager({
             </colgroup>
             <thead>
               <tr>
-                <th scope="col">{t('实验')}</th>
+                <th scope="col">{t('文件夹')}</th>
                 <th scope="col">{t('状态')}</th>
                 <th scope="col">Python</th>
                 <th scope="col">{t('最近运行')}</th>
@@ -184,7 +183,7 @@ export function ExperimentManager({
                     (item) => item.experimentId === experiment.id && item.status === 'running',
                   ).length;
                 const latest = runs[0];
-                const where = experiment.root || project.path || project.repo || '';
+                const where = displayPath(experiment.root || project.path || project.repo || '');
                 return (
                   <tr
                     key={experiment.id}
@@ -230,8 +229,8 @@ export function ExperimentManager({
                         <Button
                           variant="ghost"
                           iconOnly
-                          tooltip={t('打开实验')}
-                          aria-label={t('打开实验')}
+                          tooltip={t('打开文件夹')}
+                          aria-label={t('打开文件夹')}
                           disabled={busy || experiment.archived}
                           onClick={() => onOpen(experiment)}
                         >
@@ -240,8 +239,8 @@ export function ExperimentManager({
                         <Button
                           variant="ghost"
                           iconOnly
-                          tooltip={t('重命名实验')}
-                          aria-label={t('重命名实验')}
+                          tooltip={t('重命名文件夹')}
+                          aria-label={t('重命名文件夹')}
                           disabled={readOnly || busy}
                           onClick={() => void edit(experiment, 'rename')}
                         >
@@ -250,8 +249,8 @@ export function ExperimentManager({
                         <Button
                           variant="ghost"
                           iconOnly
-                          tooltip={t(experiment.archived ? '恢复实验' : '归档实验')}
-                          aria-label={t(experiment.archived ? '恢复实验' : '归档实验')}
+                          tooltip={t(experiment.archived ? '恢复文件夹' : '归档文件夹')}
+                          aria-label={t(experiment.archived ? '恢复文件夹' : '归档文件夹')}
                           disabled={readOnly || busy}
                           onClick={() => void edit(experiment, 'archive')}
                         >
@@ -264,8 +263,8 @@ export function ExperimentManager({
                         <Button
                           variant="ghost"
                           iconOnly
-                          tooltip={t('移除实验')}
-                          aria-label={t('移除实验')}
+                          tooltip={t('从项目中移除')}
+                          aria-label={t('从项目中移除')}
                           disabled={readOnly || busy}
                           onClick={() => void edit(experiment, 'remove')}
                         >
@@ -280,7 +279,7 @@ export function ExperimentManager({
           </table>
         </div>
       ) : (
-        <div className="sf-page-empty">{query ? t('没有匹配的实验') : t('暂无实验')}</div>
+        <div className="sf-page-empty">{query ? t('没有匹配的文件夹') : t('暂无代码文件夹')}</div>
       )}
       {creating && (
         <ExperimentForm
@@ -297,7 +296,7 @@ export function ExperimentManager({
   );
 }
 
-export function ExperimentForm({
+function ExperimentForm({
   project,
   store,
   onClose,
@@ -330,7 +329,7 @@ export function ExperimentForm({
     }
   }
   return (
-    <Modal title={t('新建实验')} onClose={onClose} busy={saving} dirty={dirty}>
+    <Modal title={t('添加文件夹')} onClose={onClose} busy={saving} dirty={dirty}>
       <form
         className="sf-experiment-config-form"
         onChange={() => setDirty(true)}
@@ -341,7 +340,7 @@ export function ExperimentForm({
       >
         <fieldset disabled={saving}>
           <label>
-            {t('实验名称')}
+            {t('名称')}
             <Input
               autoFocus
               required
@@ -351,7 +350,7 @@ export function ExperimentForm({
             />
           </label>
           <label>
-            {t('实验目的')}
+            {t('用途')}
             <Textarea
               rows={3}
               value={purpose}
@@ -359,18 +358,18 @@ export function ExperimentForm({
             />
           </label>
           <label>
-            {t('代码来源')}
+            {t('来源')}
             <Dropdown
               value={source}
               onChange={(event) => setSource(event.target.value as typeof source)}
             >
-              <option value="empty">{t('新建空目录')}</option>
-              <option value="existing">{t('关联已有目录 / worktree')}</option>
+              <option value="empty">{t('新建空文件夹')}</option>
+              <option value="existing">{t('打开已有文件夹')}</option>
             </Dropdown>
           </label>
           {source === 'existing' && (
             <label>
-              {t('代码目录')}
+              {t('文件夹位置')}
               <div className="sf-experiment-directory-input">
                 <Input
                   required
@@ -410,7 +409,7 @@ export function ExperimentForm({
             variant="primary"
             disabled={saving || !name.trim() || (source === 'existing' && !directory)}
           >
-            {t(saving ? '保存中…' : '创建实验')}
+            {t(saving ? '保存中…' : '添加')}
           </Button>
         </footer>
       </form>

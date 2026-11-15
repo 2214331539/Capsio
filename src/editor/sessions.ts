@@ -32,7 +32,8 @@ export class FileSession {
   private loading: Promise<void> | null = null;
   private editRevision = 0;
   editorState: EditorState | null = null;
-  editorWrap = false;
+  // LaTeX is prose: long paragraphs wrap like in Overleaf; code stays on one line.
+  editorWrap: boolean;
   editorScroll = { top: 0, left: 0 };
   private editorCommand: EditorCommand | null = null;
   private onSaved?: FileSavedHandler;
@@ -58,6 +59,7 @@ export class FileSession {
     onSaved?: FileSavedHandler,
   ) {
     this.onSaved = onSaved;
+    this.editorWrap = /\.(tex|ltx)$/i.test(path);
   }
   setOnSaved(handler?: FileSavedHandler) {
     if (handler) this.onSaved = handler;

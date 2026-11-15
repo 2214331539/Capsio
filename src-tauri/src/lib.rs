@@ -22,6 +22,7 @@ mod local_process;
 #[cfg(unix)]
 mod unix_process;
 pub use experiments::runner::run as run_managed_experiment;
+mod archive;
 #[cfg(test)]
 mod ipc_smoke;
 mod library;
@@ -30,6 +31,7 @@ mod literature_smoke;
 mod notes;
 mod reader;
 mod research;
+mod writing;
 
 struct AppState {
     storage: Arc<Storage>,
@@ -362,6 +364,18 @@ pub fn run() {
             research::research_list_files,
             research::research_read_file,
             research::research_write_file,
+            research::research_create_directory,
+            research::research_read_binary,
+            research::research_reveal,
+            writing::writing_tex_status,
+            writing::writing_compile,
+            writing::writing_cancel,
+            writing::writing_pdf,
+            writing::writing_synctex,
+            writing::writing_export_pdf,
+            writing::writing_import_zip,
+            writing::writing_clone,
+            writing::writing_export_source,
             research::research_import_pdf,
             research::research_read_pdf,
             reader::reader_outline,

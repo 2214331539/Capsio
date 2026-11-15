@@ -384,6 +384,7 @@ it('opens a persistent directory, searches collapsed sections and navigates whil
   fireEvent.click(screen.getByRole('button', { name: 'Methods' }));
   await waitFor(() => expect(context.mock.lastCall?.[0].page).toBe(2));
   expect(screen.getByRole('complementary', { name: 'PDF 标题目录' })).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: '关闭目录' }));
+  // Unpinning closes the docked outline.
+  fireEvent.click(screen.getByRole('button', { name: '固定目录' }));
   expect(host.container.querySelector('.pdf-outline-dock.is-pinned')).toBeNull();
 });

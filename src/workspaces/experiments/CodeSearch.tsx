@@ -49,9 +49,12 @@ export function CodeSearch({
   backend,
   onOpen,
   active,
+  folder,
 }: {
   projectId: string;
   root?: string;
+  /** Only files under this project-relative folder, e.g. one manuscript. */
+  folder?: string;
   backend: ResearchBackend;
   onOpen(hit: SearchHit): void;
   active?: boolean;
@@ -107,7 +110,12 @@ export function CodeSearch({
     setSkipped(0);
     try {
       const files = (await backend.listFiles(projectId, root))
-        .filter((file) => file.kind === 'file' && !binary.test(file.path))
+        .filter(
+          (file) =>
+            file.kind === 'file' &&
+            !binary.test(file.path) &&
+            (!folder || file.path.startsWith(folder + '/')),
+        )
         .sort((a, b) => a.path.localeCompare(b.path));
       if (ticket !== generation.current) return;
       const selected = [];

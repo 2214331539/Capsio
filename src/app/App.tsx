@@ -40,7 +40,7 @@ import { browserLayout } from '../platform/browser-pane';
 import { installPaperService } from '../platform/paper-service';
 import { ExperimentWorkspace } from '../workspaces/experiments/ExperimentWorkspace';
 import { useExecutions } from '../workspaces/experiments/runtime';
-import { useDevelopmentRuntime } from '../workspaces/experiments/development';
+import { endBackgroundTasks, useDevelopmentRuntime } from '../workspaces/experiments/development';
 import { clearCodeRoot, selectExperiment } from '../workspaces/experiments/code-context';
 import { sameCodeRoot } from '../workspaces/experiments/catalog';
 import { GlobalDock } from '../shell/GlobalDock';
@@ -231,12 +231,12 @@ function useCloseProtection(store: WorkspaceStore, backend: ResearchBackend) {
         const { busy } = store.getState();
         if (busy || hasPendingFileOperations(backend)) return;
         if (Object.keys(store.getState().agentTasks).length) {
-          store.setState({
-            error: t(
-              '后台任务仍在运行或有结果未保存。请在实验任务入口或 AI 助手中停止任务、保存结果后再关闭窗口。',
-            ),
-          });
-          return;
+          closing = true;
+          const blocked = await endBackgroundTasks(store).finally(() => (closing = false));
+          if (blocked !== null) {
+            if (blocked) store.setState({ error: translateError(blocked) });
+            return;
+          }
         }
         closing = true;
         try {

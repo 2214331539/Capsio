@@ -509,3 +509,72 @@ it('keeps pairing behavior independent from titles and retains note buffers afte
   await session.save();
   expect(session.getSnapshot().dirty).toBe(false);
 });
+
+const entry = (path: string, directory = false) => ({
+  path,
+  name: path.split('/').at(-1)!,
+  directory,
+  pdf: false,
+  note: false,
+  size: directory ? 0 : 1,
+  paperId: null,
+});
+
+it('lists folders before files, each in natural name order', async () => {
+  const { Host, scan } = await fixture();
+  scan.entries.push(
+    entry('paper10.md'),
+    entry('zeta', true),
+    entry('paper2.md'),
+    entry('Alpha', true),
+  );
+  render(<Host />);
+  await screen.findByRole('treeitem', { name: 'Alpha' });
+  const ids = screen.getAllByRole('treeitem').map((item) => item.dataset.treeId);
+  expect(ids.slice(0, 2)).toEqual(['Alpha', 'zeta']);
+  expect(ids.indexOf('paper2.md')).toBeLessThan(ids.indexOf('paper10.md'));
+});
+
+it('names a new folder in place after the existing folders and creates it on Enter', async () => {
+  const { Host, library, project, scan, user } = await fixture();
+  scan.entries.unshift(entry('Reading', true));
+  render(<Host />);
+  await screen.findByRole('treeitem', { name: 'Reading' });
+  await user.click(screen.getByRole('button', { name: '新建文件夹' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  const input = screen.getByRole('textbox', { name: '文件夹名称' });
+  expect(document.activeElement).toBe(input);
+  expect(screen.getAllByRole('treeitem')[1]).toBe(input.closest('[role="treeitem"]'));
+  await user.type(input, 'reading{Enter}');
+  expect(screen.getByText('此位置已存在文件或文件夹“reading”。')).toBeTruthy();
+  await user.clear(input);
+  await user.type(input, 'Survey{Enter}');
+  await waitFor(() =>
+    expect(library.command).toHaveBeenCalledWith(project.id, { op: 'mkdir', path: 'Survey' }),
+  );
+  expect(screen.queryByRole('textbox', { name: '文件夹名称' })).toBeNull();
+  expect(
+    vi.mocked(library.command).mock.calls.filter(([, operation]) => operation.op === 'mkdir'),
+  ).toHaveLength(1);
+});
+
+it('creates inside the selected folder until empty space is clicked, then at the root', async () => {
+  const { Host, library, project, scan, user } = await fixture();
+  scan.entries.unshift(entry('Reading', true));
+  const { container } = render(<Host />);
+  await user.click(await screen.findByRole('treeitem', { name: 'Reading' }));
+  await user.click(screen.getByRole('button', { name: '新建文件夹' }));
+  const nested = screen.getByRole('textbox', { name: '文件夹名称' });
+  expect(nested.closest('[role="treeitem"]')!.getAttribute('aria-level')).toBe('2');
+  await user.keyboard('{Escape}');
+  expect(screen.queryByRole('textbox', { name: '文件夹名称' })).toBeNull();
+  await user.click(container.querySelector('.local-file-tree')!);
+  expect(screen.queryAllByRole('treeitem', { selected: true })).toHaveLength(0);
+  await user.click(screen.getByRole('button', { name: '新建文件夹' }));
+  const root = screen.getByRole('textbox', { name: '文件夹名称' });
+  expect(root.closest('[role="treeitem"]')!.getAttribute('aria-level')).toBe('1');
+  await user.type(root, 'Survey{Enter}');
+  await waitFor(() =>
+    expect(library.command).toHaveBeenCalledWith(project.id, { op: 'mkdir', path: 'Survey' }),
+  );
+});

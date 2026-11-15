@@ -143,7 +143,7 @@ it('switches worktree navigation while retaining independent file sessions', asy
   selectCodeRoot('p1', root);
   render(<GitWorkspace projectId="p1" {...props} />);
   const user = userEvent.setup();
-  await user.click(screen.getByRole('button', { name: 'Worktree' }));
+  await user.click(screen.getByRole('button', { name: '工作树' }));
   await user.click(screen.getByRole('button', { name: '打开' }));
   expect(codeContext.getState().roots.p1).toBe(other);
   expect(getFileSession(props.backend, 'p1', 'train.py', root)).toBe(a);
@@ -184,12 +184,12 @@ it('suggests an app-managed worktree directory and submits the standard branch a
   props.store.setState({ directory: 'F:/ScientifyData/workspace' });
   render(<GitWorkspace projectId="p1" {...props} />);
   const user = userEvent.setup();
-  await user.click(screen.getByRole('button', { name: 'Worktree' }));
-  await user.click(screen.getByRole('button', { name: '创建 Worktree' }));
+  await user.click(screen.getByRole('button', { name: '工作树' }));
+  await user.click(screen.getByRole('button', { name: '创建工作树' }));
   expect(props.store.getState().dirty).toBe(false);
   await user.type(screen.getByLabelText('分支名称'), 'feature/new-loss');
   const target = 'F:/ScientifyData/workspace/projects/p1-worktrees/feature-new-loss';
-  expect((screen.getByLabelText('Worktree 目录（新的绝对路径）') as HTMLInputElement).value).toBe(
+  expect((screen.getByLabelText('工作树目录（新的绝对路径）') as HTMLInputElement).value).toBe(
     target,
   );
   await user.click(screen.getByRole('button', { name: '创建' }));

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-research-read-binary"
+description = "Enables the research_read_binary command without any pre-configured scope."
+commands.allow = ["research_read_binary"]
+
+[[permission]]
+identifier = "deny-research-read-binary"
+description = "Denies the research_read_binary command without any pre-configured scope."
+commands.deny = ["research_read_binary"]

@@ -8,7 +8,7 @@ import { emptyWorkspace, type Project } from '../../domain/workspace';
 import { createWorkspaceStore } from '../../stores/workspace';
 import type { WorkspaceBackend } from '../../platform/desktop';
 import type { ResearchBackend } from '../../platform/research';
-import { FileWorkspace } from './FileWorkspace';
+import { FileResources, FileWorkspace } from './FileWorkspace';
 
 vi.mock('../../editor/CodeEditor', () => ({
   CodeEditor: ({
@@ -136,19 +136,53 @@ it('retries a failed disk reread from the error action', async () => {
   expect(props.backend.readFile).toHaveBeenCalledTimes(3);
 });
 
-it('retains the file name after creation fails and retries the exact path', async () => {
+it('names new files and folders in the explorer, inside the selected folder', async () => {
   const props = setup();
-  vi.mocked(props.backend.writeFile).mockRejectedValueOnce(new Error('目录只读'));
+  props.backend.listFiles = async () => [
+    { path: 'src', name: 'src', kind: 'directory', size: 0 },
+    { path: 'src/train.py', name: 'train.py', kind: 'file', size: 9 },
+    { path: 'README.md', name: 'README.md', kind: 'file', size: 9 },
+  ];
+  props.backend.createDirectory = vi.fn(async (_project, path) => path);
+  const onOpen = vi.fn();
   const user = userEvent.setup();
-  render(<FileWorkspace {...props} />);
-  await user.click(screen.getAllByRole('button', { name: '新建文件' })[0]);
-  await user.type(screen.getByLabelText('文件路径'), 'chapters/intro.md');
-  await user.click(screen.getByRole('button', { name: '创建' }));
-  expect(await screen.findByRole('alert')).toHaveProperty('textContent', '目录只读');
-  expect((screen.getByLabelText('文件路径') as HTMLInputElement).value).toBe('chapters/intro.md');
-  await user.click(screen.getByRole('button', { name: '创建' }));
-  await screen.findByRole('textbox', { name: '编辑 chapters/intro.md' });
-  expect(props.backend.writeFile).toHaveBeenLastCalledWith('p1', 'chapters/intro.md', '', null);
+  const { container } = render(
+    <FileResources
+      project={props.project}
+      backend={props.backend}
+      mode="experiments"
+      view="files"
+      workspaceRoot="F:/main"
+      onOpen={onOpen}
+    />,
+  );
+  await user.click(await screen.findByRole('treeitem', { name: 'src' }));
+  await user.click(screen.getByRole('button', { name: '新建文件夹' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  const folder = screen.getByRole('textbox', { name: '文件夹名称' });
+  expect(folder.closest('[role="treeitem"]')!.getAttribute('aria-level')).toBe('2');
+  await user.type(folder, 'configs{Enter}');
+  await waitFor(() =>
+    expect(props.backend.createDirectory).toHaveBeenCalledWith('p1', 'src/configs', 'F:/main'),
+  );
+  // Empty space selects the root.
+  await user.click(container.querySelector('.sf-resource-tree')!);
+  await user.click(screen.getByRole('button', { name: '新建文件' }));
+  const file = screen.getByRole('textbox', { name: '文件名称' });
+  expect(file.closest('[role="treeitem"]')!.getAttribute('aria-level')).toBe('1');
+  await user.type(file, 'readme.md{Enter}');
+  expect(screen.getByRole('alert').textContent).toBe('此位置已存在文件或文件夹“readme.md”。');
+  vi.mocked(props.backend.writeFile).mockRejectedValueOnce(new Error('目录只读'));
+  await user.clear(file);
+  await user.type(file, 'eval.py{Enter}');
+  expect(await screen.findByText('目录只读')).toBeTruthy();
+  expect((screen.getByRole('textbox', { name: '文件名称' }) as HTMLInputElement).value).toBe(
+    'eval.py',
+  );
+  await user.type(screen.getByRole('textbox', { name: '文件名称' }), '{Enter}');
+  await waitFor(() => expect(onOpen).toHaveBeenCalledWith('eval.py'));
+  expect(props.backend.writeFile).toHaveBeenLastCalledWith('p1', 'eval.py', '', null, 'F:/main');
+  expect(screen.queryByRole('textbox', { name: '文件名称' })).toBeNull();
 });
 
 it('preserves an edited buffer on navigation remount and shares it with experiments', async () => {
@@ -180,7 +214,7 @@ it('saves a conflict copy with the current buffer and never silently overwrites 
   ).toBe('# My important conclusion');
   await user.click(screen.getByRole('button', { name: '另存副本' }));
   await user.type(screen.getByLabelText('副本路径'), 'paper-recovered.md');
-  await user.click(screen.getByRole('button', { name: '创建' }));
+  await user.click(screen.getByRole('button', { name: '保存副本' }));
   await waitFor(() =>
     expect(props.backend.writeFile).toHaveBeenLastCalledWith(
       'p1',

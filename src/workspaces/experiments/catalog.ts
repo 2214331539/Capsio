@@ -4,11 +4,18 @@ import type { WorkspaceStore } from '../../stores/workspace';
 
 export const experimentCatalog = {
   available: () => isTauri(),
-  prepare: (projectId: string, source: 'existing' | 'empty', directory?: string) =>
+  /** A clone goes into `directory` (a parent folder) or, without one, the app's data folder. */
+  prepare: (
+    projectId: string,
+    source: 'existing' | 'empty' | 'clone',
+    directory?: string,
+    url?: string,
+  ) =>
     invoke<{ id: string; root: string; source: 'existing' | 'empty' }>('experiment_prepare', {
       projectId,
       source,
       directory,
+      url,
     }),
 };
 export function experimentsFor(data: Workspace | null, project: string) {
@@ -30,10 +37,11 @@ export async function registerExperiment(
   project: string,
   name: string,
   purpose: string,
-  source: 'existing' | 'empty',
+  source: 'existing' | 'empty' | 'clone',
   directory?: string,
+  url?: string,
 ): Promise<Experiment> {
-  const prepared = await experimentCatalog.prepare(project, source, directory);
+  const prepared = await experimentCatalog.prepare(project, source, directory, url);
   const now = new Date().toISOString();
   const experiment: Experiment = {
     ...prepared,

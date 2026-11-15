@@ -1,4 +1,4 @@
-import { useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { ChevronRight, FileText, Folder } from 'lucide-react';
 import { Button } from '../primitives';
 import './tree-view.css';
@@ -10,10 +10,26 @@ export interface TreeItem {
   icon?: ReactNode;
   tooltip?: string;
   draggable?: boolean;
+  /** A short status at the end of the row, such as a Git change letter. */
+  decoration?: { text: string; tone: 'modified' | 'added' | 'deleted' | 'conflict' | 'ignored' };
+}
+
+/** A row being named in place, like a new folder in VS Code's explorer. */
+interface TreeDraft {
+  /** A folder unless given; only the icon differs. */
+  kind?: 'file' | 'folder';
+  parent: string;
+  value: string;
+  error?: string;
+  label: string;
+  onChange(value: string): void;
+  onCommit(): void;
+  onCancel(): void;
 }
 
 interface Props {
   items: TreeItem[];
+  draft?: TreeDraft | null;
   label: string;
   selectedId?: string | null;
   selectedIds?: ReadonlySet<string>;
@@ -28,6 +44,7 @@ interface Props {
 /** Plain activation opens; modifier selection and keyboard navigation keep the editor stable. */
 export function TreeView({
   items,
+  draft,
   label,
   selectedId,
   selectedIds,
@@ -48,13 +65,80 @@ export function TreeView({
     position: number;
     size: number;
   }[] = [];
+  let draftAt = -1;
+  let draftDepth = 0;
   function collect(nodes: TreeItem[], parent?: string, depth = 0) {
+    // The draft row sits after the last folder of its parent, before the files.
+    const here = draft && (parent ?? '') === draft.parent;
+    const lastFolder = nodes.reduce((last, node, index) => (node.children ? index : last), -1);
+    const mark = () => {
+      draftAt = visible.length;
+      draftDepth = depth;
+    };
+    if (here && lastFolder < 0) mark();
     nodes.forEach((item, position) => {
       visible.push({ item, parent, depth, position, size: nodes.length });
       if (item.children && !collapsed.has(item.id)) collect(item.children, item.id, depth + 1);
+      if (here && position === lastFolder) mark();
     });
   }
   collect(items);
+  const committed = useRef(false);
+  // A rejected name leaves the field open; blurring it afterwards cancels, as in VS Code.
+  useEffect(() => {
+    committed.current = false;
+  }, [draft?.error]);
+  const draftRow = draft ? (
+    <div
+      key="__draft__"
+      role="treeitem"
+      aria-level={draftDepth + 1}
+      aria-selected={false}
+      className="sf-tree-row sf-tree-draft"
+      style={{ paddingLeft: 8 + draftDepth * 16 }}
+    >
+      <span className="sf-tree-disclosure" aria-hidden="true" />
+      <span className="sf-tree-icon" aria-hidden="true">
+        {draft.kind === 'file' ? <FileText /> : <Folder />}
+      </span>
+      <span className="sf-tree-draft-field">
+        <input
+          className="sf-tree-input"
+          aria-label={draft.label}
+          aria-invalid={draft.error ? true : undefined}
+          value={draft.value}
+          autoFocus
+          spellCheck={false}
+          onFocus={() => (committed.current = false)}
+          onChange={(event) => draft.onChange(event.target.value)}
+          onKeyDown={(event) => {
+            // Keys belong to the text field, not the tree's copy, paste and menu shortcuts.
+            event.stopPropagation();
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              committed.current = true;
+              draft.onCommit();
+            } else if (event.key === 'Escape') {
+              event.preventDefault();
+              committed.current = true;
+              draft.onCancel();
+            }
+          }}
+          onBlur={() => {
+            if (committed.current) return;
+            committed.current = true;
+            if (draft.value.trim() && !draft.error) draft.onCommit();
+            else draft.onCancel();
+          }}
+        />
+        {draft.error ? (
+          <span className="sf-tree-input-error" role="alert">
+            {draft.error}
+          </span>
+        ) : null}
+      </span>
+    </div>
+  ) : null;
   const tabStop =
     [focused, selectedId].find((id) => visible.some((row) => row.item.id === id)) ??
     visible[0]?.item.id;
@@ -90,10 +174,11 @@ export function TreeView({
       aria-multiselectable={onSelectionChange ? true : undefined}
       className="sf-tree"
     >
-      {visible.map(({ item, depth, position, size }) => {
+      {draftAt === 0 ? draftRow : null}
+      {visible.map(({ item, depth, position, size }, index) => {
         const folder = item.children !== undefined;
         const expanded = folder && !collapsed.has(item.id);
-        return (
+        return [
           <Button
             key={item.id}
             type="button"
@@ -175,8 +260,14 @@ export function TreeView({
               {item.icon ?? (folder ? <Folder /> : <FileText />)}
             </span>
             <span className="sf-tree-label">{item.label}</span>
-          </Button>
-        );
+            {item.decoration ? (
+              <span className="sf-tree-decoration" data-tone={item.decoration.tone}>
+                {item.decoration.text}
+              </span>
+            ) : null}
+          </Button>,
+          index + 1 === draftAt ? draftRow : null,
+        ];
       })}
     </div>
   );

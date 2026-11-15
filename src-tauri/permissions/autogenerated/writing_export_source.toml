@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-writing-export-source"
+description = "Enables the writing_export_source command without any pre-configured scope."
+commands.allow = ["writing_export_source"]
+
+[[permission]]
+identifier = "deny-writing-export-source"
+description = "Denies the writing_export_source command without any pre-configured scope."
+commands.deny = ["writing_export_source"]

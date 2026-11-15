@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { t } from '../i18n';
 import { usePreferences } from '../i18n/preferences';
-import { Compartment, EditorState, StateEffect } from '@codemirror/state';
+import { Compartment, EditorState, StateEffect, type Extension } from '@codemirror/state';
 import { openSearchPanel, search, searchKeymap } from '@codemirror/search';
 import {
   EditorView,
@@ -26,6 +26,7 @@ import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
 import type { FileSession } from './sessions';
 import { bindingFor, shortcutToCodeMirror, type ShortcutSettings } from '../platform/shortcuts';
+import { bibtexLanguage, latexLanguage } from './latex';
 
 const theme = EditorView.theme({
   '&': {
@@ -71,12 +72,15 @@ export function CodeEditor({
   onSelection,
   onCursor,
   shortcuts,
+  extensions: extra,
 }: {
   session: FileSession;
   readOnly?: boolean;
   onSelection: (text: string) => void;
   onCursor?: (line: number, column: number) => void;
   shortcuts?: ShortcutSettings;
+  /** Read when the editor opens a file, e.g. LaTeX completion. */
+  extensions?: Extension[];
 }) {
   const host = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -104,7 +108,11 @@ export function CodeEditor({
         ? javascript({ typescript: /\.tsx?$/.test(path), jsx: /\.jsx$|\.tsx$/.test(path) })
         : /\.md(?:own)?$/.test(path)
           ? markdown()
-          : [];
+          : /\.(?:tex|sty|cls|ltx)$/.test(path)
+            ? latexLanguage
+            : /\.bib$/.test(path)
+              ? bibtexLanguage
+              : [];
     const wrap = new Compartment();
     const customBinding = (
       command: Parameters<typeof bindingFor>[1],
@@ -136,6 +144,7 @@ export function CodeEditor({
       history(),
       syntaxHighlighting(highlighting),
       language,
+      extra ?? [],
       theme,
       search({ top: true }),
       wrap.of(session.editorWrap ? EditorView.lineWrapping : []),

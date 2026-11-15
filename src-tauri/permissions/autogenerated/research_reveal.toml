@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-research-reveal"
+description = "Enables the research_reveal command without any pre-configured scope."
+commands.allow = ["research_reveal"]
+
+[[permission]]
+identifier = "deny-research-reveal"
+description = "Denies the research_reveal command without any pre-configured scope."
+commands.deny = ["research_reveal"]

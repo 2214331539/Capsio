@@ -1,0 +1,605 @@
+/* Writing: a local Overleaf. Source and PDF side by side, the log in place of the PDF. */
+.sf-writing-split {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+/* Missing packages, in the bottom-right corner like a download prompt. */
+.sf-writing-notice {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(520px, calc(100% - 32px));
+  padding: 8px 8px 8px 12px;
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: 10px;
+  background: var(--sf-surface-raised);
+  box-shadow: var(--sf-shadow-popover);
+  color: var(--sf-text-primary);
+  font-size: 12.5px;
+}
+.sf-writing-notice > svg {
+  flex: none;
+  color: var(--sf-status-warning);
+}
+.sf-writing-notice > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sf-writing-notice .sf-button {
+  flex: none;
+  gap: 5px;
+  height: 28px;
+  min-height: 28px;
+}
+.sf-writing-editor {
+  display: flex;
+  flex: 1 1 50%;
+  min-width: 0;
+  flex-direction: column;
+}
+.sf-writing-split[data-layout='split'] .sf-writing-editor {
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+.sf-writing-editor > * {
+  flex: 1;
+  min-height: 0;
+}
+.sf-writing-divider {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  border-right: 1px solid var(--sf-border-subtle);
+  border-left: 1px solid var(--sf-border-subtle);
+  background: var(--sf-surface-chrome);
+  cursor: col-resize;
+}
+.sf-writing-divider .sf-button {
+  width: 20px;
+  min-width: 20px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text-muted);
+  cursor: pointer;
+}
+.sf-writing-divider .sf-button:hover {
+  color: var(--sf-text-primary);
+}
+.sf-writing-pdf {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  background: var(--sf-surface-chrome);
+}
+.sf-writing-start {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+/* Toolbar: Overleaf's compile button with its options, the log button and the layout. */
+.sf-writing-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sf-writing-compile {
+  display: inline-flex;
+}
+.sf-writing-compile-main.sf-button {
+  gap: 6px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 7px 0 0 7px;
+}
+.sf-writing-compile-more.sf-button {
+  width: 26px;
+  min-width: 26px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-left: 1px solid color-mix(in srgb, var(--sf-surface-canvas) 30%, transparent);
+  border-radius: 0 7px 7px 0;
+}
+.sf-writing-log-button.sf-button {
+  gap: 3px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text-secondary);
+}
+.sf-writing-log-button.sf-button[aria-pressed='true'] {
+  background: var(--sf-surface-selected);
+}
+.sf-writing-log-button span {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
+.sf-writing-log-button .is-error {
+  background: var(--sf-status-danger);
+}
+.sf-writing-log-button .is-warning {
+  background: var(--sf-status-warning);
+}
+.sf-writing-actions > .sf-button-icon,
+.sf-writing-layout .sf-button {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--sf-text-secondary);
+}
+.sf-writing-layout {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--sf-surface-hover);
+}
+.sf-writing-layout .sf-button {
+  width: 26px;
+  min-width: 26px;
+  height: 24px;
+  min-height: 24px;
+}
+.sf-writing-layout .sf-button[aria-pressed='true'] {
+  background: var(--sf-surface-canvas);
+  color: var(--sf-text-primary);
+  box-shadow: 0 0 0 1px var(--sf-border-subtle);
+}
+
+/* PDF preview */
+.sf-pdf-preview {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.sf-pdf-preview-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  padding: 0 8px 0 12px;
+  border-bottom: 1px solid var(--sf-border-subtle);
+  background: var(--sf-surface-canvas);
+  color: var(--sf-text-muted);
+  font-size: 12px;
+}
+.sf-pdf-preview-bar .sf-button {
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text-secondary);
+}
+.sf-pdf-zoom {
+  width: 40px;
+  text-align: center;
+}
+.sf-pdf-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 0 24px;
+}
+.sf-pdf-slot {
+  position: relative;
+  width: max-content;
+  margin: 0 auto 16px;
+}
+.sf-pdf-page {
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
+}
+.sf-pdf-flash {
+  position: absolute;
+  border-radius: 3px;
+  pointer-events: none;
+  animation: sf-pdf-flash 2s ease-out forwards;
+}
+@keyframes sf-pdf-flash {
+  0%,
+  35% {
+    background: rgb(255 196 0 / 38%);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* Log */
+.sf-writing-log {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 12px 24px;
+  background: var(--sf-surface-canvas);
+}
+.sf-writing-log-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  background: var(--sf-surface-canvas);
+  font-size: 12.5px;
+}
+.sf-writing-log-head > span:not(.spacer) {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sf-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sf-writing-log-group {
+  margin: 12px 0 6px;
+  color: var(--sf-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.sf-writing-log-group span {
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--sf-status-warning);
+  color: #fff;
+  font-size: 10.5px;
+}
+.sf-writing-log-group[data-kind='error'] span {
+  background: var(--sf-status-danger);
+}
+.sf-writing-log-group[data-kind='box'] span {
+  background: var(--sf-text-muted);
+}
+.sf-writing-log-item {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border: 0;
+  border-left: 3px solid var(--sf-status-warning);
+  border-radius: 8px;
+  background: var(--sf-surface-chrome);
+  color: var(--sf-text-primary);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.sf-writing-log-item:disabled {
+  cursor: default;
+}
+.sf-writing-log-item[data-kind='error'] {
+  border-left-color: var(--sf-status-danger);
+  background: color-mix(in srgb, var(--sf-status-danger) 6%, var(--sf-surface-chrome));
+}
+.sf-writing-log-item[data-kind='box'] {
+  border-left-color: var(--sf-text-muted);
+}
+.sf-writing-log-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sf-writing-log-line > svg {
+  flex: none;
+  color: var(--sf-status-warning);
+}
+.sf-writing-log-item[data-kind='error'] .sf-writing-log-line > svg {
+  color: var(--sf-status-danger);
+}
+.sf-writing-log-line strong {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.sf-writing-log-line small {
+  flex: none;
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-mono);
+  font-size: 11.5px;
+}
+.sf-writing-log-item pre,
+.sf-writing-raw pre {
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  overflow: auto;
+  border-radius: 6px;
+  background: var(--sf-surface-canvas);
+  font-size: 11.5px;
+  white-space: pre-wrap;
+}
+.sf-writing-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--sf-text-secondary);
+  font-size: 12px;
+}
+.sf-writing-raw {
+  margin-top: 14px;
+  font-size: 12px;
+}
+.sf-writing-raw summary {
+  color: var(--sf-text-secondary);
+  cursor: pointer;
+}
+.sf-writing-raw pre {
+  max-height: 420px;
+}
+.sf-writing-clean.sf-button {
+  gap: 6px;
+  margin-top: 10px;
+  border: 0;
+  color: var(--sf-text-secondary);
+}
+
+/* No PDF yet, or no TeX on this computer. */
+.sf-writing-setup {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  color: var(--sf-text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+.sf-writing-setup h2 {
+  margin: 0;
+  color: var(--sf-text-primary);
+  font-size: 16px;
+}
+.sf-writing-setup p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 420px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Side views */
+.sf-writing-files {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 120px;
+  flex-direction: column;
+}
+.sf-outline-row.sf-button,
+.sf-ref-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  height: 24px;
+  min-height: 24px;
+  padding-right: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text-primary);
+  font-size: 12px;
+  font-weight: 400;
+}
+.sf-ref-row {
+  align-items: center;
+  padding-left: 22px;
+}
+.sf-ref-row > span,
+.sf-outline-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sf-ref-row > svg {
+  flex: none;
+  color: var(--sf-text-muted);
+}
+.sf-ref-row.is-missing {
+  color: var(--sf-status-danger);
+}
+.sf-ref-row.is-missing > svg {
+  color: var(--sf-status-danger);
+}
+.sf-ref-row.is-unused {
+  color: var(--sf-text-muted);
+}
+.sf-writing-refs {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Dialogs */
+.sf-writing-templates {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.sf-writing-template {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sf-text-primary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--sf-border-subtle);
+}
+.sf-writing-template[aria-checked='true'] {
+  box-shadow: 0 0 0 2px var(--sf-text-primary);
+}
+.sf-writing-template small {
+  color: var(--sf-text-muted);
+  font-size: 11px;
+}
+.sf-writing-template-page {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 42px;
+  height: 54px;
+  margin-bottom: 4px;
+  padding: 7px 6px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 20%);
+}
+.sf-writing-template-page i {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: #c9c9cf;
+}
+.sf-writing-template-page i:first-child {
+  height: 5px;
+  background: #8a8a93;
+}
+.sf-writing-check {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+}
+.sf-writing-import section + section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sf-border-subtle);
+}
+.sf-writing-import h3,
+.sf-writing-export h3,
+.sf-writing-export summary {
+  margin: 0 0 10px;
+  color: var(--sf-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.sf-writing-import section > .sf-button {
+  gap: 6px;
+}
+.sf-writing-export {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 420px;
+  max-height: 46vh;
+  margin-bottom: 14px;
+  overflow: auto;
+}
+.sf-writing-export h3 span,
+.sf-writing-export summary span {
+  margin-left: 4px;
+  color: var(--sf-text-muted);
+  font-weight: 400;
+}
+.sf-writing-export summary {
+  margin: 8px 0 6px;
+  cursor: pointer;
+}
+.sf-writing-export details label {
+  margin-bottom: 6px;
+}
+.sf-writing-export label span {
+  font-family: var(--sf-font-mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.sf-writing-count {
+  color: var(--sf-text-muted);
+  font-size: 12px;
+}
+.sf-writing-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 420px;
+  max-height: 60vh;
+  overflow: auto;
+}
+.sf-writing-pick .sf-button {
+  justify-content: flex-start;
+  gap: 8px;
+  border: 0;
+  font-size: 12.5px;
+}
+.sf-writing-pick small {
+  margin-left: auto;
+  color: var(--sf-text-muted);
+}
+.sf-writing-words td {
+  padding: 4px 16px 4px 0;
+}
+
+/* LaTeX completion in the editor */
+.cm-editor .cm-tooltip.sf-latex-completion {
+  max-height: 260px;
+  min-width: 220px;
+  max-width: 460px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: 8px;
+  background: var(--sf-surface-raised);
+  box-shadow: var(--sf-shadow-popover);
+  font-family: var(--sf-font-mono);
+  font-size: 12.5px;
+}
+.sf-latex-option {
+  display: flex;
+  gap: 10px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: var(--sf-text-primary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sf-latex-option span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-body);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+}
+.sf-latex-option[aria-selected='true'] {
+  background: var(--sf-surface-selected);
+}

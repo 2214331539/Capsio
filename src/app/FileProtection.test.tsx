@@ -159,13 +159,17 @@ it('remembers the code view after opening a changed file and leaving the workspa
   });
   await screen.findByLabelText('编辑 paper.md');
   await user.click(moduleButton(t('Experiments')));
-  await user.click(screen.getByLabelText('版本'));
+  await user.click(screen.getByRole('tab', { name: '源代码管理' }));
   await user.click(await screen.findByLabelText('查看更改 paper.md'));
-  await user.click(screen.getByLabelText(t('打开文件')));
-  expect(screen.getByLabelText(t('Code')).getAttribute('aria-current')).toBe('page');
+  // The diff opens as an editor tab; its button opens the file in another tab.
+  expect(screen.getByRole('tab', { name: 'paper.md (工作树)' }).getAttribute('aria-selected')).toBe(
+    'true',
+  );
+  await user.click(within(screen.getByRole('main')).getByLabelText('打开文件'));
+  expect(screen.getByRole('tab', { name: 'paper.md' }).getAttribute('aria-selected')).toBe('true');
   await user.click(moduleButton(t('Notes')));
   await user.click(moduleButton(t('Experiments')));
-  expect(screen.getByLabelText(t('Code')).getAttribute('aria-current')).toBe('page');
+  expect(screen.getByRole('tab', { name: 'paper.md' }).getAttribute('aria-selected')).toBe('true');
   expect(
     await within(screen.getByRole('main')).findByRole('textbox', { name: '编辑 paper.md' }),
   ).toBeTruthy();
@@ -363,7 +367,7 @@ it('opens the exact experiment source, remembers selection, and opens a recent n
     );
   });
   expect(await screen.findByRole('heading', { name: 'Ablation result' })).toBeTruthy();
-  expect(screen.getByRole('button', { name: t('Runs') }).getAttribute('aria-current')).toBe('page');
+  expect(screen.getByRole('tab', { name: '运行记录' }).getAttribute('aria-selected')).toBe('true');
   expect(JSON.parse(localStorage.getItem('scientify.ui.v2')!).locations.p1.runId).toBe('r-old');
   await user.click(screen.getByRole('button', { name: /Latest result/ }));
   expect(JSON.parse(localStorage.getItem('scientify.ui.v2')!).locations.p1.runId).toBe('r-new');
@@ -376,6 +380,5 @@ it('opens the exact experiment source, remembers selection, and opens a recent n
     'Keep the useful conclusion.',
   );
   await user.click(moduleButton(t('Experiments')));
-  await user.click(screen.getByLabelText(t('Runs')));
   expect(await screen.findByRole('heading', { name: 'Latest result' })).toBeTruthy();
 });

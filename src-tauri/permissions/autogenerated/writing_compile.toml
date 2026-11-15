@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-writing-compile"
+description = "Enables the writing_compile command without any pre-configured scope."
+commands.allow = ["writing_compile"]
+
+[[permission]]
+identifier = "deny-writing-compile"
+description = "Denies the writing_compile command without any pre-configured scope."
+commands.deny = ["writing_compile"]

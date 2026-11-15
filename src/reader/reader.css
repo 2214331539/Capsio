@@ -162,12 +162,16 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--sf-border-control) 78%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--sf-surface-raised) 84%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(110%);
-  backdrop-filter: blur(14px) saturate(110%);
-  box-shadow: var(--sf-shadow-popover);
+  /* Frosted glass: translucent fill, strong blur with saturation, a hairline edge and a top highlight. */
+  border: 0.5px solid color-mix(in srgb, var(--sf-text-primary) 12%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sf-surface-raised) 64%, transparent);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 55%),
+    0 1px 2px rgb(0 0 0 / 6%),
+    0 16px 44px rgb(0 0 0 / 16%);
   opacity: 0;
   transform: translate(-8px, -50%);
   visibility: hidden;
@@ -206,47 +210,94 @@
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-.pdf-outline-heading {
+:root.dark .pdf-outline-panel {
+  background: color-mix(in srgb, var(--sf-surface-raised) 58%, transparent);
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 8%),
+    0 1px 2px rgb(0 0 0 / 30%),
+    0 16px 44px rgb(0 0 0 / 45%);
+}
+.pdf-outline-top {
   display: flex;
   align-items: center;
-  gap: 2px;
-  min-height: 40px;
-  padding: 4px 6px 4px 12px;
-  color: var(--sf-text-secondary);
-  font-size: 12px;
-  border-bottom: 1px solid var(--sf-border-subtle);
-}
-.pdf-outline-heading .sf-button-icon {
-  width: 26px;
-  height: 26px;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 10px 8px 6px 10px;
 }
 .pdf-outline-search {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 8px;
+  height: 30px;
+  padding: 0 9px 0 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sf-text-primary) 6%, transparent);
   color: var(--sf-text-muted);
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
 }
-.pdf-outline-search input {
+.pdf-outline-search:focus-within {
+  background: color-mix(in srgb, var(--sf-surface-raised) 85%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sf-text-primary) 18%, transparent);
+}
+.pdf-outline-search .sf-input,
+.pdf-outline-search .sf-input:focus {
+  flex: 1;
   min-width: 0;
   width: 100%;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  font-size: 12.5px;
+}
+.pdf-outline-search > svg {
+  flex-shrink: 0;
+}
+.pdf-outline-pin.sf-button {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sf-text-muted);
+}
+.pdf-outline-pin.sf-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sf-text-primary) 7%, transparent);
+  color: var(--sf-text-primary);
+}
+.pdf-outline-pin.sf-button[aria-pressed='true'] {
+  color: var(--sf-text-primary);
+  background: color-mix(in srgb, var(--sf-text-primary) 9%, transparent);
 }
 .pdf-outline-items {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 0 6px 8px;
+  padding: 2px 6px 10px;
 }
 .pdf-outline-row {
   display: flex;
   align-items: flex-start;
-  border-radius: 4px;
+  border-radius: 7px;
 }
 .pdf-outline-row:hover {
-  background: var(--sf-surface-hover);
+  background: color-mix(in srgb, var(--sf-text-primary) 6%, transparent);
 }
 .pdf-outline-row.is-active {
-  background: var(--sf-surface-selected);
+  background: color-mix(in srgb, var(--sf-text-primary) 10%, transparent);
+}
+.pdf-outline-row.is-active .pdf-outline-link {
+  font-weight: 500;
 }
 .pdf-outline-fold {
   display: grid;
@@ -313,8 +364,7 @@
   line-height: 1.6;
 }
 .pdf-outline-footer {
-  padding: 7px 12px;
-  border-top: 1px solid var(--sf-border-subtle);
+  padding: 6px 12px 8px;
   color: var(--sf-text-muted);
   font-size: 11px;
 }
@@ -325,12 +375,12 @@
     width: min(272px, calc(100cqw - 24px));
   }
   .pdf-outline-dock.is-pinned .pdf-outline-panel {
-    border: 1px solid var(--sf-border-control);
-    border-radius: 8px;
-    box-shadow: var(--sf-shadow-popover);
-    background: color-mix(in srgb, var(--sf-surface-raised) 84%, transparent);
-    -webkit-backdrop-filter: blur(14px) saturate(110%);
-    backdrop-filter: blur(14px) saturate(110%);
+    border: 0.5px solid color-mix(in srgb, var(--sf-text-primary) 12%, transparent);
+    border-radius: 14px;
+    box-shadow: 0 16px 44px rgb(0 0 0 / 16%);
+    background: color-mix(in srgb, var(--sf-surface-raised) 64%, transparent);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(180%);
   }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

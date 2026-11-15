@@ -1,0 +1,327 @@
+import type { Project } from '../../domain/workspace';
+import type { ResearchBackend } from '../../platform/research';
+import type { Engine, Imported } from '../../platform/writing';
+import type { WorkspaceStore } from '../../stores/workspace';
+import { t } from '../../i18n';
+import { detectCompiler, isMainDocument } from './latex';
+
+export type Compiler = 'pdflatex' | 'xelatex' | 'lualatex';
+/** A LaTeX folder inside the project; `folder` is relative to the project folder ('' is the folder itself). */
+export type Manuscript = {
+  id: string;
+  name: string;
+  folder: string;
+  main: string;
+  compiler: Compiler;
+  /** Which TeX compiles it: the computer's when it has the compiler ('auto'), or as chosen. */
+  engine: Engine;
+  autoCompile: boolean;
+  writePdf: boolean;
+};
+const ENGINES: Engine[] = ['auto', 'builtin', 'local'];
+const COMPILERS: Compiler[] = ['pdflatex', 'xelatex', 'lualatex'];
+export const compilerLabel = (compiler: Compiler) =>
+  ({ pdflatex: 'pdfLaTeX', xelatex: 'XeLaTeX', lualatex: 'LuaLaTeX' })[compiler];
+
+/** The project's manuscripts, skipping malformed entries from older or synced data. */
+export function manuscriptsOf(project: Project | undefined): Manuscript[] {
+  const list = Array.isArray(project?.manuscripts) ? (project.manuscripts as unknown[]) : [];
+  return list.flatMap((value) => {
+    const item = value as Partial<Manuscript>;
+    if (typeof item?.id !== 'string' || typeof item.name !== 'string') return [];
+    if (typeof item.folder !== 'string' || typeof item.main !== 'string') return [];
+    return [
+      {
+        id: item.id,
+        name: item.name,
+        folder: item.folder,
+        main: item.main,
+        compiler: COMPILERS.includes(item.compiler as Compiler)
+          ? (item.compiler as Compiler)
+          : 'pdflatex',
+        engine: ENGINES.includes(item.engine as Engine) ? (item.engine as Engine) : 'auto',
+        autoCompile: item.autoCompile !== false,
+        writePdf: item.writePdf === true,
+      },
+    ];
+  });
+}
+
+/** Adds or replaces a manuscript in the project. */
+export async function saveManuscript(store: WorkspaceStore, projectId: string, next: Manuscript) {
+  const ok = await store.getState().update((data) => {
+    const project = data.projects.find((item) => item.id === projectId);
+    if (!project) throw new Error(t('项目不存在'));
+    const list = manuscriptsOf(project).filter((item) => item.id !== next.id);
+    project.manuscripts = [...list, next];
+  });
+  if (!ok) throw new Error(store.getState().error || t('保存失败'));
+}
+
+/** Forgets a manuscript; its folder and files stay on disk. */
+export async function removeManuscript(store: WorkspaceStore, projectId: string, id: string) {
+  const ok = await store.getState().update((data) => {
+    const project = data.projects.find((item) => item.id === projectId);
+    if (project) project.manuscripts = manuscriptsOf(project).filter((item) => item.id !== id);
+  });
+  if (!ok) throw new Error(store.getState().error || t('保存失败'));
+}
+
+export const join = (folder: string, path: string) => (folder ? `${folder}/${path}` : path);
+
+/** A folder name made from a manuscript name, without characters file systems reject. */
+export const folderName = (name: string) =>
+  name
+    .replace(/[\\/:*?"<>|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^\.+/, '') || 'manuscript';
+
+const BIB = String.raw`@article{example2025,
+  title   = {An Example Reference},
+  author  = {Author, Ada and Writer, Ben},
+  journal = {Journal of Examples},
+  year    = {2025}
+}
+`;
+const section = (name: string, label: string, body: string) =>
+  `\\section{${name}}\n\\label{sec:${label}}\n\n${body}\n`;
+
+export type Template = {
+  id: string;
+  label: string;
+  description: string;
+  compiler: Compiler;
+  files(title: string): Record<string, string>;
+};
+export const TEMPLATES: Template[] = [
+  {
+    id: 'article',
+    label: '空白论文',
+    description: 'article',
+    compiler: 'pdflatex',
+    files: (title) => ({
+      'main.tex': String.raw`\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{${title}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+\section{Introduction}
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
+`,
+      'references.bib': BIB,
+    }),
+  },
+  {
+    id: 'paper',
+    label: '会议论文',
+    description: '分章节、图表和参考文献',
+    compiler: 'pdflatex',
+    files: (title) => ({
+      'main.tex': String.raw`\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[numbers]{natbib}
+\usepackage{hyperref}
+
+\title{${title}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+\input{sections/introduction}
+\input{sections/related}
+\input{sections/method}
+\input{sections/experiments}
+\input{sections/conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+\end{document}
+`,
+      'sections/introduction.tex': section(
+        'Introduction',
+        'intro',
+        'Motivate the problem here \\citep{example2025}.',
+      ),
+      'sections/related.tex': section('Related Work', 'related', ''),
+      'sections/method.tex': section('Method', 'method', ''),
+      'sections/experiments.tex': section(
+        'Experiments',
+        'experiments',
+        String.raw`\begin{table}[t]
+  \centering
+  \caption{Main results.}
+  \label{tab:main}
+  \begin{tabular}{lcc}
+    \toprule
+    Method & Metric A & Metric B \\
+    \midrule
+    Baseline & 0.00 & 0.00 \\
+    Ours & 0.00 & 0.00 \\
+    \bottomrule
+  \end{tabular}
+\end{table}`,
+      ),
+      'sections/conclusion.tex': section('Conclusion', 'conclusion', ''),
+      'references.bib': BIB,
+    }),
+  },
+  {
+    id: 'ctex',
+    label: '中文论文',
+    description: 'ctexart · XeLaTeX',
+    compiler: 'xelatex',
+    files: (title) => ({
+      'main.tex': String.raw`\documentclass[UTF8]{ctexart}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{${title}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+\section{引言}
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
+`,
+      'references.bib': BIB,
+    }),
+  },
+  {
+    id: 'beamer',
+    label: '报告幻灯片',
+    description: 'beamer',
+    compiler: 'pdflatex',
+    files: (title) => ({
+      'main.tex': String.raw`\documentclass{beamer}
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}
+
+\title{${title}}
+\author{}
+\date{\today}
+
+\begin{document}
+\frame{\titlepage}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Motivation}
+\begin{frame}{Motivation}
+  \begin{itemize}
+    \item
+  \end{itemize}
+\end{frame}
+\end{document}
+`,
+    }),
+  },
+];
+
+/** Writes a template into a new folder of the project and returns the manuscript to register. */
+export async function createManuscript(
+  backend: ResearchBackend,
+  project: Project,
+  name: string,
+  template: Template,
+  taken: Set<string>,
+): Promise<Manuscript> {
+  const base = folderName(name);
+  let folder = base;
+  for (let n = 2; taken.has(folder.toLowerCase()); n++) folder = `${base} ${n}`;
+  if (!backend.createDirectory) throw new Error(t('新建稿件需要桌面应用。'));
+  await backend.createDirectory(project.id, folder);
+  const title = name.replace(/[\\{}$&#^_%~]/g, '');
+  for (const [path, content] of Object.entries(template.files(title)))
+    await backend.writeFile(project.id, `${folder}/${path}`, content, null);
+  if (template.id === 'paper') await backend.createDirectory(project.id, `${folder}/figures`);
+  return {
+    id: crypto.randomUUID(),
+    name: name.trim(),
+    folder,
+    main: 'main.tex',
+    compiler: template.compiler,
+    engine: 'auto',
+    autoCompile: true,
+    writePdf: false,
+  };
+}
+
+/**
+ * A manuscript for a folder that was just imported: its main document is the .tex file with
+ * \documentclass (main.tex first, then the shallowest), its compiler guessed from the source.
+ */
+export async function manuscriptFromImport(
+  backend: ResearchBackend,
+  projectId: string,
+  imported: Imported,
+  name: string,
+): Promise<Manuscript> {
+  const read = (path: string) =>
+    backend
+      .readFile(projectId, join(imported.folder, path))
+      .then((file) => file.content)
+      .catch(() => '');
+  const candidates = imported.files
+    .filter((path) => /\.tex$/i.test(path))
+    .sort(
+      (a, b) =>
+        Number(b.toLowerCase() === 'main.tex') - Number(a.toLowerCase() === 'main.tex') ||
+        a.split('/').length - b.split('/').length ||
+        a.localeCompare(b),
+    )
+    .slice(0, 200);
+  for (const path of candidates) {
+    const text = await read(path);
+    if (!isMainDocument(text)) continue;
+    const rc = imported.files.find((file) => /^\.?latexmkrc$/i.test(file));
+    return {
+      id: crypto.randomUUID(),
+      name: name.trim() || imported.folder,
+      folder: imported.folder,
+      main: path,
+      compiler: detectCompiler(text, rc ? await read(rc) : ''),
+      engine: 'auto',
+      autoCompile: true,
+      writePdf: false,
+    };
+  }
+  throw new Error(
+    t('已导入到“{folder}”，但没有找到包含 \\documentclass 的 .tex 文件。', {
+      folder: imported.folder,
+    }),
+  );
+}

@@ -85,6 +85,64 @@ pub async fn research_write_file(
 }
 
 #[tauri::command]
+pub async fn research_read_binary(
+    state: State<'_, AppState>,
+    project_id: String,
+    path: String,
+    workspace_root: Option<String>,
+) -> Result<tauri::ipc::Response, String> {
+    let (storage, files) = (state.storage.clone(), state.files.clone());
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = crate::git::resolve(&storage, &files, &project_id, workspace_root.as_deref())?;
+        files
+            .read_bytes(&root, &path)
+            .map(tauri::ipc::Response::new)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Shows a project file in the system file manager; nothing is opened or run.
+#[tauri::command]
+pub async fn research_reveal(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    project_id: String,
+    path: String,
+    workspace_root: Option<String>,
+) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    let (storage, files) = (state.storage.clone(), state.files.clone());
+    let file = tauri::async_runtime::spawn_blocking(move || {
+        let root = crate::git::resolve(&storage, &files, &project_id, workspace_root.as_deref())?;
+        files.locate(&root, &path)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    app.opener()
+        .reveal_item_in_dir(file)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn research_create_directory(
+    state: State<'_, AppState>,
+    project_id: String,
+    path: String,
+    workspace_root: Option<String>,
+) -> Result<String, String> {
+    let (storage, files) = (state.storage.clone(), state.files.clone());
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = crate::git::resolve(&storage, &files, &project_id, workspace_root.as_deref())?;
+        crate::collaboration::permissions::require_write(&storage, &project_id, "code")?;
+        let _lease = crate::code::Lease::write(&root)?;
+        files.create_directory(&root, &path)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 pub async fn research_import_pdf(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
@@ -231,7 +289,15 @@ fn bounded_git(
     bounded_git_full(command).map(|(status, bytes, _)| (status, bytes))
 }
 pub(crate) fn bounded_git_full(
+    command: std::process::Command,
+) -> Result<(std::process::ExitStatus, Vec<u8>, Vec<u8>), String> {
+    bounded_git_within(command, Duration::from_secs(15))
+}
+
+/// Runs Git inside a kill-on-close job, giving up after `limit`.
+pub(crate) fn bounded_git_within(
     mut command: std::process::Command,
+    limit: Duration,
 ) -> Result<(std::process::ExitStatus, Vec<u8>, Vec<u8>), String> {
     use std::{io::Read, thread, time::Instant};
     command.stderr(std::process::Stdio::piped());
@@ -298,7 +364,7 @@ pub(crate) fn bounded_git_full(
             }
             Ok(None) => (),
         }
-        if start.elapsed() > Duration::from_secs(15) {
+        if start.elapsed() > limit {
             #[cfg(windows)]
             let _ = job.terminate();
             let _ = child.kill();

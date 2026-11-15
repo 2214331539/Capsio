@@ -29,7 +29,7 @@ import { TreeView, type TreeItem } from '../../components/workspace/TreeView';
 import { DocumentTabs } from '../../components/workspace/DocumentTabs';
 import { ResizeHandle } from '../../shell/ResizeHandle';
 import { Modal } from '../../components/Modal';
-import { t, translateError } from '../../i18n';
+import { locale, t, translateError } from '../../i18n';
 import { useActiveView } from '../../components/workspace/ViewTransition';
 import {
   nativeLibrary,
@@ -160,8 +160,12 @@ export function LocalLiterature({
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [importProgress, setImportProgress] = useState('');
   const [menu, setMenu] = useState<{ path: string; x: number; y: number } | null>(null);
+  // A folder being named in place in the tree (VS Code style), not a dialog.
+  const [draft, setDraft] = useState<{ parent: string; value: string; error?: string } | null>(
+    null,
+  );
   const [dialog, setDialog] = useState<{
-    kind: 'mkdir' | 'rename' | 'move' | 'relink';
+    kind: 'rename' | 'move' | 'relink';
     path: string;
     value: string;
   } | null>(null);
@@ -512,6 +516,17 @@ export function LocalLiterature({
     if (p && nodes.has(p)) nodes.get(p)!.children!.push(item);
     else tree.push(item);
   }
+  // Folders before files, each group in natural name order, as in VS Code's explorer.
+  const collator = new Intl.Collator(locale(), { numeric: true, sensitivity: 'base' });
+  const arrange = (items: TreeItem[]) => {
+    items.sort(
+      (a, b) =>
+        Number(a.children === undefined) - Number(b.children === undefined) ||
+        collator.compare(a.label, b.label),
+    );
+    for (const item of items) if (item.children) arrange(item.children);
+  };
+  arrange(tree);
   const target = menu?.path ?? selected;
   const targetEntry = scan.entries.find((e) => e.path === target);
   const targetFolder = targetEntry?.directory ? target : parent(target);
@@ -643,17 +658,43 @@ export function LocalLiterature({
       y: Math.min(y, window.innerHeight - 360),
     });
   }
-  function command(kind: 'mkdir' | 'rename' | 'move' | 'relink', path = target) {
+  function command(kind: 'rename' | 'move' | 'relink', path = target) {
     setMenu(null);
-    setDialog({
-      kind,
-      path,
-      value:
-        kind === 'mkdir'
-          ? join(targetFolder, t('新建文件夹'))
-          : kind === 'rename'
-            ? filename(path)
-            : path,
+    setDialog({ kind, path, value: kind === 'rename' ? filename(path) : path });
+  }
+  function startFolder(folder: string) {
+    setMenu(null);
+    if (readOnly || !scan.root || busy) return;
+    if (folder)
+      setCollapsed((current) => {
+        const next = new Set(current);
+        next.delete(folder);
+        return next;
+      });
+    setDraft({ parent: folder, value: '' });
+  }
+  function commitFolder() {
+    if (!draft) return;
+    const name = draft.value.trim();
+    if (!name) {
+      setDraft(null);
+      return;
+    }
+    if (/[\\/:*?"<>|]/.test(name) || name === '.' || name === '..') {
+      setDraft({ ...draft, error: t('名称不能包含 \\ / : * ? " < > |') });
+      return;
+    }
+    const path = join(draft.parent, name);
+    if (scan.entries.some((entry) => entry.path.toLowerCase() === path.toLowerCase())) {
+      setDraft({ ...draft, error: t('此位置已存在文件或文件夹“{name}”。', { name }) });
+      return;
+    }
+    setDraft(null);
+    void mutate({ op: 'mkdir', path }).then((success) => {
+      if (success && alive.current) {
+        setSelected(path);
+        setSelectedPaths(new Set([path]));
+      }
     });
   }
   const fileEvents = {
@@ -847,7 +888,7 @@ export function LocalLiterature({
                   iconOnly
                   aria-label={t('新建文件夹')}
                   disabled={readOnly || !scan.root || busy}
-                  onClick={() => command('mkdir', directory)}
+                  onClick={() => startFolder(directory)}
                 >
                   <FolderPlus />
                 </Button>
@@ -857,10 +898,27 @@ export function LocalLiterature({
           <div
             className={`local-file-tree${dropTarget !== null ? ' is-file-dragging' : ''}`}
             {...fileEvents}
+            onClick={(event) => {
+              // Clicking empty space clears the selection, so new folders go to the root.
+              if ((event.target as Element).closest('[data-tree-id], button, input, a')) return;
+              setSelected('');
+              setSelectedPaths(new Set());
+            }}
           >
             <TreeView
               label={t('项目文献')}
               items={tree}
+              draft={
+                draft
+                  ? {
+                      ...draft,
+                      label: t('文件夹名称'),
+                      onChange: (value) => setDraft({ ...draft, value, error: undefined }),
+                      onCommit: commitFolder,
+                      onCancel: () => setDraft(null),
+                    }
+                  : null
+              }
               selectedId={selected}
               selectedIds={selectedPaths}
               onSelectionChange={(paths, active) => {
@@ -1178,7 +1236,7 @@ export function LocalLiterature({
         label={t('文献操作')}
         onClose={() => setMenu(null)}
       >
-        <Button disabled={readOnly} role="menuitem" onClick={() => command('mkdir')}>
+        <Button disabled={readOnly} role="menuitem" onClick={() => startFolder(targetFolder)}>
           {t('新建文件夹')}
         </Button>
         {target && (
@@ -1310,11 +1368,7 @@ export function LocalLiterature({
       </Menu>
       {dialog && (
         <Modal
-          title={t(
-            { mkdir: '新建文件夹', rename: '重命名', move: '移动到', relink: '重新关联' }[
-              dialog.kind
-            ],
-          )}
+          title={t({ rename: '重命名', move: '移动到', relink: '重新关联' }[dialog.kind])}
           onClose={() => setDialog(null)}
           busy={busy}
         >
@@ -1325,11 +1379,9 @@ export function LocalLiterature({
               const path =
                 dialog.kind === 'rename' ? join(parent(dialog.path), dialog.value) : dialog.value;
               const operation: LibraryOperation =
-                dialog.kind === 'mkdir'
-                  ? { op: 'mkdir', path }
-                  : dialog.kind === 'relink'
-                    ? { op: 'relink', id: dialog.path, path }
-                    : { op: 'transfer', path: dialog.path, destination: path, copy: false };
+                dialog.kind === 'relink'
+                  ? { op: 'relink', id: dialog.path, path }
+                  : { op: 'transfer', path: dialog.path, destination: path, copy: false };
               void mutate(operation).then((success) => {
                 if (success && alive.current) setDialog(null);
               });

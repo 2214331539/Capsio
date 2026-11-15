@@ -41,11 +41,13 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "binaries/codex"
+      "binaries/codex",
+      "binaries/tectonic"
     ],
     "licenseFile": "../LICENSE",
     "resources": {
       "release-resources/licenses/": "licenses/",
+      "release-resources/tectonic-cache/": "tectonic-cache/",
       "release-resources/yita/": "yita/"
     },
     "windows": {

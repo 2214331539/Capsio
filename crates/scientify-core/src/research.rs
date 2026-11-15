@@ -284,6 +284,24 @@ impl ResearchFiles {
         Ok(entries)
     }
 
+    /// The raw bytes of a project file, for images and PDFs shown in the editor.
+    pub fn read_bytes(&self, root: &Path, path: &str) -> Result<Vec<u8>, String> {
+        let real = self.resolve(root, path, false)?;
+        if !real.is_file() {
+            return Err("文件不存在。".into());
+        }
+        bounded_read(&real, MAX_PDF_BYTES)
+    }
+
+    /// The checked absolute location of a project file, to show it in the file manager.
+    pub fn locate(&self, root: &Path, path: &str) -> Result<PathBuf, String> {
+        let real = self.resolve(root, path, false)?;
+        if !real.exists() {
+            return Err("文件不存在。".into());
+        }
+        Ok(real)
+    }
+
     pub fn read(&self, root: &Path, path: &str) -> Result<FileContent, String> {
         let real = self.resolve(root, path, false)?;
         let bytes = bounded_read(&real, MAX_TEXT_BYTES)?;
@@ -366,6 +384,17 @@ impl ResearchFiles {
             content: content.into(),
             version: version(content.as_bytes()),
         })
+    }
+
+    /// Creates a folder (and any missing parents) inside the project.
+    pub fn create_directory(&self, root: &Path, path: &str) -> Result<String, String> {
+        let _guard = self.gate.lock().map_err(io_error)?;
+        let real = self.resolve(root, path, true)?;
+        if real.exists() {
+            return Err("此位置已存在同名文件或文件夹。".into());
+        }
+        fs::create_dir(&real).map_err(io_error)?;
+        Ok(portable(&relative(path)?))
     }
 
     pub fn import_pdf(&self, source: &Path) -> Result<ImportedPdf, String> {

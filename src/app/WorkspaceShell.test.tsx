@@ -412,9 +412,9 @@ it('opens manuscripts in writing and keeps the assistant draft across modules', 
   render(<App store={store} backend={backend} />);
   await screen.findByRole('navigation', { name: '一级导航' });
   await user.click(rail().getByRole('button', { name: '写作' }));
-  expect(await screen.findByRole('region', { name: t('论文文件工作区') })).toBeTruthy();
+  expect(await screen.findByRole('heading', { name: t('还没有稿件') })).toBeTruthy();
   await waitFor(() => expect(backend.listFiles).toHaveBeenCalled());
-  expect(screen.getByRole('button', { name: t('Manuscript') })).toBeTruthy();
+  expect(screen.getByRole('button', { name: t('新建稿件…') })).toBeTruthy();
   await user.click(screen.getByRole('button', { name: 'AI 助手' }));
   const draft = screen.getByRole('textbox', { name: '向 AI 提问' });
   await user.type(draft, 'Keep my question');

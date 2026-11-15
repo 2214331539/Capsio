@@ -7,15 +7,12 @@ export const secondaryViews: Record<WorkspaceId, { id: string; label: string }[]
     { id: 'subscriptions', label: 'Subscriptions' },
   ],
   notes: [],
+  // The workbench is one view; the others are where older links land (a tab or a side view).
   experiments: [
-    { id: 'manage', label: '实验管理' },
     { id: 'files', label: 'Code' },
     { id: 'versions', label: 'Git' },
     { id: 'runs', label: 'Runs' },
   ],
-  writing: [
-    { id: 'files', label: 'Manuscript' },
-    { id: 'references', label: 'References' },
-  ],
+  writing: [{ id: 'files', label: 'Manuscript' }],
   files: [{ id: 'files', label: 'All files' }],
 };
