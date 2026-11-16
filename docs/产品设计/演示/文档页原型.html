@@ -1,0 +1,2939 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scientify · 文档页原型</title>
+<style>
+/* Scientify experiment workspace prototype: an IDE layout inside the app shell. */
+:root,
+[data-theme='graphite'] {
+  --chrome: #f4f4f5;
+  --canvas: #ffffff;
+  --raised: #ffffff;
+  --sunken: #fafafa;
+  --hover: rgba(24, 24, 27, 0.045);
+  --selected: rgba(24, 24, 27, 0.075);
+  --focus-row: rgba(59, 91, 219, 0.1);
+  --line: rgba(24, 24, 27, 0.08);
+  --line-strong: rgba(24, 24, 27, 0.15);
+  --text: #18181b;
+  --text-2: #52525b;
+  --text-3: #71717a;
+  --text-4: #a1a1aa;
+  --accent: #18181b;
+  --on-accent: #ffffff;
+  --link: #2f5bd3;
+  --ok: #2f7d4f;
+  --warn: #a5650e;
+  --bad: #c0392b;
+  --info: #3b5bdb;
+  --git-m: #a5650e;
+  --git-a: #2f7d4f;
+  --git-d: #c0392b;
+  --add-bg: rgba(47, 125, 79, 0.09);
+  --del-bg: rgba(192, 57, 43, 0.08);
+  --shadow-pop: 0 0 0 1px rgba(0, 0, 0, 0.07), 0 10px 32px rgba(0, 0, 0, 0.12);
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #e87ba4;
+  --s6: #008300;
+  --code-kw: #7c3aed;
+  --code-str: #2f7d4f;
+  --code-num: #b45309;
+  --code-com: #8b8b93;
+  --note: #e8590c;
+  color-scheme: light;
+}
+[data-theme='night'] {
+  --chrome: #0e0e10;
+  --canvas: #151517;
+  --raised: #1c1c1f;
+  --sunken: #121214;
+  --hover: rgba(255, 255, 255, 0.05);
+  --selected: rgba(255, 255, 255, 0.085);
+  --focus-row: rgba(123, 147, 240, 0.16);
+  --line: rgba(255, 255, 255, 0.075);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --text: #ededef;
+  --text-2: #a3a3ab;
+  --text-3: #85858e;
+  --text-4: #5b5b63;
+  --accent: #ededef;
+  --on-accent: #111113;
+  --link: #8aa4ff;
+  --ok: #4fae73;
+  --warn: #d49a3a;
+  --bad: #e5675a;
+  --info: #7b93f0;
+  --git-m: #d49a3a;
+  --git-a: #4fae73;
+  --git-d: #e5675a;
+  --add-bg: rgba(79, 174, 115, 0.11);
+  --del-bg: rgba(229, 103, 90, 0.11);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 32px rgba(0, 0, 0, 0.5);
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #c98500;
+  --s5: #d55181;
+  --s6: #008300;
+  --code-kw: #b197fc;
+  --code-str: #69db7c;
+  --code-num: #ffa94d;
+  --code-com: #6f6f78;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  font: 13px/1.5 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
+  color: var(--text);
+  background: var(--chrome);
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+svg.i {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mono {
+  font-family: 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+}
+.muted {
+  color: var(--text-3);
+}
+.spacer {
+  flex: 1;
+}
+
+/* Shell */
+.app {
+  display: grid;
+  grid-template-rows: 44px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  height: 100vh;
+  min-width: 1100px;
+  min-height: 680px;
+}
+.titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 8px 0 12px;
+}
+.logo {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+.ib {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.ib:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.ib[aria-pressed='true'] {
+  background: var(--selected);
+  color: var(--text);
+}
+.ib:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: transparent;
+}
+.ib.sm {
+  height: 22px;
+  min-width: 22px;
+  padding: 0 3px;
+}
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  color: var(--text-3);
+}
+.crumbs b {
+  color: var(--text);
+  font-weight: 500;
+}
+.tb-search {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 400px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--text-3);
+  text-align: left;
+}
+.tb-search kbd {
+  margin-left: auto;
+  font-size: 11px;
+}
+.tb-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--line-strong);
+}
+.body {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 8px 8px 0;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 248px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 6px 8px 8px;
+}
+.uplink {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  padding: 0 8px 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin: 2px 0 6px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+}
+.mark {
+  width: 18px;
+  height: 24px;
+  flex: none;
+  border-radius: 2px 4px 4px 2px;
+  background: #4f5866;
+  box-shadow: inset 3px 0 0 rgba(0, 0, 0, 0.22);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  text-align: left;
+}
+.nav-item:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.nav-item[aria-current] {
+  background: var(--selected);
+  color: var(--text);
+  font-weight: 500;
+}
+.views {
+  display: flex;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 8px 0 6px;
+  border-top: 1px solid var(--line);
+}
+.views .ib {
+  position: relative;
+  flex: 1;
+  height: 30px;
+}
+.views .ib[aria-pressed='true'] {
+  color: var(--text);
+}
+.views .ib[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  left: 28%;
+  right: 28%;
+  bottom: -3px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.views .badge {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--info);
+  color: #fff;
+  font: 600 10px/15px 'Segoe UI', sans-serif;
+}
+.view-title {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  padding: 0 2px 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+}
+.view {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0 -8px;
+  padding: 0 8px 8px;
+}
+.sec {
+  margin-top: 4px;
+}
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  height: 24px;
+  padding: 0 2px 0 2px;
+  border: 0;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-align: left;
+}
+.sec-head .t {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sec-head .n {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--selected);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--text-2);
+}
+.sec-head .acts {
+  display: none;
+}
+.sec:hover .sec-head .acts {
+  display: inline-flex;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12.5px;
+  text-align: left;
+  white-space: nowrap;
+}
+.row:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.row[aria-current] {
+  background: var(--focus-row);
+  color: var(--text);
+}
+.row .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row .dir {
+  color: var(--text-4);
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row .end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.row .hov {
+  display: none;
+}
+.row:hover .hov {
+  display: inline-flex;
+}
+.row:hover .unhov {
+  display: none;
+}
+.row svg.i {
+  color: var(--text-3);
+}
+.git {
+  width: 12px;
+  text-align: center;
+  font: 600 11px 'Cascadia Code', Consolas, monospace;
+}
+.git.M,
+.name.M {
+  color: var(--git-m);
+}
+.git.A,
+.git.U,
+.name.A,
+.name.U {
+  color: var(--git-a);
+}
+.git.D {
+  color: var(--git-d);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--text-4);
+}
+.dot.run {
+  background: var(--info);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--info) 22%, transparent);
+}
+.dot.done {
+  background: var(--ok);
+}
+.dot.fail {
+  background: var(--bad);
+}
+.inputbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin: 4px 0;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text-3);
+}
+.inputbox input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12.5px;
+}
+.inputbox .opt {
+  padding: 0 3px;
+  border-radius: 3px;
+  font: 11px 'Cascadia Code', Consolas, monospace;
+  color: var(--text-3);
+}
+textarea.msg-input {
+  width: 100%;
+  min-height: 52px;
+  margin: 2px 0 6px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  outline: 0;
+  resize: vertical;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--hover);
+}
+.btn.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: none;
+}
+.btn.primary:hover {
+  filter: brightness(1.15);
+}
+.btn.sm {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+.btn.block {
+  width: 100%;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--link);
+  font-size: 12.5px;
+}
+.link:hover {
+  text-decoration: underline;
+}
+.side-foot {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.account {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+}
+.avatar {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--selected);
+  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 600;
+}
+.avatar.ai {
+  background: color-mix(in srgb, var(--info) 14%, transparent);
+  color: var(--info);
+}
+.avatar.lj {
+  background: color-mix(in srgb, var(--s2) 16%, transparent);
+  color: var(--s2);
+}
+
+/* Main workspace */
+.main-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+}
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  border-radius: 10px;
+  background: var(--canvas);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 40px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line);
+}
+.widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.widget:hover {
+  background: var(--hover);
+}
+.widget .sub {
+  color: var(--text-3);
+  font-weight: 400;
+}
+.widget svg.i {
+  color: var(--text-3);
+}
+.run-btn {
+  color: var(--ok);
+}
+.stop-btn {
+  color: var(--bad);
+}
+.editor-tabs {
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  height: 34px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--sunken);
+  border-bottom: 1px solid var(--line);
+}
+.etab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 0 12px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.etab:hover {
+  color: var(--text);
+}
+.etab[aria-current] {
+  background: var(--canvas);
+  color: var(--text);
+  box-shadow: inset 0 -1px 0 var(--canvas), inset 0 2px 0 var(--accent);
+}
+.etab .x {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  opacity: 0;
+}
+.etab[aria-current] .x,
+.etab:hover .x {
+  opacity: 0.7;
+}
+.etab .x:hover {
+  background: var(--hover);
+}
+.etab .mod {
+  width: 7px;
+  height: 7px;
+  margin: 0 5px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.etab svg.i {
+  color: var(--text-3);
+}
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  height: 28px;
+  padding: 0 8px 0 14px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.workbench {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.editor {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+}
+.code {
+  padding: 2px 0 60px;
+  font: 12.5px/1.7 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+}
+.ln {
+  display: flex;
+}
+.ln .no {
+  position: relative;
+  width: 56px;
+  flex: none;
+  padding-right: 16px;
+  text-align: right;
+  color: var(--text-4);
+  user-select: none;
+}
+.ln.cur {
+  background: var(--hover);
+}
+.ln.cur .no {
+  color: var(--text-2);
+}
+.ln.add .no::after,
+.ln.mod .no::after {
+  content: '';
+  position: absolute;
+  right: 5px;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  background: var(--git-a);
+}
+.ln.mod .no::after {
+  background: var(--git-m);
+}
+.ln .tx {
+  white-space: pre;
+  padding-right: 24px;
+}
+.ln.dadd {
+  background: var(--add-bg);
+}
+.ln.ddel {
+  background: var(--del-bg);
+}
+.ln .wavy {
+  text-decoration: underline wavy var(--warn);
+  text-underline-offset: 3px;
+}
+.tk-kw {
+  color: var(--code-kw);
+}
+.tk-str {
+  color: var(--code-str);
+}
+.tk-num {
+  color: var(--code-num);
+}
+.tk-com {
+  color: var(--code-com);
+  font-style: italic;
+}
+.inline-chat {
+  margin: 4px 24px 6px 56px;
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  font: 12.5px/1.5 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+}
+.inline-chat .q {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+}
+.inline-chat .a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--line);
+}
+.codelens {
+  height: 18px;
+  padding-left: 56px;
+  font: 11.5px 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  color: var(--text-3);
+}
+.codelens button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text-3);
+}
+.codelens button:hover {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+/* Panel and status bar */
+.panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  height: 220px;
+  border-top: 1px solid var(--line);
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 32px;
+  padding: 0 6px 0 6px;
+}
+.ptab {
+  position: relative;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ptab:hover {
+  color: var(--text);
+}
+.ptab[aria-current] {
+  color: var(--text);
+  font-weight: 500;
+}
+.ptab[aria-current]::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 3px;
+  height: 1.5px;
+  background: var(--accent);
+}
+.ptab .n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--selected);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.panel-list {
+  width: 200px;
+  flex: none;
+  overflow: auto;
+  padding: 2px 6px;
+  border-right: 1px solid var(--line);
+}
+.console {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 2px 14px 12px;
+  font: 12px/1.65 'Cascadia Code', Consolas, monospace;
+  color: var(--text-2);
+  white-space: pre-wrap;
+}
+.console .err {
+  color: var(--bad);
+}
+.console a {
+  color: var(--link);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 24px;
+  padding: 0 6px;
+  border-top: 1px solid var(--line);
+  background: var(--sunken);
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.sb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  white-space: nowrap;
+}
+.sb:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.sb.live {
+  color: var(--info);
+}
+
+/* Tables */
+.grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.grid-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 30px;
+  padding: 0 10px;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+.grid-table thead tr:first-child th.grp {
+  height: 22px;
+  border-bottom: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-4);
+}
+.grid-table thead tr + tr th {
+  top: 22px;
+}
+.grid-table td {
+  height: 30px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.grid-table tr.r:hover td {
+  background: var(--hover);
+}
+.grid-table tr.r.sel td {
+  background: var(--focus-row);
+}
+.grid-table td:first-child,
+.grid-table th:first-child {
+  padding-left: 14px;
+}
+.grid-table .num {
+  text-align: right;
+}
+.grid-table .best {
+  color: var(--text);
+  font-weight: 650;
+}
+.grid-table .sep {
+  border-left: 1px solid var(--line);
+}
+.grid-table .nm {
+  color: var(--text);
+}
+.grid-table tr.grp-row td {
+  height: 28px;
+  background: var(--sunken);
+  font-size: 12px;
+  cursor: pointer;
+}
+.hist {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 16px;
+  margin: 2px 0 4px;
+}
+.hist i {
+  width: 6px;
+  background: color-mix(in srgb, var(--s1) 55%, transparent);
+}
+.check {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.progress {
+  display: inline-block;
+  width: 56px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--selected);
+  overflow: hidden;
+  vertical-align: middle;
+}
+.progress i {
+  display: block;
+  height: 100%;
+  background: var(--info);
+}
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ver {
+  font: 12px 'Cascadia Code', Consolas, monospace;
+  color: var(--text-2);
+}
+.ver em {
+  font-style: normal;
+  color: var(--warn);
+}
+.subbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 7px;
+  background: var(--hover);
+}
+.seg button {
+  height: 22px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.seg button[aria-pressed='true'] {
+  background: var(--canvas);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 240px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text-3);
+}
+.filter input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12px;
+}
+.pane-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.pane {
+  min-width: 0;
+  padding: 12px 16px 10px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.pane:nth-child(2n) {
+  border-right: 0;
+}
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.chart svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.chart .grid line {
+  stroke: var(--line);
+}
+.chart .axis text {
+  fill: var(--text-3);
+  font-size: 11px;
+}
+.chart .label {
+  fill: var(--text-2);
+  font-size: 11px;
+}
+.chart .hover-line {
+  stroke: var(--text-4);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.legend button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+}
+.legend button:hover {
+  background: var(--hover);
+}
+.legend button.off {
+  color: var(--text-4);
+}
+.legend i {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+.legend button.off i {
+  background: var(--text-4) !important;
+}
+.tooltip {
+  position: fixed;
+  z-index: 100;
+  min-width: 140px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  font-size: 12px;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.tooltip b {
+  display: block;
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+.tooltip div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tooltip div span:last-child {
+  margin-left: auto;
+  padding-left: 12px;
+}
+.tooltip i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Documents inside editors */
+.doc {
+  max-width: 1000px;
+  padding: 16px 24px 40px;
+}
+.doc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.doc-head h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.doc h2 {
+  margin: 20px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.kv {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 5px 14px;
+  margin: 0;
+  font-size: 12.5px;
+}
+.kv dt {
+  color: var(--text-3);
+}
+.kv dd {
+  margin: 0;
+}
+.subnav {
+  display: flex;
+  gap: 2px;
+  margin-top: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.subnav button {
+  position: relative;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+}
+.subnav button[aria-current] {
+  color: var(--text);
+  font-weight: 500;
+}
+.subnav button[aria-current]::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+}
+.note-area {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+  outline: 0;
+  resize: vertical;
+  line-height: 1.6;
+}
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--bad);
+  background: color-mix(in srgb, var(--bad) 7%, transparent);
+  font-size: 12.5px;
+}
+.welcome-head {
+  padding: 64px 56px 28px;
+}
+.welcome-head h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.welcome {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 340px);
+  gap: 56px;
+  padding: 0 56px 40px;
+}
+.welcome h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.welcome h2 {
+  margin: 26px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.welcome .lk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--link);
+  font-size: 13px;
+}
+.welcome .lk:hover {
+  text-decoration: underline;
+}
+.welcome .recent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 26px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.welcome .recent .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.welcome .recent .muted {
+  font-size: 12px;
+}
+
+/* Notebook */
+.nb-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 34px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+.cell {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  margin-right: 20px;
+  padding: 6px 0;
+}
+.cell .gutter {
+  padding: 8px 10px 0 0;
+  text-align: right;
+  font: 11.5px 'Cascadia Code', Consolas, monospace;
+  color: var(--text-4);
+}
+.cell .src {
+  border-radius: 6px;
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+  padding: 8px 12px;
+  font: 12.5px/1.65 'Cascadia Code', Consolas, monospace;
+  white-space: pre;
+  overflow-x: auto;
+}
+.cell.md .src {
+  background: transparent;
+  box-shadow: none;
+  font: 13px/1.6 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  white-space: normal;
+}
+.cell.md h3 {
+  margin: 4px 0;
+  font-size: 15px;
+}
+.cell.active .src {
+  box-shadow: inset 0 0 0 1px var(--info);
+}
+.cell .out {
+  grid-column: 2;
+  margin-top: 6px;
+  padding: 2px 12px;
+  font: 12px/1.6 'Cascadia Code', Consolas, monospace;
+  color: var(--text-2);
+}
+.cell .out table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.cell .out th,
+.cell .out td {
+  padding: 3px 14px 3px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+.cell .out th {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+/* Git graph */
+.log-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 90px 80px 76px;
+  align-items: center;
+  min-height: 32px;
+  padding-right: 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+  cursor: default;
+}
+.log-row:hover {
+  background: var(--hover);
+}
+.log-row.sel {
+  background: var(--focus-row);
+}
+.log-row .rail {
+  position: relative;
+  align-self: stretch;
+}
+.log-row .rail::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--s1);
+}
+.log-row .rail.side::after {
+  content: '';
+  position: absolute;
+  left: 31px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--s2);
+}
+.log-row .rail.first::before {
+  top: 16px;
+}
+.log-row .rail i {
+  position: absolute;
+  left: 15px;
+  top: 11px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 2px var(--s1);
+}
+.log-row .rail i.b {
+  left: 27px;
+  box-shadow: inset 0 0 0 2px var(--s2);
+}
+.log-row .msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.log-detail {
+  padding: 10px 16px 12px 58px;
+  border-bottom: 1px solid var(--line);
+  background: var(--sunken);
+  font-size: 12.5px;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font: 11px 'Cascadia Code', Consolas, monospace;
+  color: var(--text-2);
+}
+.tag.run {
+  box-shadow: none;
+  background: var(--selected);
+  font-family: inherit;
+  cursor: pointer;
+}
+.diff2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font: 12.5px/1.7 'Cascadia Code', Consolas, monospace;
+}
+.diff2 > div + div {
+  border-left: 1px solid var(--line);
+}
+
+/* Overlays */
+.quick {
+  position: fixed;
+  left: 50%;
+  top: 52px;
+  z-index: 60;
+  width: 580px;
+  transform: translateX(-50%);
+  border-radius: 9px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+.quick .qin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  margin: 6px;
+  padding: 0 10px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  color: var(--text-3);
+}
+.quick .qin input {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+.quick .ql {
+  padding: 6px 14px 2px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.quick .qi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.quick .qi:hover {
+  background: var(--focus-row);
+}
+.quick .qi small {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.quick .qi .mono {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.quick .list {
+  max-height: 380px;
+  overflow: auto;
+  padding-bottom: 6px;
+}
+.quick-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+}
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: start center;
+  padding-top: 10vh;
+  background: rgba(12, 12, 14, 0.24);
+}
+.dialog {
+  width: 560px;
+  border-radius: 10px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+}
+.dialog-head {
+  display: flex;
+  align-items: center;
+  padding: 14px 12px 4px 20px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.dialog-body {
+  padding: 10px 20px;
+}
+.dialog-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 14px 20px;
+  font-size: 12.5px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+}
+.form-row > label {
+  color: var(--text-2);
+}
+.field {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  outline: 0;
+}
+.field:focus {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.ptable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.ptable th {
+  padding: 4px 6px 4px 0;
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--text-3);
+  font-weight: 500;
+  font-size: 12px;
+  text-align: left;
+}
+.ptable td {
+  padding: 4px 6px 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ptable td:first-child {
+  width: 80px;
+  font: 12px 'Cascadia Code', Consolas, monospace;
+}
+.ptable .field {
+  height: 26px;
+  font: 12px 'Cascadia Code', Consolas, monospace;
+}
+.menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 230px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+}
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  text-align: left;
+  font-size: 12.5px;
+}
+.menu button:hover {
+  background: var(--focus-row);
+}
+.menu button kbd {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.menu hr {
+  height: 1px;
+  margin: 4px 6px;
+  border: 0;
+  background: var(--line);
+}
+.menu .ml {
+  padding: 5px 10px 2px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 60px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 440px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  font-size: 12.5px;
+}
+.toast svg.i {
+  color: var(--info);
+}
+
+/* AI dock */
+.dock {
+  width: 340px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: var(--canvas);
+  box-shadow: 0 0 0 1px var(--line);
+  overflow: hidden;
+}
+.dock-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 6px 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+.dock-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.msg.me {
+  align-self: flex-end;
+  max-width: 90%;
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: var(--selected);
+}
+.ctx {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  background: var(--hover);
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.codeblock {
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  overflow: hidden;
+  font: 12px/1.65 'Cascadia Code', Consolas, monospace;
+}
+.codeblock .h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--sunken);
+  font: 12px 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+}
+.codeblock .a,
+.codeblock .d {
+  padding: 0 10px;
+  white-space: pre;
+}
+.codeblock .a {
+  background: var(--add-bg);
+  color: var(--git-a);
+}
+.codeblock .d {
+  background: var(--del-bg);
+  color: var(--git-d);
+}
+.composer {
+  margin: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text-3);
+}
+
+/* Prototype controls and notes */
+.proto {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 9px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  font-size: 12px;
+}
+.proto strong {
+  padding: 0 8px;
+  font-weight: 600;
+}
+.proto .btn {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+  box-shadow: none;
+  font-weight: 400;
+}
+.proto .btn[aria-pressed='true'] {
+  background: var(--note);
+  color: #fff;
+}
+.note-badge {
+  position: fixed;
+  z-index: 85;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--note);
+  color: #fff;
+  font: 600 11px 'Segoe UI', sans-serif;
+  box-shadow: 0 0 0 2px var(--canvas);
+  pointer-events: none;
+}
+.note-outline {
+  position: fixed;
+  z-index: 69;
+  border: 1.5px dashed color-mix(in srgb, var(--note) 70%, transparent);
+  border-radius: 6px;
+  pointer-events: none;
+}
+.notes {
+  position: fixed;
+  right: 16px;
+  bottom: 56px;
+  z-index: 80;
+  width: 380px;
+  max-height: 68vh;
+  overflow: auto;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+}
+.notes h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.notes ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.notes li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.notes li b {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--note);
+  color: #fff;
+  font-size: 11px;
+}
+.notes li em {
+  display: block;
+  font-style: normal;
+  font-weight: 600;
+}
+.notes .ref {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: 11.5px;
+}
+
+/* v3: experiments as the unit, in-place naming, quick picks. */
+.row.draft { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; height: auto; min-height: 26px; padding-block: 2px; }
+.draft-input { flex: 1; min-width: 0; height: 22px; padding: 0 5px; border: 0; border-radius: 4px; outline: none; background: var(--bg); box-shadow: inset 0 0 0 1px var(--accent, var(--text)); color: var(--text); font: inherit; font-size: 12.5px; }
+.draft-error { flex-basis: 100%; margin: 2px 0 2px 31px; padding: 4px 6px; border-radius: 4px; background: color-mix(in srgb, var(--err, #c4473a) 10%, var(--bg)); color: var(--err, #c4473a); font-size: 11.5px; }
+.blank-fill { min-height: 40px; }
+.explorer-path { margin-top: auto; padding: 8px 6px 2px; border-top: 1px solid var(--line); color: var(--text-3); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goal-input { width: 100%; height: 32px; font-size: 13.5px; }
+.exp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.exp-cols h2 { margin-top: 18px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 22px; margin-left: 8px; padding: 0 8px; border: 0; border-radius: 11px; background: var(--hover); color: var(--text-2); font: inherit; font-size: 12px; cursor: pointer; }
+.chip:hover { color: var(--text); }
+.goal-cell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: 12px; }
+
+/* ---------- Writing workspace (local Overleaf) ---------- */
+.split { flex: 1; min-height: 0; display: flex; }
+.pane-left { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--line); }
+.pane-right { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; background: var(--sunken); }
+.split > .pane-left:only-child, .split > .pane-right:only-child { border-right: 0; }
+.sync-col { flex: none; width: 26px; display: flex; flex-direction: column; justify-content: center; gap: 6px; align-items: center; border-right: 1px solid var(--line); background: var(--chrome); }
+.ed-tools { display: flex; align-items: center; gap: 1px; flex: none; height: 32px; padding: 0 8px; border-bottom: 1px solid var(--line); background: var(--canvas); }
+.ed-tools .wide { width: auto; padding: 0 6px; gap: 4px; font-size: 12px; }
+.tsep { width: 1px; height: 16px; margin: 0 4px; background: var(--line-strong); }
+.code.tex .ln { cursor: text; }
+.tk-cite { color: var(--s1); text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+.tk-cite.is-missing { color: var(--bad); text-decoration: underline wavy var(--bad); }
+.tk-ref { color: var(--s3); }
+.ln.err-line { background: color-mix(in srgb, var(--bad) 7%, transparent); }
+.ln.cmt-line .tx { background: color-mix(in srgb, var(--s4) 16%, transparent); }
+.gut-err, .gut-cmt { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); display: inline-flex; }
+.gut-err { color: var(--bad); }
+.gut-cmt { color: var(--s4); }
+.cite-pop { margin: 2px 0 6px 56px; width: min(560px, calc(100% - 70px)); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow-pop); overflow: hidden; font-family: system-ui, sans-serif; }
+.cite-pop .qin { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border-bottom: 1px solid var(--line); color: var(--text-3); }
+.cite-pop .qin input { flex: 1; border: 0; outline: none; background: transparent; color: var(--text); font: inherit; font-size: 13px; }
+.cite-item { display: grid; grid-template-columns: 150px 1fr; grid-template-areas: "key title" "who src"; gap: 1px 10px; width: 100%; padding: 6px 10px; border: 0; background: transparent; color: var(--text); text-align: left; font: inherit; font-size: 12.5px; cursor: pointer; }
+.cite-item:hover { background: var(--hover); }
+.cite-item .mono { grid-area: key; font-size: 11.5px; color: var(--s1); }
+.cite-item .t { grid-area: title; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cite-item .muted { grid-area: who; font-size: 11.5px; }
+.cite-item .src { grid-area: src; font-size: 11px; color: var(--text-3); }
+.compile-group { display: inline-flex; }
+.compile-group .compile { border-radius: 6px 0 0 6px; gap: 6px; }
+.compile-group .compile-more { border-radius: 0 6px 6px 0; padding: 0 6px; border-left: 1px solid color-mix(in srgb, var(--on-accent) 25%, transparent); }
+.spin { width: 11px; height: 11px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.log-btn { position: relative; gap: 3px; }
+.log-btn .cnt { min-width: 15px; padding: 0 4px; border-radius: 8px; color: #fff; font-size: 10px; line-height: 15px; text-align: center; }
+.log-btn .cnt.bad { background: var(--bad); }
+.log-btn .cnt.warn { background: var(--warn); }
+.layout-seg button { width: 28px; padding: 0; display: grid; place-items: center; }
+.pdf-bar { display: flex; align-items: center; gap: 2px; flex: none; height: 32px; padding: 0 10px; border-bottom: 1px solid var(--line); background: var(--canvas); }
+.pdf-scroll { flex: 1; min-height: 0; overflow: auto; padding: 18px 0 40px; transition: opacity 0.2s; }
+.pdf-scroll.is-compiling { opacity: 0.45; }
+.page { width: calc(560px * var(--z)); margin: 0 auto 18px; background: #fff; color: #111; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18); }
+.page-in { position: relative; padding: calc(44px * var(--z)) calc(52px * var(--z)) calc(40px * var(--z)); font: calc(10.5px * var(--z)) / 1.45 "Times New Roman", "Nimbus Roman", serif; }
+.page h1 { margin: 0 0 6px; font-size: 1.6em; line-height: 1.25; text-align: center; font-weight: 700; }
+.page h2 { margin: 1.1em 0 0.4em; font-size: 1.2em; font-weight: 700; }
+.page h3 { margin: 0.8em 0 0.3em; font-size: 1.05em; font-weight: 700; }
+.page p { margin: 0 0 0.6em; text-align: justify; cursor: default; border-radius: 2px; }
+.page .authors { text-align: center; margin-bottom: 14px; }
+.page .abstract { margin: 0 8% 10px; font-size: 0.95em; }
+.page .abstract b { display: block; text-align: center; margin-bottom: 4px; }
+.page figure { margin: 10px 0; text-align: center; }
+.page figcaption { margin-top: 4px; font-size: 0.92em; }
+.page .pdf-cite { color: #1b5fb4; }
+.page .pdf-cite.missing { color: #c0392b; font-weight: 700; }
+.page .tex-err { color: #c0392b; }
+.pdf-table { margin: 10px auto; width: 88%; }
+.pdf-table .cap { text-align: center; margin-bottom: 4px; font-size: 0.92em; }
+.pdf-table table { width: 100%; border-collapse: collapse; border-top: 1.5px solid #111; border-bottom: 1.5px solid #111; }
+.pdf-table th { border-bottom: 1px solid #111; font-weight: 400; }
+.pdf-table td, .pdf-table th { padding: 2px 6px; text-align: center; }
+.page .refs { padding-left: 1.6em; font-size: 0.92em; }
+.page-no { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; font-size: 0.9em; }
+.flash { animation: flash 1.8s ease-out; }
+@keyframes flash { 0%, 30% { background: rgba(255, 196, 0, 0.45); } 100% { background: transparent; } }
+.log-pane { flex: 1; min-height: 0; overflow: auto; padding: 0 12px 30px; background: var(--canvas); }
+.log-head { position: sticky; top: 0; display: flex; align-items: center; gap: 10px; height: 40px; background: var(--canvas); font-size: 12.5px; z-index: 1; }
+.log-group { margin: 12px 0 6px; font-size: 12px; font-weight: 600; color: var(--text-2); }
+.log-group .n { margin-left: 4px; padding: 0 6px; border-radius: 8px; color: #fff; font-size: 10.5px; }
+.log-group .n.bad { background: var(--bad); }
+.log-group .n.warn { background: var(--warn); }
+.log-item { margin-bottom: 6px; padding: 8px 10px; border-radius: 8px; border-left: 3px solid var(--warn); background: var(--sunken); cursor: pointer; font-size: 12.5px; }
+.log-item.error { border-left-color: var(--bad); background: color-mix(in srgb, var(--bad) 6%, var(--sunken)); }
+.log-item .lh { display: flex; align-items: center; gap: 6px; }
+.log-item.error .lh svg { color: var(--bad); }
+.log-item.warn .lh svg { color: var(--warn); }
+.log-item pre { margin: 6px 0 0; padding: 6px 8px; border-radius: 6px; background: var(--canvas); font-size: 11.5px; overflow: auto; }
+.log-item .hint { margin-top: 6px; color: var(--text-2); font-size: 12px; }
+.img-preview { display: grid; place-items: center; background: var(--sunken); }
+.toggle-row { display: flex; gap: 8px; align-items: flex-start; padding: 6px; font-size: 12.5px; cursor: pointer; }
+.review-card { margin: 4px 2px 6px; padding: 8px 10px; border-radius: 8px; background: var(--canvas); box-shadow: 0 0 0 1px var(--line); font-size: 12.5px; cursor: pointer; }
+.review-card del { color: var(--bad); }
+.review-card ins { color: var(--ok); text-decoration: none; background: var(--add-bg); }
+.env-box { padding: 8px 10px; border-radius: 6px; background: var(--sunken); font-size: 12.5px; }
+.env-box svg { color: var(--ok); vertical-align: -2px; }
+.tpl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+.tpl { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 6px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font: inherit; font-size: 12px; cursor: pointer; box-shadow: 0 0 0 1px var(--line); }
+.tpl.sel { box-shadow: 0 0 0 2px var(--accent); }
+.tpl-page { width: 46px; height: 60px; padding: 6px 5px; border-radius: 2px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); display: flex; flex-direction: column; gap: 4px; }
+.tpl-page i { display: block; height: 3px; border-radius: 2px; background: #c9c9cf; }
+.tpl-page i:first-child { height: 5px; background: #8a8a93; }
+.fig-pick { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.fig { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border: 0; border-radius: 8px; background: var(--sunken); color: var(--text); font: inherit; font-size: 11.5px; cursor: pointer; }
+.fig.sel { box-shadow: 0 0 0 2px var(--accent); }
+.fig svg { background: #fff; border-radius: 4px; }
+.tbl-grid { display: grid; grid-template-columns: repeat(6, 26px); gap: 3px; }
+.tbl-grid i { height: 20px; border-radius: 3px; background: var(--hover); box-shadow: inset 0 0 0 1px var(--line); }
+.tbl-grid i.on { background: color-mix(in srgb, var(--s1) 30%, transparent); }
+.sym { display: grid; grid-template-columns: repeat(8, 30px); gap: 2px; padding: 4px; }
+.sym button { width: 30px; height: 28px; justify-content: center; padding: 0; font-size: 14px; }
+.log-head b { white-space: nowrap; }
+.log-head .muted { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-tools { overflow: hidden; }
+
+/* ---------- Docs module (knowledge base + block editor) ---------- */
+.docs-side { display: flex; flex-direction: column; gap: 2px; }
+.side-search { display: flex; align-items: center; gap: 4px; padding: 6px 0 4px; }
+.search-field { flex: 1; display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border-radius: 6px; background: var(--hover); color: var(--text-3); }
+.search-field input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 12.5px; }
+.new-btn { width: 28px; height: 28px; }
+.tree-row { cursor: default; }
+.tree-row .caret { display: inline-grid; place-items: center; width: 16px; height: 16px; flex: none; border-radius: 4px; color: var(--text-3); }
+.tree-row .caret:hover { background: var(--selected); }
+.pi { width: 18px; flex: none; text-align: center; font-size: 13px; line-height: 1; }
+.mini { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; color: var(--text-3); }
+.mini:hover { background: var(--selected); color: var(--text); }
+.side-tools { display: flex; flex-direction: column; padding: 4px 0; border-top: 1px solid var(--line); }
+.side-tools .row { height: 26px; }
+.muted.pad { padding: 8px; }
+.sm { font-size: 11.5px; }
+
+.doc-main { background: var(--canvas); }
+.doc-top { display: flex; align-items: center; gap: 6px; flex: none; height: 44px; padding: 0 10px 0 14px; border-bottom: 1px solid var(--line); }
+.doc-crumbs { display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.crumb { height: 26px; padding: 0 6px; border: 0; border-radius: 5px; background: transparent; color: var(--text-2); font: inherit; font-size: 13px; }
+.crumb:last-child { color: var(--text); font-weight: 500; }
+.crumb:hover { background: var(--hover); }
+.doc-crumbs .sep { color: var(--text-4); }
+.doc-status { display: inline-flex; align-items: center; gap: 5px; color: var(--text-3); font-size: 12px; white-space: nowrap; }
+.faces { display: inline-flex; margin: 0 4px; }
+.face { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-left: -6px; border: 2px solid var(--canvas); border-radius: 50%; color: #fff; font-size: 8.5px; font-weight: 600; }
+.face.a { background: #3b5bdb; }
+.face.b { background: #1baf7a; }
+.face.c { background: #eb6834; }
+.member .face { margin: 0; width: 28px; height: 28px; }
+
+.doc-scroll { position: relative; flex: 1; min-height: 0; overflow: auto; }
+.doc-col { max-width: 760px; margin: 0 auto; padding: 36px 56px 160px; }
+.doc-col.wide { max-width: none; padding-right: 220px; }
+.page-head { position: relative; padding-left: 4px; }
+.page-head-tools { height: 28px; opacity: 0; transition: opacity 0.15s; }
+.page-head:hover .page-head-tools { opacity: 1; }
+.btn.ghost { background: transparent; box-shadow: none; color: var(--text-3); }
+.btn.ghost:hover { background: var(--hover); color: var(--text); }
+.doc-icon { font-size: 44px; line-height: 1.2; margin: 6px 0 4px; }
+.doc-title { margin: 0 0 18px; font-size: 32px; font-weight: 700; letter-spacing: -0.01em; }
+.doc-title.empty { color: var(--text-4); }
+.tpl-suggest { margin: -6px 0 16px 4px; }
+.tpl-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tpl-chip { height: 30px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 15px; background: var(--canvas); color: var(--text-2); font: inherit; font-size: 12.5px; }
+.tpl-chip:hover { background: var(--hover); color: var(--text); }
+
+.blocks { font-size: 15px; line-height: 1.75; color: var(--text); }
+.blk { position: relative; margin: 1px 0; padding: 1px 4px; border-radius: 4px; }
+.blk-tools { position: absolute; left: -52px; top: 3px; display: flex; gap: 0; opacity: 0; transition: opacity 0.1s; }
+.blk.is-h2 .blk-tools { top: 14px; }
+.blk:hover .blk-tools { opacity: 1; }
+.bt { display: grid; place-items: center; width: 24px; height: 24px; border: 0; border-radius: 4px; background: transparent; color: var(--text-4); }
+.bt:hover { background: var(--hover); color: var(--text-2); }
+.grip { cursor: grab; }
+.blk-body p { margin: 0; padding: 3px 0; }
+.blk-body h2 { margin: 18px 0 4px; font-size: 21px; font-weight: 650; }
+.blk-body h3 { margin: 12px 0 2px; font-size: 17px; font-weight: 650; }
+.blk-body ol, .blk-body ul { margin: 2px 0; padding-left: 24px; }
+.blk-body li { padding: 2px 0; }
+.callout { display: flex; gap: 10px; padding: 12px 14px; border-radius: 8px; background: color-mix(in srgb, var(--s4) 13%, var(--canvas)); }
+.callout.ai-made { background: color-mix(in srgb, var(--s1) 10%, var(--canvas)); }
+.callout .emoji { font-size: 18px; line-height: 1.5; }
+.mention { padding: 1px 6px; border-radius: 10px; background: color-mix(in srgb, var(--info) 12%, transparent); color: var(--info); font-size: 13.5px; }
+.page-link { display: inline-flex; align-items: center; gap: 2px; padding: 0 4px; border: 0; border-radius: 4px; background: transparent; color: var(--text); font: inherit; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; cursor: pointer; }
+.page-link:hover { background: var(--hover); }
+.imath { padding: 0 4px; font-family: 'Cambria Math', 'Times New Roman', serif; font-size: 15.5px; white-space: nowrap; }
+.hl { cursor: text; border-radius: 2px; }
+.hl:hover { background: color-mix(in srgb, var(--info) 8%, transparent); }
+.hl.is-selected { background: color-mix(in srgb, var(--info) 22%, transparent); }
+.card { display: flex; gap: 12px; align-items: flex-start; margin: 6px 0; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--canvas); cursor: pointer; font-size: 13.5px; line-height: 1.55; }
+.card:hover { background: var(--sunken); }
+.card > svg.i { margin-top: 2px; color: var(--s1); flex: none; }
+.card .muted { font-size: 12.5px; }
+.card-note { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--text-2); font-size: 12.5px; }
+.card blockquote { margin: 8px 0 0; padding: 2px 0 2px 10px; border-left: 3px solid var(--s1); color: var(--text-2); font-style: italic; }
+.run-card { align-items: center; }
+.run-dot { width: 10px; height: 10px; margin-top: 0; border-radius: 50%; background: var(--ok); flex: none; }
+.kv-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 4px; font-size: 12.5px; color: var(--text-3); }
+.kv-row b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pill { padding: 2px 8px; border-radius: 10px; font-size: 11.5px; white-space: nowrap; }
+.pill.ok { background: color-mix(in srgb, var(--ok) 13%, transparent); color: var(--ok); }
+.math-block { margin: 6px 0; padding: 14px; border-radius: 6px; background: var(--sunken); text-align: center; font-family: 'Cambria Math', 'Times New Roman', serif; font-size: 18px; }
+.dtable { width: 100%; margin: 6px 0; border-collapse: collapse; font-size: 13.5px; }
+.dtable th, .dtable td { padding: 7px 10px; border: 1px solid var(--line-strong); text-align: left; }
+.dtable th { background: var(--sunken); font-weight: 600; }
+.fig-block { margin: 8px 0; text-align: center; }
+.chart-svg { width: 100%; max-width: 520px; font-size: 11px; fill: var(--text-3); }
+.fig-block figcaption { color: var(--text-3); font-size: 12.5px; }
+.todo { display: flex; align-items: flex-start; gap: 8px; padding: 3px 0; cursor: pointer; }
+.todo input { width: 16px; height: 16px; margin: 5px 0 0; accent-color: var(--s1); }
+.todo.done > span { color: var(--text-4); text-decoration: line-through; }
+.date { padding: 1px 6px; border-radius: 4px; background: var(--hover); color: var(--text-2); font-size: 12.5px; }
+.toggle-b { display: flex; gap: 4px; }
+.tg { display: grid; place-items: center; width: 22px; height: 22px; margin-top: 3px; border: 0; border-radius: 4px; background: transparent; color: var(--text-2); }
+.tg:hover { background: var(--hover); }
+.toggle-b b { font-weight: 500; }
+.placeholder { color: var(--text-4); cursor: text; }
+.code-b { position: relative; margin: 6px 0; padding: 14px 16px; border-radius: 6px; background: var(--sunken); font: 13px/1.6 'Cascadia Code', Consolas, monospace; white-space: pre; }
+.code-b .lang { position: absolute; top: 6px; right: 10px; color: var(--text-4); font-size: 11px; }
+.subpage { display: flex; align-items: center; gap: 8px; width: 100%; height: 34px; padding: 0 6px; border: 0; border-radius: 5px; background: transparent; color: var(--text); font: inherit; font-size: 15px; text-align: left; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 4px; }
+.subpage:hover { background: var(--hover); }
+.conflict { margin: 6px 0; border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent); border-radius: 8px; overflow: hidden; }
+.conflict-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: color-mix(in srgb, var(--warn) 10%, var(--canvas)); color: var(--warn); font-size: 13px; font-weight: 500; }
+.conflict-side { padding: 8px 14px 10px; border-top: 1px solid var(--line); }
+.conflict-side.mine { background: color-mix(in srgb, var(--info) 5%, transparent); }
+.conflict-side .who { color: var(--text-3); font-size: 12px; }
+.conflict-side p { margin: 2px 0 0; }
+
+.outline { position: absolute; top: 120px; right: 22px; display: flex; flex-direction: column; gap: 1px; width: 150px; padding-left: 10px; border-left: 1px solid var(--line); }
+.outline button { height: 26px; padding: 0 6px; border: 0; border-radius: 4px; background: transparent; color: var(--text-3); font: inherit; font-size: 12.5px; text-align: left; }
+.outline button:hover { background: var(--hover); color: var(--text); }
+@media (max-width: 1360px) { .outline { display: none; } }
+
+.float-bar { position: fixed; z-index: 55; display: flex; align-items: center; gap: 1px; padding: 3px; border-radius: 8px; background: var(--raised); box-shadow: var(--shadow-pop); }
+.float-bar .ib { width: 28px; height: 28px; }
+.fb-t, .fb-ai { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border: 0; border-radius: 5px; background: transparent; color: var(--text); font: inherit; font-size: 12.5px; }
+.fb-t:hover, .fb-ai:hover { background: var(--hover); }
+.fb-ai { color: var(--info); }
+.float-bar .tsep { width: 1px; height: 18px; margin: 0 3px; background: var(--line-strong); }
+
+.menu.slash { width: 300px; max-height: 420px; overflow: auto; }
+.slash-q { padding: 6px 10px 4px; font-size: 12.5px; }
+.menu .turn-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.menu button.danger { color: var(--bad); }
+
+.home .home-title { margin: 8px 0 12px; font-size: 28px; font-weight: 700; }
+.home-actions { display: flex; gap: 8px; margin-bottom: 28px; }
+.home-h { margin: 18px 0 10px; color: var(--text-3); font-size: 12.5px; font-weight: 600; }
+.home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.home-card, .tpl-card { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 120px; padding: 14px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--canvas); color: var(--text); font: inherit; text-align: left; }
+.home-card:hover, .tpl-card:hover { background: var(--sunken); }
+.home-card b, .tpl-card b { font-size: 14px; font-weight: 600; }
+.home-card .muted, .tpl-card .muted { font-size: 12px; }
+.hc-icon { font-size: 24px; margin-bottom: 4px; }
+.home-list .row { height: 30px; }
+
+.tool-line { display: flex; align-items: center; gap: 6px; color: var(--text-3); font: 12px 'Cascadia Code', Consolas, monospace; }
+.tool-line svg.i { color: var(--ok); }
+.approve { padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 8px; }
+.approve-acts { display: flex; gap: 6px; margin-top: 8px; }
+.mini-doc { gap: 6px; }
+.mini-page { margin-top: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.mini-page p { margin: 6px 0 0; }
+
+.doc-dialog { width: 520px; }
+.member { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.member:last-child { border-bottom: 0; }
+.tpl-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tpl-card { min-height: 104px; }
+.lib-item { display: flex; gap: 10px; width: 100%; padding: 10px 6px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; text-align: left; }
+.lib-item:hover { background: var(--hover); }
+.lib-item > span { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.lib-item svg.i { margin-top: 2px; color: var(--s1); }
+.main-wrap:has(.dock) .outline { display: none; }
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+/* Scientify docs prototype: a project knowledge base with a block editor. Sample data only. */
+(() => {
+  'use strict';
+
+  // ---------- Icons ----------
+  const P = {
+    play: '<polygon points="7 4 20 12 7 20 7 4"/>',
+    down: '<path d="m6 9 6 6 6-6"/>',
+    right: '<path d="m9 18 6-6-6-6"/>',
+    left: '<path d="m15 18-6-6 6-6"/>',
+    more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    plus: '<path d="M5 12h14M12 5v14"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+    files: '<path d="M15 2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 7v13a2 2 0 0 0 2 2h9"/>',
+    folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    book: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+    note: '<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><path d="M21.38 5.62a1 1 0 0 0-3-3l-5 5a2 2 0 0 0-.51.86l-.84 2.87a.5.5 0 0 0 .62.62l2.87-.84a2 2 0 0 0 .86-.51z"/>',
+    flask: '<path d="M10 2v7.31M14 9.3V2M8.5 2h7M14 9.3a6.5 6.5 0 1 1-4 0M5.52 16h12.96"/>',
+    pen: '<path d="M12 20h9"/><path d="M16.38 3.62a1 1 0 0 1 3 3L7.37 18.64a2 2 0 0 1-.86.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.86z"/>',
+    sparkles: '<path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/><path d="M19 3v4M17 5h4"/>',
+    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+    user: '<circle cx="12" cy="8" r="4.5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77"/>',
+    help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>',
+    sidebar: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/>',
+    back: '<path d="m12 19-7-7 7-7M19 12H5"/>',
+    fwd: '<path d="M5 12h14m-7-7 7 7-7 7"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/>',
+    error: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/>',
+    history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+    table: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+    cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
+    newfile: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M12 12v6M9 15h6"/>',
+    newfolder: '<path d="M12 10v6M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+    redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
+    bold: '<path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/>',
+    italic: '<line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/>',
+    quote: '<path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    sigma: '<path d="M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2"/>',
+    omega: '<path d="M3 20h4.5a.5.5 0 0 0 .5-.5v-.282a.52.52 0 0 0-.247-.437 8 8 0 1 1 8.494-.001.52.52 0 0 0-.247.438v.282a.5.5 0 0 0 .5.5H21"/>',
+    comment: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+    split: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/>',
+    code: '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
+    pdf: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"/>',
+    zin: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/>',
+    zout: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M8 11h6"/>',
+    open: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+    star: '<path d="M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7 5.2.8a.5.5 0 0 1 .3.9l-3.8 3.6.9 5.2a.5.5 0 0 1-.7.5L12 15.6l-4.7 2.4a.5.5 0 0 1-.7-.5l.9-5.2-3.8-3.6a.5.5 0 0 1 .3-.9l5.2-.8z"/>',
+    tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5"/>',
+    git: '<circle cx="12" cy="12" r="3"/><path d="M3 12h6M15 12h6"/>',
+    zip: '<path d="M10 12v-1M10 18v-2M10 7V6M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5"/><circle cx="10" cy="20" r="2"/>',
+  };
+  const icon = (name, size = 16) =>
+    `<svg class="i" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${P[name] || ''}</svg>`;
+  const esc = (s) =>
+    String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  Object.assign(P, {
+    grip: '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>',
+    home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+    layout: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    at: '<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>',
+    copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',
+    move: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
+    width: '<path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/>',
+    heading: '<path d="M6 4v16M18 4v16M6 12h12"/>',
+    todo: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/>',
+    bulb: '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>',
+    minus: '<path d="M4 12h16"/>',
+    toggle: '<path d="m9 6 6 6-6 6"/>',
+    olist: '<path d="M10 6h11M10 12h11M10 18h11M4 6h1v4M4 10h2M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',
+    paper: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+    run: '<path d="M10 2v7.31M14 9.3V2M8.5 2h7M14 9.3a6.5 6.5 0 1 1-4 0M5.52 16h12.96"/>',
+    palette: '<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2a10 10 0 0 0 0 20c1 0 1.5-.8 1.5-1.5 0-.4-.1-.7-.4-1-.3-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16a6 6 0 0 0 6-6c0-5-4.5-9-10-9z"/>',
+    strike: '<path d="M16 4H9a3 3 0 0 0-2.83 4M14 12a4 4 0 0 1 0 8H6M4 12h16"/>',
+    lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  });
+
+  // ---------- Sample project knowledge base ----------
+  const ME = { id: 'me', name: '我', tail: '我' };
+  const MEMBERS = [
+    { id: 'me', tail: '尾号 0718', role: '所有者', you: true },
+    { id: 'u6018', tail: '尾号 6018', role: '编辑者' },
+    { id: 'u2231', tail: '尾号 2231', role: '审阅者' },
+  ];
+  const PAGES0 = [
+    { id: 'home', title: '项目首页', icon: '🏠', parent: null, at: '11-14 21:02', by: '尾号 0718' },
+    { id: 'meet', title: '组会纪要', icon: '🗓️', parent: 'home', at: '11-16 10:31', by: '尾号 6018' },
+    { id: 'm1116', title: '11 月 16 日组会', icon: '📝', parent: 'meet', at: '11-16 10:31', by: '尾号 6018' },
+    { id: 'm1109', title: '11 月 9 日组会', icon: '📝', parent: 'meet', at: '11-09 18:20', by: '尾号 0718' },
+    { id: 'm1102', title: '11 月 2 日组会', icon: '📝', parent: 'meet', at: '11-02 17:45', by: '尾号 0718' },
+    { id: 'exp', title: '实验记录', icon: '🧪', parent: 'home', at: '11-15 23:10', by: '尾号 0718' },
+    { id: 'abl', title: 'StreamingJev 时机模型消融', icon: '📈', parent: 'exp', at: '11-16 09:12', by: '尾号 0718' },
+    { id: 'base', title: '基线复现：VideoLLM-online', icon: '🔁', parent: 'exp', at: '11-12 15:03', by: '尾号 6018' },
+    { id: 'lit', title: '文献调研', icon: '📚', parent: 'home', at: '11-15 16:40', by: '尾号 2231' },
+    { id: 'related', title: '主动式助手相关工作', icon: '🧭', parent: 'lit', at: '11-15 16:40', by: '尾号 2231' },
+    { id: 'bench', title: '流式视频 benchmark 对比', icon: '📊', parent: 'lit', at: '11-10 11:22', by: '尾号 0718' },
+    { id: 'weekly', title: '周报', icon: '🗂️', parent: 'home', at: '11-09 20:00', by: '尾号 0718' },
+    { id: 'w45', title: '第 45 周周报', icon: '📄', parent: 'weekly', at: '11-09 20:00', by: '尾号 0718' },
+    { id: 'old', title: '笔记（迁移）', icon: '📒', parent: 'home', at: '11-16 11:52', by: 'Scientify' },
+    { id: 'n1', title: 'CapMem 阅读', icon: '📄', parent: 'old', at: '10-23 23:06', by: '尾号 0718' },
+    { id: 'n2', title: 'OASIS OnDemand', icon: '📄', parent: 'old', at: '10-24 14:30', by: '尾号 0718' },
+  ];
+  const TEMPLATES = [
+    ['blank', '📄', '空白页', '从空白开始'],
+    ['meeting', '🗓️', '组会纪要', '参会、议题、结论、待办'],
+    ['experiment', '🧪', '实验记录', '目的、设置、运行、结果、分析'],
+    ['survey', '📚', '论文调研', '问题、方法对比表、论文卡片'],
+    ['weekly', '🗂️', '周报', '本周进展、问题、下周计划'],
+  ];
+  const TITLES = { meeting: '11 月 23 日组会', experiment: '新的实验记录', survey: '新的论文调研', weekly: '第 46 周周报' };
+  const LIBRARY = [
+    ['Proactive Physical AI: Timing Models for Streaming Assistants', 'Chen et al. · 2026 · CVPR', '有笔记'],
+    ['IPIBench: Benchmarking Proactive Intervention in Streaming Video', 'Liu et al. · 2026 · NeurIPS', '有笔记'],
+    ['VideoLLM-online: Online Video Large Language Model for Streaming Video', 'Chen et al. · 2024 · CVPR', ''],
+    ['StreamingBench: Assessing the Gap for MLLMs to Achieve Streaming Video Understanding', 'Lin et al. · 2024 · arXiv', '有笔记'],
+  ];
+
+  const fresh = () => ({
+    theme: 'graphite',
+    annotate: false,
+    dock: null,
+    page: 'm1116',
+    pages: PAGES0.map((p) => ({ ...p })),
+    trash: [{ id: 'tmp', title: '临时想法', icon: '📄', at: '11-14 删除', by: '尾号 0718' }],
+    expanded: new Set(['home', 'meet', 'exp', 'lit']),
+    starred: ['home', 'related'],
+    recent: ['m1116', 'abl', 'related', 'w45'],
+    recentOpen: true,
+    menu: null,
+    dialog: null,
+    toast: null,
+    search: '',
+    selection: false,
+    todo: { t1: false, t2: true, t3: false },
+    toggle: false,
+    conflict: 'open',
+    inserted: [],
+    template: null,
+    width: 'standard',
+    ai: 'idle',
+  });
+  let S = fresh();
+
+  // ---------- Helpers ----------
+  const page = (id) => S.pages.find((p) => p.id === id);
+  const children = (id) => S.pages.filter((p) => p.parent === id);
+  const path = (id) => {
+    const out = [];
+    for (let p = page(id); p; p = page(p.parent)) out.unshift(p);
+    return out;
+  };
+  const toast = (text) => {
+    S.toast = { text, at: Date.now() };
+    const at = S.toast.at;
+    setTimeout(() => {
+      if (S.toast?.at === at) {
+        S.toast = null;
+        render();
+      }
+    }, 2600);
+  };
+  const anchor = (el, dx = 0) => {
+    const r = el.getBoundingClientRect();
+    return { x: Math.min(r.left + dx, window.innerWidth - 280), y: Math.min(r.bottom + 4, window.innerHeight - 380) };
+  };
+  const mention = (who) => `<span class="mention">@${esc(who)}</span>`;
+  const pageLink = (id) => {
+    const p = page(id);
+    return p ? `<button class="page-link" data-act="open" data-id="${id}">${p.icon} ${esc(p.title)}</button>` : '';
+  };
+
+  // ---------- Chrome ----------
+  function titlebar() {
+    const p = page(S.page);
+    return `<header class="titlebar">
+      <svg class="logo" viewBox="0 0 24 24"><path d="M12 2.5 3.5 7v10l8.5 4.5 8.5-4.5V7z" fill="var(--text)"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10" stroke="var(--chrome)" stroke-width="1.4" fill="none"/><circle cx="12" cy="6.2" r="1.6" fill="var(--chrome)"/></svg>
+      <button class="ib" aria-pressed="true">${icon('sidebar')}</button>
+      <button class="ib">${icon('back')}</button><button class="ib">${icon('fwd')}</button>
+      <div class="crumbs">Proactive <span>/</span> 文档${p ? ` <span>/</span> <b>${esc(p.title)}</b>` : ''}</div>
+      <button class="tb-search" data-act="toast" data-text="全局搜索：文献、文档、实验文件和命令">${icon('search', 14)}搜索文献、文档和命令<kbd>Ctrl K</kbd></button>
+      <span class="spacer"></span>
+      <button class="ib">${icon('users', 15)}共享</button><span class="tb-sep"></span>
+      <button class="ib">${icon('bell', 15)}</button>
+      <button class="ib" data-act="dock" data-id="docs" aria-pressed="${S.dock === 'docs'}">${icon('file', 15)}文档</button>
+      <button class="ib" data-act="dock" data-id="ai" aria-pressed="${S.dock === 'ai'}">${icon('sparkles', 15)}AI</button>
+    </header>`;
+  }
+
+  function treeRows(parent, depth) {
+    return children(parent)
+      .map((p) => {
+        const kids = children(p.id).length;
+        const open = S.expanded.has(p.id);
+        const caret = kids
+          ? `<span class="caret" data-act="expand" data-id="${p.id}">${icon(open ? 'down' : 'right', 12)}</span>`
+          : '<span class="caret"></span>';
+        const row = `<div class="row tree-row" style="padding-left:${4 + depth * 14}px" data-act="open" data-id="${p.id}" ${S.page === p.id ? 'aria-current="page"' : ''}>${caret}<span class="pi">${p.icon}</span><span class="name">${esc(p.title)}</span><span class="end hov"><span class="mini" data-act="menu" data-kind="page" data-id="${p.id}" title="更多">${icon('more', 13)}</span><span class="mini" data-act="new" data-id="${p.id}" title="新建子页面">${icon('plus', 13)}</span></span></div>`;
+        return row + (kids && open ? treeRows(p.id, depth + 1) : '');
+      })
+      .join('');
+  }
+  function docsView() {
+    const q = S.search.trim();
+    if (q) {
+      const hits = S.pages.filter((p) => p.title.includes(q) || (p.id === 'm1116' && '时机 阈值 IPIBench'.includes(q)));
+      return `<div class="side-search">${searchBox()}</div><div class="view-title">搜索结果 ${hits.length}</div>${hits
+        .map((p) => `<div class="row" data-act="open" data-id="${p.id}"><span class="pi">${p.icon}</span><span class="name">${esc(p.title)}</span><span class="dir">${esc(path(p.id).slice(0, -1).map((x) => x.title).join(' / '))}</span></div>`)
+        .join('') || '<div class="muted pad">没有找到</div>'}`;
+    }
+    const recent = S.recent.map(page).filter(Boolean);
+    return `<div class="side-search">${searchBox()}<button class="ib new-btn" data-act="menu" data-kind="new" title="新建">${icon('plus', 15)}</button></div>
+      <div class="sec"><button class="sec-head" data-act="recent"><span class="t">${icon(S.recentOpen ? 'down' : 'right', 12)}最近</span></button>${S.recentOpen ? recent.map((p) => `<div class="row" data-act="open" data-id="${p.id}"><span class="pi">${p.icon}</span><span class="name">${esc(p.title)}</span></div>`).join('') : ''}</div>
+      <div class="sec"><div class="sec-head"><span class="t">${icon('star', 12)}收藏</span></div>${S.starred.map(page).filter(Boolean).map((p) => `<div class="row" data-act="open" data-id="${p.id}"><span class="pi">${p.icon}</span><span class="name">${esc(p.title)}</span></div>`).join('')}</div>
+      <div class="sec" data-note="1"><div class="sec-head"><span class="t">页面</span><span class="acts"><span class="mini" data-act="new" data-id="home" title="新建页面">${icon('plus', 13)}</span></span></div>${treeRows(null, 0)}</div>`;
+  }
+  const searchBox = () => `<label class="search-field">${icon('search', 13)}<input data-input="search" placeholder="搜索文档" value="${esc(S.search)}"></label>`;
+
+  function sidebar() {
+    return `<aside class="sidebar">
+      <button class="uplink">${icon('left', 14)}我的项目</button>
+      <button class="switcher"><span class="mark"></span><b style="flex:1">Proactive</b>${icon('down', 14)}</button>
+      <nav>
+        <button class="nav-item">${icon('book')}文献</button>
+        <button class="nav-item" aria-current="page" data-act="home">${icon('file')}文档</button>
+        <button class="nav-item">${icon('flask')}实验</button>
+        <button class="nav-item">${icon('pen')}写作</button>
+      </nav>
+      <div class="view docs-side" data-scroll="side">${docsView()}</div>
+      <div class="side-tools"><button class="row" data-act="dialog" data-kind="templates">${icon('layout', 14)}模板</button><button class="row" data-act="dialog" data-kind="trash">${icon('trash', 14)}回收站<span class="end">${S.trash.length}</span></button></div>
+      <div class="side-foot"><button class="account"><span class="avatar">${icon('user', 11)}</span>潘子禾</button><button class="ib">${icon('help', 15)}</button><button class="ib">${icon('gear', 15)}</button></div>
+    </aside>`;
+  }
+
+  // ---------- Blocks ----------
+  const blk = (id, inner, cls = '') =>
+    `<div class="blk ${cls}" data-block="${id}"><span class="blk-tools"><button class="bt" data-act="slash-at" title="在下方插入">${icon('plus', 14)}</button><button class="bt grip" data-act="menu" data-kind="block" data-id="${id}" title="拖动移动，点击打开菜单">${icon('grip', 14)}</button></span><div class="blk-body">${inner}</div></div>`;
+  const h = (id, level, text) => blk(id, `<h${level} id="h-${id}">${text}</h${level}>`, 'is-h' + level);
+  const p = (id, html) => blk(id, `<p>${html}</p>`);
+  const todo = (id, html) =>
+    blk(id, `<label class="todo ${S.todo[id] ? 'done' : ''}"><input type="checkbox" data-act="todo" data-id="${id}" ${S.todo[id] ? 'checked' : ''}><span>${html}</span></label>`);
+  const paperCard = (title, meta, note, quote) =>
+    `<div class="card paper-card" data-act="toast" data-text="在文献页打开：${esc(title)}">${icon('paper', 16)}<div><b>${esc(title)}</b><div class="muted">${esc(meta)}</div>${note ? `<div class="card-note">${icon('note', 12)}${esc(note)}</div>` : ''}${quote ? `<blockquote>${quote}</blockquote>` : ''}</div></div>`;
+  const runCard = () =>
+    `<div class="card run-card" data-act="toast" data-text="打开实验页 · 运行记录 ablation-gate-0.5"><span class="run-dot"></span><div style="flex:1"><b>ablation-gate-0.5</b><div class="muted">StreamingJev 消融 · 11-16 08:51 开始 · 用时 18 分</div><div class="kv-row"><span>gate <b>0.5</b></span><span>lr <b>2e-5</b></span><span>时机 F1 <b>0.712</b></span><span>平均延迟 <b>0.61 s</b></span></div></div><span class="pill ok">已完成</span></div>`;
+  const chart = () =>
+    `<svg viewBox="0 0 420 150" class="chart-svg">${[0.58, 0.66, 0.712, 0.69, 0.63]
+      .map((v, i) => `<rect x="${40 + i * 74}" y="${130 - v * 160}" width="40" height="${v * 160}" rx="3" fill="${i === 2 ? 'var(--s1)' : 'color-mix(in srgb, var(--s1) 45%, transparent)'}"/><text x="${60 + i * 74}" y="145" text-anchor="middle">${(0.3 + i * 0.1).toFixed(1)}</text><text x="${60 + i * 74}" y="${124 - v * 160}" text-anchor="middle">${v.toFixed(3)}</text>`)
+      .join('')}<line x1="30" y1="130" x2="410" y2="130" stroke="var(--line-strong)"/></svg>`;
+
+  function meetingBlocks() {
+    const sel = S.selection ? 'is-selected' : '';
+    return [
+      blk('c1', `<div class="callout"><span class="emoji">💡</span><div>本周目标：确定 StreamingJev 的时机损失，下周开始系统消融。</div></div>`),
+      h('h1', 2, '参会'),
+      p('p1', `${mention('尾号 6018')} ${mention('尾号 2231')} ${mention('我')}`),
+      h('h2', 2, '议题'),
+      blk('o1', `<ol><li>时机模型的标注方式：用完整视频离线生成“何时介入”的标签</li><li>IPIBench 评测协议是否沿用原文</li><li>论文投稿时间线，见 ${pageLink('w45')}</li></ol>`),
+      h('h3', 2, '讨论'),
+      p('p2', `训练时只允许模型看到当前时刻之前的帧，损失是逐时刻的带掩码交叉熵 <span class="imath">L = −Σ<sub>t</sub> m<sub>t</sub> [ y<sub>t</sub> log p<sub>t</sub> + (1 − y<sub>t</sub>) log(1 − p<sub>t</sub>) ]</span>。<span class="hl ${sel}" data-act="select">阈值从 0.5 往上调，误报明显减少，但延迟变长</span>，需要在表里对比。`),
+      blk('q1', paperCard('Proactive Physical AI: Timing Models for Streaming Assistants', 'Chen et al. · 2026 · CVPR · 第 4 页', '', '“The timing model decides when to intervene, while the response model decides how.”'), 'is-card'),
+      blk('m1', `<div class="math-block">p<sub>t</sub> = σ( w<sup>⊤</sup> h<sub>t</sub> + b ),  &nbsp; 介入当且仅当 p<sub>t</sub> &gt; τ</div>`),
+      blk('t1', `<table class="dtable"><thead><tr><th>阈值 τ</th><th>时机 F1</th><th>误报 / 小时</th><th>平均延迟</th></tr></thead><tbody><tr><td>0.3</td><td>0.581</td><td>14.2</td><td>0.32 s</td></tr><tr><td>0.5</td><td><b>0.712</b></td><td>6.8</td><td>0.61 s</td></tr><tr><td>0.7</td><td>0.630</td><td>2.1</td><td>1.40 s</td></tr></tbody></table>`, 'is-table'),
+      blk('r1', runCard(), 'is-card'),
+      blk('i1', `<figure class="fig-block">${chart()}<figcaption>图 1 不同阈值下的时机 F1</figcaption></figure>`),
+      h('h4', 2, '待办'),
+      todo('t1', `补充无音频输入的消融 ${mention('尾号 6018')} <span class="date">11 月 20 日</span>`),
+      todo('t2', `整理 IPIBench 评测脚本 ${mention('我')}`),
+      todo('t3', `写方法一节初稿，放进稿件 <button class="page-link" data-act="toast" data-text="打开写作页 · NeurIPS 2026">✒️ NeurIPS 2026</button>`),
+      blk('g1', `<div class="toggle-b"><button class="tg" data-act="toggle">${icon(S.toggle ? 'down' : 'right', 13)}</button><div><b>原始讨论记录</b>${S.toggle ? '<p class="muted">10:05 讨论标注方式……10:20 确认沿用 IPIBench 的五类任务……10:31 会议结束。</p>' : ''}</div></div>`),
+      ...S.inserted.map((b, i) => blk('ins' + i, b, 'is-card')),
+      blk('empty', `<p class="placeholder" data-act="slash-at">输入 / 插入块，@ 提及成员或页面</p>`),
+    ].join('');
+  }
+  function ablationBlocks() {
+    const conflict =
+      S.conflict === 'open'
+        ? blk('x1', `<div class="conflict"><div class="conflict-head">${icon('alert', 14)}同步时两边都改了这一段<span class="spacer"></span><button class="btn sm" data-act="conflict" data-id="mine">保留我的</button><button class="btn sm" data-act="conflict" data-id="theirs">保留对方的</button><button class="btn sm" data-act="conflict" data-id="both">都保留</button></div><div class="conflict-side"><span class="who">尾号 6018 · 服务端</span><p>gate 0.5 在三个划分上都最好，作为默认设置。</p></div><div class="conflict-side mine"><span class="who">我 · 这台电脑</span><p>gate 0.5 在 IPIBench 上最好，但在 Ego4D 划分上 0.6 更好，默认值待定。</p></div></div>`, 'is-card')
+        : p('x1', S.conflict === 'theirs' ? 'gate 0.5 在三个划分上都最好，作为默认设置。' : S.conflict === 'mine' ? 'gate 0.5 在 IPIBench 上最好，但在 Ego4D 划分上 0.6 更好，默认值待定。' : 'gate 0.5 在三个划分上都最好，作为默认设置。<br>gate 0.5 在 IPIBench 上最好，但在 Ego4D 划分上 0.6 更好，默认值待定。');
+    return [
+      blk('a0', `<div class="callout"><span class="emoji">🎯</span><div>目的：找到时机门控阈值和损失权重的最佳组合。</div></div>`),
+      h('a1', 2, '设置'),
+      blk('a2', `<pre class="code-b"><span class="lang">yaml</span>model: streamingjev-base
+gate: [0.3, 0.5, 0.7]
+loss: masked_bce
+frames_per_second: 2</pre>`),
+      h('a3', 2, '运行'),
+      blk('a4', runCard(), 'is-card'),
+      h('a5', 2, '结论'),
+      conflict,
+      blk('a6', `<p class="placeholder" data-act="slash-at">输入 / 插入块</p>`),
+    ].join('');
+  }
+  function relatedBlocks() {
+    return [
+      p('l0', '整理“主动式”定义：目标由用户先给出，模型决定什么时候开口。'),
+      h('l1', 2, '方法对比'),
+      blk('l2', `<table class="dtable"><thead><tr><th>论文</th><th>主动的来源</th><th>输入</th><th>评测</th></tr></thead><tbody><tr><td>Proactive Physical AI</td><td>时机模型</td><td>流式视频</td><td>IPIBench</td></tr><tr><td>IPIBench</td><td>用户预设触发条件</td><td>流式视频</td><td>自建</td></tr><tr><td>VideoLLM-online</td><td>逐帧决定是否回答</td><td>流式视频</td><td>Ego4D</td></tr></tbody></table>`, 'is-table'),
+      h('l3', 2, '论文'),
+      blk('l4', paperCard(LIBRARY[1][0], LIBRARY[1][1], '主动任务的目标几乎都由用户先给出，模型只决定触发时机。'), 'is-card'),
+      blk('l5', paperCard(LIBRARY[2][0], LIBRARY[2][1], ''), 'is-card'),
+      blk('l6', `<p class="placeholder" data-act="slash-at">输入 / 插入块</p>`),
+    ].join('');
+  }
+  function templateBlocks(kind) {
+    const map = {
+      meeting: [h('tm1', 2, '参会'), p('tm2', mention('我')), h('tm3', 2, '议题'), blk('tm4', '<ol><li>&nbsp;</li></ol>'), h('tm5', 2, '结论'), p('tm6', '&nbsp;'), h('tm7', 2, '待办'), todo('tm8', '&nbsp;')],
+      experiment: [h('te1', 2, '目的'), p('te2', '&nbsp;'), h('te3', 2, '设置'), blk('te4', '<pre class="code-b"><span class="lang">yaml</span>\n</pre>'), h('te5', 2, '运行'), blk('te6', `<p class="placeholder">输入 /实验运行 插入运行卡片</p>`), h('te7', 2, '结果与分析'), p('te8', '&nbsp;')],
+      survey: [h('ts1', 2, '问题'), p('ts2', '&nbsp;'), h('ts3', 2, '方法对比'), blk('ts4', '<table class="dtable"><thead><tr><th>论文</th><th>方法</th><th>数据</th><th>结果</th></tr></thead><tbody><tr><td>&nbsp;</td><td></td><td></td><td></td></tr></tbody></table>', 'is-table'), h('ts5', 2, '论文'), blk('ts6', `<p class="placeholder">输入 /论文 从文献库插入</p>`)],
+      weekly: [h('tw1', 2, '本周进展'), blk('tw2', '<ul><li>&nbsp;</li></ul>'), h('tw3', 2, '遇到的问题'), p('tw4', '&nbsp;'), h('tw5', 2, '下周计划'), todo('tw6', '&nbsp;')],
+    };
+    return (map[kind] || []).join('');
+  }
+  function weeklyBlocks() {
+    return [
+      blk('w0', `<div class="callout ai-made"><span class="emoji">✨</span><div>由 AI 根据 11 月 2 日、9 日、16 日三次组会纪要汇总，已经过你确认。</div></div>`),
+      h('w1', 2, '本周进展'),
+      blk('w2', `<ul><li>确定时机模型的标注方式和带掩码的交叉熵损失（${pageLink('m1116')}）</li><li>阈值消融：τ = 0.5 时时机 F1 最高（0.712）</li><li>IPIBench 评测脚本已整理</li></ul>`),
+      h('w3', 2, '下周计划'),
+      todo('t1', `补充无音频输入的消融 ${mention('尾号 6018')}`),
+      todo('t3', '写方法一节初稿'),
+    ].join('');
+  }
+
+  function blocksFor(id) {
+    if (S.template?.page === id) return S.template.kind === 'pick' ? '' : templateBlocks(S.template.kind);
+    if (id === 'm1116') return meetingBlocks();
+    if (id === 'abl') return ablationBlocks();
+    if (id === 'related') return relatedBlocks();
+    if (id === 'w46') return weeklyBlocks();
+    const kids = children(id);
+    if (kids.length) return kids.map((k) => blk('sub-' + k.id, `<button class="subpage" data-act="open" data-id="${k.id}">${k.icon}<span>${esc(k.title)}</span></button>`)).join('');
+    return p('d1', '示例页面。打开“11 月 16 日组会”看完整的块。');
+  }
+  const headingsFor = (id) => {
+    if (id === 'm1116') return [['h1', '参会'], ['h2', '议题'], ['h3', '讨论'], ['h4', '待办']];
+    if (id === 'abl') return [['a1', '设置'], ['a3', '运行'], ['a5', '结论']];
+    if (id === 'related') return [['l1', '方法对比'], ['l3', '论文']];
+    return [];
+  };
+
+  // ---------- Pages ----------
+  function docTop(p) {
+    const crumbs = path(p.id)
+      .map((x, i, all) => `<button class="crumb" data-act="open" data-id="${x.id}">${i === all.length - 1 ? '' : x.icon + ' '}${esc(x.title)}</button>`)
+      .join('<span class="sep">/</span>');
+    const star = S.starred.includes(p.id);
+    return `<div class="doc-top" data-note="2"><div class="doc-crumbs">${crumbs}</div><span class="spacer"></span>
+      <span class="doc-status">${icon('cloud', 13)}已同步 · ${esc(p.by)} ${esc(p.at)} 编辑</span>
+      <span class="faces"><span class="face a">0718</span><span class="face b">6018</span><span class="face c">2231</span></span>
+      <button class="btn sm" data-act="dialog" data-kind="share">${icon('share', 13)}分享</button>
+      <button class="ib" data-act="star" data-id="${p.id}" title="收藏" aria-pressed="${star}">${icon('star', 15)}</button>
+      <button class="ib" data-act="menu" data-kind="more" title="更多">${icon('more', 15)}</button></div>`;
+  }
+  function docPage() {
+    const p = page(S.page);
+    const heads = headingsFor(p.id);
+    const picking = S.template?.page === p.id && S.template.kind === 'pick';
+    return `${docTop(p)}<div class="doc-scroll" data-scroll="doc"><div class="doc-col ${S.width === 'wide' ? 'wide' : ''}">
+      <div class="page-head" data-note="3"><div class="page-head-tools"><button class="btn ghost sm">${icon('palette', 13)}添加封面</button></div><div class="doc-icon">${p.icon}</div><h1 class="doc-title ${p.title ? '' : 'empty'}">${esc(p.title || '无标题')}</h1></div>
+      ${picking ? `<div class="tpl-suggest"><div class="muted">从模板开始，或直接输入</div><div class="tpl-row">${TEMPLATES.map(([k, ic, name]) => `<button class="tpl-chip" data-act="use-template" data-id="${k}">${ic} ${name}</button>`).join('')}</div></div>` : ''}
+      <div class="blocks" data-note="4">${blocksFor(p.id)}</div>
+    </div>
+    ${heads.length ? `<nav class="outline" data-note="6">${heads.map(([id, t]) => `<button data-act="jump" data-id="${id}">${t}</button>`).join('')}</nav>` : ''}
+    ${S.selection ? floatBar() : ''}</div>`;
+  }
+  function floatBar() {
+    return `<div class="float-bar" style="left:${S.selection.x}px;top:${S.selection.y}px"><button class="fb-t">正文 ${icon('down', 11)}</button><span class="tsep"></span><button class="ib">${icon('bold', 14)}</button><button class="ib">${icon('italic', 14)}</button><button class="ib">${icon('strike', 14)}</button><button class="ib">${icon('code', 14)}</button><button class="ib">${icon('link', 14)}</button><button class="ib">${icon('palette', 14)}</button><span class="tsep"></span><button class="ib" data-act="toast" data-text="评论在第二期加入">${icon('comment', 14)}</button><button class="fb-ai" data-act="ask-ai">${icon('sparkles', 13)}问 AI</button></div>`;
+  }
+  function docHome() {
+    const recent = S.recent.map(page).filter(Boolean);
+    return `<div class="doc-scroll"><div class="doc-col home">
+      <h1 class="home-title">文档</h1>
+      <div class="home-actions"><button class="btn primary" data-act="new" data-id="home">${icon('plus', 14)}新建页面</button><button class="btn" data-act="dialog" data-kind="templates">${icon('layout', 14)}从模板新建</button><button class="btn" data-act="toast" data-text="导入 Markdown：选择 .md 文件或文件夹，图片一起导入">${icon('upload', 14)}导入 Markdown</button></div>
+      <h3 class="home-h">最近编辑</h3>
+      <div class="home-grid">${recent.map((p) => `<button class="home-card" data-act="open" data-id="${p.id}"><span class="hc-icon">${p.icon}</span><b>${esc(p.title)}</b><span class="muted">${esc(path(p.id).slice(0, -1).map((x) => x.title).join(' / '))}</span><span class="muted sm">${esc(p.by)} · ${esc(p.at)}</span></button>`).join('')}</div>
+      <h3 class="home-h">收藏</h3>
+      <div class="home-list">${S.starred.map(page).filter(Boolean).map((p) => `<div class="row" data-act="open" data-id="${p.id}"><span class="pi">${p.icon}</span><span class="name">${esc(p.title)}</span><span class="end">${esc(p.at)}</span></div>`).join('')}</div>
+    </div></div>`;
+  }
+
+  // ---------- Dock ----------
+  function dock() {
+    if (!S.dock) return '';
+    if (S.dock === 'docs')
+      return `<aside class="dock"><div class="dock-head"><b style="font-weight:600">文档</b><span class="spacer"></span><button class="ib" data-act="dock" data-id="docs">${icon('x', 15)}</button></div><div class="dock-body mini-doc"><div class="muted">在任何页面都能打开一页文档，边读论文边写。</div>${S.pages.filter((p) => ['related', 'm1116', 'abl'].includes(p.id)).map((p) => `<div class="row" data-act="open" data-id="${p.id}"><span class="pi">${p.icon}</span><span class="name">${esc(p.title)}</span></div>`).join('')}<div class="mini-page"><b>🧭 主动式助手相关工作</b><p>整理“主动式”定义：目标由用户先给出，模型决定什么时候开口。</p><p class="muted">在文献页读论文时，这里可以直接编辑。</p></div></div></aside>`;
+    let c;
+    if (S.ai === 'idle')
+      c = `<div class="muted">AI 会带上当前页面、选中的块和项目的文档目录，也能读写文档。</div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><button class="link" data-act="ai-weekly">把这周三次组会纪要汇总成周报，放到“周报”下面</button><button class="link" data-act="toast" data-text="AI 正在把这页的待办整理成表格…">把这页的待办整理成表格</button><button class="link" data-act="toast" data-text="AI 正在根据文献库补充相关工作…">根据文献库补全“主动式助手相关工作”</button></div>`;
+    else if (S.ai === 'ask')
+      c = `<div class="msg me">把这周三次组会纪要汇总成周报，放到“周报”下面</div>
+        <div class="tool-line">${icon('check', 12)}scientify_list_docs · 16 页</div><div class="tool-line">${icon('check', 12)}scientify_read_doc · 11 月 16 日组会</div><div class="tool-line">${icon('check', 12)}scientify_read_doc · 11 月 9 日组会</div><div class="tool-line">${icon('check', 12)}scientify_read_doc · 11 月 2 日组会</div>
+        <div class="approve"><b>新建文档：周报 / 第 46 周周报</b><div class="muted">本周进展 3 条、下周计划 2 条，引用了“11 月 16 日组会”。</div><div class="approve-acts"><button class="btn sm primary" data-act="ai-allow">允许</button><button class="btn sm">本会话允许</button><button class="btn sm">拒绝</button></div></div>`;
+    else
+      c = `<div class="msg me">把这周三次组会纪要汇总成周报，放到“周报”下面</div><div class="tool-line">${icon('check', 12)}读了 3 页组会纪要</div><div class="tool-line">${icon('check', 12)}scientify_create_doc · 第 46 周周报</div><div>已新建 ${pageLink('w46')}，包括本周进展和下周计划，待办保留了负责人。</div>`;
+    return `<aside class="dock" data-note="8"><div class="dock-head"><b style="font-weight:600">AI 助手</b><span class="muted" style="font-size:12px;margin-left:6px">${esc(page(S.page)?.title || '文档')}</span><span class="spacer"></span><button class="ib" data-act="dock" data-id="ai">${icon('x', 15)}</button></div><div class="dock-body">${c}</div><div class="composer">提问，或描述要整理的内容…</div></aside>`;
+  }
+
+  // ---------- Overlays ----------
+  function menu() {
+    const m = S.menu;
+    if (!m) return '';
+    let items = '';
+    if (m.kind === 'page')
+      items = `<button data-act="new" data-id="${m.id}">${icon('plus', 13)}新建子页面</button><button data-act="toast" data-text="直接在目录里改名">${icon('pen', 13)}重命名</button><button data-act="toast" data-text="已复制页面链接">${icon('link', 13)}复制链接</button><button data-act="toast" data-text="已创建副本">${icon('copy', 13)}创建副本</button><button data-act="dialog" data-kind="move">${icon('move', 13)}移动到…</button><button data-act="star" data-id="${m.id}">${icon('star', 13)}${S.starred.includes(m.id) ? '取消收藏' : '收藏'}</button><button data-act="toast" data-text="已导出 Markdown（图片一起导出）">${icon('download', 13)}导出 Markdown</button><hr><button data-act="delete" data-id="${m.id}" class="danger">${icon('trash', 13)}删除</button>`;
+    else if (m.kind === 'block')
+      items = `<div class="ml">转换成</div><div class="turn-grid">${[['heading', '标题'], ['list', '列表'], ['todo', '待办'], ['quote', '引用'], ['bulb', '高亮块'], ['code', '代码']].map(([ic, t]) => `<button data-act="toast" data-text="已转换成${t}">${icon(ic, 13)}${t}</button>`).join('')}</div><hr><button data-act="toast" data-text="颜色：文字色和背景色">${icon('palette', 13)}颜色</button><button data-act="toast" data-text="已复制块链接，粘贴到其他文档会显示为引用">${icon('link', 13)}复制块链接</button><button data-act="toast" data-text="已创建副本">${icon('copy', 13)}创建副本<kbd>Ctrl D</kbd></button><button data-act="toast" data-text="评论在第二期加入">${icon('comment', 13)}评论</button><hr><button data-act="toast" data-text="已删除这一块，Ctrl+Z 撤销" class="danger">${icon('trash', 13)}删除</button>`;
+    else if (m.kind === 'more')
+      items = `<button data-act="width">${icon('width', 13)}${S.width === 'wide' ? '标准宽度' : '全宽'}</button><button data-act="dialog" data-kind="history">${icon('history', 13)}历史记录</button><hr><button data-act="toast" data-text="已导出 11 月 16 日组会.md 和 2 张图片">${icon('download', 13)}导出 Markdown</button><button data-act="toast" data-text="打开系统打印，选择“另存为 PDF”">${icon('pdf', 13)}导出 PDF</button><hr><button data-act="dialog" data-kind="move">${icon('move', 13)}移动到…</button><button data-act="toast" data-text="已创建副本">${icon('copy', 13)}创建副本</button><button data-act="delete" data-id="${S.page}" class="danger">${icon('trash', 13)}删除</button>`;
+    else if (m.kind === 'new')
+      items = `<button data-act="new" data-id="home">${icon('file', 13)}新建页面</button><button data-act="dialog" data-kind="templates">${icon('layout', 13)}从模板新建…</button><button data-act="toast" data-text="导入 Markdown：选择 .md 文件或文件夹">${icon('upload', 13)}导入 Markdown…</button>`;
+    else if (m.kind === 'slash') {
+      const group = (title, list) => `<div class="ml">${title}</div>${list.map(([act, ic, t, hint]) => `<button data-act="${act}" data-id="${t}">${icon(ic, 14)}${t}<kbd>${hint}</kbd></button>`).join('')}`;
+      items = `<div class="slash-q">/ <span class="muted">输入关键词或拼音首字母，如 /bg 表格</span></div>
+        ${group('研究', [['pick-paper', 'paper', '论文', 'lw'], ['insert', 'note', '论文笔记', 'lwbj'], ['insert', 'run', '实验运行', 'syyx'], ['insert', 'pen', '稿件', 'gj'], ['insert', 'file', '项目文件', 'wj']])}
+        ${group('基础', [['insert', 'heading', '标题', '#'], ['insert', 'list', '无序列表', '-'], ['insert', 'olist', '有序列表', '1.'], ['insert', 'todo', '待办', '[]'], ['insert', 'quote', '引用', '>'], ['insert', 'bulb', '高亮块', 'gl'], ['insert', 'minus', '分割线', '---']])}
+        ${group('更多', [['insert', 'toggle', '折叠块', 'zd'], ['insert', 'table', '表格', 'bg'], ['insert', 'code', '代码块', '```'], ['insert', 'sigma', '公式', '$$'], ['insert', 'image', '图片', 'tp'], ['insert', 'link', '链接到页面', '[[']])}`;
+    }
+    return `<div class="menu ${m.kind === 'slash' ? 'slash' : ''}" style="left:${m.x}px;top:${m.y}px">${items}</div>`;
+  }
+  function dialog() {
+    const d = S.dialog;
+    if (!d) return '';
+    let title = '';
+    let body = '';
+    let foot = '<button class="btn" data-act="close">关闭</button>';
+    if (d.kind === 'share') {
+      title = '分享“' + esc(page(S.page).title) + '”';
+      body = `<p class="muted">团队项目的成员按项目角色访问全部文档。单页权限放在第三期。</p>${MEMBERS.map((m) => `<div class="member"><span class="face ${m.id === 'me' ? 'a' : m.id === 'u6018' ? 'b' : 'c'}">${m.tail.slice(-4)}</span><span style="flex:1">${m.tail}${m.you ? '（你）' : ''}</span><span class="muted">${m.role}</span></div>`).join('')}<div class="member"><input class="field" placeholder="输入手机号邀请成员" style="flex:1"><button class="btn primary">邀请</button></div>`;
+      foot = `<button class="btn" data-act="toast" data-text="已复制页面链接，成员点开后在 Scientify 里定位到这页">${icon('link', 13)}复制链接</button><span class="spacer"></span>` + foot;
+    } else if (d.kind === 'trash') {
+      title = '回收站';
+      body = `<p class="muted">删除的页面连同子页面保留 30 天。</p>${S.trash.map((t) => `<div class="member"><span class="pi">${t.icon}</span><span style="flex:1">${esc(t.title)}<span class="muted sm"> · ${esc(t.at)}</span></span><button class="btn sm" data-act="restore" data-id="${t.id}">恢复</button><button class="btn sm" data-act="purge" data-id="${t.id}">彻底删除</button></div>`).join('') || '<p class="muted">回收站是空的</p>'}`;
+    } else if (d.kind === 'templates') {
+      title = '模板';
+      body = `<div class="tpl-cards">${TEMPLATES.map(([k, ic, name, desc]) => `<button class="tpl-card" data-act="from-template" data-id="${k}"><span class="hc-icon">${ic}</span><b>${name}</b><span class="muted">${desc}</span></button>`).join('')}</div>`;
+    } else if (d.kind === 'history') {
+      title = '历史记录';
+      body = `<p class="muted">这台电脑每 10 分钟有修改时留一个快照，保留 30 天。服务端历史和版本对比在第二期。</p>${['今天 10:31 · 尾号 6018（同步）', '今天 10:20 · 我', '今天 10:05 · 我', '昨天 22:40 · 我'].map((v, i) => `<div class="member"><span style="flex:1">${v}</span>${i ? '<button class="btn sm" data-act="toast" data-text="已恢复到这个版本，当前内容另存为一个快照">恢复</button>' : '<span class="muted">当前</span>'}</div>`).join('')}`;
+    } else if (d.kind === 'move') {
+      title = '移动到';
+      body = `<label class="search-field">${icon('search', 13)}<input placeholder="搜索页面"></label>${S.pages.filter((x) => !x.parent || x.parent === 'home').map((x) => `<button class="row" data-act="toast" data-text="已移动到“${esc(x.title)}”下">${'&nbsp;'.repeat(x.parent ? 4 : 0)}<span class="pi">${x.icon}</span>${esc(x.title)}</button>`).join('')}`;
+    } else if (d.kind === 'paper') {
+      title = '插入论文';
+      body = `<label class="search-field">${icon('search', 13)}<input placeholder="搜索文献库：标题、作者"></label>${LIBRARY.map(([t, meta, note], i) => `<button class="lib-item" data-act="insert-paper" data-id="${i}">${icon('paper', 15)}<span><b>${esc(t)}</b><span class="muted">${esc(meta)}${note ? ' · ' + note : ''}</span></span></button>`).join('')}`;
+    }
+    return `<div class="scrim" data-act="scrim"><div class="dialog doc-dialog"><div class="dialog-head"><b>${title}</b><span class="spacer"></span><button class="ib" data-act="close">${icon('x', 15)}</button></div><div class="dialog-body">${body}</div><div class="dialog-foot">${foot}</div></div></div>`;
+  }
+
+  // ---------- Annotations ----------
+  function notesList() {
+    return [
+      ['页面管理', '搜索、新建；最近、收藏；无限层级的页面树，悬停出现“+”和“⋯”，拖动排序或变成子页面；底部模板和回收站。', '飞书知识库目录、语雀目录'],
+      ['文档顶栏', '面包屑、同步状态和最后编辑人、协作者、分享、收藏、更多（全宽、历史、导出、移动、删除）。', '飞书文档顶栏'],
+      ['标题区', '页面图标、封面、大标题；空页面下面给出模板。', 'Notion 页面头'],
+      ['块编辑器', '每段都是一个块：左侧“+”插入、“⋮⋮”拖动和打开块菜单；输入 / 打开斜杠菜单；选中文字出现浮动工具栏（点“阈值从 0.5 往上调…”这句试试）。研究块：论文、论文页码引用、实验运行、稿件、项目文件。', 'Notion 块模型、飞书文档'],
+      ['同步冲突', '两人改了同一块时保留双方，在这里选择；改不同块会自动合并。打开“StreamingJev 时机模型消融”查看。', 'Git 合并冲突的块级版本'],
+      ['目录', '标题生成，点击跳转。', '飞书文档右侧目录'],
+      ['右侧栏', '“文档”可以在任何页面并排写一页；“AI”能读写文档，写入前审批。', 'Scientify 现有右侧栏'],
+      ['AI 助手', '点“把这周三次组会纪要汇总成周报”试试：读三页、审批后新建一页。', 'Codex 工具调用和审批'],
+    ];
+  }
+  function notesPanel() {
+    if (!S.annotate) return '';
+    return `<div class="notes"><h3>区域和参考的产品</h3><ol>${notesList().map(([t, d, ref], i) => `<li><b>${i + 1}</b><span><em>${t}</em>${esc(d)}<span class="ref">参考：${ref}</span></span></li>`).join('')}</ol></div>`;
+  }
+  function placeBadges() {
+    document.querySelectorAll('.note-badge,.note-outline').forEach((n) => n.remove());
+    if (!S.annotate) return;
+    const seen = new Set();
+    for (const el of document.querySelectorAll('[data-note]')) {
+      const n = +el.dataset.note;
+      if (seen.has(n)) continue;
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      seen.add(n);
+      const o = document.createElement('div');
+      o.className = 'note-outline';
+      Object.assign(o.style, { left: r.left - 2 + 'px', top: r.top - 2 + 'px', width: r.width + 4 + 'px', height: Math.min(r.height, window.innerHeight - r.top - 4) + 4 + 'px' });
+      const b = document.createElement('div');
+      b.className = 'note-badge';
+      b.textContent = n;
+      Object.assign(b.style, { left: r.left - 9 + 'px', top: r.top - 9 + 'px' });
+      document.body.append(o, b);
+    }
+  }
+
+  // ---------- Render ----------
+  function render() {
+    const scrolls = {};
+    document.querySelectorAll('[data-scroll]').forEach((el) => (scrolls[el.dataset.scroll] = el.scrollTop));
+    const focused = document.activeElement?.dataset?.input;
+    const conflictNote = S.page === 'abl' ? '' : '';
+    document.getElementById('root').innerHTML = `<div class="app" data-theme="${S.theme}">
+      ${titlebar()}
+      <div class="body">${sidebar()}<div class="main-wrap"><main class="main doc-main">${S.page ? docPage() : docHome()}</main>${dock()}</div></div>
+      ${dialog()}${menu()}${conflictNote}
+      ${S.toast ? `<div class="toast">${icon('check', 14)}${esc(S.toast.text)}</div>` : ''}
+      ${notesPanel()}
+      <div class="proto"><strong>文档 · 原型</strong><button class="btn" data-act="annotate" aria-pressed="${S.annotate}">标注</button><button class="btn" data-act="theme">${S.theme === 'graphite' ? '夜' : '石墨'}</button><button class="btn" data-act="reset">重置</button></div>
+    </div>`;
+    document.body.dataset.theme = S.theme;
+    document.querySelectorAll('[data-scroll]').forEach((el) => {
+      if (scrolls[el.dataset.scroll] != null) el.scrollTop = scrolls[el.dataset.scroll];
+    });
+    if (S.top) {
+      const doc = document.querySelector('.doc-scroll');
+      if (doc) doc.scrollTop = 0;
+      S.top = false;
+    }
+    if (S.jump) {
+      document.getElementById('h-' + S.jump)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      S.jump = null;
+    }
+    if (S.annotate && S.page === 'm1116') {
+      // The conflict block lives on another page; mark the sync area on the status instead.
+      document.querySelector('.doc-status')?.setAttribute('data-note', '5');
+    }
+    if (S.page === 'abl') document.querySelector('.conflict')?.setAttribute('data-note', '5');
+    document.querySelector('.dock-head')?.closest('.dock')?.setAttribute('data-note', S.dock === 'ai' ? '8' : '7');
+    if (focused) {
+      const field = document.querySelector(`[data-input="${focused}"]`);
+      field?.focus();
+      field?.setSelectionRange?.(field.value.length, field.value.length);
+    }
+    placeBadges();
+  }
+
+  // ---------- Actions ----------
+  function newPage(parent, template) {
+    const id = 'new' + Date.now();
+    const kind = template && template !== 'blank' ? template : null;
+    const title = kind ? TITLES[kind] : '';
+    S.pages.push({ id, title, icon: kind ? TEMPLATES.find((t) => t[0] === kind)[1] : '📄', parent, at: '刚刚', by: '我' });
+    S.expanded.add(parent);
+    S.page = id;
+    S.top = true;
+    S.template = { page: id, kind: kind || 'pick' };
+    S.recent = [id, ...S.recent.filter((x) => x !== id)].slice(0, 5);
+  }
+  function act(el, ev) {
+    const a = el.dataset.act;
+    const id = el.dataset.id;
+    const keepMenu = ['menu', 'slash-at'].includes(a);
+    if (!keepMenu) S.menu = null;
+    switch (a) {
+      case 'open':
+        S.top = true;
+        S.page = id;
+        S.selection = false;
+        S.recent = [id, ...S.recent.filter((x) => x !== id)].slice(0, 5);
+        S.dialog = null;
+        break;
+      case 'home':
+        S.page = null;
+        break;
+      case 'expand':
+        ev.stopPropagation();
+        if (S.expanded.has(id)) S.expanded.delete(id);
+        else S.expanded.add(id);
+        break;
+      case 'recent':
+        S.recentOpen = !S.recentOpen;
+        break;
+      case 'menu':
+        ev.stopPropagation();
+        S.menu = { kind: el.dataset.kind, id, ...anchor(el) };
+        break;
+      case 'new':
+        ev.stopPropagation();
+        newPage(id || 'home');
+        break;
+      case 'use-template':
+        S.template = { page: S.page, kind: id };
+        if (id !== 'blank') {
+          const t = TEMPLATES.find((x) => x[0] === id);
+          Object.assign(page(S.page), { title: TITLES[id], icon: t[1] });
+        } else S.template = { page: S.page, kind: 'blank' };
+        break;
+      case 'from-template':
+        S.dialog = null;
+        newPage('home', id);
+        break;
+      case 'star':
+        S.starred = S.starred.includes(id) ? S.starred.filter((x) => x !== id) : [...S.starred, id];
+        toast(S.starred.includes(id) ? '已收藏' : '已取消收藏');
+        break;
+      case 'delete': {
+        const target = page(id);
+        const drop = new Set([id]);
+        for (let changed = true; changed; ) {
+          changed = false;
+          for (const x of S.pages) if (x.parent && drop.has(x.parent) && !drop.has(x.id)) drop.add(x.id), (changed = true);
+        }
+        S.trash.unshift({ id, title: target.title || '无标题', icon: target.icon, at: '刚刚删除', by: '我', pages: S.pages.filter((x) => drop.has(x.id)) });
+        S.pages = S.pages.filter((x) => !drop.has(x.id));
+        if (drop.has(S.page)) S.page = target.parent;
+        toast(drop.size > 1 ? `已移到回收站（含 ${drop.size - 1} 个子页面）` : '已移到回收站');
+        break;
+      }
+      case 'restore': {
+        const t = S.trash.find((x) => x.id === id);
+        S.trash = S.trash.filter((x) => x.id !== id);
+        if (t.pages) S.pages.push(...t.pages);
+        else S.pages.push({ id: t.id, title: t.title, icon: t.icon, parent: 'home', at: '刚刚', by: '我' });
+        toast('已恢复');
+        break;
+      }
+      case 'purge':
+        S.trash = S.trash.filter((x) => x.id !== id);
+        toast('已彻底删除');
+        break;
+      case 'dialog':
+        S.dialog = { kind: el.dataset.kind };
+        break;
+      case 'close':
+        S.dialog = null;
+        break;
+      case 'scrim':
+        if (ev.target === el) S.dialog = null;
+        break;
+      case 'dock':
+        S.dock = S.dock === id ? null : id;
+        break;
+      case 'slash-at':
+        ev.stopPropagation();
+        S.menu = { kind: 'slash', ...anchor(el, 20) };
+        break;
+      case 'pick-paper':
+        S.dialog = { kind: 'paper' };
+        break;
+      case 'insert-paper': {
+        const [t, meta, note] = LIBRARY[+id];
+        S.inserted.push(paperCard(t, meta, note ? '论文笔记：主动任务的目标由用户先给出。' : ''));
+        S.dialog = null;
+        toast('已插入论文卡片');
+        break;
+      }
+      case 'insert':
+        if (id === '实验运行') S.inserted.push(runCard());
+        else if (id === '表格') S.inserted.push('<table class="dtable"><thead><tr><th>&nbsp;</th><th>&nbsp;</th><th>&nbsp;</th></tr></thead><tbody><tr><td>&nbsp;</td><td></td><td></td></tr></tbody></table>');
+        else if (id === '公式') S.inserted.push('<div class="math-block muted">输入 LaTeX 公式，例如 E = mc²</div>');
+        else if (id === '高亮块') S.inserted.push('<div class="callout"><span class="emoji">📌</span><div class="muted">输入内容</div></div>');
+        else S.inserted.push(`<p class="muted">（已插入“${esc(id)}”块）</p>`);
+        toast('已插入' + id);
+        break;
+      case 'select': {
+        const r = el.getBoundingClientRect();
+        S.selection = S.selection ? false : { x: Math.max(8, r.left + r.width / 2 - 200), y: r.top - 46 };
+        break;
+      }
+      case 'ask-ai':
+        S.selection = false;
+        S.dock = 'ai';
+        toast('已把选中的内容带到 AI 助手');
+        break;
+      case 'todo':
+        S.todo[id] = !S.todo[id];
+        break;
+      case 'toggle':
+        S.toggle = !S.toggle;
+        break;
+      case 'conflict':
+        S.conflict = id;
+        toast(id === 'both' ? '两段都保留' : id === 'mine' ? '保留了你的版本' : '保留了对方的版本');
+        break;
+      case 'jump':
+        S.jump = id;
+        break;
+      case 'width':
+        S.width = S.width === 'wide' ? 'standard' : 'wide';
+        break;
+      case 'ai-weekly':
+        S.ai = 'ask';
+        break;
+      case 'ai-allow':
+        S.ai = 'done';
+        if (!page('w46')) S.pages.push({ id: 'w46', title: '第 46 周周报', icon: '📄', parent: 'weekly', at: '刚刚', by: 'AI · 我确认' });
+        S.expanded.add('weekly');
+        toast('已新建“第 46 周周报”');
+        break;
+      case 'toast':
+        toast(el.dataset.text);
+        break;
+      case 'annotate':
+        S.annotate = !S.annotate;
+        break;
+      case 'theme':
+        S.theme = S.theme === 'graphite' ? 'night' : 'graphite';
+        break;
+      case 'reset':
+        S = fresh();
+        break;
+    }
+    render();
+  }
+
+  document.addEventListener('click', (ev) => {
+    const el = ev.target.closest('[data-act]');
+    if (!el) {
+      if (S.menu || S.selection) {
+        S.menu = null;
+        if (!ev.target.closest('.float-bar')) S.selection = false;
+        render();
+      }
+      return;
+    }
+    if (el.tagName === 'INPUT' && el.type !== 'checkbox') return;
+    act(el, ev);
+  });
+  document.addEventListener('input', (ev) => {
+    if (ev.target.dataset.input === 'search') {
+      S.search = ev.target.value;
+      render();
+    }
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      if (S.menu) S.menu = null;
+      else if (S.dialog) S.dialog = null;
+      else if (S.selection) S.selection = false;
+      else return;
+      render();
+    }
+  });
+  window.addEventListener('resize', placeBadges);
+  render();
+})();
+
+</script>
+</body>
+</html>
