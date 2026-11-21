@@ -26,13 +26,17 @@ export function Popover({
     if (!anchor || !panel) return;
     const place = () => {
       const rect = anchor.getBoundingClientRect();
-      const left = align === 'end' ? rect.right - panel.offsetWidth : rect.left;
-      panel.style.left = `${Math.max(8, Math.min(left, innerWidth - panel.offsetWidth - 8))}px`;
+      const wanted = align === 'end' ? rect.right - panel.offsetWidth : rect.left;
+      const left = Math.max(8, Math.min(wanted, innerWidth - panel.offsetWidth - 8));
+      panel.style.left = `${left}px`;
       const below = rect.bottom + 6;
-      panel.style.top =
-        below + panel.offsetHeight > innerHeight - 8
-          ? `${Math.max(8, rect.top - 6 - panel.offsetHeight)}px`
-          : `${below}px`;
+      const above = below + panel.offsetHeight > innerHeight - 8;
+      panel.style.top = above
+        ? `${Math.max(8, rect.top - 6 - panel.offsetHeight)}px`
+        : `${below}px`;
+      // Grow out of the trigger.
+      const originX = Math.max(0, Math.min(panel.offsetWidth, rect.left + rect.width / 2 - left));
+      panel.style.transformOrigin = `${originX}px ${above ? '100%' : '0'}`;
     };
     place();
     panel

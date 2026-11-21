@@ -4,7 +4,7 @@ import { useStore } from 'zustand';
 import { Archive, ArchiveRestore, FolderOpen, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import type { Experiment, Project } from '../../domain/workspace';
 import type { WorkspaceStore } from '../../stores/workspace';
-import { Button, Dropdown, Input, Textarea } from '../../components/primitives';
+import { Button, Dropdown, Input, Textarea, segmentThumb } from '../../components/primitives';
 import { Modal } from '../../components/Modal';
 import { confirmAction, requestText } from '../../components/prompts';
 import { t, translateError } from '../../i18n';
@@ -116,7 +116,12 @@ export function ExperimentManager({
         </h1>
         <span className="spacer" />
         {archivedCount ? (
-          <div className="sf-segmented" role="group" aria-label={t('文件夹状态')}>
+          <div
+            ref={segmentThumb}
+            className="sf-segmented"
+            role="group"
+            aria-label={t('文件夹状态')}
+          >
             <Button variant="ghost" aria-pressed={!archived} onClick={() => setArchivedView(false)}>
               {t('进行中')}
             </Button>

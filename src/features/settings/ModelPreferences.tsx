@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { ArrowLeft, Plus } from 'lucide-react';
-import { Button } from '../../components/primitives';
+import { Button, segmentThumb } from '../../components/primitives';
 import { confirmAction } from '../../components/prompts';
 import { t, translateError } from '../../i18n';
 import { errorMessage } from '../../domain/errors';
@@ -294,7 +294,7 @@ export function ModelPreferences({
 
   return (
     <div className="settings-models">
-      <div className="sf-segmented settings-models-kinds" role="group" aria-label={t('模型来源')}>
+      <div ref={segmentThumb} className="sf-segmented settings-models-kinds" role="group" aria-label={t('模型来源')}>
         <Button
           variant="ghost"
           aria-pressed={kind === 'official'}

@@ -57,9 +57,17 @@ export function Menu({
       menu.style.maxHeight =
         anchor.placement === 'top' ? `${Math.max(0, Math.min(360, anchor.y - 8))}px` : '';
       // offset sizes are not affected by the entry transform.
-      menu.style.left = `${Math.max(8, Math.min(anchor.x, innerWidth - menu.offsetWidth - 8))}px`;
-      const top = anchor.placement === 'top' ? anchor.y - menu.offsetHeight : anchor.y;
-      menu.style.top = `${Math.max(8, Math.min(top, innerHeight - menu.offsetHeight - 8))}px`;
+      const width = menu.offsetWidth;
+      const height = menu.offsetHeight;
+      const left = Math.max(8, Math.min(anchor.x, innerWidth - width - 8));
+      const wanted = anchor.placement === 'top' ? anchor.y - height : anchor.y;
+      const top = Math.max(8, Math.min(wanted, innerHeight - height - 8));
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      // Grow out of the point it was opened from.
+      const originX = Math.max(0, Math.min(width, anchor.x - left));
+      const originY = Math.max(0, Math.min(height, anchor.y - top));
+      menu.style.transformOrigin = `${originX}px ${originY}px`;
     };
     position();
     menu.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true });

@@ -1,8 +1,51 @@
 import { t } from '../i18n';
 import { Button } from './primitives';
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { browserLayout } from '../platform/browser-pane';
+import { easing, motion, reducedMotion, scale } from '../platform/motion';
+
+/** A closing dialog leaves an inert copy in its place that fades out; the real dialog and its
+ *  state are already gone, so nothing waits for the animation. */
+function leaveGhost(dialog: HTMLDialogElement) {
+  if (
+    !dialog.open ||
+    !dialog.isConnected ||
+    reducedMotion() ||
+    typeof dialog.animate !== 'function'
+  )
+    return;
+  const rect = dialog.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const layer = document.createElement('div');
+  layer.className = 'sf-dialog-ghost';
+  layer.setAttribute('aria-hidden', 'true');
+  layer.inert = true;
+  layer.style.background = getComputedStyle(dialog, '::backdrop').backgroundColor;
+  const ghost = dialog.cloneNode(true) as HTMLDialogElement;
+  ghost.removeAttribute('data-native-overlay');
+  for (const node of ghost.querySelectorAll('[id]')) node.removeAttribute('id');
+  for (const node of ghost.querySelectorAll('iframe, video, audio, object, embed')) node.remove();
+  Object.assign(ghost.style, {
+    position: 'fixed',
+    inset: 'auto',
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+    margin: '0',
+    boxSizing: 'border-box',
+    animation: 'none',
+  });
+  layer.append(ghost);
+  document.body.append(layer);
+  const timing = { duration: motion.exit, easing: easing.exit, fill: 'forwards' as const };
+  layer.animate([{ opacity: 1 }, { opacity: 0 }], timing);
+  void ghost
+    .animate([{ scale: '1' }, { scale: String(scale.popFrom) }], timing)
+    .finished.catch(() => {})
+    .then(() => layer.remove());
+}
 
 export function Modal({
   title,
@@ -31,6 +74,11 @@ export function Modal({
   );
   const [discard, setDiscard] = useState(false);
   const backdropPressed = useRef(false);
+  // Layout cleanup runs while the dialog is still in the document.
+  useLayoutEffect(() => {
+    const dialog = ref.current!;
+    return () => leaveGhost(dialog);
+  }, []);
   useEffect(() => {
     const dialog = ref.current!;
     let active = true;

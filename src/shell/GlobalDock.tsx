@@ -11,7 +11,7 @@ import { FileText, X } from 'lucide-react';
 import { Mascot } from '../components/ai/Mascot';
 import { useStore } from 'zustand';
 import { DocsWorkspace } from '../workspaces/docs/DocsWorkspace';
-import { Button } from '../components/primitives';
+import { Button, segmentThumb } from '../components/primitives';
 import type { WorkContext } from '../domain/context';
 import type { ResearchBackend } from '../platform/research';
 import type { WorkspaceStore } from '../stores/workspace';
@@ -224,7 +224,12 @@ export function GlobalDock({
         {resizeHandle}
       </div>
       <div className="sf-dock-header sf-dock-shared-header" hidden={!sideVisible}>
-        <div className="sf-dock-tabs" role="group" aria-label={t('辅助工具切换')}>
+        <div
+          ref={segmentThumb}
+          className="sf-dock-tabs"
+          role="group"
+          aria-label={t('辅助工具切换')}
+        >
           <span className="sf-dock-tab-indicator" aria-hidden="true" />
           <Button
             variant="ghost"

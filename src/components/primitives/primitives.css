@@ -186,13 +186,6 @@
   background: var(--sf-surface-raised);
   color: var(--sf-text-primary);
   box-shadow: var(--sf-shadow-popover);
-  animation: sf-popover-in var(--sf-motion-feedback) var(--sf-ease-enter);
-}
-@keyframes sf-popover-in {
-  from {
-    opacity: 0;
-    transform: translateY(3px);
-  }
 }
 .sf-menu {
   position: fixed;
@@ -261,4 +254,60 @@
   color: var(--sf-text-muted);
   font-family: inherit;
   font-size: 11px;
+}
+
+/* Segmented controls (useSegmentThumb): one background slides to the selected option. Groups
+   may restyle it with --sf-thumb-radius, --sf-thumb-bg and --sf-thumb-shadow. */
+[data-thumb] {
+  position: relative;
+  isolation: isolate;
+}
+[data-thumb]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: var(--sf-thumb-w, 0);
+  height: var(--sf-thumb-h, 0);
+  border-radius: var(--sf-thumb-radius, 6px);
+  background: var(--sf-thumb-bg, var(--sf-surface-canvas));
+  box-shadow: var(--sf-thumb-shadow, 0 0 0 1px var(--sf-border-subtle), 0 1px 2px rgb(0 0 0 / 5%));
+  transform: translate(var(--sf-thumb-x, 0), var(--sf-thumb-y, 0));
+  pointer-events: none;
+}
+[data-thumb='slide']::before {
+  transition:
+    transform var(--sf-motion-selection) var(--sf-ease-spring),
+    width var(--sf-motion-selection) var(--sf-ease-spring),
+    height var(--sf-motion-selection) var(--sf-ease-spring);
+}
+[data-thumb] > :is([aria-pressed='true'], [aria-checked='true'], [aria-selected='true']) {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* A field that fails validation shakes once, then keeps its red border. */
+@keyframes sf-shake {
+  0%,
+  100% {
+    translate: 0;
+  }
+  20% {
+    translate: -3px 0;
+  }
+  40% {
+    translate: 3px 0;
+  }
+  60% {
+    translate: -2px 0;
+  }
+  80% {
+    translate: 2px 0;
+  }
+}
+:is(.sf-input, .sf-textarea, .sf-tree-input)[aria-invalid='true'] {
+  border-color: var(--sf-status-danger);
+  animation: sf-shake 280ms var(--sf-ease-standard);
 }

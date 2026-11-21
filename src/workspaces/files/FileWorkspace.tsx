@@ -1,5 +1,5 @@
 import { t, translateError } from '../../i18n';
-import { Button, Input } from '../../components/primitives';
+import { Button, Input, segmentThumb } from '../../components/primitives';
 import { Panel } from '../../components/layout/Panel';
 import { TreeView, type TreeItem } from '../../components/workspace/TreeView';
 import { useActiveView } from '../../components/workspace/ViewTransition';
@@ -543,7 +543,7 @@ function FileDocument({
           </>
         )}
         {rendered ? (
-          <div className="sf-file-segments" aria-label={t('显示方式')}>
+          <div ref={segmentThumb} className="sf-file-segments" aria-label={t('显示方式')}>
             <Button variant="ghost" aria-pressed={!showSource} onClick={() => setShowSource(false)}>
               {t(kind === 'table' ? '表格' : '笔记本')}
             </Button>
@@ -553,7 +553,7 @@ function FileDocument({
           </div>
         ) : null}
         {isMarkdown ? (
-          <div className="sf-file-segments" aria-label={t('稿件显示模式')}>
+          <div ref={segmentThumb} className="sf-file-segments" aria-label={t('稿件显示模式')}>
             {(['source', 'split', 'preview'] as const).map((value) => (
               <Button
                 variant="ghost"

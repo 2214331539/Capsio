@@ -7,7 +7,12 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { motion } from '../../platform/motion';
 import './primitives.css';
+
+/** When a tooltip last closed on pointer leave: moving straight to a neighbour shows its tooltip
+ *  without waiting again. */
+let lastClosed = -Infinity;
 
 export interface TooltipProps {
   targetRef: RefObject<HTMLElement | null>;
@@ -21,6 +26,8 @@ export function Tooltip({ targetRef, id, children, onOpenChange }: TooltipProps)
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ left: 0, top: 0 });
   const bubbleRef = useRef<HTMLDivElement>(null);
+  const openRef = useRef(open);
+  openRef.current = open;
 
   useEffect(() => {
     const target = targetRef.current;
@@ -38,13 +45,15 @@ export function Tooltip({ targetRef, id, children, onOpenChange }: TooltipProps)
       hovered = true;
       dismissed = false;
       clearHover();
+      const delay = performance.now() - lastClosed < motion.tooltipGrace ? 0 : motion.tooltipDelay;
       hoverTimer = setTimeout(() => {
         if (hovered && !dismissed) setOpen(true);
-      }, 250);
+      }, delay);
     };
     const leave = () => {
       hovered = false;
       clearHover();
+      if (openRef.current) lastClosed = performance.now();
       if (!focused) dismissed = false;
       if (!focused || dismissed) setOpen(false);
     };

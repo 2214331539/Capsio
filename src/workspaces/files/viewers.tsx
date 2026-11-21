@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { FolderOpen } from 'lucide-react';
-import { Button } from '../../components/primitives';
+import { Button, segmentThumb } from '../../components/primitives';
 import type { WorkContext } from '../../domain/context';
 import type { PdfBackend, ResearchBackend } from '../../platform/research';
 import { t, translateError } from '../../i18n';
@@ -106,7 +106,7 @@ export function BinaryView({
           {path}
         </span>
         {kind === 'image' && bytes ? (
-          <div className="sf-file-segments" aria-label={t('图片大小')}>
+          <div ref={segmentThumb} className="sf-file-segments" aria-label={t('图片大小')}>
             <Button variant="ghost" aria-pressed={!actual} onClick={() => setActual(false)}>
               {t('适应窗口')}
             </Button>

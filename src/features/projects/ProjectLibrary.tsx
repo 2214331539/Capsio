@@ -14,7 +14,7 @@ import {
   Search,
 } from 'lucide-react';
 import { t, translateError } from '../../i18n';
-import { Button, Input } from '../../components/primitives';
+import { Button, Input, segmentThumb } from '../../components/primitives';
 import { Menu, menuAnchor, type MenuAnchor } from '../../components/primitives/Menu';
 import { ViewTransition } from '../../components/workspace/ViewTransition';
 import type { Project } from '../../domain/workspace';
@@ -247,7 +247,12 @@ export function ProjectLibrary({
               {t(sortLabels[sort])}
               <ChevronDown />
             </Button>
-            <div className="center-view-switch" role="group" aria-label={t('项目显示方式')}>
+            <div
+              ref={segmentThumb}
+              className="center-view-switch"
+              role="group"
+              aria-label={t('项目显示方式')}
+            >
               <Button
                 variant="ghost"
                 iconOnly

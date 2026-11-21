@@ -107,6 +107,7 @@
   white-space: nowrap;
 }
 .sf-file-segments {
+  --sf-thumb-radius: 3px;
   display: flex;
   background: var(--sf-surface-chrome);
   border-radius: 4px;

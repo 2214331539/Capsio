@@ -123,3 +123,19 @@ it('keeps edge tooltips inside the viewport and inside a native modal top layer'
   expect(Number.parseFloat(tooltip.style.left)).toBeLessThanOrEqual(window.innerWidth - 168);
   expect(Number.parseFloat(tooltip.style.top)).toBeLessThanOrEqual(window.innerHeight - 56);
 });
+
+it('shows the next tooltip at once when moving straight from one button to another', async () => {
+  const user = userEvent.setup();
+  render(
+    <>
+      <Button iconOnly aria-label="Browser" />
+      <Button iconOnly aria-label="Members" />
+    </>,
+  );
+  await user.hover(screen.getByRole('button', { name: 'Browser' }));
+  expect((await screen.findByRole('tooltip')).textContent).toBe('Browser');
+  await user.unhover(screen.getByRole('button', { name: 'Browser' }));
+  await user.hover(screen.getByRole('button', { name: 'Members' }));
+  const next = await screen.findByRole('tooltip', {}, { timeout: 100 });
+  expect(next.textContent).toBe('Members');
+});

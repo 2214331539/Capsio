@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from 'zustand';
 import { Plus, Trash } from 'lucide-react';
-import { Button, Input, Textarea } from '../../components/primitives';
+import { Button, Input, Textarea, segmentThumb } from '../../components/primitives';
 import { t } from '../../i18n';
 import type { WorkspaceStore } from '../../stores/workspace';
 
@@ -135,7 +135,12 @@ export function McpServers({ store }: { store: WorkspaceStore }) {
             aria-label={t('名称')}
             onChange={(event) => field('name', event.target.value)}
           />
-          <div className="sf-segmented" role="radiogroup" aria-label={t('连接方式')}>
+          <div
+            ref={segmentThumb}
+            className="sf-segmented"
+            role="radiogroup"
+            aria-label={t('连接方式')}
+          >
             {(['command', 'url'] as const).map((kind) => (
               <button
                 key={kind}

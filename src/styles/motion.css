@@ -1,17 +1,5 @@
-/* One motion vocabulary for both windows. Research surfaces never move or remount. */
-@keyframes sf-overlay-enter {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes sf-overlay-exit {
-  to {
-    opacity: 0;
-  }
-}
+/* One motion vocabulary for both windows. Research surfaces never move or remount; controls
+   and overlays follow platform/motion.ts. */
 @keyframes sf-fade-in {
   from {
     opacity: 0;
@@ -36,21 +24,43 @@
     opacity: 1;
   }
 }
-dialog[open] {
-  animation: sf-overlay-enter var(--sf-motion-overlay) var(--sf-ease-enter);
+/* Menus, popovers and dialogs open calmly from where they were asked for: a short fade and a
+   scale from --sf-pop-from that barely overshoots. They leave faster than they came. The
+   `scale` property composes with any transform a surface already has. */
+@keyframes sf-pop-scale {
+  from {
+    scale: var(--sf-pop-from);
+  }
+}
+@keyframes sf-pop-exit {
+  to {
+    opacity: 0;
+    scale: var(--sf-pop-from);
+  }
+}
+dialog[open],
+.sf-popover[data-state='open'],
+.sf-panel-popover {
+  animation:
+    sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter),
+    sf-pop-scale var(--sf-motion-overlay) var(--sf-ease-pop);
 }
 dialog[open]::backdrop {
-  animation: sf-fade-in var(--sf-motion-overlay) var(--sf-ease-standard);
-}
-.sf-popover[data-state='open'] {
-  animation: sf-overlay-enter var(--sf-motion-overlay) var(--sf-ease-enter);
+  animation: sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter);
 }
 .sf-popover[data-state='closed'] {
   pointer-events: none;
-  animation: sf-overlay-exit var(--sf-motion-exit) var(--sf-ease-exit) forwards;
+  animation: sf-pop-exit var(--sf-motion-exit) var(--sf-ease-exit) forwards;
 }
 .sf-tooltip {
-  animation: sf-fade-in var(--sf-motion-feedback) var(--sf-ease-enter);
+  animation: sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter);
+}
+/* A closed dialog's inert copy fading out in place (Modal). */
+.sf-dialog-ghost {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
 }
 /* Dock tabs share a stable header and retained layers; auxiliary.css owns their
    crossfade. Never replay the full side-panel entry animation on a tab switch. */

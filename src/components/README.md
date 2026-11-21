@@ -20,6 +20,7 @@ components/
     Menu.tsx          右键/按钮菜单：定位、方向键、退出保留与焦点恢复
     Tooltip.tsx       不增加布局包装的提示浮层
     Badge.tsx         仅表示资源或任务状态
+    segment-thumb.ts  分段控件的滑动底块：组上加 ref={segmentThumb}
   workspace/
     WorkspaceFrame.tsx 二级视图、资源区与中央呈现
     Section.tsx       标题、操作、内容的平面分组

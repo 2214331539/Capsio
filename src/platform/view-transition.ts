@@ -1,4 +1,4 @@
-import { motion, reducedMotion } from './motion';
+import { easing, motion, reducedMotion } from './motion';
 
 /** Retains the painted composite until the latest navigation finishes. */
 export class CrossfadeController {
@@ -65,7 +65,7 @@ export class CrossfadeController {
           { opacity: start.opacity },
           { opacity: layer === incoming ? 1 : start.order > order ? 0 : start.opacity },
         ],
-        { duration: motion.navigation, easing: motion.easing, fill: 'both' },
+        { duration: motion.navigation, easing: easing.standard, fill: 'both' },
       );
       this.animations.set(layer, animation);
       return animation.finished.catch(() => {});

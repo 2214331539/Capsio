@@ -7,6 +7,7 @@ import { createWorkspaceStore } from './stores/workspace';
 import { browserResearch, browserWorkspace } from './platform/browser';
 import { applyAppearance, getPreferences, setPreferences } from './i18n/preferences';
 import { installErrorReports } from './platform/error-reports';
+import { installPress } from './platform/motion';
 
 const native = isTauri();
 if (native) {
@@ -27,6 +28,7 @@ if (native) {
   history.replaceState(null, '', `${location.pathname}${params.size ? '?' + params : ''}`);
 }
 applyAppearance(getPreferences(), matchMedia('(prefers-color-scheme: dark)').matches);
+installPress();
 const store = native ? undefined : createWorkspaceStore(browserWorkspace);
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
