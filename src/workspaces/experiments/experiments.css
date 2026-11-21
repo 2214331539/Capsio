@@ -709,3 +709,9 @@
   margin: 2px;
   font-size: 11px;
 }
+
+.sf-experiment-table .sf-experiment-name > .sf-experiment-rename {
+  width: 100%;
+  max-width: 320px;
+  height: 26px;
+}

@@ -8,12 +8,14 @@ import { experimentCatalog, sameCodeRoot } from './catalog';
 import { codeContext, selectExperiment } from './code-context';
 import { ConfigurationForm } from './ExperimentWorkspace';
 import { developmentStore } from './development';
+import { clearToasts } from '../../components/feedback';
 vi.mock('../../components/prompts', () => ({
   confirmAction: vi.fn(async () => true),
   requestText: vi.fn(async () => 'Renamed'),
 }));
 afterEach(() => {
   cleanup();
+  clearToasts();
   vi.restoreAllMocks();
   codeContext.setState({ roots: {}, experiments: {} });
   developmentStore.setState({ terminals: [], tasks: [] });
@@ -83,6 +85,9 @@ it('registers a new isolated root and retains it when renaming, archiving and re
     ),
   );
   await user.click(screen.getAllByRole('button', { name: '重命名文件夹' })[1]);
+  const field = screen.getByRole('textbox', { name: '重命名文件夹' });
+  await user.clear(field);
+  await user.type(field, 'Renamed{Enter}');
   await waitFor(() => expect(store.getState().data?.experiments?.[1].name).toBe('Renamed'));
   await user.click(screen.getAllByRole('button', { name: '归档文件夹' })[1]);
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Renamed' })).toBeNull());
@@ -94,6 +99,30 @@ it('registers a new isolated root and retains it when renaming, archiving and re
   await waitFor(() => expect(store.getState().data?.experiments?.[1].archived).toBe(false));
   await user.click(screen.getAllByRole('button', { name: '从项目中移除' })[1]);
   await waitFor(() => expect(store.getState().data?.experiments).toHaveLength(1));
+});
+it('archives and removes at once and takes both back from the toast', async () => {
+  const { store, project } = await setup();
+  await store.getState().update((data) => {
+    data.experiments!.push({
+      ...data.experiments![0],
+      id: 'e2',
+      name: 'Ablation',
+      root: 'F:/ablation',
+      source: 'existing',
+    });
+  });
+  const user = userEvent.setup();
+  render(<ExperimentManager project={project} store={store} executions={[]} onOpen={() => {}} />);
+  await user.click(screen.getAllByRole('button', { name: '归档文件夹' })[1]);
+  await waitFor(() => expect(store.getState().data?.experiments?.[1].archived).toBe(true));
+  await user.click(await screen.findByRole('button', { name: '撤销' }));
+  await waitFor(() => expect(store.getState().data?.experiments?.[1].archived).toBe(false));
+  clearToasts();
+  await user.click(screen.getAllByRole('button', { name: '从项目中移除' })[1]);
+  await waitFor(() => expect(store.getState().data?.experiments).toHaveLength(1));
+  await user.click(await screen.findByRole('button', { name: '撤销' }));
+  await waitFor(() => expect(store.getState().data?.experiments).toHaveLength(2));
+  expect(store.getState().data?.experiments?.[1].id).toBe('e2');
 });
 it('saves configurations to the selected experiment and preserves the sibling configuration', async () => {
   const { store, project } = await setup();

@@ -35,6 +35,12 @@ export function NewProjectWizard({
   const team = mode === 'team';
   const signedIn = cloud.available && !!cloud.state?.authenticated;
   const [step, setStep] = useState<1 | 2>(1);
+  // Which way the steps slid last, so the next one comes from the right side; none on opening.
+  const [direction, setDirection] = useState<'forward' | 'back' | undefined>();
+  const go = (next: 1 | 2) => {
+    setDirection(next > step ? 'forward' : 'back');
+    setStep(next);
+  };
   const [draft, setDraft] = useState(() => ({
     name: '',
     question: '',
@@ -128,7 +134,7 @@ export function NewProjectWizard({
         className="form-grid wizard"
         onSubmit={(event) => {
           event.preventDefault();
-          if (step === 1 && name) setStep(2);
+          if (step === 1 && name) go(2);
           else if (step === 2) void create();
         }}
       >
@@ -151,7 +157,7 @@ export function NewProjectWizard({
           ))}
         </ol>
         {step === 1 ? (
-          <div className="wizard-body">
+          <div className="wizard-body wizard-step" key="basics" data-direction={direction}>
             <div className="wizard-preview" aria-hidden="true">
               <ProjectCoverArt
                 name={name || t('项目名称')}
@@ -211,7 +217,7 @@ export function NewProjectWizard({
             </div>
           </div>
         ) : (
-          <div className="wizard-fields">
+          <div className="wizard-fields wizard-step" key="folders" data-direction={direction}>
             <fieldset className="wizard-choice" disabled={locked}>
               <legend>{t('文献文件夹')}</legend>
               <label>
@@ -294,7 +300,7 @@ export function NewProjectWizard({
         <footer className="dialog-footer center-dialog-footer">
           <span className="center-dialog-extra">
             {step === 2 ? (
-              <Button type="button" variant="ghost" disabled={locked} onClick={() => setStep(1)}>
+              <Button type="button" variant="ghost" disabled={locked} onClick={() => go(1)}>
                 <ChevronLeft />
                 {t('上一步')}
               </Button>

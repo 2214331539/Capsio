@@ -10,6 +10,7 @@ import { DocsWorkspace } from './DocsWorkspace';
 import { newPage, type Page } from './model';
 import { resetDocsRuntimes } from './runtime';
 import { migrateNotes } from './migrate';
+import { clearToasts } from '../../components/feedback';
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () {
@@ -21,6 +22,7 @@ beforeAll(() => {
 });
 afterEach(() => {
   cleanup();
+  clearToasts();
   resetDocsRuntimes();
   localStorage.clear();
 });
@@ -128,6 +130,18 @@ it('moves a page and its subpages to the recycle bin and back', async () => {
   expect(within(dialog).getAllByRole('listitem')).toHaveLength(1);
   await user.click(within(dialog).getByRole('button', { name: '恢复' }));
   await waitFor(() => expect(docs.pages.get(child.id)!.deletedAt).toBeNull());
+});
+
+it('trashes a page without asking and brings it back from the toast', async () => {
+  const page = meeting();
+  const { docs } = await setup([page]);
+  const user = userEvent.setup();
+  const tree = await screen.findByRole('tree', { name: '页面' });
+  await user.click(within(tree).getByRole('button', { name: '更多' }));
+  await user.click(screen.getByRole('menuitem', { name: '删除' }));
+  await waitFor(() => expect(docs.pages.get(page.id)!.deletedAt).toBeTruthy());
+  await user.click(await screen.findByRole('button', { name: '撤销' }));
+  await waitFor(() => expect(docs.pages.get(page.id)!.deletedAt).toBeNull());
 });
 
 it('turns old notes into pages under “笔记”, once', async () => {

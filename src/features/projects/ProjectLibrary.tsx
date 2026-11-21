@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { t, translateError } from '../../i18n';
 import { Button, Input, segmentThumb } from '../../components/primitives';
+import { toastUndo } from '../../components/feedback';
 import { Menu, menuAnchor, type MenuAnchor } from '../../components/primitives/Menu';
 import { ViewTransition } from '../../components/workspace/ViewTransition';
 import type { Project } from '../../domain/workspace';
@@ -104,14 +105,21 @@ export function ProjectLibrary({
     setView(next);
     writeSetting('scientify.projects.view', next);
   }
+  /** Archives or brings back a project at once; the toast takes it back. */
   async function toggle(project: Project, key: 'archived') {
-    await store.getState().update((value) => {
-      const target = value.projects.find((entry) => entry.id === project.id);
-      if (target) {
-        target[key] = !target[key];
-        target.updatedAt = new Date().toISOString();
-      }
-    });
+    const set = (on: boolean) =>
+      store.getState().update((value) => {
+        const target = value.projects.find((entry) => entry.id === project.id);
+        if (target) {
+          target[key] = on;
+          target.updatedAt = new Date().toISOString();
+        }
+      });
+    const on = !project[key];
+    if (await set(on))
+      toastUndo(t(on ? '已归档“{name}”' : '已恢复“{name}”', { name: project.name }), async () => {
+        await set(!on);
+      });
   }
   function act(project: Project, action: ProjectAction) {
     setContext(null);
@@ -309,6 +317,7 @@ export function ProjectLibrary({
                           className="project-cover"
                           aria-label={project.name}
                           title={project.question || project.name}
+                          data-press
                           disabled={busy}
                           onClick={() => onOpen(project.id)}
                         >
@@ -329,6 +338,7 @@ export function ProjectLibrary({
                     <button
                       type="button"
                       className="project-new-book"
+                      data-press
                       disabled={busy}
                       onClick={onNew}
                     >

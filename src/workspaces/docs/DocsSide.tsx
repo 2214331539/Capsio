@@ -22,6 +22,7 @@ import { t } from '../../i18n';
 import { errorMessage } from '../../domain/errors';
 import type { DocHit } from '../../platform/docs';
 import { childrenOf, type PageSummary } from './model';
+import { useFlip } from '../files/flip';
 import { useDocs, type DocsRuntime } from './runtime';
 
 export type PageAction =
@@ -73,6 +74,8 @@ export function DocsSide({
   const [drop, setDrop] = useState<Drop | null>(null);
   const dragged = useRef<string | null>(null);
   const [error, setError] = useState('');
+  const scroller = useRef<HTMLDivElement>(null);
+  useFlip(scroller);
 
   useEffect(() => {
     const q = query.trim();
@@ -126,6 +129,7 @@ export function DocsSide({
       <div key={page.id} role="treeitem" aria-expanded={children.length ? open : undefined}>
         <div
           className="doc-tree-row"
+          data-flip={page.id}
           data-drop={marker}
           aria-current={current === page.id ? 'page' : undefined}
           style={{ paddingLeft: 4 + depth * 14 }}
@@ -273,7 +277,7 @@ export function DocsSide({
           ))}
         </div>
       ) : (
-        <div className="doc-side-scroll">
+        <div className="doc-side-scroll" ref={scroller}>
           {recent.some((id) => live.has(id)) ? (
             <section className="doc-side-section">
               <button

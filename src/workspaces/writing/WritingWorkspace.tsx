@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Button, Dropdown, Input } from '../../components/primitives';
 import { Menu, type MenuAnchor } from '../../components/primitives/Menu';
+import { Spinner, StateLabel } from '../../components/feedback';
 import { Modal } from '../../components/Modal';
 import { WorkspaceFrame } from '../../components/workspace/WorkspaceFrame';
 import { useActiveView } from '../../components/workspace/ViewTransition';
@@ -81,6 +82,7 @@ import {
   type SyncData,
 } from './synctex';
 import { PdfPreview } from './PdfPreview';
+import { flashLine } from './flash';
 import {
   compilerLabel,
   createManuscript,
@@ -326,6 +328,29 @@ function WritingWorkspaceView({
     builds.set(target, next);
     if (target === keyRef.current) setBuildState(next);
   };
+  // The compile button shows how the last build went for a moment, then goes back to its label.
+  const [outcome, setOutcome] = useState<'done' | 'failed' | null>(null);
+  const wasRunning = useRef(false);
+  useEffect(() => {
+    wasRunning.current = false;
+    setOutcome(null);
+  }, [key]);
+  useEffect(() => {
+    if (build.running) {
+      wasRunning.current = true;
+      setOutcome(null);
+      return;
+    }
+    if (!wasRunning.current) return;
+    wasRunning.current = false;
+    const status = build.result?.status;
+    const next =
+      build.error || status === 'failed' ? 'failed' : status === 'success' ? 'done' : null;
+    if (!next) return;
+    setOutcome(next);
+    const timer = setTimeout(() => setOutcome(null), 2400);
+    return () => clearTimeout(timer);
+  }, [build.running, key]);
   const files = useManuscriptFiles(backend, project.id, manuscript?.folder ?? null, revision);
   // LaTeX folders that appear in the project (written by the AI, copied in) become manuscripts.
   useEffect(() => {
@@ -505,6 +530,7 @@ function WritingWorkspaceView({
       from,
       to: from + (lines[line - 1]?.length ?? 0),
     });
+    flashLine(session, from);
   }
   function syncForward() {
     if (!build.synctex) {
@@ -1029,12 +1055,35 @@ function WritingWorkspaceView({
               build.running ? void writingApi.cancel(project.id, target) : void compile()
             }
           >
-            {build.running ? (
-              <LoaderCircle size={13} className="sf-ai-spinner" />
-            ) : (
-              <RefreshCw size={13} />
-            )}
-            {build.running ? t('正在编译…') : t('重新编译')}
+            <StateLabel
+              state={build.running ? 'busy' : (outcome ?? 'idle')}
+              labels={{
+                idle: (
+                  <>
+                    <RefreshCw size={13} />
+                    {t('重新编译')}
+                  </>
+                ),
+                busy: (
+                  <>
+                    <Spinner />
+                    {t('正在编译…')}
+                  </>
+                ),
+                done: (
+                  <>
+                    <Check size={13} />
+                    {t('编译成功')}
+                  </>
+                ),
+                failed: (
+                  <>
+                    <CircleX size={13} />
+                    {errors.length ? t('{count} 个错误', { count: errors.length }) : t('编译失败')}
+                  </>
+                ),
+              }}
+            />
           </Button>
           <Button
             variant="primary"

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ArrowLeft,
+  Check,
   Copy,
   Download,
   FileDown,
@@ -26,7 +27,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/primitives';
 import { Menu, type MenuAnchor } from '../../components/primitives/Menu';
-import { confirmAction } from '../../components/prompts';
+import { StateLabel, toast, toastUndo } from '../../components/feedback';
 import { t } from '../../i18n';
 import { errorMessage } from '../../domain/errors';
 import type { WorkContext } from '../../domain/context';
@@ -92,6 +93,7 @@ const when = (iso: string | undefined) => {
   if (minutes < 24 * 60) return t('{count} 小时前', { count: Math.round(minutes / 60) });
   return date.toLocaleDateString();
 };
+const notify = (message: string) => void toast(message);
 const emptyPage = (blocks: Block[]) =>
   blocks.length <= 1 &&
   !blocks.some((block) => blockText(block).trim() || block.type !== 'paragraph');
@@ -149,12 +151,6 @@ export function DocsWorkspace({
   const loadError = useDocs(runtime, (state) => state.error);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  useEffect(() => {
-    if (!notice) return;
-    const timer = setTimeout(() => setNotice(''), 4000);
-    return () => clearTimeout(timer);
-  }, [notice]);
   useNoteMigration(store, docs, project.id, runtime);
   useEffect(() => {
     void runtime.load().then(() => runtime.purgeExpired());
@@ -184,10 +180,14 @@ export function DocsWorkspace({
       if (current && !pages.some((item) => item.id === current && !item.deletedAt))
         onOpenPage(null);
       else if (page.id === current) onOpenPage(page.parent);
-      setNotice(
+      toastUndo(
         count > 1
           ? t('已移到回收站（含 {count} 个子页面）', { count: count - 1 })
           : t('已移到回收站'),
+        async () => {
+          await runtime.restore(page.id);
+          if (page.id === current) onOpenPage(page.id);
+        },
       );
     }
   }
@@ -215,7 +215,7 @@ export function DocsWorkspace({
       image: async (asset) => imageForWord(await images.read(asset)).catch(() => null),
     });
     if (await docs.saveFile?.(page.title || t('无标题'), 'docx', bytes))
-      setNotice(t('已导出 Word 文档'));
+      toast(t('已导出 Word 文档'), { tone: 'success' });
   }
   async function importMarkdown() {
     const files = (await docs.importMarkdown?.()) ?? [];
@@ -265,18 +265,13 @@ export function DocsWorkspace({
             </Button>
           </div>
         ) : null}
-        {notice ? (
-          <div className="doc-notice" role="status">
-            {notice}
-          </div>
-        ) : null}
         {current ? (
           <DocPage
             key={current}
             runtime={runtime}
             id={current}
             onError={setError}
-            onNotice={setNotice}
+            onNotice={notify}
             wordExport={!!docs.saveFile}
             project={project}
             library={library}
@@ -511,6 +506,24 @@ function DocPage({
   const cloud = useCloud();
   const [menu, setMenu] = useState<MenuAnchor | null>(null);
   const selection = useRef('');
+  // "Saved" shows for a moment after a save finishes, then gives way to who edited and when.
+  const [savedFlash, setSavedFlash] = useState(false);
+  const wasSaving = useRef(false);
+  const isSaving = !!open?.saving;
+  const hasError = !!open?.error;
+  useEffect(() => {
+    if (isSaving) {
+      wasSaving.current = true;
+      setSavedFlash(false);
+      return;
+    }
+    if (!wasSaving.current) return;
+    wasSaving.current = false;
+    if (hasError) return;
+    setSavedFlash(true);
+    const timer = setTimeout(() => setSavedFlash(false), 1800);
+    return () => clearTimeout(timer);
+  }, [isSaving, hasError]);
   useEffect(() => {
     void runtime.open(id);
     return () => void runtime.save(id);
@@ -666,12 +679,15 @@ function DocPage({
     (block) => block.type === 'heading' && blockText(block).trim(),
   );
   const status = open.error
-    ? open.error
+    ? 'error'
     : open.saving
-      ? t('正在保存…')
+      ? 'saving'
       : open.dirty
-        ? t('未保存')
-        : [userLabel(page.updatedBy ?? ''), when(page.updatedAt)].filter(Boolean).join(' · ');
+        ? 'dirty'
+        : savedFlash
+          ? 'saved'
+          : 'idle';
+  const statusText = (text: string) => <span className="doc-status-text">{text}</span>;
   return (
     <div
       className={`doc-page${compact ? ' is-compact' : ''}${page.cover ? ' has-cover' : ''}`}
@@ -704,7 +720,25 @@ function DocPage({
           ))}
         </nav>
         <span className="spacer" />
-        <span className={`doc-status${open.error ? ' is-error' : ''}`}>{status}</span>
+        <span className={`doc-status${open.error ? ' is-error' : ''}`} role="status">
+          <StateLabel
+            state={status}
+            labels={{
+              idle: statusText(
+                [userLabel(page.updatedBy ?? ''), when(page.updatedAt)].filter(Boolean).join(' · '),
+              ),
+              dirty: statusText(t('未保存')),
+              saving: statusText(t('正在保存…')),
+              saved: (
+                <>
+                  <Check size={12} />
+                  {t('已保存')}
+                </>
+              ),
+              ...(open.error ? { error: statusText(open.error) } : {}),
+            }}
+          />
+        </span>
         <Button
           variant="ghost"
           iconOnly
@@ -943,17 +977,7 @@ function DocPage({
                   type="button"
                   role="menuitem"
                   className="sf-menu-danger"
-                  onClick={async () => {
-                    setMenu(null);
-                    if (
-                      await confirmAction(
-                        t('把“{title}”和它的子页面移到回收站？', {
-                          title: page.title || t('无标题'),
-                        }),
-                      )
-                    )
-                      onAction('delete', summary);
-                  }}
+                  onClick={() => (setMenu(null), onAction('delete', summary))}
                 >
                   <Trash2 size={14} />
                   {t('删除')}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
-import { FileText, RefreshCw, Square } from 'lucide-react';
+import { ArrowDown, FileText, RefreshCw, Square } from 'lucide-react';
 import { Button } from '../../components/primitives';
 import { Modal } from '../../components/Modal';
 import { t, translateError } from '../../i18n';
@@ -31,6 +31,8 @@ export function ExecutionPanel({
   const logTicket = useRef(0);
   const logRef = useRef<HTMLPreElement>(null);
   const followLog = useRef(true);
+  // The log follows its end; scrolling up lets go and offers the way back.
+  const [behind, setBehind] = useState(false);
   useEffect(() => {
     if (!run || tab !== 'logs' || !outputRevision) return;
     let alive = true;
@@ -57,6 +59,7 @@ export function ExecutionPanel({
     setArtifact(null);
     setStopping(false);
     followLog.current = true;
+    setBehind(false);
     if (!run) return;
     let alive = true;
     let timer: ReturnType<typeof setTimeout>;
@@ -120,17 +123,34 @@ export function ExecutionPanel({
       </div>
       {error || run.error ? <p role="alert">{translateError(error || run.error || '')}</p> : null}
       {tab === 'logs' && (
-        <pre
-          ref={logRef}
-          className="sf-execution-log"
-          aria-label={t('只读运行日志')}
-          onScroll={(event) => {
-            const el = event.currentTarget;
-            followLog.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-          }}
-        >
-          {log || t('暂无输出')}
-        </pre>
+        <div className="sf-execution-log-wrap">
+          <pre
+            ref={logRef}
+            className="sf-execution-log"
+            aria-label={t('只读运行日志')}
+            onScroll={(event) => {
+              const el = event.currentTarget;
+              followLog.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+              setBehind(!followLog.current);
+            }}
+          >
+            {log || t('暂无输出')}
+          </pre>
+          {behind ? (
+            <Button
+              className="sf-log-latest"
+              onClick={() => {
+                const el = logRef.current;
+                followLog.current = true;
+                setBehind(false);
+                if (el) el.scrollTop = el.scrollHeight;
+              }}
+            >
+              <ArrowDown size={13} />
+              {t('回到最新')}
+            </Button>
+          ) : null}
+        </div>
       )}
       {tab === 'environment' && (
         <dl className="sf-execution-definition">

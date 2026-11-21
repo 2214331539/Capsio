@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { Button, segmentThumb } from '../../components/primitives';
-import { confirmAction } from '../../components/prompts';
+import { toastUndo } from '../../components/feedback';
 import { t, translateError } from '../../i18n';
 import { errorMessage } from '../../domain/errors';
 import type { ModelProfile } from '../../domain/workspace';
@@ -67,8 +67,9 @@ const otherGroups = [
 
 const isOfficial = (profile: ModelProfile) => serviceFor(profile).id === 'scientify';
 const groupOf = (profile: ModelProfile) =>
-  otherGroups.find((group) => (group.services as readonly string[]).includes(serviceFor(profile).id)) ??
-  otherGroups[otherGroups.length - 1];
+  otherGroups.find((group) =>
+    (group.services as readonly string[]).includes(serviceFor(profile).id),
+  ) ?? otherGroups[otherGroups.length - 1];
 
 /** Settings → AI 模型: the same connections the assistant's model menu uses. */
 export function ModelPreferences({
@@ -180,16 +181,23 @@ export function ModelPreferences({
       setError(store.getState().error ?? t('模型配置保存失败'));
   }
 
+  /** Removes the connection at once; its saved key stays, so the toast can put it back as it was. */
   async function remove(profile: ModelProfile) {
-    if (
-      !(await confirmAction(
-        t('删除连接“{name}”？已有对话保留原来的设置。', { name: profile.name }),
-      ))
-    )
-      return;
     setError('');
-    if (!(await store.getState().update((workspace) => removeConnection(workspace, profile.id))))
+    const index = saved.findIndex((item) => item.id === profile.id);
+    const wasDefault = defaultId === profile.id;
+    if (!(await store.getState().update((workspace) => removeConnection(workspace, profile.id)))) {
       setError(store.getState().error ?? t('模型配置保存失败'));
+      return;
+    }
+    toastUndo(t('已删除连接“{name}”', { name: profile.name }), async () => {
+      await store.getState().update((workspace) => {
+        const list = (workspace.settings.modelProfiles ??= []);
+        if (list.some((item) => item.id === profile.id)) return;
+        list.splice(Math.max(0, Math.min(index, list.length)), 0, profile);
+        if (wasDefault) workspace.settings.defaultModelProfileId = profile.id;
+      });
+    });
   }
 
   if (editing)
@@ -294,7 +302,12 @@ export function ModelPreferences({
 
   return (
     <div className="settings-models">
-      <div ref={segmentThumb} className="sf-segmented settings-models-kinds" role="group" aria-label={t('模型来源')}>
+      <div
+        ref={segmentThumb}
+        className="sf-segmented settings-models-kinds"
+        role="group"
+        aria-label={t('模型来源')}
+      >
         <Button
           variant="ghost"
           aria-pressed={kind === 'official'}
@@ -312,7 +325,9 @@ export function ModelPreferences({
             <div>
               <h3 className="settings-section-heading">{t('Scientify 官方模型')}</h3>
               <p className="settings-note">
-                {t('用 Scientify 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。')}
+                {t(
+                  '用 Scientify 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。',
+                )}
               </p>
             </div>
             <Button type="button" disabled={busy} onClick={() => void edit(null, OFFICIAL)}>
@@ -321,11 +336,18 @@ export function ModelPreferences({
             </Button>
           </div>
           {official.length ? (
-            <ul className="settings-models-list">{official.map((profile) => row(profile, OFFICIAL))}</ul>
+            <ul className="settings-models-list">
+              {official.map((profile) => row(profile, OFFICIAL))}
+            </ul>
           ) : (
             <p className="settings-note">{t('还没有添加官方模型。')}</p>
           )}
-          <Button type="button" variant="ghost" className="settings-models-upgrade" onClick={() => openUpgrade()}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="settings-models-upgrade"
+            onClick={() => openUpgrade()}
+          >
             {t('升级到专业版')}
           </Button>
         </section>
@@ -333,19 +355,29 @@ export function ModelPreferences({
         otherGroups.map((group) => {
           const items = others.filter((profile) => groupOf(profile) === group);
           return (
-            <section key={group.title} className="settings-models-group" aria-label={t(group.title)}>
+            <section
+              key={group.title}
+              className="settings-models-group"
+              aria-label={t(group.title)}
+            >
               <div className="settings-models-heading">
                 <div>
                   <h3 className="settings-section-heading">{t(group.title)}</h3>
                   <p className="settings-note">{t(group.note)}</p>
                 </div>
-                <Button type="button" disabled={busy} onClick={() => void edit(null, group.services)}>
+                <Button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void edit(null, group.services)}
+                >
                   <Plus size={14} />
                   {t('添加')}
                 </Button>
               </div>
               {items.length ? (
-                <ul className="settings-models-list">{items.map((profile) => row(profile, group.services))}</ul>
+                <ul className="settings-models-list">
+                  {items.map((profile) => row(profile, group.services))}
+                </ul>
               ) : null}
             </section>
           );

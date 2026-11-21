@@ -4584,5 +4584,19 @@
   "网络已断开，恢复后会自动同步。": [
     "网络已断开，恢复后会自动同步。",
     "Offline. Changes sync when the connection is back."
-  ]
+  ],
+  "{count} 个错误": ["{count} 个错误", "{count} errors"],
+  "连接已断开": ["连接已断开", "Connection lost"],
+  "已归档“{name}”": ["已归档“{name}”", "Archived “{name}”"],
+  "已恢复“{name}”": ["已恢复“{name}”", "Restored “{name}”"],
+  "已从项目中移除“{name}”": ["已从项目中移除“{name}”", "Removed “{name}” from the project"],
+  "已删除连接“{name}”": ["已删除连接“{name}”", "Deleted connection “{name}”"],
+  "已删除运行配置“{name}”": ["已删除运行配置“{name}”", "Deleted run configuration “{name}”"],
+  "正在创建虚拟环境…": ["正在创建虚拟环境…", "Creating virtual environment…"],
+  "正在创建 Conda 环境…": ["正在创建 Conda 环境…", "Creating Conda environment…"],
+  "正在安装依赖…": ["正在安装依赖…", "Installing dependencies…"],
+  "环境已创建": ["环境已创建", "Environment created"],
+  "依赖已安装": ["依赖已安装", "Dependencies installed"],
+  "环境创建失败": ["环境创建失败", "Environment creation failed"],
+  "依赖安装失败": ["依赖安装失败", "Dependency installation failed"]
 }

@@ -183,7 +183,8 @@ export function SettingsDialog({
   }, []);
   const busy = useStore(store, (s) => s.busy);
   const profiles = data?.settings.modelProfiles ?? [];
-  const model = profiles.find((item) => item.id === data?.settings.defaultModelProfileId) ?? profiles[0];
+  const model =
+    profiles.find((item) => item.id === data?.settings.defaultModelProfileId) ?? profiles[0];
   const [shortcutsDirty, setShortcutsDirty] = useState(false);
   useEffect(() => {
     store.getState().setDirtySource('settings-shortcuts', shortcutsDirty);

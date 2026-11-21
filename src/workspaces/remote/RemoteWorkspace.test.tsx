@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { RemoteWorkspace } from './RemoteWorkspace';
@@ -115,7 +115,7 @@ it('opens another folder on the host from the folder picker', async () => {
   expect(await within(files).findByText('raw')).toBeTruthy();
 });
 
-it('goes back to connecting when the line drops', async () => {
+it('keeps the page and offers to reconnect when the line drops', async () => {
   const user = userEvent.setup();
   const api = fakeApi();
   render(<RemoteWorkspace project={{ ...project, id: 'p4' }} onContext={vi.fn()} api={api} />);
@@ -124,6 +124,29 @@ it('goes back to connecting when the line drops', async () => {
   const files = await screen.findByRole('tree', { name: '云主机文件' });
   vi.mocked(api.list).mockRejectedValueOnce(new Error('DISCONNECTED:连接已断开，请重新连接。'));
   await user.click(within(files).getByText('src'));
-  expect(await screen.findByText('连接已断开，请重新连接。')).toBeTruthy();
-  expect((screen.getByRole('textbox', { name: '主机' }) as HTMLInputElement).value).toBe('gpu');
+  expect(await screen.findByText(/连接已断开/)).toBeTruthy();
+  // The tree stays on screen; one click connects to the same host again.
+  expect(screen.getByRole('tree', { name: '云主机文件' })).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: '重新连接' }));
+  await waitFor(() => expect(api.connect).toHaveBeenCalledTimes(2));
+  expect(api.connect).toHaveBeenLastCalledWith('gpu', undefined);
+  await waitFor(() => expect(screen.queryByRole('button', { name: '重新连接' })).toBeNull());
+});
+
+it('renames a file in place in the tree', async () => {
+  const user = userEvent.setup();
+  const api = fakeApi();
+  render(<RemoteWorkspace project={{ ...project, id: 'p5' }} onContext={vi.fn()} api={api} />);
+  const [gpu] = await screen.findAllByRole('button', { name: /gpu/ });
+  await user.click(gpu);
+  const files = await screen.findByRole('tree', { name: '云主机文件' });
+  fireEvent.contextMenu(within(files).getByText('train.py'));
+  await user.click(await screen.findByRole('menuitem', { name: '重命名…' }));
+  const field = within(files).getByRole('textbox', { name: '文件名称' });
+  await user.clear(field);
+  await user.type(field, 'run.py{Enter}');
+  await waitFor(() =>
+    expect(api.rename).toHaveBeenCalledWith('c1', '/home/pp/train.py', '/home/pp/run.py'),
+  );
+  expect(within(files).queryByRole('textbox')).toBeNull();
 });

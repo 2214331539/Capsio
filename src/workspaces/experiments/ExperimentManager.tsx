@@ -1,12 +1,12 @@
 import { canEditProject } from '../../platform/collaboration';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { Archive, ArchiveRestore, FolderOpen, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import type { Experiment, Project } from '../../domain/workspace';
+import type { Experiment, Project, Workspace } from '../../domain/workspace';
 import type { WorkspaceStore } from '../../stores/workspace';
 import { Button, Dropdown, Input, Textarea, segmentThumb } from '../../components/primitives';
 import { Modal } from '../../components/Modal';
-import { confirmAction, requestText } from '../../components/prompts';
+import { toastUndo } from '../../components/feedback';
 import { t, translateError } from '../../i18n';
 import { displayPath } from '../../platform/os';
 import { relativeTime } from '../../features/projects/model';
@@ -48,10 +48,13 @@ export function ExperimentManager({
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // A folder is renamed in its own row; the ref keeps Enter and the blur after it from both saving.
+  const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
+  const renamingId = useRef<string | null>(null);
   const archivedCount = experiments.filter((e) => e.archived).length;
   const archived = archivedView && archivedCount > 0;
-  async function edit(experiment: Experiment, action: 'rename' | 'archive' | 'remove') {
-    setError('');
+  /** Whether runs, terminals, tasks or chats of this folder are still going. */
+  function inUse(experiment: Experiment) {
     const running = executions.some(
       (run) =>
         run.status === 'running' &&
@@ -59,48 +62,91 @@ export function ExperimentManager({
           (experiment.root && run.workspaceRoot === experiment.root)),
     );
     const chats = data?.sessions.filter((chat) => chat.experimentId === experiment.id) ?? [];
-    if (
-      action !== 'rename' &&
-      (running ||
-        development.terminals.some(
-          (item) => item.experimentId === experiment.id && item.status === 'running',
-        ) ||
-        development.tasks.some(
-          (item) => item.experimentId === experiment.id && item.status === 'running',
-        ) ||
-        chats.some((chat) => store.getState().agentTasks[`${project.id}:${chat.id}`]))
-    ) {
-      setError(t('请先停止此文件夹的 AI 和运行任务。'));
-      return;
-    }
-    const name = action === 'rename' ? await requestText(t('重命名文件夹'), experiment.name) : null;
-    if (action === 'rename' && !name?.trim()) return;
-    if (
-      action === 'remove' &&
-      !(await confirmAction(
-        t('从项目中移除此文件夹？磁盘上的文件、Git 提交、AI 对话和运行记录都会保留。'),
-      ))
-    )
-      return;
+    return (
+      running ||
+      development.terminals.some(
+        (item) => item.experimentId === experiment.id && item.status === 'running',
+      ) ||
+      development.tasks.some(
+        (item) => item.experimentId === experiment.id && item.status === 'running',
+      ) ||
+      chats.some((chat) => store.getState().agentTasks[`${project.id}:${chat.id}`])
+    );
+  }
+  async function save(change: (draft: Workspace) => void) {
     setBusy(true);
     try {
-      const ok = await store.getState().update((draft) => {
-        const target = draft.experiments?.find((e) => e.id === experiment.id);
-        if (!target) throw new Error(t('实验不存在。'));
-        if (action === 'remove')
-          draft.experiments = draft.experiments?.filter((e) => e.id !== experiment.id);
-        else {
-          if (action === 'rename') target.name = name!.trim();
-          else target.archived = !target.archived;
-          target.updatedAt = new Date().toISOString();
-        }
-      });
-      if (!ok) throw new Error(store.getState().error ?? t('保存失败'));
+      if (!(await store.getState().update(change)))
+        throw new Error(store.getState().error ?? t('保存失败'));
+      return true;
     } catch (reason) {
       setError(errorMessage(reason));
+      return false;
     } finally {
       setBusy(false);
     }
+  }
+  const target = (draft: Workspace, id: string) => {
+    const found = draft.experiments?.find((e) => e.id === id);
+    if (!found) throw new Error(t('实验不存在。'));
+    return found;
+  };
+  function startRename(experiment: Experiment) {
+    renamingId.current = experiment.id;
+    setRenaming({ id: experiment.id, value: experiment.name });
+  }
+  function stopRename() {
+    renamingId.current = null;
+    setRenaming(null);
+  }
+  async function rename(experiment: Experiment, value: string) {
+    if (renamingId.current !== experiment.id) return;
+    stopRename();
+    const name = value.trim();
+    if (!name || name === experiment.name) return;
+    setError('');
+    await save((draft) => {
+      const found = target(draft, experiment.id);
+      found.name = name;
+      found.updatedAt = new Date().toISOString();
+    });
+  }
+  /** Archives or brings back a folder at once; the toast takes it back. */
+  async function archive(experiment: Experiment) {
+    setError('');
+    if (inUse(experiment)) return setError(t('请先停止此文件夹的 AI 和运行任务。'));
+    const archived = !experiment.archived;
+    const mark = (value: boolean) => (draft: Workspace) => {
+      const found = target(draft, experiment.id);
+      found.archived = value;
+      found.updatedAt = new Date().toISOString();
+    };
+    if (await save(mark(archived)))
+      toastUndo(
+        t(archived ? '已归档“{name}”' : '已恢复“{name}”', { name: experiment.name }),
+        async () => void (await save(mark(!archived))),
+      );
+  }
+  /** Only the folder's entry leaves the project; files, commits, chats and runs stay, so undo puts it back. */
+  async function remove(experiment: Experiment) {
+    setError('');
+    if (inUse(experiment)) return setError(t('请先停止此文件夹的 AI 和运行任务。'));
+    const kept = structuredClone(experiment);
+    const index = experiments.findIndex((e) => e.id === experiment.id);
+    const ok = await save((draft) => {
+      target(draft, experiment.id);
+      draft.experiments = draft.experiments?.filter((e) => e.id !== experiment.id);
+    });
+    if (ok)
+      toastUndo(
+        t('已从项目中移除“{name}”', { name: experiment.name }),
+        async () =>
+          void (await save((draft) => {
+            const list = (draft.experiments ??= []);
+            if (!list.some((e) => e.id === kept.id))
+              list.splice(Math.max(0, Math.min(index, list.length)), 0, kept);
+          })),
+      );
   }
   const visible = experiments.filter(
     (e) =>
@@ -198,13 +244,37 @@ export function ExperimentManager({
                     }}
                   >
                     <td className="sf-experiment-name" title={where}>
-                      <Button
-                        variant="ghost"
-                        disabled={experiment.archived}
-                        onClick={() => onOpen(experiment)}
-                      >
-                        <span>{experiment.name}</span>
-                      </Button>
+                      {renaming?.id === experiment.id ? (
+                        <Input
+                          autoFocus
+                          className="sf-experiment-rename"
+                          aria-label={t('重命名文件夹')}
+                          maxLength={200}
+                          value={renaming.value}
+                          onFocus={(event) => event.currentTarget.select()}
+                          onChange={(event) =>
+                            setRenaming({ id: experiment.id, value: event.target.value })
+                          }
+                          onBlur={() => void rename(experiment, renaming.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              void rename(experiment, renaming.value);
+                            } else if (event.key === 'Escape') {
+                              event.preventDefault();
+                              stopRename();
+                            }
+                          }}
+                        />
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          disabled={experiment.archived}
+                          onClick={() => onOpen(experiment)}
+                        >
+                          <span>{experiment.name}</span>
+                        </Button>
+                      )}
                       {experiment.purpose ? <small>{experiment.purpose}</small> : null}
                     </td>
                     <td>
@@ -247,7 +317,7 @@ export function ExperimentManager({
                           tooltip={t('重命名文件夹')}
                           aria-label={t('重命名文件夹')}
                           disabled={readOnly || busy}
-                          onClick={() => void edit(experiment, 'rename')}
+                          onClick={() => startRename(experiment)}
                         >
                           <Pencil size={15} />
                         </Button>
@@ -257,7 +327,7 @@ export function ExperimentManager({
                           tooltip={t(experiment.archived ? '恢复文件夹' : '归档文件夹')}
                           aria-label={t(experiment.archived ? '恢复文件夹' : '归档文件夹')}
                           disabled={readOnly || busy}
-                          onClick={() => void edit(experiment, 'archive')}
+                          onClick={() => void archive(experiment)}
                         >
                           {experiment.archived ? (
                             <ArchiveRestore size={15} />
@@ -271,7 +341,7 @@ export function ExperimentManager({
                           tooltip={t('从项目中移除')}
                           aria-label={t('从项目中移除')}
                           disabled={readOnly || busy}
-                          onClick={() => void edit(experiment, 'remove')}
+                          onClick={() => void remove(experiment)}
                         >
                           <Trash2 size={15} />
                         </Button>

@@ -79,6 +79,26 @@ dialog.settings-dialog[open] {
 .settings-scroll [hidden] {
   display: none !important;
 }
+/* A category fades in when it is chosen; the sections stay mounted. */
+.settings-scroll > section:not([hidden]) {
+  animation: sf-fade-in var(--sf-motion-content) var(--sf-ease-enter);
+}
+/* "Saved" appears in place, the tick springing in. */
+.settings-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--sf-status-success);
+  animation: sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter);
+}
+.settings-saved svg {
+  animation: settings-saved-tick var(--sf-motion-pop) var(--sf-ease-spring);
+}
+@keyframes settings-saved-tick {
+  from {
+    scale: 0.4;
+  }
+}
 /* Rows grouped in one card, like system settings. */
 .settings-group {
   border: 1px solid var(--sf-border-subtle);

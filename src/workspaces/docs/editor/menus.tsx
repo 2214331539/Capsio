@@ -3,6 +3,7 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -53,7 +54,24 @@ export const SuggestionList = forwardRef<ListHandle, ListProps>(function Suggest
 ) {
   const [index, setIndex] = useState(0);
   const list = useRef<HTMLDivElement>(null);
+  const thumb = useRef<HTMLDivElement>(null);
+  const placed = useRef(false);
   useEffect(() => setIndex(0), [items]);
+  // The highlight is one element that slides to the chosen row, in the list's own coordinates.
+  useLayoutEffect(() => {
+    const box = list.current;
+    const mark = thumb.current;
+    const row = box?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!box || !mark) return;
+    mark.hidden = !row;
+    if (!row) return;
+    const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top;
+    mark.style.translate = `0 ${top - box.clientTop + box.scrollTop}px`;
+    mark.style.height = `${row.offsetHeight}px`;
+    if (placed.current) return;
+    placed.current = true;
+    requestAnimationFrame(() => thumb.current?.setAttribute('data-ready', ''));
+  }, [index, items]);
   useEffect(() => {
     list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
   }, [index]);
@@ -69,6 +87,7 @@ export const SuggestionList = forwardRef<ListHandle, ListProps>(function Suggest
   }));
   return (
     <div className="doc-suggest" role="listbox" ref={list}>
+      <div className="doc-suggest-thumb" ref={thumb} hidden aria-hidden="true" />
       {items.length ? null : <div className="doc-suggest-empty">{empty}</div>}
       {items.map((item, i) => (
         <div key={item.id} role="presentation">

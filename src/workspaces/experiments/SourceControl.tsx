@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowUpRight,
   Check,
@@ -19,6 +19,7 @@ import type { WorkspaceStore } from '../../stores/workspace';
 import { t, translateError } from '../../i18n';
 import { errorMessage } from '../../domain/errors';
 import { relativeTime } from '../../features/projects/model';
+import { useFlip } from '../files/flip';
 import type { useCodeWorkspace } from './code-context';
 import { useGitActions } from './git-actions';
 import { changeSides, Patch } from './GitWorkspace';
@@ -59,6 +60,9 @@ export function SourceControl({
   const { snapshot, loading, refresh } = code;
   const git = useGitActions({ projectId, backend, store, code });
   const { message, blocked, error, setError, result, execute } = git;
+  // Staging moves a file between the two groups; it glides there instead of jumping.
+  const scroller = useRef<HTMLDivElement>(null);
+  useFlip(scroller);
   if (!gitApi.available()) return <p className="sf-ide-empty">{t('Git 管理仅在桌面应用可用')}</p>;
   if (!snapshot)
     return (
@@ -102,7 +106,7 @@ export function SourceControl({
     const letter = changeLetter(change, isStaged);
     const sides = changeSides(change);
     return (
-      <div key={change.path} className="sf-scm-row">
+      <div key={change.path} className="sf-scm-row" data-flip={change.path}>
         <Button
           variant="ghost"
           className="sf-scm-file"
@@ -195,7 +199,7 @@ export function SourceControl({
           {result}
         </p>
       ) : null}
-      <div className="sf-scm-scroll">
+      <div className="sf-scm-scroll" ref={scroller}>
         {staged.length ? (
           <SideSection
             title={t('暂存的更改')}

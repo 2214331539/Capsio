@@ -277,8 +277,8 @@
     0 1px 2px rgb(0 0 0 / 14%),
     0 14px 24px -14px rgb(0 0 0 / 45%);
   transition:
-    transform var(--sf-motion-panel) var(--sf-ease-standard),
-    box-shadow var(--sf-motion-panel) var(--sf-ease-standard);
+    transform var(--sf-motion-content) var(--sf-ease-pop),
+    box-shadow var(--sf-motion-content) var(--sf-ease-pop);
 }
 .project-cover-art::before {
   content: '';
@@ -1085,6 +1085,9 @@
   background: var(--sf-border-control);
 }
 .wizard-steps li > span {
+  transition:
+    background-color var(--sf-motion-content) var(--sf-ease-standard),
+    color var(--sf-motion-content) var(--sf-ease-standard);
   width: 18px;
   height: 18px;
   display: grid;
@@ -1102,6 +1105,25 @@
   background: var(--sf-accent);
   box-shadow: none;
   color: var(--sf-on-accent);
+}
+/* The step that arrives slides in from the side it comes from, and fades in. */
+.wizard-step[data-direction] {
+  animation: wizard-step-forward var(--sf-motion-content) var(--sf-ease-enter);
+}
+.wizard-step[data-direction='back'] {
+  animation-name: wizard-step-back;
+}
+@keyframes wizard-step-forward {
+  from {
+    opacity: 0;
+    translate: 18px 0;
+  }
+}
+@keyframes wizard-step-back {
+  from {
+    opacity: 0;
+    translate: -18px 0;
+  }
 }
 .wizard-body {
   display: grid;

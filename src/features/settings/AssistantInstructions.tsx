@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
+import { Check } from 'lucide-react';
 import { Button, Textarea } from '../../components/primitives';
+import { StateLabel } from '../../components/feedback';
 import { t } from '../../i18n';
 import type { WorkspaceStore } from '../../stores/workspace';
+import { useSavedFlash } from './saved';
 
 const LIMIT = 4000;
 
@@ -18,7 +21,7 @@ export function AssistantInstructions({ store }: { store: WorkspaceStore }) {
   });
   const busy = useStore(store, (state) => state.busy);
   const [draft, setDraft] = useState(saved);
-  const [done, setDone] = useState(false);
+  const [done, flash, clearDone] = useSavedFlash();
   useEffect(() => setDraft(saved), [saved]);
   const dirty = draft !== saved;
   useEffect(() => {
@@ -26,10 +29,11 @@ export function AssistantInstructions({ store }: { store: WorkspaceStore }) {
     return () => store.getState().setDirtySource('settings-instructions', false);
   }, [dirty, store]);
   async function save() {
+    if (!dirty) return;
     const ok = await store.getState().update((workspace) => {
       workspace.settings.assistantInstructions = draft.trim();
     });
-    if (ok) setDone(true);
+    if (ok) flash();
   }
   return (
     <div className="settings-instructions">
@@ -47,13 +51,24 @@ export function AssistantInstructions({ store }: { store: WorkspaceStore }) {
         placeholder={t('例如：我做视频理解方向，代码用 PyTorch；回答先给结论，引用给出论文链接。')}
         onChange={(event) => {
           setDraft(event.target.value);
-          setDone(false);
+          clearDone();
         }}
       />
       <div className="settings-actions">
-        <span className="muted">{done && !dirty ? t('已保存') : `${draft.length} / ${LIMIT}`}</span>
-        <Button variant="primary" disabled={busy || !dirty} onClick={() => void save()}>
-          {t('保存')}
+        <span className="muted">{`${draft.length} / ${LIMIT}`}</span>
+        <Button variant="primary" disabled={busy || (!dirty && !done)} onClick={() => void save()}>
+          <StateLabel
+            state={done && !dirty ? 'done' : 'idle'}
+            labels={{
+              idle: t('保存'),
+              done: (
+                <>
+                  <Check size={13} />
+                  {t('已保存')}
+                </>
+              ),
+            }}
+          />
         </Button>
       </div>
     </div>

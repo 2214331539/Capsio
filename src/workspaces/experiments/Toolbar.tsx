@@ -2,6 +2,7 @@ import { useState, type MouseEvent } from 'react';
 import {
   Check,
   ChevronDown,
+  CircleX,
   FileCode2,
   FolderClosed,
   FolderGit2,
@@ -21,6 +22,7 @@ import {
   TerminalSquare,
 } from 'lucide-react';
 import { Button, Input } from '../../components/primitives';
+import { Spinner, StateLabel } from '../../components/feedback';
 import { Menu, type MenuAnchor } from '../../components/primitives/Menu';
 import { Modal } from '../../components/Modal';
 import type { Experiment } from '../../domain/workspace';
@@ -215,6 +217,7 @@ export function RunWidget({
   disabled,
   starting,
   running,
+  outcome,
   unavailable,
   onSelect,
   onRun,
@@ -233,6 +236,8 @@ export function RunWidget({
   disabled: boolean;
   starting: boolean;
   running: boolean;
+  /** How the last run ended, shown for a moment on the run button. */
+  outcome?: 'done' | 'failed' | null;
   unavailable: boolean;
   onSelect(id: string): void;
   onRun(): void;
@@ -310,7 +315,16 @@ export function RunWidget({
         disabled={disabled || starting || unavailable}
         onClick={onRun}
       >
-        <Play size={15} />
+        <StateLabel
+          state={starting ? 'starting' : running ? 'running' : (outcome ?? 'idle')}
+          labels={{
+            idle: <Play size={15} />,
+            starting: <Spinner />,
+            running: <span className="sf-pulse-dot" />,
+            done: <Check size={15} className="sf-run-done" />,
+            failed: <CircleX size={15} className="sf-run-failed" />,
+          }}
+        />
       </Button>
       <Button
         variant="ghost"

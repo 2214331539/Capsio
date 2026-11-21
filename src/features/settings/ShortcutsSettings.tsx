@@ -213,9 +213,9 @@ export function ShortcutsSettings({
       <footer className="settings-actions settings-shortcut-footer">
         <span role="status">
           {!dirty && saved.length ? (
-            <>
+            <span className="settings-saved">
               <Check size={13} /> {t('已保存')}
-            </>
+            </span>
           ) : (
             ''
           )}

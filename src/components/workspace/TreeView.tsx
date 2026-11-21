@@ -98,7 +98,10 @@ export function TreeView({
   const lastCollapsed = useRef(collapsed);
   useLayoutEffect(() => {
     const ids = new Set(visible.map((row) => row.item.id));
-    const opened = [...lastCollapsed.current].some((id) => !collapsed.has(id));
+    // Only `has` is used: callers may pass any set-like object.
+    const opened = visible.some(
+      ({ item }) => item.children && lastCollapsed.current.has(item.id) && !collapsed.has(item.id),
+    );
     if (seen.current && opened && !reducedMotion())
       for (const id of ids)
         if (!seen.current.has(id))

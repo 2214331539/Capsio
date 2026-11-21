@@ -20,19 +20,6 @@
 .doc-error {
   margin: 8px 16px 0;
 }
-.doc-notice {
-  position: absolute;
-  z-index: 30;
-  left: 50%;
-  bottom: 24px;
-  transform: translateX(-50%);
-  padding: 8px 14px;
-  border: 1px solid var(--sf-border-subtle);
-  border-radius: var(--sf-radius-overlay);
-  background: var(--sf-surface-raised);
-  box-shadow: var(--sf-shadow-popover);
-  font-size: 12.5px;
-}
 
 /* Plain buttons inside the shared menu look like its items. */
 .sf-menu > button:not(.sf-button) {
@@ -253,6 +240,9 @@
   font: inherit;
   font-size: 12.5px;
 }
+.doc-tree-row {
+  transition: background-color var(--sf-motion-feedback) var(--sf-ease-standard);
+}
 .doc-tree-row[data-drop='inside'] {
   background: color-mix(in srgb, var(--sf-status-info) 14%, transparent);
 }
@@ -265,6 +255,17 @@
   height: 2px;
   border-radius: 1px;
   background: var(--sf-status-info);
+}
+.doc-tree-row[data-drop='before']::before,
+.doc-tree-row[data-drop='after']::after {
+  transform-origin: left;
+  animation: sf-drop-line var(--sf-motion-feedback) var(--sf-ease-enter);
+}
+@keyframes sf-drop-line {
+  from {
+    opacity: 0;
+    scale: 0.4 1;
+  }
 }
 .doc-tree-row[data-drop='before']::before {
   top: -1px;
@@ -371,12 +372,29 @@
   flex: 1;
 }
 .doc-status {
+  display: inline-grid;
   max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
   color: var(--sf-text-muted);
   font-size: 12px;
+  white-space: nowrap;
+}
+/* The states stack in one place and fade into each other; saving is not a lively moment. */
+.doc-status .sf-state-label {
+  min-width: 0;
+}
+.doc-status .sf-state-label > span {
+  min-width: 0;
+  justify-content: flex-end;
+  scale: 1;
+}
+.doc-status-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.doc-status .sf-state-label > span[data-on] svg {
+  color: var(--sf-status-success);
 }
 .doc-status.is-error {
   color: var(--sf-status-danger);
@@ -412,6 +430,7 @@
   position: relative;
   height: 180px;
   background: var(--sf-surface-hover);
+  animation: sf-fade-in var(--sf-motion-content) var(--sf-ease-enter);
 }
 .is-compact .doc-cover {
   height: 96px;
@@ -918,6 +937,10 @@
   background: var(--sf-surface-hover);
 }
 .doc-emoji-pick {
+  transform-origin: top left;
+  animation:
+    sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter),
+    sf-pop-scale var(--sf-motion-overlay) var(--sf-ease-pop);
   position: absolute;
   z-index: 20;
   top: 30px;
@@ -1258,6 +1281,11 @@
   font-weight: 600;
 }
 .doc-suggest {
+  position: relative;
+  transform-origin: top left;
+  animation:
+    sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter),
+    sf-pop-scale var(--sf-motion-overlay) var(--sf-ease-pop);
   width: 280px;
   max-height: 360px;
   overflow: auto;
@@ -1289,8 +1317,27 @@
   font-size: 12.5px;
   text-align: left;
 }
-.doc-suggest button[aria-selected='true'] {
+/* One highlight slides to the chosen row, as the arrow keys move. */
+.doc-suggest-thumb {
+  position: absolute;
+  top: 0;
+  left: 5px;
+  right: 5px;
+  border-radius: var(--sf-radius);
   background: var(--sf-surface-selected);
+  pointer-events: none;
+}
+.doc-suggest-thumb[data-ready] {
+  transition:
+    translate var(--sf-motion-feedback) var(--sf-ease-enter),
+    height var(--sf-motion-feedback) var(--sf-ease-enter);
+}
+.doc-suggest button {
+  position: relative;
+}
+.prosemirror-dropcursor-block,
+.prosemirror-dropcursor-inline {
+  animation: sf-fade-in var(--sf-motion-feedback) var(--sf-ease-enter);
 }
 .doc-suggest button span {
   flex: 1;

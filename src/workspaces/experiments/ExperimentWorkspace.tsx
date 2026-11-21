@@ -27,11 +27,12 @@ import {
 } from 'lucide-react';
 import { Button, Input, Textarea } from '../../components/primitives';
 import { Modal } from '../../components/Modal';
+import { dismissToast, toast, toastUndo, updateToast } from '../../components/feedback';
 import { WorkspaceFrame } from '../../components/workspace/WorkspaceFrame';
 import { PanelSash } from '../../components/workspace/PanelSash';
 import { useActiveView } from '../../components/workspace/ViewTransition';
 import { confirmAction, requestText } from '../../components/prompts';
-import type { Project, Experiment } from '../../domain/workspace';
+import type { Project, Experiment, Workspace } from '../../domain/workspace';
 import type { WorkContext } from '../../domain/context';
 import type { ResearchBackend } from '../../platform/research';
 import type { WorkspaceStore } from '../../stores/workspace';
@@ -59,6 +60,7 @@ import {
   ensureExecutionTrust,
   openTerminal,
   useDevelopment,
+  type EnvironmentTask,
 } from './development';
 import {
   configurationsOf,
@@ -291,6 +293,29 @@ export function ExperimentWorkspace({
     .sort((a, b) => b.startedAt - a.startedAt);
   const activeRun = ownRuns.find((r) => r.id === logRun) ?? ownRuns[0];
   const runningRuns = ownRuns.filter((r) => r.status === 'running');
+  // The run button shows how the last run ended for a moment, then goes back to its icon.
+  const [outcome, setOutcome] = useState<'done' | 'failed' | null>(null);
+  const wasRunning = useRef(false);
+  const running = runningRuns.length > 0;
+  useEffect(() => {
+    wasRunning.current = false;
+    setOutcome(null);
+  }, [experiment?.id]);
+  useEffect(() => {
+    if (running) {
+      wasRunning.current = true;
+      setOutcome(null);
+      return;
+    }
+    if (!wasRunning.current) return;
+    wasRunning.current = false;
+    const status = ownRuns[0]?.status;
+    const next = status === 'completed' ? 'done' : status === 'failed' ? 'failed' : null;
+    if (!next) return;
+    setOutcome(next);
+    const timer = setTimeout(() => setOutcome(null), 2400);
+    return () => clearTimeout(timer);
+  }, [running]);
   const handledRun = useRef<string | null>(null);
   useEffect(() => {
     if (selectedRunId && handledRun.current !== selectedRunId) {
@@ -312,8 +337,41 @@ export function ExperimentWorkspace({
     else if (view === 'versions') showSide('scm');
     onView('files');
   }, [view, code.ready]);
+  // A background environment task keeps one message until it ends, then says how it went.
+  const taskToasts = useRef(new Map<string, number>());
+  function announce(task: EnvironmentTask) {
+    taskToasts.current.set(
+      task.id,
+      toast(
+        task.kind === 'venv'
+          ? t('正在创建虚拟环境…')
+          : task.kind === 'conda'
+            ? t('正在创建 Conda 环境…')
+            : t('正在安装依赖…'),
+        { duration: Infinity },
+      ),
+    );
+  }
   useEffect(() => {
     for (const task of development.tasks) {
+      const message = taskToasts.current.get(task.id);
+      if (message !== undefined && task.status !== 'running') {
+        taskToasts.current.delete(task.id);
+        const setup = ['venv', 'conda'].includes(task.kind);
+        if (task.status === 'completed')
+          updateToast(message, {
+            message: setup ? t('环境已创建') : t('依赖已安装'),
+            tone: 'success',
+            duration: undefined,
+          });
+        else if (task.status === 'failed')
+          updateToast(message, {
+            message: setup ? t('环境创建失败') : t('依赖安装失败'),
+            tone: 'error',
+            duration: undefined,
+          });
+        else dismissToast(message);
+      }
       if (!preparing.current.has(task.id) || task.status === 'running') continue;
       preparing.current.delete(task.id);
       if (task.status === 'completed' && task.environment)
@@ -817,7 +875,8 @@ export function ExperimentWorkspace({
             currentFile={filePath}
             disabled={readOnly || !code.ready}
             starting={starting}
-            running={runningRuns.length > 0}
+            running={running}
+            outcome={outcome}
             unavailable={!experimentApi.available()}
             onSelect={setSelectedConfig}
             onRun={() => void run()}
@@ -1063,6 +1122,7 @@ export function ExperimentWorkspace({
           root={root}
           onStarted={(task) => {
             if (['venv', 'conda'].includes(task.kind)) preparing.current.add(task.id);
+            announce(task);
           }}
           onClose={() => setPicker(false)}
         />
@@ -1230,22 +1290,38 @@ export function ConfigurationForm({
                 type="button"
                 disabled={saving}
                 onClick={async () => {
-                  if (!(await confirmAction(t('删除此运行配置？已有运行记录不会删除。')))) return;
+                  // Run records stay, so the configuration can simply be put back where it was.
+                  const owner = (d: Workspace) =>
+                    experimentId
+                      ? d.experiments?.find(
+                          (e) => e.id === experimentId && e.project === project.id,
+                        )
+                      : d.projects.find((p) => p.id === project.id);
+                  const position = configurationsOf(
+                    owner(store.getState().data!)?.runConfigurations,
+                  ).findIndex((c) => c.id === initial.id);
                   setSaving(true);
                   try {
                     const ok = await store.getState().update((d) => {
-                      const p = experimentId
-                        ? d.experiments?.find(
-                            (e) => e.id === experimentId && e.project === project.id,
-                          )
-                        : d.projects.find((p) => p.id === project.id);
+                      const p = owner(d);
                       if (p)
                         p.runConfigurations = configurationsOf(p.runConfigurations).filter(
                           (c) => c.id !== initial.id,
                         );
                     });
-                    if (ok) onClose();
-                    else setError(store.getState().error || t('保存失败'));
+                    if (ok) {
+                      onClose();
+                      toastUndo(t('已删除运行配置“{name}”', { name: initial.name }), async () => {
+                        await store.getState().update((d) => {
+                          const p = owner(d);
+                          if (!p) return;
+                          const list = configurationsOf(p.runConfigurations);
+                          if (list.some((c) => c.id === initial.id)) return;
+                          list.splice(Math.max(0, Math.min(position, list.length)), 0, initial);
+                          p.runConfigurations = list;
+                        });
+                      });
+                    } else setError(store.getState().error || t('保存失败'));
                   } finally {
                     setSaving(false);
                   }

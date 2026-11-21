@@ -15,6 +15,7 @@ import {
   sortProjects,
 } from './model';
 import { setPreferences } from '../../i18n/preferences';
+import { clearToasts } from '../../components/feedback';
 
 beforeAll(() => {
   window.matchMedia = vi
@@ -23,6 +24,7 @@ beforeAll(() => {
 });
 afterEach(() => {
   cleanup();
+  clearToasts();
   localStorage.clear();
   setPreferences({ theme: 'light', language: 'zh-CN' });
   vi.restoreAllMocks();
@@ -170,6 +172,19 @@ it('archives instead of deleting when asked', async () => {
   await user.click(screen.getByRole('button', { name: '改为归档' }));
   await waitFor(() => expect(store.getState().data?.projects[0].archived).toBe(true));
   expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+it('archives from the menu at once and takes it back from the toast', async () => {
+  const data = emptyWorkspace();
+  data.projects.push(project('Alpha'));
+  const { user, store } = fixture(data);
+  await openMine(user);
+  await user.click(await screen.findByRole('button', { name: '项目操作 Alpha' }));
+  await user.click(screen.getByRole('menuitem', { name: '归档' }));
+  await waitFor(() => expect(store.getState().data?.projects[0].archived).toBe(true));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  await user.click(await screen.findByRole('button', { name: '撤销' }));
+  await waitFor(() => expect(store.getState().data?.projects[0].archived).toBe(false));
 });
 
 it('edits projects from the context menu, restores keyboard focus and restores archived projects', async () => {

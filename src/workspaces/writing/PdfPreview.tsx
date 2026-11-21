@@ -4,11 +4,38 @@ import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-d
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { Button } from '../../components/primitives';
 import { t } from '../../i18n';
+import { easing, motion, reducedMotion } from '../../platform/motion';
 import type { PdfSpot } from './synctex';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
 type Size = { width: number; height: number };
+
+/** A copy of what the canvas shows now, laid over it, to fade away once the new page is drawn. */
+function ghostOf(canvas: HTMLCanvasElement, host: HTMLElement | null) {
+  if (reducedMotion() || !host || !canvas.width || typeof canvas.animate !== 'function')
+    return null;
+  const copy = window.document.createElement('canvas');
+  copy.width = canvas.width;
+  copy.height = canvas.height;
+  copy.getContext('2d')?.drawImage(canvas, 0, 0);
+  copy.setAttribute('aria-hidden', 'true');
+  copy.className = 'sf-pdf-ghost';
+  host.append(copy);
+  return {
+    fadeOut: () => {
+      const done = () => copy.remove();
+      copy
+        .animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: motion.content,
+          easing: easing.standard,
+        })
+        .addEventListener('finish', done);
+      // Left at full opacity until it finishes, so it covers the swap.
+      copy.style.opacity = '0';
+    },
+  };
+}
 
 function Page({
   document,
@@ -24,6 +51,7 @@ function Page({
   const canvas = useRef<HTMLCanvasElement>(null);
   const [visible, setVisible] = useState(false);
   const host = useRef<HTMLDivElement>(null);
+  const shown = useRef<PDFDocumentProxy | null>(null);
   useEffect(() => {
     const element = host.current;
     if (!element || typeof IntersectionObserver === 'undefined') {
@@ -47,14 +75,28 @@ function Page({
       if (cancelled || !canvas.current) return;
       const viewport = page.getViewport({ scale });
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.current.width = Math.floor(viewport.width * dpr);
-      canvas.current.height = Math.floor(viewport.height * dpr);
+      // Drawn off screen, then swapped in whole: resizing a canvas clears it, which flashes white.
+      const buffer = window.document.createElement('canvas');
+      buffer.width = Math.floor(viewport.width * dpr);
+      buffer.height = Math.floor(viewport.height * dpr);
       task = page.render({
-        canvas: canvas.current,
+        canvas: buffer,
         viewport,
         transform: dpr === 1 ? undefined : [dpr, 0, 0, dpr, 0, 0],
       });
-      task.promise.catch(() => {});
+      task.promise
+        .then(() => {
+          const target = canvas.current;
+          if (cancelled || !target) return;
+          const fade = shown.current !== null && shown.current !== document;
+          const ghost = fade ? ghostOf(target, host.current) : null;
+          target.width = buffer.width;
+          target.height = buffer.height;
+          target.getContext('2d')?.drawImage(buffer, 0, 0);
+          shown.current = document;
+          ghost?.fadeOut();
+        })
+        .catch(() => {});
     });
     return () => {
       cancelled = true;

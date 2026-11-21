@@ -30,7 +30,8 @@ import {
 import { Button, Input } from '../../components/primitives';
 import { Menu, menuAnchor, type MenuAnchor } from '../../components/primitives/Menu';
 import { Modal } from '../../components/Modal';
-import { confirmAction, requestText } from '../../components/prompts';
+import { Collapse, Spinner, StateLabel } from '../../components/feedback';
+import { confirmAction } from '../../components/prompts';
 import { DocumentTabs } from '../../components/workspace/DocumentTabs';
 import { PanelSash } from '../../components/workspace/PanelSash';
 import { TreeView, type TreeItem } from '../../components/workspace/TreeView';
@@ -41,6 +42,7 @@ import { getFileRuntime, getFileSession, type FileSession } from '../../editor/s
 import { t } from '../../i18n';
 import type { Project } from '../../domain/workspace';
 import type { WorkContext } from '../../domain/context';
+import type { FileBackend } from '../../platform/research';
 import { canEditProject } from '../../platform/collaboration';
 import { developmentStore } from '../experiments/development';
 import {
@@ -51,7 +53,6 @@ import {
   needsPassword,
   parentOf,
   remote,
-  remoteFiles,
   remoteMessage,
   type RemoteApi,
   type RemoteConnection,
@@ -70,6 +71,10 @@ const TerminalPanel = lazy(() =>
 /** One project's connection, kept while the page is away so coming back finds it as left. */
 type Place = {
   connection: RemoteConnection;
+  /** Reads and writes through whichever connection the place has now, so open buffers survive a reconnect. */
+  backend: FileBackend;
+  /** The line dropped; everything stays on screen until the user reconnects. */
+  lost?: boolean;
   folder: string;
   tabs: string[];
   active: string | null;
@@ -100,6 +105,14 @@ function remember(target: string, folder?: string) {
   }
 }
 
+function stableFiles(projectId: string, first: RemoteConnection, api: RemoteApi): FileBackend {
+  const id = () => places.getState()[projectId]?.connection.id ?? first.id;
+  return {
+    readFile: (_project, path) => api.read(id(), path),
+    writeFile: (_project, path, content, expected) => api.write(id(), path, content, expected),
+  };
+}
+
 function patch(projectId: string, change: Partial<Place> | null) {
   places.setState((all) => {
     const current = all[projectId];
@@ -114,11 +127,13 @@ function HostList({
   hosts,
   recent,
   busy,
+  connecting,
   onPick,
 }: {
   hosts: RemoteHost[];
   recent: Recent[];
   busy: boolean;
+  connecting: string | null;
   onPick(target: string): void;
 }) {
   const named = new Set(hosts.map((host) => host.alias));
@@ -136,7 +151,11 @@ function HostList({
               disabled={busy}
               onClick={() => onPick(host.alias)}
             >
-              <Server size={15} />
+              {connecting === host.alias ? (
+                <span className="remote-dot" data-state="connecting" aria-hidden />
+              ) : (
+                <Server size={15} />
+              )}
               <span>
                 <strong>{host.alias}</strong>
                 <small>
@@ -159,7 +178,11 @@ function HostList({
               disabled={busy}
               onClick={() => onPick(item.target)}
             >
-              <Server size={15} />
+              {connecting === item.target ? (
+                <span className="remote-dot" data-state="connecting" aria-hidden />
+              ) : (
+                <Server size={15} />
+              )}
               <span>
                 <strong>{item.target}</strong>
                 {item.folder ? <small>{item.folder}</small> : null}
@@ -332,12 +355,16 @@ export function RemoteWorkspace({
   const [selected, setSelected] = useState<string | null>(null);
   // A new file or folder is named in place in the tree, as in the experiments page.
   const [draft, setDraft] = useState<{
+    /** Set when an existing row is being renamed in place. */
+    id?: string;
     kind: 'file' | 'folder';
     parent: string;
     value: string;
     error?: string;
   } | null>(null);
   const [creating, setCreating] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [reconnectPassword, setReconnectPassword] = useState<string | null>(null);
   useEffect(() => setDraft(null), [place?.connection?.id, place?.folder]);
   const [menu, setMenu] = useState<{ anchor: MenuAnchor; path: string } | null>(null);
   const [picking, setPicking] = useState(false);
@@ -352,7 +379,7 @@ export function RemoteWorkspace({
   const terminals = allTerminals.filter(
     (info) => connection && info.experimentId === `remote:${connection.id}`,
   );
-  const backend = connection ? remoteFiles(connection.id, api) : null;
+  const backend = place?.backend ?? null;
   const runtime = backend ? getFileRuntime(backend) : null;
   useSyncExternalStore(
     (listener) => {
@@ -368,13 +395,30 @@ export function RemoteWorkspace({
       .catch(() => {});
   }, [api]);
 
-  /** Any call that finds the line dropped returns the page to connecting. */
+  /** A call that finds the line dropped keeps the page as it is and offers to reconnect. */
   function fail(reason: unknown) {
     if (disconnected(reason) && connection) {
-      setTarget(connection.target);
-      patch(project.id, null);
+      patch(project.id, { lost: true });
+      return;
     }
     setError(remoteMessage(reason));
+  }
+
+  /** Connects to the same host again, keeping the open files and the tree. */
+  async function reconnect(secret?: string) {
+    if (!place || reconnecting) return;
+    setReconnecting(true);
+    setError('');
+    try {
+      const made = await api.connect(place.connection.target, secret || undefined);
+      patch(project.id, { connection: made, lost: false });
+      setReconnectPassword(null);
+    } catch (reason) {
+      if (needsPassword(reason) && !secret) setReconnectPassword('');
+      else setError(remoteMessage(reason));
+    } finally {
+      setReconnecting(false);
+    }
   }
 
   async function load(path: string) {
@@ -409,7 +453,14 @@ export function RemoteWorkspace({
       if (last) folder = await api.resolve(made.id, last).catch(() => made.home);
       places.setState((all) => ({
         ...all,
-        [project.id]: { connection: made, folder, tabs: [], active: null, expanded: [] },
+        [project.id]: {
+          connection: made,
+          backend: stableFiles(project.id, made, api),
+          folder,
+          tabs: [],
+          active: null,
+          expanded: [],
+        },
       }));
       remember(destination, folder);
       setRecent(recentHosts());
@@ -488,6 +539,7 @@ export function RemoteWorkspace({
 
   async function commitDraft() {
     if (!connection || !place || !draft || creating) return;
+    if (draft.id) return commitRename({ ...draft, id: draft.id });
     const name = draft.value.trim();
     if (!name) return setDraft(null);
     if (name.includes('/') || name === '.' || name === '..')
@@ -513,22 +565,52 @@ export function RemoteWorkspace({
     }
   }
 
-  async function renameItem(path: string) {
-    if (!connection) return;
-    const name = (await requestText(t('新名称'), nameOf(path)))?.trim();
-    if (!name || name === nameOf(path)) return;
-    if (name.includes('/')) return setError(t('名称里不能有 /。'));
-    const next = joinPath(parentOf(path), name);
+  /** Renaming happens in the row itself, like a new file does. */
+  function renameItem(path: string) {
+    if (!connection || creating) return;
+    const entry = Object.values(entries)
+      .flatMap((list) => (Array.isArray(list) ? list : []))
+      .find((item) => item.path === path);
+    setDraft({
+      id: path,
+      kind: entry?.kind === 'directory' ? 'folder' : 'file',
+      parent: parentOf(path),
+      value: nameOf(path),
+    });
+  }
+
+  async function commitRename(current: NonNullable<typeof draft> & { id: string }) {
+    if (!connection || !place) return;
+    const path = current.id;
+    const name = current.value.trim();
+    if (!name || name === nameOf(path)) return setDraft(null);
+    if (name.includes('/') || name === '.' || name === '..')
+      return setDraft({ ...current, error: t('名称里不能有 /。') });
+    const siblings = entries[current.parent];
+    if (Array.isArray(siblings) && siblings.some((item) => nameOf(item.path) === name))
+      return setDraft({ ...current, error: t('此位置已存在文件或文件夹“{name}”。', { name }) });
+    const next = joinPath(current.parent, name);
+    // Open tabs and expanded folders inside a renamed folder follow it.
+    const moved = (item: string) =>
+      item === path ? next : item.startsWith(`${path}/`) ? next + item.slice(path.length) : item;
+    setCreating(true);
     try {
       await api.rename(connection.id, path, next);
-      await load(parentOf(path));
-      if (place?.tabs.includes(path))
-        patch(project.id, {
-          tabs: place.tabs.map((tab) => (tab === path ? next : tab)),
-          active: place.active === path ? next : place.active,
-        });
+      await load(current.parent);
+      setDraft(null);
+      patch(project.id, {
+        tabs: place.tabs.map(moved),
+        active: place.active ? moved(place.active) : place.active,
+        expanded: place.expanded.map(moved),
+      });
+      setSelected(next);
     } catch (reason) {
-      fail(reason);
+      if (disconnected(reason)) {
+        setDraft(null);
+        fail(reason);
+      } else setDraft({ ...current, error: remoteMessage(reason) });
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -590,13 +672,20 @@ export function RemoteWorkspace({
     }));
   };
   const expanded = new Set(place?.expanded ?? []);
-  const collapsed = { has: (id: string) => !expanded.has(id) } as unknown as ReadonlySet<string>;
+  // Every folder the tree knows of that is not open.
+  const collapsed: ReadonlySet<string> = new Set(
+    Object.values(entries)
+      .flatMap((list) => (Array.isArray(list) ? list : []))
+      .filter((entry) => entry.kind === 'directory' && !expanded.has(entry.path))
+      .map((entry) => entry.path),
+  );
 
   const hostsBlock = (
     <HostList
       hosts={hosts}
       recent={recent}
       busy={!!connecting}
+      connecting={connecting}
       onPick={(chosen) => {
         setTarget(chosen);
         void connect(undefined, chosen);
@@ -712,7 +801,11 @@ export function RemoteWorkspace({
             </div>
           </div>
           <div className="remote-host-bar">
-            <span className="remote-dot" aria-hidden />
+            <span
+              className="remote-dot"
+              data-state={place.lost ? (reconnecting ? 'connecting' : 'lost') : 'connected'}
+              aria-hidden
+            />
             <span title={connection.target}>SSH: {connection.target}</span>
             <Button
               variant="ghost"
@@ -792,7 +885,8 @@ export function RemoteWorkspace({
               </form>
             ) : null}
             {connecting ? (
-              <p className="remote-muted" role="status">
+              <p className="remote-muted remote-connecting" role="status">
+                <span className="remote-dot" data-state="connecting" aria-hidden />
                 {t('正在连接 {target}…', { target: connecting })}
               </p>
             ) : null}
@@ -808,6 +902,69 @@ export function RemoteWorkspace({
       ) : (
         <div className="sf-experiment-code remote-code" ref={area}>
           <div className="sf-experiment-editor remote-editor-area">
+            <Collapse open={!!place.lost}>
+              <div className="remote-lost" role="status">
+                <span
+                  className="remote-dot"
+                  data-state={reconnecting ? 'connecting' : 'lost'}
+                  aria-hidden
+                />
+                <span className="remote-lost-text">
+                  {t('连接已断开')} · {connection.target}
+                </span>
+                {reconnectPassword !== null ? (
+                  <form
+                    className="remote-lost-password"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void reconnect(reconnectPassword);
+                    }}
+                  >
+                    <Input
+                      type="password"
+                      autoFocus
+                      aria-label={t('密码')}
+                      placeholder={t('{target} 的密码', { target: connection.target })}
+                      value={reconnectPassword}
+                      disabled={reconnecting}
+                      onChange={(event) => setReconnectPassword(event.target.value)}
+                    />
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={reconnecting || !reconnectPassword}
+                    >
+                      <KeyRound size={13} />
+                      {t('登录')}
+                    </Button>
+                  </form>
+                ) : (
+                  <Button
+                    variant="primary"
+                    disabled={reconnecting}
+                    onClick={() => void reconnect()}
+                  >
+                    <StateLabel
+                      state={reconnecting ? 'busy' : 'idle'}
+                      labels={{
+                        idle: (
+                          <>
+                            <RefreshCw size={13} />
+                            {t('重新连接')}
+                          </>
+                        ),
+                        busy: (
+                          <>
+                            <Spinner />
+                            {t('重新连接')}
+                          </>
+                        ),
+                      }}
+                    />
+                  </Button>
+                )}
+              </div>
+            </Collapse>
             {error ? (
               <div className="inline-error" role="alert">
                 <span>{error}</span>
@@ -1010,7 +1167,7 @@ export function RemoteWorkspace({
                   variant="ghost"
                   onClick={() => {
                     setMenu(null);
-                    void renameItem(menu.path);
+                    renameItem(menu.path);
                   }}
                 >
                   {t('重命名…')}
