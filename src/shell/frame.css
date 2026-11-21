@@ -76,3 +76,25 @@
   > .resize-handle:is(:hover, :focus-visible, [data-resizing='true'])::after {
   background: var(--sf-accent);
 }
+
+/* Offline: a single line between the title bar and the panels. */
+.sf-frame.app-shell.research-shell[data-offline] {
+  grid-template-rows: var(--sf-topbar-height) auto minmax(0, 1fr);
+}
+.sf-offline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 6px 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sf-status-warning) 12%, var(--sf-surface-canvas));
+  color: color-mix(in srgb, var(--sf-status-warning) 75%, var(--sf-text-primary));
+  font-size: 12.5px;
+  animation: sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter);
+}
+.sf-offline svg {
+  width: 14px;
+  height: 14px;
+}

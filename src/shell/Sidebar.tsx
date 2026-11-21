@@ -27,7 +27,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { Button } from '../components/primitives';
+import { Button, segmentThumb } from '../components/primitives';
 import { Menu, type MenuAnchor } from '../components/primitives/Menu';
 import { confirmAction } from '../components/prompts';
 import { t } from '../i18n';
@@ -42,12 +42,7 @@ import type { WorkspaceId } from '../domain/context';
 import './sidebar.css';
 
 export type SettingsSection =
-  | 'general'
-  | 'models'
-  | 'shortcuts'
-  | 'collaboration'
-  | 'account'
-  | 'about';
+  'general' | 'models' | 'shortcuts' | 'collaboration' | 'account' | 'about';
 
 const guideUrl = `https://github.com/2214331539/Scientify/blob/main/docs/${encodeURIComponent('使用说明')}/${encodeURIComponent('桌面使用说明')}.md`;
 const issuesUrl = 'https://github.com/2214331539/Scientify/issues';
@@ -226,6 +221,7 @@ export function SidebarFooter({ onSettings }: { onSettings(section: SettingsSect
         <Button role="menuitem" variant="ghost" onClick={() => go('shortcuts')}>
           <Keyboard />
           {t('快捷键')}
+          <kbd>?</kbd>
         </Button>
         <Button role="menuitem" variant="ghost" onClick={() => openExternal(issuesUrl)}>
           <MessageSquare />
@@ -303,7 +299,7 @@ export function CenterNavigation({
 }) {
   return (
     <aside className="sf-sidebar" aria-label={t('项目中心导航')}>
-      <nav className="sf-nav" aria-label={t('项目中心页面')}>
+      <nav ref={segmentThumb} className="sf-nav" aria-label={t('项目中心页面')}>
         <NavItem
           icon={<FolderClosed />}
           label={t('我的项目')}
@@ -399,7 +395,7 @@ export function ProjectNavigation({
         </span>
         <ChevronsUpDown className="sf-switcher-caret" />
       </button>
-      <nav className="sf-nav" aria-label={t('一级导航')}>
+      <nav ref={segmentThumb} className="sf-nav" aria-label={t('一级导航')}>
         {projectModules.map(({ id, label, icon: Icon }) => (
           <NavItem
             key={id}

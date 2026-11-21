@@ -305,3 +305,21 @@
     display: none;
   }
 }
+/* While dragging, the width shows on the handle. */
+.resize-handle[data-resizing='true']::before {
+  content: attr(aria-valuenow) 'px';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  translate: -50% -50%;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--sf-text-primary);
+  color: var(--sf-surface-canvas);
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}

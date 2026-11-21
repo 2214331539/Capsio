@@ -232,7 +232,10 @@ export function Notifications({
         }}
       >
         <Bell />
-        {items.length ? <span className="sf-bell-dot" aria-hidden="true" /> : null}
+        {/* Keyed on the count so a new notification pops the dot again. */}
+        {items.length ? (
+          <span key={items.length} className="sf-bell-dot" aria-hidden="true" />
+        ) : null}
       </Button>
       <Popover anchor={anchor} label={t('通知')} width={340} align="end" onClose={close}>
         <div className="sf-notice-head">{t('通知')}</div>

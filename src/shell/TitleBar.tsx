@@ -6,9 +6,14 @@ import { BrandMark } from '../components/layout/BrandMark';
 import { WindowControls } from '../components/layout/WindowControls';
 import { t } from '../i18n';
 import { isMacOS } from '../platform/os';
+import { formatShortcut } from '../platform/shortcuts';
 import './titlebar.css';
 
 export type Crumb = { label: string; onClick?: () => void };
+
+/** Tooltips name the shortcut next to the action. */
+const withKeys = (label: string, keys?: string) =>
+  keys ? `${label}  ${formatShortcut(keys)}` : label;
 
 /** Where the user is, how to move, and the few entries every page shares. */
 export function TitleBar({
@@ -40,6 +45,7 @@ export function TitleBar({
     tool: 'assistant' | 'notes';
     open: boolean;
     notesAvailable: boolean;
+    keys?: Partial<Record<'assistant' | 'notes', string>>;
     onTool(tool: 'assistant' | 'notes'): void;
   };
   /** Opens a new browser tab in the project's literature module. */
@@ -67,6 +73,7 @@ export function TitleBar({
           variant="ghost"
           iconOnly
           aria-label={sidebarOpen ? t('隐藏侧边栏') : t('显示侧边栏')}
+          tooltip={withKeys(sidebarOpen ? t('隐藏侧边栏') : t('显示侧边栏'), 'Mod+\\')}
           aria-pressed={sidebarOpen}
           onClick={onToggleSidebar}
         >
@@ -142,6 +149,7 @@ export function TitleBar({
                 variant="ghost"
                 iconOnly
                 aria-label={t('文档')}
+                tooltip={withKeys(t('文档'), dock.keys?.notes)}
                 data-tour="notes"
                 aria-pressed={dock.open && dock.tool === 'notes'}
                 disabled={!ready}
@@ -155,6 +163,7 @@ export function TitleBar({
               variant="ghost"
               iconOnly
               aria-label={t('AI 助手')}
+              tooltip={withKeys(t('AI 助手'), dock.keys?.assistant)}
               data-tour="assistant"
               aria-pressed={dock.open && dock.tool === 'assistant'}
               disabled={!ready}

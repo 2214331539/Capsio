@@ -10,6 +10,12 @@
   border-radius: 50%;
   background: var(--sf-status-danger);
   box-shadow: 0 0 0 2px var(--sf-surface-chrome);
+  animation: sf-badge-pop var(--sf-motion-pop) var(--sf-ease-spring);
+}
+@keyframes sf-badge-pop {
+  from {
+    scale: 0;
+  }
 }
 .sf-notice-head {
   padding: 6px 8px 4px;

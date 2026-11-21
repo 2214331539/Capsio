@@ -22,6 +22,7 @@ import {
   translationConversation,
   type TranslationConversationRequest,
 } from '../features/translation/conversations';
+import { slideIn } from '../platform/motion';
 import './auxiliary.css';
 import { translationWindow, watchTranslationWindow } from '../features/translation/window';
 
@@ -187,6 +188,18 @@ export function GlobalDock({
   const sideVisible = open && (!notesWorkspaceActive || tool !== 'notes');
   const notesVisible = notesWorkspaceActive || (open && tool === 'notes' && !notesWorkspace);
   const assistantVisible = open && tool === 'assistant';
+  const layout = useRef<HTMLDivElement>(null);
+  const wasVisible = useRef(sideVisible);
+  useLayoutEffect(() => {
+    if (sideVisible && !wasVisible.current && layout.current)
+      slideIn(
+        layout.current.querySelectorAll(
+          ':scope > .sf-dock-header, :scope > .sf-dock-layer[data-active="true"]:not([role="main"])',
+        ),
+        '16px 0',
+      );
+    wasVisible.current = sideVisible;
+  }, [sideVisible]);
   useLayoutEffect(() => {
     if (!notesWorkspace && notesLayerRef?.current) {
       notesLayerRef.current.hidden = !notesVisible;
@@ -212,6 +225,7 @@ export function GlobalDock({
     ));
   return (
     <div
+      ref={layout}
       className={`sf-dock-layout${notesWorkspace ? ' has-notes-workspace' : ' auxiliary-surface'}${integrated ? ' sf-workspace-layout' : ''}`}
       data-side-open={sideVisible}
       data-tool={tool}

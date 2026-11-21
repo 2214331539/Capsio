@@ -193,6 +193,12 @@ export function bindingFor(settings: ShortcutSettings | undefined, command: Shor
   return custom ?? DEFAULT_SHORTCUTS.bindings.find((binding) => binding.command === command);
 }
 
+/** The keys to show next to an action, or nothing when the shortcut is turned off. */
+export function enabledKeys(settings: ShortcutSettings | undefined, command: ShortcutCommand) {
+  const binding = bindingFor(settings, command);
+  return binding?.enabled === false ? undefined : binding?.keys;
+}
+
 export function detectShortcutConflicts(bindings: ShortcutBinding[]) {
   const conflicts = new Set<string>();
   const seen = new Map<string, ShortcutBinding>();

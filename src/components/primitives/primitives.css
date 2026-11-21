@@ -282,7 +282,13 @@
     width var(--sf-motion-selection) var(--sf-ease-spring),
     height var(--sf-motion-selection) var(--sf-ease-spring);
 }
-[data-thumb] > :is([aria-pressed='true'], [aria-checked='true'], [aria-selected='true']) {
+[data-thumb]
+  > :is(
+    [aria-pressed='true'],
+    [aria-checked='true'],
+    [aria-selected='true'],
+    [aria-current='page']
+  ) {
   background: transparent !important;
   box-shadow: none !important;
   border-color: transparent !important;

@@ -9,6 +9,7 @@ import { createNote } from '../notes/model';
 import { SearchDialog, searchWorkspace } from './SearchDialog';
 import { memoryDocs } from '../../platform/docs';
 import { newPage } from '../../workspaces/docs/model';
+import { Keyboard } from 'lucide-react';
 
 const conclusion = () => {
   const page = newPage({ parent: null, order: 'V', title: '实验结论' });
@@ -164,4 +165,44 @@ it('finds PDFs in the literature folder by file name and opens the one picked', 
   expect(
     searchWorkspace(store.getState().data, '检索').some((result) => result.title === '已删除'),
   ).toBe(false);
+});
+
+it('lists commands with their shortcuts and runs one after closing', async () => {
+  const user = userEvent.setup();
+  const data = fixture();
+  const adapter: WorkspaceBackend = {
+    load: async () => ({ workspace: data, directory: '', legacyAvailable: false }),
+    save: async (value) => value,
+    restore: async () => data,
+    migrateLegacy: async () => data,
+    importWorkspace: async () => null,
+    exportWorkspace: async () => true,
+    chooseDirectory: async () => null,
+  };
+  const store = createWorkspaceStore(adapter);
+  await store.getState().load();
+  const order: string[] = [];
+  render(
+    <SearchDialog
+      store={store}
+      onClose={() => order.push('close')}
+      onNavigate={() => {}}
+      docs={memoryDocs()}
+      commands={[
+        {
+          id: 'shortcuts',
+          label: '快捷键',
+          Icon: Keyboard,
+          keys: '?',
+          run: () => order.push('run'),
+        },
+        { id: 'models', label: '模型设置', Icon: Keyboard, run: () => {} },
+      ]}
+    />,
+  );
+  expect(screen.getByRole('button', { name: /快捷键/ }).textContent).toContain('?');
+  await user.type(screen.getByLabelText('搜索项目、文献和文档'), '快捷');
+  expect(screen.queryByRole('button', { name: /模型设置/ })).toBeNull();
+  await user.click(screen.getByRole('button', { name: /快捷键/ }));
+  expect(order).toEqual(['close', 'run']);
 });

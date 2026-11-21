@@ -1,7 +1,9 @@
-const SELECTED = '[aria-pressed="true"], [aria-checked="true"], [aria-selected="true"]';
+const SELECTED =
+  '[aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], [aria-current="page"]';
 
 /** The selected option's background slides between options instead of jumping. Pass as the
- *  group's `ref`; options mark the selection with aria-pressed, aria-checked or aria-selected. */
+ *  group's `ref`; options mark the selection with aria-pressed, aria-checked, aria-selected or
+ *  aria-current="page" (navigation). */
 export const segmentThumb = (group: HTMLElement | null) => (group ? attachThumb(group) : undefined);
 
 export function attachThumb(group: HTMLElement) {
@@ -26,7 +28,7 @@ export function attachThumb(group: HTMLElement) {
   mutations.observe(group, {
     subtree: true,
     childList: true,
-    attributeFilter: ['aria-pressed', 'aria-checked', 'aria-selected'],
+    attributeFilter: ['aria-pressed', 'aria-checked', 'aria-selected', 'aria-current'],
   });
   const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);
   resize?.observe(group);

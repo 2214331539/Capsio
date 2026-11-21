@@ -7,7 +7,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { applyAppearance, migrateTheme, usePreferences } from '../i18n/preferences';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { X } from 'lucide-react';
+import { Bot, Cpu, Keyboard, MessageSquarePlus, PanelLeft, Settings, X } from 'lucide-react';
 import { BrandMark } from '../components/layout/BrandMark';
 import { secondaryViews as secondary } from '../components/navigation/workspaces';
 import { WritingWorkspace } from '../workspaces/writing/WritingWorkspace';
@@ -74,7 +74,7 @@ import type { WorkContext, WorkspaceId } from '../domain/context';
 import { workspaceStore, type WorkspaceStore } from '../stores/workspace';
 import { nativeResearch, type ResearchBackend } from '../platform/research';
 import { ViewTransition } from '../components/workspace/ViewTransition';
-import { bindingFor, eventToShortcut, isEditableTarget } from '../platform/shortcuts';
+import { bindingFor, enabledKeys, eventToShortcut, isEditableTarget } from '../platform/shortcuts';
 import {
   canEditProject,
   collaborationStateEvent,
@@ -141,6 +141,8 @@ type UISession = {
   dockOpen: boolean;
   leftWidth: number;
   rightWidth: number;
+  /** Each module keeps its own right panel width; others use `rightWidth`. */
+  rightWidths?: Record<string, number>;
 };
 const defaults: UISession = {
   version: 2,
@@ -192,6 +194,11 @@ function readSession(storageKey = 'scientify.ui.v2'): UISession {
         rightWidth: Math.max(
           MIN_DOCK_WIDTH,
           Number.isFinite(Number(value.rightWidth)) ? Number(value.rightWidth) || 340 : 340,
+        ),
+        rightWidths: Object.fromEntries(
+          Object.entries(value.rightWidths ?? {})
+            .map(([module, width]) => [module, Number(width)] as const)
+            .filter(([, width]) => Number.isFinite(width) && width >= MIN_DOCK_WIDTH),
         ),
       };
   } catch {
@@ -698,6 +705,19 @@ export function App({
         setSidebarOpen((open) => !open);
         return;
       }
+      // "?" lists every shortcut, as in Gmail, GitHub and Linear.
+      if (
+        event.key === '?' &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        !isEditableTarget(event.target) &&
+        !document.querySelector('dialog[open], [role="menu"]')
+      ) {
+        event.preventDefault();
+        setDialog({ kind: 'shortcuts' });
+        return;
+      }
       const shortcut = eventToShortcut(event);
       if (!shortcut) return;
       const settings = data?.settings.shortcuts;
@@ -1023,7 +1043,7 @@ export function App({
   const inlineDockOpen =
     ui.dockOpen && windowWidth > 900 && (!notesWorkspace || ui.dock !== 'notes');
   const rightWidth = Math.min(
-    ui.rightWidth,
+    ui.rightWidths?.[workspace] ?? ui.rightWidth,
     Math.max(MIN_DOCK_WIDTH, windowWidth - (sidebarOpen ? SIDEBAR_WIDTH : 0) - MIN_CENTRAL_WIDTH),
   );
   const maxResourceWidth = Math.max(
@@ -1283,6 +1303,9 @@ export function App({
                   tool: ui.dock,
                   open: ui.dockOpen,
                   notesAvailable: workspace !== 'notes',
+                  keys: {
+                    assistant: enabledKeys(data?.settings.shortcuts, 'app.openAssistant'),
+                  },
                   onTool: toggleTool,
                 }
               : undefined
@@ -1358,6 +1381,55 @@ export function App({
               onClose={() => setDialog(null)}
               onNavigate={goToTarget}
               {...(project ? { projectId: project.id } : {})}
+              commands={[
+                ...(project
+                  ? [
+                      {
+                        id: 'assistant',
+                        label: t('打开或关闭 AI 助手'),
+                        Icon: Bot,
+                        keys: enabledKeys(data?.settings.shortcuts, 'app.openAssistant'),
+                        run: () => toggleTool('assistant'),
+                      },
+                      {
+                        id: 'conversation',
+                        label: t('新对话'),
+                        Icon: MessageSquarePlus,
+                        keys: enabledKeys(data?.settings.shortcuts, 'app.newConversation'),
+                        run: () => {
+                          openTool('assistant');
+                          window.dispatchEvent(new CustomEvent('scientify-new-conversation'));
+                        },
+                      },
+                    ]
+                  : []),
+                {
+                  id: 'sidebar',
+                  label: sidebarOpen ? t('隐藏侧边栏') : t('显示侧边栏'),
+                  Icon: PanelLeft,
+                  keys: 'Mod+\\',
+                  run: () => setSidebarOpen((open) => !open),
+                },
+                {
+                  id: 'settings',
+                  label: t('设置'),
+                  Icon: Settings,
+                  run: () => setDialog({ kind: 'profile' }),
+                },
+                {
+                  id: 'models',
+                  label: t('模型设置'),
+                  Icon: Cpu,
+                  run: () => setDialog({ kind: 'models' }),
+                },
+                {
+                  id: 'shortcuts',
+                  label: t('快捷键'),
+                  Icon: Keyboard,
+                  keys: '?',
+                  run: () => setDialog({ kind: 'shortcuts' }),
+                },
+              ]}
             />
           ) : null}
           {sharing && data ? (
@@ -1403,7 +1475,13 @@ export function App({
                 )}
                 side="right"
                 label={t('调整辅助栏宽度')}
-                onChange={(rightWidth) => setUI((s) => ({ ...s, rightWidth }))}
+                onChange={(rightWidth) =>
+                  setUI((s) => ({
+                    ...s,
+                    rightWidth,
+                    rightWidths: { ...s.rightWidths, [workspace]: rightWidth },
+                  }))
+                }
               />
             }
           />

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n';
+import { Skeleton } from '../components/feedback';
 
 /** A Word document rendered in the app, close to its print layout. */
 export function DocxView({ bytes }: { bytes: Uint8Array }) {
@@ -102,7 +103,12 @@ export function PptxView({ bytes }: { bytes: Uint8Array }) {
     };
   }, [bytes]);
   if (error) return <p className="sf-file-loading">{error}</p>;
-  if (!slides) return <p className="sf-file-loading">{t('正在读取…')}</p>;
+  if (!slides)
+    return (
+      <div className="sf-file-skeleton" role="status" aria-label={t('正在读取…')}>
+        <Skeleton lines={8} />
+      </div>
+    );
   if (!slides.length) return <p className="sf-file-loading">{t('演示文稿里没有幻灯片')}</p>;
   return (
     <div className="sf-slides">

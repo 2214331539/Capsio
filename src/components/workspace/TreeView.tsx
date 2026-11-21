@@ -1,6 +1,14 @@
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import { ChevronRight, FileText, Folder } from 'lucide-react';
 import { Button } from '../primitives';
+import { easing, motion, reducedMotion } from '../../platform/motion';
 import './tree-view.css';
 
 export interface TreeItem {
@@ -85,6 +93,25 @@ export function TreeView({
     });
   }
   collect(items);
+  // Rows revealed by expanding a folder fade in; everything else appears at once.
+  const seen = useRef<Set<string> | null>(null);
+  const lastCollapsed = useRef(collapsed);
+  useLayoutEffect(() => {
+    const ids = new Set(visible.map((row) => row.item.id));
+    const opened = [...lastCollapsed.current].some((id) => !collapsed.has(id));
+    if (seen.current && opened && !reducedMotion())
+      for (const id of ids)
+        if (!seen.current.has(id))
+          elements.current.get(id)?.animate?.(
+            [
+              { opacity: 0, translate: '0 -4px' },
+              { opacity: 1, translate: '0 0' },
+            ],
+            { duration: motion.content, easing: easing.enter },
+          );
+    seen.current = ids;
+    lastCollapsed.current = collapsed;
+  });
   const committed = useRef(false);
   // A rejected name leaves the field open; blurring it afterwards cancels, as in VS Code.
   useEffect(() => {

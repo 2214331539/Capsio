@@ -106,3 +106,62 @@
   left: 0;
   right: 0;
 }
+
+/* Opening, closing and dragging tabs (DocumentTabs animates; these hold the visuals). */
+.document-tabs {
+  position: relative;
+}
+.document-tab-ghost {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+.document-tab[data-dragging] {
+  z-index: 2;
+  cursor: grabbing;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+}
+.document-tab[data-drop]::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  z-index: 3;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--sf-accent);
+}
+.document-tab[data-drop='before']::before {
+  left: 0;
+}
+.document-tab[data-drop='after']::before {
+  right: 0;
+}
+.document-tabs:is([data-overflow-start], [data-overflow-end]) .document-tab-list {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--fade-start, 0px),
+    #000 calc(100% - var(--fade-end, 0px)),
+    transparent 100%
+  );
+}
+.document-tabs[data-overflow-start] .document-tab-list {
+  --fade-start: 24px;
+}
+.document-tabs[data-overflow-end] .document-tab-list {
+  --fade-end: 24px;
+}
+.document-tabs > .document-tab-all {
+  align-self: center;
+  width: 28px;
+  min-height: 28px;
+  height: 28px;
+  margin: 0 0 3px 2px;
+  border-radius: 6px;
+}
+.document-tab-menu-title {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -103,6 +103,20 @@ export function installPress(root: Document = document) {
   };
 }
 
+/** A panel that has just been opened slides in from `offset` (e.g. '-8px 0'). Layout has
+ *  already changed; only the panel's own pixels move. */
+export function slideIn(elements: Iterable<Element | null | undefined>, offset: string) {
+  if (reducedMotion()) return;
+  for (const element of elements)
+    element?.animate?.(
+      [
+        { opacity: 0, translate: offset },
+        { opacity: 1, translate: '0 0' },
+      ],
+      { duration: motion.overlay, easing: easing.enter },
+    );
+}
+
 export function reducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }

@@ -10,6 +10,9 @@
 }
 
 .sf-nav {
+  --sf-thumb-bg: var(--sf-surface-selected);
+  --sf-thumb-shadow: none;
+  --sf-thumb-radius: var(--sf-radius);
   display: flex;
   flex-direction: column;
   gap: 1px;

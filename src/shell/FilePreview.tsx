@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ExternalLink, FileText, X } from 'lucide-react';
 import { Button } from '../components/primitives';
 import { t, translateError } from '../i18n';
+import { Skeleton } from '../components/feedback';
 import { errorMessage } from '../domain/errors';
 import { nativeResearch, openWithSystem } from '../platform/research';
 import { browserCommand, type BrowserTab } from '../platform/browser-pane';
@@ -115,7 +116,9 @@ export function FilePreview({ target, onClose }: { target: FilePreviewTarget; on
           )
         ) : office ? (
           bytes === null ? (
-            <div className="sf-file-loading">{t('正在读取…')}</div>
+            <div className="sf-file-skeleton" role="status" aria-label={t('正在读取…')}>
+              <Skeleton lines={8} />
+            </div>
           ) : /\.docx$/i.test(path) ? (
             <DocxView bytes={bytes} />
           ) : (
@@ -137,7 +140,9 @@ export function FilePreview({ target, onClose }: { target: FilePreviewTarget; on
             onContext={() => {}}
           />
         ) : content === null ? (
-          <div className="sf-file-loading">{t('正在读取…')}</div>
+          <div className="sf-file-skeleton" role="status" aria-label={t('正在读取…')}>
+            <Skeleton lines={8} />
+          </div>
         ) : kind === 'table' ? (
           <TableView content={content} path={path} />
         ) : kind === 'notebook' ? (

@@ -21,7 +21,17 @@ import { nativeLibrary, type LibraryBackend, type LibraryEntry } from '../../pla
 import { appDocs, type DocHit, type DocsBackend } from '../../platform/docs';
 import type { PageSummary } from '../../workspaces/docs/model';
 import { relativeTime } from '../projects/model';
+import { formatShortcut } from '../../platform/shortcuts';
 import './search.css';
+
+/** An action the palette can run, listed with its shortcut. */
+export type PaletteCommand = {
+  id: string;
+  label: string;
+  Icon: LucideIcon;
+  keys?: string;
+  run(): void;
+};
 
 export interface SearchTarget {
   projectId?: string;
@@ -184,10 +194,12 @@ export function SearchDialog({
   projectId,
   library = nativeLibrary,
   docs = appDocs(),
+  commands = [],
 }: {
   store: WorkspaceStore;
   onClose: () => void;
   onNavigate: (target: SearchTarget) => void;
+  commands?: PaletteCommand[];
   /** Inside a project, its literature folder is searched; otherwise every project's. */
   projectId?: string;
   library?: LibraryBackend;
@@ -299,6 +311,32 @@ export function SearchDialog({
     onNavigate(target);
     onClose();
   }
+  function run(command: PaletteCommand) {
+    // Close first: a command may open another dialog.
+    onClose();
+    command.run();
+  }
+  const term = deferredQuery.trim().toLowerCase();
+  const matchingCommands = term
+    ? commands.filter((command) => command.label.toLowerCase().includes(term))
+    : commands;
+  const commandGroup = () =>
+    matchingCommands.length ? (
+      <div className="sf-search-group">
+        <h3>{t('命令')}</h3>
+        <ResourceList label={t('命令')}>
+          {matchingCommands.map((command) =>
+            row(
+              command.id,
+              command.Icon,
+              command.label,
+              command.keys ? formatShortcut(command.keys) : '',
+              () => run(command),
+            ),
+          )}
+        </ResourceList>
+      </div>
+    ) : null;
   const groups = [
     { kind: 'project' as const, title: t('项目'), Icon: FolderKanban },
     { kind: 'paper' as const, title: t('文献'), Icon: BookOpen },
@@ -361,6 +399,7 @@ export function SearchDialog({
           className="sf-search-results"
           aria-busy={query !== deferredQuery || (typed && !libraries)}
         >
+          {typed ? commandGroup() : null}
           {!typed ? (
             projectId ? (
               <>
@@ -407,7 +446,7 @@ export function SearchDialog({
             ) : (
               <div className="sf-search-empty">{t('还没有项目')}</div>
             )
-          ) : !results.length ? (
+          ) : !results.length && !matchingCommands.length ? (
             <div className="sf-search-empty" role="status">
               {libraries ? t('没有找到“{query}”相关内容。', { query }) : t('正在搜索…')}
             </div>
@@ -439,6 +478,7 @@ export function SearchDialog({
               ) : null;
             })
           )}
+          {!typed ? commandGroup() : null}
         </div>
       </div>
     </Modal>
