@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { PageViewport } from 'pdfjs-dist';
@@ -125,7 +125,9 @@ it('keeps a typed comment when the popover closes, recolors and deletes', async 
     color: '#2ea8e5',
   });
   fireEvent.keyDown(window, { key: 'Escape' });
-  expect(close).toHaveBeenCalled();
+  // It leaves with the short exit, then tells its owner.
+  expect(screen.getByRole('dialog', { name: '批注' }).hasAttribute('data-leaving')).toBe(true);
+  await waitFor(() => expect(close).toHaveBeenCalled());
   expect(change).toHaveBeenLastCalledWith({ ...annotation, comment: 'Key result' });
   view.unmount();
   render(

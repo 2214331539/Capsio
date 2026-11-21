@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import userEvent from '@testing-library/user-event';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import type { PdfBackend } from '../platform/research';
+import { clearToasts } from '../components/feedback';
 import PdfReader from './PdfReader';
 
 const links = vi.hoisted(() => ({
@@ -387,4 +388,82 @@ it('opens a persistent directory, searches collapsed sections and navigates whil
   // Unpinning closes the docked outline.
   fireEvent.click(screen.getByRole('button', { name: '固定目录' }));
   expect(host.container.querySelector('.pdf-outline-dock.is-pinned')).toBeNull();
+});
+
+it('says it returned to the last page when a paper is opened again, and offers the first page', async () => {
+  localStorage.setItem('scientify.reader.resumed', '2');
+  const user = userEvent.setup();
+  const context = vi.fn();
+  const backend: PdfBackend = { readPdf: vi.fn(async () => new Uint8Array([1])) };
+  const paper = (
+    <PdfReader
+      assetId="resumed"
+      title="Paper"
+      projectId="p"
+      paperId="resumed"
+      backend={backend}
+      onContext={context}
+      onTool={() => {}}
+      compact
+    />
+  );
+  const view = render(paper);
+  await screen.findByText('已回到上次读到的第 2 页');
+  expect((screen.getByRole('spinbutton', { name: '页码' }) as HTMLInputElement).value).toBe('2');
+  await user.click(screen.getByRole('button', { name: '从头开始' }));
+  await waitFor(() =>
+    expect((screen.getByRole('spinbutton', { name: '页码' }) as HTMLInputElement).value).toBe('1'),
+  );
+  // Said once per paper and session: opening it again does not repeat it.
+  view.unmount();
+  clearToasts();
+  localStorage.setItem('scientify.reader.resumed', '2');
+  render(paper);
+  await waitFor(() => expect(context).toHaveBeenCalled());
+  expect(screen.queryByText('已回到上次读到的第 2 页')).toBeNull();
+  clearToasts();
+});
+
+it('deletes a highlight at once and puts it back from the undo offer, saving both ways', async () => {
+  const user = userEvent.setup();
+  const mark = {
+    id: 'h1',
+    kind: 'highlight' as const,
+    page: 0,
+    rects: [[10, 10, 100, 22]] as [number, number, number, number][],
+    text: 'Research text',
+    comment: '',
+    color: '#ffd400',
+  };
+  vi.stubGlobal('CSS', { escape: (value: string) => value });
+  Element.prototype.scrollIntoView = vi.fn();
+  const save = vi.fn(async (record: object) => record);
+  const record = { load: async () => ({ version: 1, annotations: [mark] }), save };
+  const backend: PdfBackend = { readPdf: vi.fn(async () => new Uint8Array([1])) };
+  render(
+    <PdfReader
+      assetId="marked"
+      title="Paper"
+      projectId="p"
+      paperId="marked"
+      backend={backend}
+      onContext={vi.fn()}
+      onTool={() => {}}
+      record={record}
+      compact
+    />,
+  );
+  await user.click(await screen.findByRole('button', { name: '批注列表' }));
+  await user.click(await screen.findByRole('button', { name: /Research text/ }));
+  await user.click(await screen.findByRole('button', { name: '删除批注' }));
+  await waitFor(() =>
+    expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ annotations: [] })),
+  );
+  await user.click(await screen.findByRole('button', { name: '撤销' }));
+  await waitFor(() =>
+    expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ annotations: [mark] })),
+  );
+  clearToasts();
+  vi.unstubAllGlobals();
+  delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
 });

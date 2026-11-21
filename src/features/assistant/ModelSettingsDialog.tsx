@@ -135,7 +135,9 @@ export function ModelConnectionForm({
   services,
 }: FormProps) {
   const service = serviceFor(value);
-  const offered = services ? modelServices.filter((item) => services.includes(item.id)) : modelServices;
+  const offered = services
+    ? modelServices.filter((item) => services.includes(item.id))
+    : modelServices;
   // The official models use the signed-in account; there is no address or key to fill in.
   const official = service.id === 'scientify';
   // A ChatGPT plan signs in through the browser; it has no address or key.

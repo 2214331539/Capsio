@@ -24,6 +24,8 @@ import { newAnnotation } from './annotations';
 import { AnnotationList, AnnotationPopover, SelectionToolbar } from './ReaderAnnotations';
 import { destinationOffset, ReaderLinkService, type PdfLinkTarget } from './pdf-links';
 import { errorMessage } from '../domain/errors';
+import { dismissToast, toast, toastUndo } from '../components/feedback';
+import { takeResumeHint } from './resume';
 import './reader.css';
 import { PdfOutlinePanel } from './PdfOutlinePanel';
 
@@ -68,6 +70,8 @@ export default function PdfReader({
   const onContextRef = useRef(onContext);
   onContextRef.current = onContext;
   const positionKey = JSON.stringify([projectId, assetId]);
+  // The page a first open returns to, to say so once the paper is shown.
+  const resumedAt = useRef(0);
   const [initial] = useState<ReadingPosition>(() => {
     const cached = readingPositions.get(backend)?.get(positionKey);
     let page = cached?.page ?? 1,
@@ -82,6 +86,7 @@ export default function PdfReader({
     } catch {
       /* Optional reading preferences. */
     }
+    resumedAt.current = !cached && page > 1 ? page : 0;
     return {
       page,
       zoom: cached?.zoom ?? 1,
@@ -101,6 +106,8 @@ export default function PdfReader({
     [selectionPage, setSelectionPage] = useState(initial.page);
   const [visible, setVisible] = useState<Set<number>>(new Set([initial.page]));
   const [annotations, setAnnotations] = useState<PaperAnnotation[]>([]);
+  const annotationsNow = useRef(annotations);
+  annotationsNow.current = annotations;
   const saved = useRef<PaperRecord>({});
   const saving = useRef(Promise.resolve());
   const [picked, setPicked] = useState<
@@ -125,6 +132,7 @@ export default function PdfReader({
   }, [record]);
   /** Shows the change at once and saves in order, the newest list last. */
   function commit(next: PaperAnnotation[]) {
+    annotationsNow.current = next;
     setAnnotations(next);
     if (!record) return;
     saving.current = saving.current
@@ -204,6 +212,23 @@ export default function PdfReader({
       if (ticket === navigationTicket.current) setError(errorMessage(reason));
     }
   }
+  // A paper opened on a saved page says so once, and offers the first page instead.
+  const resumeToast = useRef<number | null>(null);
+  useEffect(() => {
+    if (!document || !resumedAt.current) return;
+    const at = Math.min(resumedAt.current, document.numPages);
+    resumedAt.current = 0;
+    if (at < 2 || !takeResumeHint(assetId)) return;
+    resumeToast.current = toast(t('已回到上次读到的第 {page} 页', { page: at }), {
+      action: { label: t('从头开始'), run: () => navigate(1) },
+    });
+  }, [document]);
+  useEffect(
+    () => () => {
+      if (resumeToast.current !== null) dismissToast(resumeToast.current);
+    },
+    [],
+  );
   const linkCallbacks = useRef({ followLink });
   linkCallbacks.current = { followLink };
   const linkService = useMemo(
@@ -663,8 +688,15 @@ export default function PdfReader({
           focusComment={opened.edit}
           onChange={(next) => commit(annotations.map((a) => (a.id === next.id ? next : a)))}
           onDelete={() => {
-            commit(annotations.filter((a) => a.id !== opened.id));
+            const removed = annotations.find((a) => a.id === opened.id)!;
+            const index = annotations.indexOf(removed);
+            commit(annotations.filter((a) => a !== removed));
             setOpened(null);
+            toastUndo(t('已删除批注'), () => {
+              const current = annotationsNow.current;
+              if (current.some((a) => a.id === removed.id)) return;
+              commit([...current.slice(0, index), removed, ...current.slice(index)]);
+            });
           }}
           onClose={() => setOpened(null)}
         />

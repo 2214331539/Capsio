@@ -4,6 +4,7 @@ import { t } from '../../i18n';
 import { usePreferences } from '../../i18n/preferences';
 import { Markdown } from '../../features/notes/Markdown';
 import { Button } from '../primitives';
+import { StateLabel } from '../feedback';
 import type { AgentSkillRef } from '../../platform/agent';
 import { attachmentNote, type ChatAttachment } from '../../features/assistant/model';
 
@@ -127,7 +128,10 @@ export const ChatMessageView = memo(function ChatMessageView({
           tooltip={feedback || t('复制消息')}
           onClick={() => void copy()}
         >
-          {copyState === 'copied' ? <Check size={13} /> : <Copy size={13} />}
+          <StateLabel
+            state={copyState === 'copied' ? 'copied' : 'idle'}
+            labels={{ idle: <Copy size={13} />, copied: <Check size={13} /> }}
+          />
         </Button>
         {onRegenerate ? (
           <Button

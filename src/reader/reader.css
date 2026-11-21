@@ -566,7 +566,15 @@
     0 10px 28px rgb(0 0 0 / 14%),
     0 1px 3px rgb(0 0 0 / 8%);
   transform: translateX(-50%);
-  animation: pdf-pop 120ms ease-out;
+  transform-origin: 50% 100%;
+  /* They appear calmly beside the selection: a short fade and a scale from --sf-pop-from. */
+  animation:
+    sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter),
+    sf-pop-scale var(--sf-motion-overlay) var(--sf-ease-pop);
+}
+.pdf-annotation-popover[data-leaving] {
+  pointer-events: none;
+  animation: sf-pop-exit var(--sf-motion-exit) var(--sf-ease-exit) forwards;
 }
 .pdf-selection-toolbar {
   display: flex;
@@ -589,15 +597,24 @@
   background: var(--swatch);
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%);
   cursor: pointer;
-  transition: transform 100ms ease;
+  transition:
+    transform var(--sf-motion-release) var(--sf-ease-spring),
+    box-shadow var(--sf-motion-content) var(--sf-ease-enter);
 }
 .pdf-swatch:hover {
   transform: scale(1.15);
 }
+/* The chosen colour grows its ring and springs once. */
 .pdf-swatch[aria-pressed='true'] {
   box-shadow:
     0 0 0 2px var(--sf-surface-raised),
     0 0 0 3.5px var(--swatch);
+  animation: pdf-swatch-pick var(--sf-motion-release) var(--sf-ease-spring);
+}
+@keyframes pdf-swatch-pick {
+  from {
+    scale: 0.7;
+  }
 }
 .pdf-toolbar-sep {
   width: 1px;
@@ -634,12 +651,6 @@
 }
 .pdf-annotation-actions .spacer {
   flex: 1;
-}
-@keyframes pdf-pop {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 4px);
-  }
 }
 
 /* Every highlight in the paper, beside the page. */

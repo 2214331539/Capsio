@@ -3,6 +3,7 @@ import { Copy, MessageSquarePlus, NotebookPen, StickyNote, Trash2, Underline } f
 import { Button, Textarea } from '../components/primitives';
 import { Mascot } from '../components/ai/Mascot';
 import { t } from '../i18n';
+import { motion, reducedMotion } from '../platform/motion';
 import type { PaperAnnotation } from '../platform/library';
 import { HIGHLIGHT_COLORS, readingOrder } from './annotations';
 
@@ -36,6 +37,26 @@ function useDismiss(ref: RefObject<HTMLElement | null>, onClose: () => void) {
   }, [ref]);
 }
 
+/** Closing plays the short exit first; the owner is told once it is over. Unmounting early
+ *  (another highlight opened, the page changed) drops the pending close. */
+function useLeave(onClose: () => void) {
+  const [leaving, setLeaving] = useState(false);
+  const latest = useRef(onClose);
+  latest.current = onClose;
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const close = useRef(() => {
+    if (timer.current !== undefined) return;
+    if (reducedMotion()) {
+      latest.current();
+      return;
+    }
+    setLeaving(true);
+    timer.current = setTimeout(() => latest.current(), motion.exit);
+  });
+  return [leaving, close.current] as const;
+}
+
 function Swatches({ value, onPick }: { value?: string; onPick(color: string): void }) {
   return (
     <span className="pdf-swatches" role="group" aria-label={t('高亮颜色')}>
@@ -44,6 +65,7 @@ function Swatches({ value, onPick }: { value?: string; onPick(color: string): vo
           key={color}
           type="button"
           className="pdf-swatch"
+          data-press
           style={{ '--swatch': color } as CSSProperties}
           aria-label={t('{color}高亮', { color: t(name) })}
           aria-pressed={value === color}
@@ -143,9 +165,10 @@ export function AnnotationPopover({
     const { comment, annotation, onChange } = latest.current;
     if (comment !== annotation.comment) onChange({ ...annotation, comment });
   };
+  const [leaving, leave] = useLeave(onClose);
   useDismiss(ref, () => {
     finish();
-    onClose();
+    leave();
   });
   // Closing by any means keeps what was typed.
   useEffect(() => () => finish(), []);
@@ -156,6 +179,7 @@ export function AnnotationPopover({
       className="pdf-annotation-popover"
       role="dialog"
       aria-label={t('批注')}
+      data-leaving={leaving || undefined}
       style={{ top, left }}
     >
       {annotation.text ? <blockquote>{annotation.text}</blockquote> : null}
@@ -176,7 +200,7 @@ export function AnnotationPopover({
               if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
                 event.preventDefault();
                 finish();
-                onClose();
+                leave();
               }
             }}
           />

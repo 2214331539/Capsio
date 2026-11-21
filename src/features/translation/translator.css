@@ -8,3 +8,32 @@
   gap: 8px;
   margin: 12px 0;
 }
+
+/* The translation ring: a track, a filled arc starting at twelve o'clock, and a slow turn
+   while the end is unknown. */
+.sf-progress-ring {
+  flex: none;
+  color: var(--sf-accent);
+}
+.sf-progress-ring circle {
+  fill: none;
+  stroke-width: 2;
+}
+.sf-progress-ring-track {
+  stroke: var(--sf-surface-selected);
+}
+.sf-progress-ring-arc {
+  stroke: currentColor;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.sf-progress-ring[data-indeterminate] {
+  animation: sf-ring-turn 900ms linear infinite;
+}
+@keyframes sf-ring-turn {
+  to {
+    rotate: 360deg;
+  }
+}

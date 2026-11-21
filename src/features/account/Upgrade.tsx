@@ -10,14 +10,22 @@ import { describeError } from './account';
 import './upgrade.css';
 
 /** Which model asked for the upgrade card, if any; null while it is closed. */
-const upgradeStore = createStore<{ open: boolean; model: string }>(() => ({ open: false, model: '' }));
+const upgradeStore = createStore<{ open: boolean; model: string }>(() => ({
+  open: false,
+  model: '',
+}));
 
 /** Opens the upgrade card, from the model list or a "plan does not include" notice. */
 export function openUpgrade(model = '') {
   upgradeStore.setState({ open: true, model });
 }
 
-const features = ['每月 3,000 点，开放全部官方模型', '50 GB 同步空间', '团队项目每个最多 20 人', '电子普通发票'];
+const features = [
+  '每月 3,000 点，开放全部官方模型',
+  '50 GB 同步空间',
+  '团队项目每个最多 20 人',
+  '电子普通发票',
+];
 
 /** Mounted once in the app: the plan card, then the WeChat group QR code to upgrade by hand. */
 export function UpgradeHost() {
@@ -52,9 +60,7 @@ export function UpgradeHost() {
       {step === 'plan' ? (
         <div className="sf-upgrade">
           <p className="sf-upgrade-lead">
-            {model
-              ? t('{model} 需要个人专业版。', { model })
-              : t('个人专业版开放全部官方模型。')}
+            {model ? t('{model} 需要个人专业版。', { model }) : t('个人专业版开放全部官方模型。')}
           </p>
           <div className="sf-upgrade-plan">
             <div className="sf-upgrade-price">
@@ -74,7 +80,9 @@ export function UpgradeHost() {
             </ul>
           </div>
           <p className="sf-upgrade-note">
-            {t('目前不支持在线支付。加入微信群说明手机号，我们在后台为你开通，开通后重新选择模型即可。')}
+            {t(
+              '目前不支持在线支付。加入微信群说明手机号，我们在后台为你开通，开通后重新选择模型即可。',
+            )}
           </p>
           <footer>
             <Button onClick={close}>{t('暂不升级')}</Button>

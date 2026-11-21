@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { t } from '../../i18n';
-import { Mascot } from '../../components/ai/Mascot';
+import { Mascot, type MascotMood } from '../../components/ai/Mascot';
+import { Collapse } from '../../components/feedback';
 import type { AgentPlanStep } from './agent-session';
 
 /** The steps the Agent planned for this turn, ticked off as it goes. */
@@ -214,14 +215,42 @@ export function duration(ms: number) {
 
 type Operation = { id: string; label: string; status: string; output: string };
 
+/** One step of a turn; a step with output folds it open and shut. A running step pulses. */
+function Step({ op }: { op: Operation }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <li className={`is-${op.status}`}>
+      {op.output ? (
+        <>
+          <button
+            type="button"
+            className="sf-ai-step-toggle"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {op.label}
+          </button>
+          <Collapse open={open}>
+            <pre>{op.output}</pre>
+          </Collapse>
+        </>
+      ) : (
+        <span>{op.label}</span>
+      )}
+    </li>
+  );
+}
+
 /**
  * One turn's work, above its answer: "正在搜索网页… · 12 秒" while it runs,
  * "已处理 4 分 28 秒" after, opening to what the model thought, its plan, each
- * step it took and the files it changed.
+ * step it took and the files it changed. The mascot wears what the turn is doing:
+ * thinking, working on a step, waiting to be allowed, done, or failed.
  */
 export function TurnProcess({
   running,
   status,
+  mood,
   startedAt,
   completedAt,
   reasoning,
@@ -231,6 +260,7 @@ export function TurnProcess({
 }: {
   running: boolean;
   status?: string;
+  mood?: MascotMood;
   startedAt?: string;
   completedAt?: string;
   reasoning?: string;
@@ -239,6 +269,8 @@ export function TurnProcess({
   diff?: string;
 }) {
   const [now, setNow] = useState(() => Date.now());
+  // Folded until asked for, while running too; the line above shows what it is doing.
+  const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!running) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -248,47 +280,54 @@ export function TurnProcess({
   const end = running ? now : completedAt ? Date.parse(completedAt) : NaN;
   const elapsed = Number.isFinite(start) && Number.isFinite(end) ? end - start : null;
   const empty = !reasoning && !plan.length && !operations.length && !diff;
-  if (!running && empty) return null;
+  const face = mood ?? (running ? 'working' : undefined);
+  if (!running && empty && face !== 'error') return null;
   const label = running
     ? [status || t('正在处理…'), elapsed !== null ? duration(elapsed) : '']
         .filter(Boolean)
         .join(' · ')
-    : elapsed !== null
-      ? t('已处理 {time}', { time: duration(elapsed) })
-      : t('处理过程');
+    : face === 'error'
+      ? t('处理出错')
+      : elapsed !== null
+        ? t('已处理 {time}', { time: duration(elapsed) })
+        : t('处理过程');
   return (
-    // Folded until asked for, while running too; the line above shows what it is doing.
-    <details className={`sf-ai-process${running ? ' is-running' : ''}`}>
-      <summary>
-        {running ? <Mascot size={16} mood="working" /> : null}
+    <div
+      className={`sf-ai-process${running ? ' is-running' : ''}`}
+      data-open={open && !empty}
+      data-mood={face}
+    >
+      <button
+        type="button"
+        className="sf-ai-process-summary"
+        aria-expanded={empty ? undefined : open}
+        aria-disabled={empty || undefined}
+        onClick={() => {
+          if (!empty) setOpen((value) => !value);
+        }}
+      >
+        {face ? <Mascot size={16} mood={face} /> : null}
         <span>{label}</span>
         {!empty ? (
           <ChevronRight size={13} aria-hidden="true" className="sf-ai-process-chevron" />
         ) : null}
-      </summary>
+      </button>
       {!empty ? (
-        <div className="sf-ai-process-body">
-          {reasoning ? <div className="sf-ai-thinking-text">{reasoning}</div> : null}
-          <PlanList plan={plan} />
-          {operations.length ? (
-            <ol className="sf-ai-steps">
-              {operations.map((op) => (
-                <li key={op.id} className={`is-${op.status}`}>
-                  {op.output ? (
-                    <details>
-                      <summary>{op.label}</summary>
-                      <pre>{op.output}</pre>
-                    </details>
-                  ) : (
-                    <span>{op.label}</span>
-                  )}
-                </li>
-              ))}
-            </ol>
-          ) : null}
-          {diff ? <TurnDiff diff={diff} /> : null}
-        </div>
+        <Collapse open={open}>
+          <div className="sf-ai-process-body">
+            {reasoning ? <div className="sf-ai-thinking-text">{reasoning}</div> : null}
+            <PlanList plan={plan} />
+            {operations.length ? (
+              <ol className="sf-ai-steps">
+                {operations.map((op) => (
+                  <Step key={op.id} op={op} />
+                ))}
+              </ol>
+            ) : null}
+            {diff ? <TurnDiff diff={diff} /> : null}
+          </div>
+        </Collapse>
       ) : null}
-    </details>
+    </div>
   );
 }

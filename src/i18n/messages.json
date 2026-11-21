@@ -4598,5 +4598,40 @@
   "环境已创建": ["环境已创建", "Environment created"],
   "依赖已安装": ["依赖已安装", "Dependencies installed"],
   "环境创建失败": ["环境创建失败", "Environment creation failed"],
-  "依赖安装失败": ["依赖安装失败", "Dependency installation failed"]
+  "依赖安装失败": ["依赖安装失败", "Dependency installation failed"],
+  "批量操作": ["批量操作", "Batch actions"],
+  "已选 {count} 项": ["已选 {count} 项", "{count} selected"],
+  "取消选择": ["取消选择", "Clear selection"],
+  "已重命名为“{name}”": ["已重命名为“{name}”", "Renamed to “{name}”"],
+  "已移动“{name}”": ["已移动“{name}”", "Moved “{name}”"],
+  "已导入 {count} 个文件": ["已导入 {count} 个文件", "Imported {count} files"],
+  "已移动 {count} 项": ["已移动 {count} 项", "Moved {count} items"],
+  "将选中的 {count} 项移入系统回收站？": [
+    "将选中的 {count} 项移入系统回收站？",
+    "Move the {count} selected items to the system trash?"
+  ],
+  "已将 {count} 项移入回收站": ["已将 {count} 项移入回收站", "Moved {count} items to the trash"],
+  "已优先翻译 {count} 篇": ["已优先翻译 {count} 篇", "Translating {count} papers first"],
+  "松开导入": ["松开导入", "Release to import"],
+  "导入到 {folder}": ["导入到 {folder}", "Import into {folder}"],
+  "已回到上次读到的第 {page} 页": [
+    "已回到上次读到的第 {page} 页",
+    "Back at page {page}, where you left off"
+  ],
+  "从头开始": ["从头开始", "Start from page 1"],
+  "已删除批注": ["已删除批注", "Annotation deleted"],
+  "已删除对话“{name}”": ["已删除对话“{name}”", "Deleted conversation “{name}”"],
+  "对话恢复失败，请重试。": [
+    "对话恢复失败，请重试。",
+    "Could not restore the conversation. Try again."
+  ],
+  "处理出错": ["处理出错", "Something went wrong"],
+  "已允许": ["已允许", "Allowed"],
+  "本会话已允许": ["本会话已允许", "Allowed for this session"],
+  "已设为以后都允许": ["已设为以后都允许", "Always allowed from now on"],
+  "已中止任务": ["已中止任务", "Task stopped"],
+  "已允许权限": ["已允许权限", "Permission granted"],
+  "已拒绝权限": ["已拒绝权限", "Permission denied"],
+  "Enter 允许 · Esc 拒绝": ["Enter 允许 · Esc 拒绝", "Enter to allow · Esc to decline"],
+  "松开添加到这条消息": ["松开添加到这条消息", "Release to add to this message"]
 }

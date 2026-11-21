@@ -21,6 +21,7 @@ import { PERSONAL_SCOPE } from '../notes/model';
 import { Modal } from '../../components/Modal';
 import { Panel } from '../../components/layout/Panel';
 import { confirmAction, requestText } from '../../components/prompts';
+import { toastUndo } from '../../components/feedback';
 import type { WorkContext } from '../../domain/context';
 import {
   domainForWorkspace,
@@ -741,7 +742,8 @@ export function AssistantPanel({
       return;
     }
     const name = String(item.title || t('历史对话'));
-    if (!(await confirmAction(t('删除对话“{name}”？', { name })))) return;
+    // Taken out of the history at once; the record is kept to put back until the offer lapses.
+    const kept = structuredClone(item);
     let saved = false;
     try {
       saved = await runtime.deleteConversation(scope, id);
@@ -753,6 +755,13 @@ export function AssistantPanel({
       setError(store.getState().error || t('对话删除失败，请重试。'));
       return;
     }
+    toastUndo(t('已删除对话“{name}”', { name }), async () => {
+      const restored = await store.getState().update((workspace) => {
+        if (!workspace.sessions.some((entry) => entry.id === id && entry.project === scope))
+          workspace.sessions.push(kept);
+      });
+      if (!restored) throw new Error(store.getState().error || t('对话恢复失败，请重试。'));
+    });
     drafts.current.delete(id);
     chatRuntime.forget(scope, id);
     draftChats.current.delete(id);

@@ -1,6 +1,14 @@
 import { useRef, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import { EmptyState } from '../../components/EmptyState';
-import { FileText, FolderOpen, Library, NotebookPen, Upload } from 'lucide-react';
+import {
+  FileText,
+  FolderOpen,
+  Languages,
+  Library,
+  MoreHorizontal,
+  NotebookPen,
+  Upload,
+} from 'lucide-react';
 import { Button } from '../../components/primitives';
 import { t } from '../../i18n';
 import type { LibraryEntry, LibraryPaper, PaperReference } from '../../platform/library';
@@ -40,11 +48,16 @@ export function LibraryTable({
   folder,
   query,
   selected,
+  selectedPaths,
   busy,
   readOnly,
   importing,
   onSelect,
+  onSelectMany,
   onOpen,
+  onNote,
+  onTranslate,
+  onMenu,
   onChoose,
   onImport,
   onImportLibrary,
@@ -57,11 +70,19 @@ export function LibraryTable({
   folder: string;
   query: string;
   selected: string;
+  /** Every selected row, when more than one can be; `selected` stays the active one. */
+  selectedPaths?: ReadonlySet<string>;
   busy: boolean;
   readOnly: boolean;
   importing: string;
   onSelect(path: string): void;
+  /** Ctrl / Cmd toggles a row, Shift selects the rows in between. */
+  onSelectMany?(paths: Set<string>, active: string): void;
   onOpen(path: string): void;
+  /** Row actions shown on hover. */
+  onNote?(path: string): void;
+  onTranslate?(path: string): void;
+  onMenu?(path: string, x: number, y: number): void;
   onChoose(): void;
   onImport(files: File[]): void;
   /** Opens the Zotero / BibTeX / RIS import. */
@@ -107,6 +128,29 @@ export function LibraryTable({
       matches(entry),
   );
   const title = folder ? filename(folder) : t('全部论文');
+  const anchor = useRef('');
+  /** One row, or with Ctrl / Cmd / Shift a growing selection. */
+  function pick(path: string, range: boolean, toggle: boolean) {
+    if (!onSelectMany || (!range && !toggle)) {
+      anchor.current = path;
+      onSelect(path);
+      return;
+    }
+    let next = new Set<string>();
+    if (range) {
+      const from = rows.findIndex((row) => row.path === (anchor.current || selected));
+      const to = rows.findIndex((row) => row.path === path);
+      if (toggle && selectedPaths) next = new Set(selectedPaths);
+      for (const row of rows.slice(Math.min(from < 0 ? to : from, to), Math.max(from, to) + 1))
+        next.add(row.path);
+    } else {
+      anchor.current = path;
+      next = new Set(selectedPaths ?? (selected ? [selected] : []));
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+    }
+    onSelectMany(next, path);
+  }
   function move(event: KeyboardEvent<HTMLElement>) {
     const index = rows.findIndex((row) => row.path === selected);
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -114,7 +158,7 @@ export function LibraryTable({
       const next =
         rows[Math.max(0, Math.min(rows.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)))];
       if (next) {
-        onSelect(next.path);
+        pick(next.path, event.shiftKey, false);
         document
           .querySelector<HTMLElement>(`[data-library-row="${CSS.escape(next.path)}"]`)
           ?.focus();
@@ -224,17 +268,25 @@ export function LibraryTable({
             const page = lastPage(entry.paperId);
             const where = folderOf(entry.path);
             const reference = referenceOf(entry);
+            const chosen = entry.path === selected || !!selectedPaths?.has(entry.path);
+            // A row action must not also select or open the row.
+            const only = (action: () => void) => (event: MouseEvent<HTMLElement>) => {
+              event.stopPropagation();
+              action();
+            };
             return (
               <div
                 key={entry.path}
                 role="row"
                 tabIndex={entry.path === selected || (!selected && entry === rows[0]) ? 0 : -1}
-                className={`library-row${entry.path === selected ? ' is-selected' : ''}`}
-                aria-selected={entry.path === selected}
+                className={`library-row${chosen ? ' is-selected' : ''}`}
+                aria-selected={chosen}
                 data-tree-id={entry.path}
                 data-library-row={entry.path}
                 draggable={!readOnly}
-                onClick={() => onSelect(entry.path)}
+                onClick={(event) =>
+                  pick(entry.path, event.shiftKey, event.ctrlKey || event.metaKey)
+                }
                 onDoubleClick={() => onOpen(entry.path)}
               >
                 <span role="gridcell" className="library-name">
@@ -262,6 +314,59 @@ export function LibraryTable({
                 <span role="gridcell" className="library-meta">
                   {size(entry.size)}
                 </span>
+                {onNote || onTranslate || onMenu ? (
+                  <span
+                    role="gridcell"
+                    className="library-row-actions"
+                    onDoubleClick={(event) => event.stopPropagation()}
+                  >
+                    {entry.pdf && onNote ? (
+                      <Button
+                        variant="ghost"
+                        iconOnly
+                        size="sm"
+                        tabIndex={-1}
+                        aria-label={t('打开论文笔记')}
+                        tooltip={t('打开论文笔记')}
+                        disabled={busy}
+                        onClick={only(() => onNote(entry.path))}
+                      >
+                        <NotebookPen />
+                      </Button>
+                    ) : null}
+                    {entry.pdf && onTranslate ? (
+                      <Button
+                        variant="ghost"
+                        iconOnly
+                        size="sm"
+                        tabIndex={-1}
+                        aria-label={t('全文翻译')}
+                        tooltip={t('全文翻译')}
+                        disabled={busy}
+                        onClick={only(() => onTranslate(entry.path))}
+                      >
+                        <Languages />
+                      </Button>
+                    ) : null}
+                    {onMenu ? (
+                      <Button
+                        variant="ghost"
+                        iconOnly
+                        size="sm"
+                        tabIndex={-1}
+                        aria-label={t('更多')}
+                        tooltip={t('更多')}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          const box = event.currentTarget.getBoundingClientRect();
+                          onMenu(entry.path, box.left, box.bottom);
+                        }}
+                      >
+                        <MoreHorizontal />
+                      </Button>
+                    ) : null}
+                  </span>
+                ) : null}
               </div>
             );
           })}

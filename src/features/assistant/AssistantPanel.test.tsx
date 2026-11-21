@@ -7,6 +7,7 @@ import type { WorkContext } from '../../domain/context';
 import type { WorkspaceBackend } from '../../platform/desktop';
 import type { ResearchBackend } from '../../platform/research';
 import { createWorkspaceStore } from '../../stores/workspace';
+import { clearToasts } from '../../components/feedback';
 import { AssistantPanel } from './AssistantPanel';
 import { getAgentRuntime } from './agent-runtime';
 import type { AgentBackend, AgentEvent } from '../../platform/agent';
@@ -766,10 +767,15 @@ it('renames and deletes a saved conversation from its context menu', async () =>
   const renamedItem = screen.getByRole('menuitemradio', { name: '已重命名的会话' });
   fireEvent.contextMenu(renamedItem);
   await user.click(screen.getByRole('menuitem', { name: '删除对话' }));
-  const confirmDialog = await screen.findByRole('dialog', { name: '确认操作' });
-  await user.click(within(confirmDialog).getByRole('button', { name: '确认' }));
+  // A conversation can be put back, so it goes at once and offers to undo instead of asking.
+  expect(screen.queryByRole('dialog', { name: '确认操作' })).toBeNull();
   await waitFor(() => expect(store.getState().data?.sessions).toHaveLength(0));
   expect(screen.queryByText('需要重命名的问题')).toBeNull();
+  await screen.findByText('已删除对话“已重命名的会话”');
+  await user.click(screen.getByRole('button', { name: '撤销' }));
+  await waitFor(() => expect(store.getState().data?.sessions).toHaveLength(1));
+  expect(store.getState().data?.sessions[0]?.title).toBe('已重命名的会话');
+  clearToasts();
 });
 
 it('opens provider settings for an unconfigured chat and preserves the question through cancel and save', async () => {

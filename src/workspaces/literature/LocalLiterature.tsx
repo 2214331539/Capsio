@@ -22,10 +22,12 @@ import {
   Languages,
   NotebookPen,
   FileText,
+  Folder,
   X,
   Trash2,
 } from 'lucide-react';
 import { Button, Input } from '../../components/primitives';
+import { dismissToast, toast, toastUndo, updateToast } from '../../components/feedback';
 import { TreeView, type TreeItem } from '../../components/workspace/TreeView';
 import { DocumentTabs } from '../../components/workspace/DocumentTabs';
 import { ResizeHandle } from '../../shell/ResizeHandle';
@@ -69,6 +71,10 @@ import {
   paperOfTab,
   translationTab,
 } from '../../features/translation/paper-translation';
+import { TranslationIcon, useTranslationStatus } from '../../features/translation/ProgressRing';
+import { translator } from '../../platform/translator';
+import { skipResumeHint } from '../../reader/resume';
+import { BatchBar } from './BatchBar';
 import { BrowserPane } from './BrowserPane';
 import { FeaturePlaceholder } from '../../components/workspace/FeaturePlaceholder';
 import TextMarkdownPreview from '../files/MarkdownPreview';
@@ -87,11 +93,11 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
 } from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Upload } from 'lucide-react';
 import { useSidebarSlot } from '../../shell/Sidebar';
 import { LibraryTable } from './LibraryTable';
 import { ImportLibrary } from './ImportLibrary';
-import type { PaperReference } from '../../platform/library';
+import type { LibraryPaper, PaperReference } from '../../platform/library';
 
 const PdfReader = lazy(() => import('../../reader/PdfReader'));
 type RecordStore = import('../../reader/PdfReader').RecordStore;
@@ -177,13 +183,26 @@ export function LocalLiterature({
     [busy, setBusy] = useState(false);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [importProgress, setImportProgress] = useState('');
+  // Files are being dragged over the page from outside.
+  const [pageDrag, setPageDrag] = useState(false);
   const [menu, setMenu] = useState<{ path: string; x: number; y: number } | null>(null);
-  // A folder being named in place in the tree (VS Code style), not a dialog.
-  const [draft, setDraft] = useState<{ parent: string; value: string; error?: string } | null>(
-    null,
-  );
+  // Where the batch bar's folder list opens.
+  const [moveMenu, setMoveMenu] = useState<{
+    x: number;
+    y: number;
+    trigger: HTMLElement;
+  } | null>(null);
+  // A folder or file being named in place in the tree (VS Code style), not a dialog; `id` is
+  // set when an existing row is renamed.
+  const [draft, setDraft] = useState<{
+    id?: string;
+    kind?: 'file' | 'folder';
+    parent: string;
+    value: string;
+    error?: string;
+  } | null>(null);
   const [dialog, setDialog] = useState<{
-    kind: 'rename' | 'move' | 'relink';
+    kind: 'move' | 'relink';
     path: string;
     value: string;
   } | null>(null);
@@ -220,11 +239,17 @@ export function LocalLiterature({
     const preventFileNavigation = (event: DragEvent) => {
       if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
     };
+    const endPageDrag = () => setPageDrag(false);
     window.addEventListener('dragover', preventFileNavigation);
     window.addEventListener('drop', preventFileNavigation);
+    window.addEventListener('drop', endPageDrag);
+    window.addEventListener('dragend', endPageDrag);
     return () => {
       window.removeEventListener('dragover', preventFileNavigation);
       window.removeEventListener('drop', preventFileNavigation);
+      window.removeEventListener('drop', endPageDrag);
+      window.removeEventListener('dragend', endPageDrag);
+      setPageDrag(false);
     };
   }, [viewActive]);
   const changed = useRef(onContext);
@@ -233,6 +258,14 @@ export function LocalLiterature({
     notePanel = useId();
   const active = session.tabs.find((t) => t.id === session.active),
     paper = scan.papers.find((p) => p.id === active?.paperId);
+  // Translation tabs show how far their translation has got.
+  const translationStatus = useTranslationStatus(
+    project.id,
+    session.notes.filter(isTranslationTab).flatMap((id) => {
+      const bound = scan.papers.find((p) => p.id === paperOfTab(id));
+      return bound ? [{ id: bound.id, fingerprint: bound.fingerprint }] : [];
+    }),
+  );
   const [selection, setSelection] = useState<WorkContext>();
   // The open paper's highlights live in its record, which follows the PDF.
   const paperId = paper?.id;
@@ -443,6 +476,9 @@ export function LocalLiterature({
       } else await library.external(project.id, path, true);
     });
   }
+  const undoMoves = useRef<(moves: { from: string; to: string }[]) => Promise<void>>(
+    async () => {},
+  );
   async function mutate(operation: LibraryOperation) {
     return run(async () => {
       protect();
@@ -490,9 +526,38 @@ export function LocalLiterature({
         setSelectedPaths(new Set([operation.destination]));
         setClipboard(null);
         remapTabs(operation.path, operation.destination);
+        const name = filename(operation.destination);
+        offerUndoMove(
+          parent(operation.path) === parent(operation.destination)
+            ? t('已重命名为“{name}”', { name })
+            : t('已移动“{name}”', { name }),
+          [{ from: operation.path, to: operation.destination }],
+        );
       }
     });
   }
+  /** A finished move or rename is undone for real: each item goes back to where it was. */
+  function offerUndoMove(message: string, moves: { from: string; to: string }[]) {
+    toastUndo(message, () => undoMoves.current(moves));
+  }
+  undoMoves.current = async (moves) => {
+    await run(async () => {
+      protect();
+      for (const move of [...moves].reverse()) {
+        const next = await library.command(project.id, {
+          op: 'transfer',
+          path: move.to,
+          destination: move.from,
+          copy: false,
+        });
+        setScan(next);
+        requestProjectSync(project.id);
+        remapTabs(move.to, move.from);
+      }
+      setSelected(moves.at(-1)!.from);
+      setSelectedPaths(new Set(moves.map((move) => move.from)));
+    });
+  };
   async function choose() {
     await run(async () => {
       protect();
@@ -531,20 +596,27 @@ export function LocalLiterature({
       if (files.some((file) => file.size > 150 * 1024 * 1024))
         throw new Error(t('文件名无效或文件超过 150 MiB。'));
       let completed = 0;
+      const progress = (current: number) =>
+        t('导入文件 {current}/{total}', { current, total: files.length });
+      const card = toast(progress(1), { progress: 0 });
       try {
         for (const file of files) {
-          setImportProgress(
-            t('导入文件 {current}/{total}', {
-              current: completed + 1,
-              total: files.length,
-            }),
-          );
+          const label = progress(completed + 1);
+          setImportProgress(label);
+          updateToast(card, { message: label, progress: completed / files.length });
           const next = await library.importFile(project.id, folder, file);
           completed++;
           requestProjectSync(project.id);
           if (alive.current) setScan(next);
         }
+        updateToast(card, {
+          message: t('已导入 {count} 个文件', { count: completed }),
+          tone: 'success',
+          progress: undefined,
+          duration: 2500,
+        });
       } catch (error) {
+        dismissToast(card);
         throw new Error(
           t('已导入 {count} 个文件。{error}', {
             count: completed,
@@ -565,6 +637,8 @@ export function LocalLiterature({
   function openPaperPage(id: string, page: number) {
     const bound = scan.papers.find((p) => p.id === id);
     if (!bound) return;
+    // The reader opens on this page by request, not as a return to where it was left.
+    skipResumeHint(id);
     try {
       localStorage.setItem(`scientify.reader.${id}`, String(page));
     } catch {
@@ -746,6 +820,14 @@ export function LocalLiterature({
               ...operations.slice(completed.length).map((operation) => operation.path),
             ]),
           );
+          // A copy cannot be taken back without deleting; a move goes back where it came from.
+          if (!copy)
+            offerUndoMove(
+              completed.length === 1
+                ? t('已移动“{name}”', { name: filename(completed[0]) })
+                : t('已移动 {count} 项', { count: completed.length }),
+              completed.map((to, index) => ({ from: operations[index].path, to })),
+            );
         }
       }
     });
@@ -782,9 +864,27 @@ export function LocalLiterature({
       y: Math.min(y, window.innerHeight - 360),
     });
   }
-  function command(kind: 'rename' | 'move' | 'relink', path = target) {
+  function command(kind: 'move' | 'relink', path = target) {
     setMenu(null);
-    setDialog({ kind, path, value: kind === 'rename' ? filename(path) : path });
+    setDialog({ kind, path, value: path });
+  }
+  /** Names an existing row where it stands in the tree; Enter keeps the name, Esc drops it. */
+  function startRename(path = target) {
+    setMenu(null);
+    const entry = scan.entries.find((e) => e.path === path);
+    if (!entry || readOnly || busy) return;
+    // The row has to be showing: open the folders above it.
+    setCollapsed((current) => {
+      const next = new Set(current);
+      for (let folder = parent(path); folder; folder = parent(folder)) next.delete(folder);
+      return next;
+    });
+    setDraft({
+      id: path,
+      kind: entry.directory ? 'folder' : 'file',
+      parent: parent(path),
+      value: entry.name,
+    });
   }
   function startFolder(folder: string) {
     setMenu(null);
@@ -797,7 +897,7 @@ export function LocalLiterature({
       });
     setDraft({ parent: folder, value: '' });
   }
-  function commitFolder() {
+  function commitDraft() {
     if (!draft) return;
     const name = draft.value.trim();
     if (!name) {
@@ -809,11 +909,23 @@ export function LocalLiterature({
       return;
     }
     const path = join(draft.parent, name);
-    if (scan.entries.some((entry) => entry.path.toLowerCase() === path.toLowerCase())) {
+    if (draft.id && name === filename(draft.id)) {
+      setDraft(null);
+      return;
+    }
+    // Renaming only the letter case keeps the same place, so it does not collide with itself.
+    if (
+      path.toLowerCase() !== draft.id?.toLowerCase() &&
+      scan.entries.some((entry) => entry.path.toLowerCase() === path.toLowerCase())
+    ) {
       setDraft({ ...draft, error: t('此位置已存在文件或文件夹“{name}”。', { name }) });
       return;
     }
     setDraft(null);
+    if (draft.id) {
+      void mutate({ op: 'transfer', path: draft.id, destination: path, copy: false });
+      return;
+    }
     void mutate({ op: 'mkdir', path }).then((success) => {
       if (success && alive.current) {
         setSelected(path);
@@ -886,6 +998,13 @@ export function LocalLiterature({
             paths: selectedBundle(focusPath),
             copy: e.key.toLowerCase() === 'c',
           });
+      }
+      if (e.key === 'F2') {
+        const focusPath = pathFrom(e.target) || selected;
+        if (focusPath) {
+          e.preventDefault();
+          startRename(focusPath);
+        }
       }
       if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
         e.preventDefault();
@@ -997,9 +1116,9 @@ export function LocalLiterature({
               draft
                 ? {
                     ...draft,
-                    label: t('文件夹名称'),
+                    label: draft.id ? t('名称') : t('文件夹名称'),
                     onChange: (value) => setDraft({ ...draft, value, error: undefined }),
-                    onCommit: commitFolder,
+                    onCommit: commitDraft,
                     onCancel: () => setDraft(null),
                   }
                 : null
@@ -1072,11 +1191,6 @@ export function LocalLiterature({
               </div>
             ))}
         </div>
-        {importProgress ? (
-          <div className="library-bottom">
-            <span role="status">{importProgress}</span>
-          </div>
-        ) : null}
       </div>
     </aside>
   );
@@ -1103,6 +1217,80 @@ export function LocalLiterature({
       noteWidth: Math.round(Math.min(noteMax, Math.max(noteMin, next))),
     }));
   }
+  // Several files selected at once: a folder carries what is in it, a paper its note. The bar
+  // keeps the last numbers while it fades out.
+  const batch = transferPaths(selectedPaths);
+  const batchPdfs = batch.filter((path) => scan.entries.some((e) => e.path === path && e.pdf));
+  const batchShown = useRef({ count: 0, pdfs: 0 });
+  if (batch.length > 1) batchShown.current = { count: batch.length, pdfs: batchPdfs.length };
+  // Every folder a batch may move into, the library folder first; not into itself.
+  const batchFolders = [
+    { path: '', depth: 0, label: scan.root ? filename(scan.root) : t('文献库') },
+    ...scan.entries
+      .filter((entry) => entry.directory && !batch.some((path) => isBelowPath(entry.path, path)))
+      .sort((a, b) => collator.compare(a.path, b.path))
+      .map((entry) => ({
+        path: entry.path,
+        depth: entry.path.split('/').length,
+        label: entry.name,
+      })),
+  ];
+  /** The paper behind a PDF or its note file, opened into the library when it is not yet. */
+  async function paperAt(path: string) {
+    return (
+      scan.papers.find((p) => p.path === path || p.notePath === path) ??
+      (await library.open(project.id, path))
+    );
+  }
+  function showNote(path: string) {
+    void run(async () => {
+      const bound = await paperAt(path);
+      setSession((s) => ({
+        ...s,
+        notes: s.notes.includes(bound.id) ? s.notes : [...s.notes, bound.id],
+        activeNote: bound.id,
+        showNotes: true,
+      }));
+      await refresh();
+    });
+  }
+  function showTranslation(path: string) {
+    void run(async () => {
+      openTranslation((await paperAt(path)).id);
+      await refresh();
+    });
+  }
+  async function trashBatch() {
+    const paths = batch;
+    if (readOnly || paths.length < 2) return;
+    if (!(await confirmAction(t('将选中的 {count} 项移入系统回收站？', { count: paths.length }))))
+      return;
+    let done = 0;
+    for (const path of paths) {
+      if (!(await mutate({ op: 'delete', path }))) break;
+      done++;
+    }
+    if (done) toast(t('已将 {count} 项移入回收站', { count: done }));
+  }
+  async function translateBatch() {
+    const paths = batchPdfs;
+    if (!paths.length) return;
+    await run(async () => {
+      const papers: LibraryPaper[] = [];
+      for (const path of paths)
+        papers.push(
+          scan.papers.find((p) => p.path === path) ?? (await library.open(project.id, path)),
+        );
+      // The last one asked for goes first in line, so the others are asked in reverse and
+      // the first is left to its own pane.
+      for (const other of papers.slice(1).reverse())
+        void translator.open(project.id, other.id).catch(() => {});
+      openTranslation(papers[0].id);
+      await refresh();
+      if (papers.length > 1) toast(t('已优先翻译 {count} 篇', { count: papers.length }));
+    });
+  }
+  const droppingInto = (dropTarget ?? directory) || filename(scan.root ?? t('文献库'));
   return (
     <div
       className="literature-studio local-library"
@@ -1113,6 +1301,22 @@ export function LocalLiterature({
           setSearchOpen(true);
           requestAnimationFrame(() => search.current?.focus());
         }
+      }}
+      onDragOver={(e) => {
+        if (!readOnly && scan.root && e.dataTransfer.types.includes('Files')) setPageDrag(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPageDrag(false);
+      }}
+      onDrop={(e) => {
+        setPageDrag(false);
+        // The tree and the table took their own drops; this one landed elsewhere on the page.
+        if (e.defaultPrevented || readOnly || !e.dataTransfer.types.includes('Files')) return;
+        e.preventDefault();
+        const hasDirectory = Array.from(e.dataTransfer.items ?? []).some(
+          (item) => item.webkitGetAsEntry?.()?.isDirectory,
+        );
+        void importFiles(Array.from(e.dataTransfer.files), directory, hasDirectory);
       }}
     >
       {slot ? (viewActive ? createPortal(resources, slot) : null) : resources}
@@ -1179,6 +1383,12 @@ export function LocalLiterature({
                 })
               }
               onClose={(id) => void closeTab(id).catch((e) => setError(errorMessage(e)))}
+              onReorder={(ids) =>
+                setSession((s) => ({
+                  ...s,
+                  tabs: ids.flatMap((id) => s.tabs.find((tab) => tab.id === id) ?? []),
+                }))
+              }
               onNew={() => void newWeb()}
             />
             <div className="local-reader" id={panelId} role="tabpanel" aria-label={t('文献呈现区')}>
@@ -1257,6 +1467,7 @@ export function LocalLiterature({
                   folder={directory}
                   query={query}
                   selected={selected}
+                  selectedPaths={selectedPaths}
                   busy={busy}
                   readOnly={readOnly}
                   importing={importProgress}
@@ -1264,7 +1475,14 @@ export function LocalLiterature({
                     setSelected(path);
                     setSelectedPaths(new Set([path]));
                   }}
+                  onSelectMany={(paths, active) => {
+                    setSelectedPaths(paths);
+                    setSelected(active);
+                  }}
                   onOpen={(path) => void open(path)}
+                  onNote={(path) => showNote(path)}
+                  onTranslate={(path) => showTranslation(path)}
+                  onMenu={(path, x, y) => void showMenu(path, x, y)}
                   onChoose={() => void choose()}
                   onImport={(files) => void importFiles(files, directory)}
                   onImportLibrary={readOnly ? undefined : () => setImportOpen(true)}
@@ -1297,9 +1515,19 @@ export function LocalLiterature({
                     const name = filename(
                       scan.papers.find((p) => p.id === paperOfTab(id))?.path ?? t('论文笔记'),
                     );
+                    const bound = scan.papers.find((p) => p.id === paperOfTab(id));
                     return {
                       id,
                       title: isTranslationTab(id) ? t('译文 · {name}', { name }) : name,
+                      ...(isTranslationTab(id)
+                        ? {
+                            icon: (
+                              <TranslationIcon
+                                status={bound ? translationStatus[bound.fingerprint] : undefined}
+                              />
+                            ),
+                          }
+                        : {}),
                     };
                   })}
                   activeId={session.activeNote}
@@ -1345,7 +1573,42 @@ export function LocalLiterature({
             </>
           )}
         </div>
+        <BatchBar
+          open={batch.length > 1}
+          count={batchShown.current.count}
+          translatable={batchShown.current.pdfs}
+          busy={busy}
+          readOnly={readOnly}
+          moving={!!moveMenu}
+          onMove={(trigger) => {
+            const box = trigger.getBoundingClientRect();
+            void browserLayout({ op: 'hideAll' }).catch(() => {});
+            setMoveMenu({ x: box.left, y: box.top - 6, trigger });
+          }}
+          onTranslate={() => void translateBatch()}
+          onTrash={() => void trashBatch()}
+          onClear={() => {
+            setSelectedPaths(new Set(selected ? [selected] : []));
+          }}
+        />
       </div>
+      <Menu
+        anchor={moveMenu ? { ...moveMenu, placement: 'top' } : null}
+        label={t('移动到')}
+        onClose={() => setMoveMenu(null)}
+      >
+        {batchFolders.map((folder) => (
+          <Button
+            key={folder.path || '/'}
+            role="menuitem"
+            style={{ paddingInlineStart: 8 + Math.min(folder.depth, 4) * 12 }}
+            onClick={() => void transferMany(batch, folder.path, false)}
+          >
+            <Folder size={14} />
+            {folder.label}
+          </Button>
+        ))}
+      </Menu>
       <Menu
         anchor={
           menu
@@ -1366,7 +1629,7 @@ export function LocalLiterature({
         </Button>
         {target && (
           <>
-            <Button disabled={readOnly} role="menuitem" onClick={() => command('rename')}>
+            <Button disabled={readOnly} role="menuitem" onClick={() => startRename()}>
               {t('重命名')}
             </Button>
             <Button
@@ -1406,18 +1669,9 @@ export function LocalLiterature({
         {(binding || targetEntry?.pdf) && (
           <Button
             role="menuitem"
-            onClick={async () => {
+            onClick={() => {
               setMenu(null);
-              void run(async () => {
-                const p = binding ?? (await library.open(project.id, target));
-                setSession((s) => ({
-                  ...s,
-                  notes: s.notes.includes(p.id) ? s.notes : [...s.notes, p.id],
-                  activeNote: p.id,
-                  showNotes: true,
-                }));
-                await refresh();
-              });
+              showNote(target);
             }}
           >
             <NotebookPen />
@@ -1427,13 +1681,9 @@ export function LocalLiterature({
         {(binding || targetEntry?.pdf) && (
           <Button
             role="menuitem"
-            onClick={async () => {
+            onClick={() => {
               setMenu(null);
-              void run(async () => {
-                const p = binding ?? (await library.open(project.id, target));
-                openTranslation(p.id);
-                await refresh();
-              });
+              showTranslation(target);
             }}
           >
             <Languages />
@@ -1509,7 +1759,7 @@ export function LocalLiterature({
       </Menu>
       {dialog && (
         <Modal
-          title={t({ rename: '重命名', move: '移动到', relink: '重新关联' }[dialog.kind])}
+          title={t({ move: '移动到', relink: '重新关联' }[dialog.kind])}
           onClose={() => setDialog(null)}
           busy={busy}
         >
@@ -1517,8 +1767,7 @@ export function LocalLiterature({
             className="form-grid"
             onSubmit={(e) => {
               e.preventDefault();
-              const path =
-                dialog.kind === 'rename' ? join(parent(dialog.path), dialog.value) : dialog.value;
+              const path = dialog.value;
               const operation: LibraryOperation =
                 dialog.kind === 'relink'
                   ? { op: 'relink', id: dialog.path, path }
@@ -1542,6 +1791,13 @@ export function LocalLiterature({
           </form>
         </Modal>
       )}
+      <div className="library-drop-overlay" data-open={pageDrag} aria-hidden="true">
+        <div className="library-drop-card">
+          <Upload />
+          <strong>{t('松开导入')}</strong>
+          <small>{t('导入到 {folder}', { folder: droppingInto })}</small>
+        </div>
+      </div>
     </div>
   );
 }

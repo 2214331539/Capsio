@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, waitFor, within, fireEvent } from '@testi
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { clearToasts } from '../../components/feedback';
 import { LocalLiterature } from './LocalLiterature';
 import { emptyWorkspace } from '../../domain/workspace';
 import { createWorkspaceStore } from '../../stores/workspace';
@@ -43,6 +44,7 @@ vi.mock('../../platform/browser-pane', () => ({
 }));
 afterEach(() => {
   cleanup();
+  clearToasts();
   localStorage.clear();
 });
 async function fixture(requestedPaper?: string) {
@@ -207,13 +209,62 @@ it('updates an open Markdown tab and its reader when the file is renamed', async
   });
   fireEvent.contextMenu(file);
   await user.click(await screen.findByRole('menuitem', { name: '重命名' }));
-  const dialog = await screen.findByRole('dialog', { name: '重命名' });
-  await user.clear(within(dialog).getByRole('textbox', { name: '相对路径' }));
-  await user.type(within(dialog).getByRole('textbox', { name: '相对路径' }), 'renamed.md');
-  await user.click(within(dialog).getByRole('button', { name: '保存' }));
+  // The name is edited where it stands in the tree, not in a dialog.
+  expect(screen.queryByRole('dialog', { name: '重命名' })).toBeNull();
+  const field = await screen.findByRole('textbox', { name: '名称' });
+  await user.clear(field);
+  await user.type(field, 'renamed.md{Enter}');
   await waitFor(() => expect(library.readFile).toHaveBeenCalledWith(project.id, 'renamed.md'));
   expect(screen.getByRole('tab', { name: 'renamed.md' })).toBeTruthy();
   expect(screen.queryByRole('tab', { name: 'notes.md' })).toBeNull();
+});
+it('renames in the tree with Enter, refuses a taken name inline and cancels with Escape', async () => {
+  const { Host, library, project, scan, user } = await fixture();
+  render(<Host />);
+  const file = await screen.findByRole('treeitem', { name: 'notes.md' });
+  await user.click(file);
+  await screen.findByRole('article', { name: 'Markdown 预览' });
+  await user.keyboard('{F2}');
+  const field = await screen.findByRole('textbox', { name: '名称' });
+  await user.clear(field);
+  await user.type(field, 'a.pdf{Enter}');
+  expect((await screen.findByRole('alert')).textContent).toContain('已存在');
+  expect(library.command).not.toHaveBeenCalledWith(
+    project.id,
+    expect.objectContaining({ op: 'transfer' }),
+  );
+  await user.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('textbox', { name: '名称' })).toBeNull());
+  expect(screen.getByRole('treeitem', { name: 'notes.md' })).toBeTruthy();
+  expect(scan.entries.some((entry) => entry.path === 'notes.md')).toBe(true);
+});
+it('takes a rename back from the undo offer by moving the file to where it was', async () => {
+  const { Host, library, project, scan, user } = await fixture();
+  render(<Host />);
+  await user.click(await screen.findByRole('treeitem', { name: 'notes.md' }));
+  await screen.findByRole('article', { name: 'Markdown 预览' });
+  vi.mocked(library.command).mockResolvedValueOnce({
+    ...scan,
+    entries: scan.entries.map((entry) =>
+      entry.path === 'notes.md' ? { ...entry, path: 'renamed.md', name: 'renamed.md' } : entry,
+    ),
+  });
+  await user.keyboard('{F2}');
+  const field = await screen.findByRole('textbox', { name: '名称' });
+  await user.clear(field);
+  await user.type(field, 'renamed.md{Enter}');
+  await screen.findByText('已重命名为“renamed.md”');
+  vi.mocked(library.command).mockResolvedValueOnce(scan);
+  await user.click(screen.getByRole('button', { name: '撤销' }));
+  await waitFor(() =>
+    expect(library.command).toHaveBeenLastCalledWith(project.id, {
+      op: 'transfer',
+      path: 'renamed.md',
+      destination: 'notes.md',
+      copy: false,
+    }),
+  );
+  await waitFor(() => expect(screen.getByRole('treeitem', { name: 'notes.md' })).toBeTruthy());
 });
 it('ignores a Markdown response after switching to another document', async () => {
   const { Host, library, onContext, user } = await fixture();
@@ -604,4 +655,67 @@ it('creates inside the selected folder until empty space is clicked, then at the
   await waitFor(() =>
     expect(library.command).toHaveBeenCalledWith(project.id, { op: 'mkdir', path: 'Survey' }),
   );
+});
+
+it('puts quick actions on each paper row of the library table', async () => {
+  const { Host, user } = await fixture();
+  render(<Host />);
+  const row = (await screen.findAllByRole('row')).find(
+    (item) => item.getAttribute('data-library-row') === 'a.pdf',
+  )!;
+  expect(within(row).getByRole('button', { name: '全文翻译' })).toBeTruthy();
+  expect(within(row).getByRole('button', { name: '更多' })).toBeTruthy();
+  await user.click(within(row).getByRole('button', { name: '打开论文笔记' }));
+  await screen.findByRole('textbox', { name: '论文笔记正文' });
+  // A row action does not also open the paper.
+  expect(
+    within(screen.getByRole('tablist', { name: '文献标签页' })).queryByRole('tab', {
+      name: 'a.pdf',
+    }),
+  ).toBeNull();
+});
+
+it('raises a batch bar for several selected files and trashes them after one confirmation', async () => {
+  const { Host, library, project, user } = await fixture();
+  render(<Host />);
+  const bar = await screen.findByRole('toolbar', { name: '批量操作' });
+  expect(bar.getAttribute('data-open')).toBe('false');
+  const rows = await screen.findAllByRole('row');
+  const named = (path: string) =>
+    rows.find((item) => item.getAttribute('data-library-row') === path)!;
+  await user.click(named('a.pdf'));
+  await user.keyboard('{Control>}');
+  await user.click(named('b.pdf'));
+  await user.keyboard('{/Control}');
+  expect(bar.getAttribute('data-open')).toBe('true');
+  expect(within(bar).getByText('已选 2 项')).toBeTruthy();
+  await user.click(within(bar).getByRole('button', { name: '移入回收站' }));
+  await user.click(
+    within(await screen.findByRole('dialog', { name: '确认操作' })).getByRole('button', {
+      name: '确认',
+    }),
+  );
+  await waitFor(() =>
+    expect(library.command).toHaveBeenCalledWith(project.id, { op: 'delete', path: 'b.pdf' }),
+  );
+  expect(library.command).toHaveBeenCalledWith(project.id, { op: 'delete', path: 'a.pdf' });
+});
+
+it('says "松开导入" over the page while files are dragged in, and imports with a progress card', async () => {
+  const { Host, library, project } = await fixture();
+  const { container } = render(<Host />);
+  await screen.findByRole('treeitem', { name: 'a.pdf' });
+  const page = container.querySelector('.local-library')!;
+  const overlay = container.querySelector('.library-drop-overlay')!;
+  expect(overlay.getAttribute('data-open')).toBe('false');
+  fireEvent.dragOver(page, { dataTransfer: { types: ['Files'] } });
+  expect(overlay.getAttribute('data-open')).toBe('true');
+  expect(within(overlay as HTMLElement).getByText('松开导入')).toBeTruthy();
+  const file = new File(['%PDF'], 'new.pdf', { type: 'application/pdf' });
+  fireEvent.drop(screen.getByRole('tabpanel', { name: '文献呈现区' }), {
+    dataTransfer: { types: ['Files'], files: [file], items: [] },
+  });
+  expect(overlay.getAttribute('data-open')).toBe('false');
+  await waitFor(() => expect(library.importFile).toHaveBeenCalledWith(project.id, '', file));
+  expect(await screen.findByText('已导入 1 个文件')).toBeTruthy();
 });

@@ -170,3 +170,62 @@ it('keeps image drafts for the next message while allowing stop and text-only st
   fireEvent.keyDown(input, { key: 'Enter' });
   expect(onSteer).toHaveBeenCalledOnce();
 });
+
+it('turns the send button into the stop button in place and marks a file drag over the box', () => {
+  const props = {
+    prompt: 'hello',
+    disabled: false,
+    isBusy: false,
+    canInterrupt: true,
+    model: 'fixture',
+    endpoint: 'local',
+    onPromptChange: vi.fn(),
+    onSend: vi.fn(),
+    onInterrupt: vi.fn(),
+    onModelMenu: vi.fn(),
+    modelMenuOpen: false,
+    onAttach: vi.fn(),
+  };
+  const view = render(<AssistantComposer {...props} />);
+  const button = screen.getByRole('button', { name: '发送' });
+  expect(button.getAttribute('data-state')).toBe('send');
+  // Every mark stays in the one button, so it never changes its size; only one is shown.
+  expect(button.querySelectorAll('.sf-state-label > span').length).toBe(3);
+  view.rerender(<AssistantComposer {...props} isBusy />);
+  const stop = screen.getByRole('button', { name: '中止任务' });
+  expect(stop).toBe(button);
+  expect(stop.getAttribute('data-state')).toBe('stop');
+  view.rerender(<AssistantComposer {...props} isBusy canInterrupt={false} />);
+  expect(button.getAttribute('data-state')).toBe('wait');
+  const form = screen.getByLabelText('向 AI 提问').closest('form')!;
+  fireEvent.dragOver(form, { dataTransfer: { items: [{ kind: 'file' }], dropEffect: 'none' } });
+  expect(form.hasAttribute('data-dragging')).toBe(true);
+  expect(screen.getByText('松开添加到这条消息')).toBeTruthy();
+  fireEvent.dragLeave(form, { relatedTarget: document.body });
+  expect(form.hasAttribute('data-dragging')).toBe(false);
+});
+
+it('lets the attachment row fold away after the last attachment is removed', () => {
+  const props = {
+    prompt: '',
+    disabled: false,
+    isBusy: false,
+    canInterrupt: true,
+    model: 'fixture',
+    endpoint: 'local',
+    onPromptChange: vi.fn(),
+    onSend: vi.fn(),
+    onInterrupt: vi.fn(),
+    onModelMenu: vi.fn(),
+    modelMenuOpen: false,
+    onAttach: vi.fn(),
+  };
+  const attachment = { name: 'note.txt', mimeType: 'text/plain', data: '', text: 'x' };
+  const view = render(<AssistantComposer {...props} attachments={[attachment]} />);
+  const row = () => screen.getByLabelText('待发送附件', { selector: 'div' });
+  expect(row().closest('.sf-collapse')?.getAttribute('data-open')).toBe('true');
+  view.rerender(<AssistantComposer {...props} attachments={[]} />);
+  // Still drawn for the fold-away, but closed and out of reach.
+  expect(view.container.querySelector('.sf-collapse')?.getAttribute('data-open')).toBe('false');
+  expect(screen.queryByRole('button', { name: '移除附件' })).toBeNull();
+});

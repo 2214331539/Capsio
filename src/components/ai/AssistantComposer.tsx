@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type Ref, type MouseEvent } from 'react';
 import { Button, Textarea } from '../primitives';
+import { Collapse, StateLabel } from '../feedback';
+import { motion } from '../../platform/motion';
 import { attachmentNote, type ChatAttachment } from '../../features/assistant/model';
 import type { AgentSkill, AgentSkillRef, PermissionMode } from '../../platform/agent';
 import { permissionName } from '../../features/assistant/permissions';
@@ -29,6 +31,23 @@ const commands = [
   { id: 'context', aliases: [], description: '查看当前材料' },
   { id: 'stop', aliases: [], description: '中止当前任务' },
 ] as const;
+
+/** Keeps showing a list for a moment after it empties, so its row can fold away instead of
+ *  vanishing. The retained items are only drawn, inert; the owner already dropped them. */
+function useRetained<T>(items: T[]) {
+  const last = useRef(items);
+  const [, settle] = useState(0);
+  if (items.length) last.current = items;
+  useEffect(() => {
+    if (items.length || !last.current.length) return;
+    const timer = setTimeout(() => {
+      last.current = [];
+      settle((count) => count + 1);
+    }, motion.content + 80);
+    return () => clearTimeout(timer);
+  }, [items.length]);
+  return items.length ? items : last.current;
+}
 
 interface Props {
   prompt: string;
@@ -105,6 +124,8 @@ export function AssistantComposer({
   shortcuts,
 }: Props) {
   const [dragging, setDragging] = useState(false);
+  const shownSkills = useRetained(selectedSkills);
+  const shownAttachments = useRetained(attachments);
   const modelButton = useRef<HTMLButtonElement>(null);
   const permissionButton = useRef<HTMLButtonElement>(null);
   const filePicker = useRef<HTMLInputElement>(null);
@@ -220,6 +241,9 @@ export function AssistantComposer({
         submit();
       }}
     >
+      <div className="sf-ai-drop" aria-hidden="true">
+        {t('松开添加到这条消息')}
+      </div>
       {commandsOpen ? (
         <div className="sf-ai-command-menu sf-popover" data-state="open" data-native-overlay="true">
           <div className="sf-ai-command-heading">
@@ -337,53 +361,57 @@ export function AssistantComposer({
           }
         }}
       />
-      {selectedSkills.length ? (
-        <div className="sf-ai-attachments" aria-label={t('待发送技能')}>
-          {selectedSkills.map((skill, index) => (
-            <span className="sf-ai-attachment" key={skill.path}>
-              <span>{skill.name}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                type="button"
-                aria-label={t('移除技能 {name}', { name: skill.name })}
-                onClick={() => onRemoveSkill?.(index)}
-              >
-                ×
-              </Button>
-            </span>
-          ))}
-        </div>
+      {shownSkills.length ? (
+        <Collapse open={selectedSkills.length > 0}>
+          <div className="sf-ai-attachments" aria-label={t('待发送技能')}>
+            {shownSkills.map((skill, index) => (
+              <span className="sf-ai-attachment" key={skill.path}>
+                <span>{skill.name}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  type="button"
+                  aria-label={t('移除技能 {name}', { name: skill.name })}
+                  onClick={() => onRemoveSkill?.(index)}
+                >
+                  ×
+                </Button>
+              </span>
+            ))}
+          </div>
+        </Collapse>
       ) : null}
-      {attachments.length ? (
-        <div className="sf-ai-attachments" aria-label={t('待发送附件')}>
-          {attachments.map((attachment, index) => (
-            <span className="sf-ai-attachment" key={`${attachment.name}-${index}`}>
-              {attachment.mimeType.startsWith('image/') ? (
-                <img src={`data:${attachment.mimeType};base64,${attachment.data}`} alt="" />
-              ) : (
-                <span aria-hidden="true">
-                  {attachment.mimeType === 'application/pdf' ? 'PDF' : 'TXT'}
-                </span>
-              )}
-              <span>{attachment.name}</span>
-              {attachmentNote(attachment) ? (
-                <small className="sf-ai-attachment-note">{attachmentNote(attachment)}</small>
-              ) : null}
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                type="button"
-                aria-label={t(attachment.mimeType.startsWith('image/') ? '移除图片' : '移除附件')}
-                onClick={() => onRemoveAttachment?.(index)}
-              >
-                ×
-              </Button>
-            </span>
-          ))}
-        </div>
+      {shownAttachments.length ? (
+        <Collapse open={attachments.length > 0}>
+          <div className="sf-ai-attachments" aria-label={t('待发送附件')}>
+            {shownAttachments.map((attachment, index) => (
+              <span className="sf-ai-attachment" key={`${attachment.name}-${index}`}>
+                {attachment.mimeType.startsWith('image/') ? (
+                  <img src={`data:${attachment.mimeType};base64,${attachment.data}`} alt="" />
+                ) : (
+                  <span aria-hidden="true">
+                    {attachment.mimeType === 'application/pdf' ? 'PDF' : 'TXT'}
+                  </span>
+                )}
+                <span>{attachment.name}</span>
+                {attachmentNote(attachment) ? (
+                  <small className="sf-ai-attachment-note">{attachmentNote(attachment)}</small>
+                ) : null}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  type="button"
+                  aria-label={t(attachment.mimeType.startsWith('image/') ? '移除图片' : '移除附件')}
+                  onClick={() => onRemoveAttachment?.(index)}
+                >
+                  ×
+                </Button>
+              </span>
+            ))}
+          </div>
+        </Collapse>
       ) : null}
       <div className="sf-ai-composer-actions">
         {onAttach ? (
@@ -484,6 +512,7 @@ export function AssistantComposer({
           size="sm"
           iconOnly
           className="sf-ai-send"
+          data-state={isBusy ? (canInterrupt ? 'stop' : 'wait') : 'send'}
           type={isBusy ? 'button' : 'submit'}
           aria-label={isBusy ? (canInterrupt ? t('中止任务') : t('正在处理')) : t('发送')}
           title={
@@ -496,15 +525,14 @@ export function AssistantComposer({
           disabled={isBusy ? !canInterrupt : disabled || (!prompt.trim() && !attachments.length)}
           onClick={isBusy && canInterrupt ? onInterrupt : undefined}
         >
-          {isBusy ? (
-            canInterrupt ? (
-              <Square size={13} fill="currentColor" />
-            ) : (
-              <LoaderCircle className="sf-ai-spinner" size={15} />
-            )
-          ) : (
-            <ArrowUp size={15} />
-          )}
+          <StateLabel
+            state={isBusy ? (canInterrupt ? 'stop' : 'wait') : 'send'}
+            labels={{
+              send: <ArrowUp size={15} />,
+              stop: <Square size={13} fill="currentColor" />,
+              wait: <LoaderCircle className="sf-ai-spinner" size={15} />,
+            }}
+          />
         </Button>
       </div>
     </form>

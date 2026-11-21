@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApprovalCard } from './ApprovalCard';
 import type { ApprovalRequest } from '../../platform/agent';
@@ -94,5 +94,59 @@ describe('ApprovalCard', () => {
     cleanup();
     render(<ApprovalCard event={note('update')} onDecide={vi.fn()} />);
     expect(screen.getByText('请求修改笔记')).toBeTruthy();
+  });
+
+  it('allows with Enter and refuses with Esc only while the card itself is in focus', async () => {
+    const onDecide = vi.fn();
+    const view = render(
+      <ApprovalCard
+        event={request('item/commandExecution/requestApproval', { command: 'ls' })}
+        onDecide={onDecide}
+      />,
+    );
+    const card = screen.getByRole('group', { name: '请求执行命令' });
+    // Enter on one of its buttons is that button's own, not "allow".
+    fireEvent.keyDown(screen.getByRole('button', { name: '拒绝' }), { key: 'Enter' });
+    expect(onDecide).not.toHaveBeenCalled();
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(onDecide).toHaveBeenLastCalledWith('accept');
+    view.unmount();
+    onDecide.mockClear();
+    render(
+      <ApprovalCard
+        event={request('item/commandExecution/requestApproval', { command: 'ls' })}
+        onDecide={onDecide}
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole('group', { name: '请求执行命令' }), { key: 'Escape' });
+    expect(onDecide).toHaveBeenLastCalledWith('decline');
+  });
+
+  it('answers a permission request with the permission replies from the keyboard', () => {
+    const onDecide = vi.fn();
+    render(
+      <ApprovalCard event={request('item/permissions/requestApproval', {})} onDecide={onDecide} />,
+    );
+    fireEvent.keyDown(screen.getByRole('group', { name: '请求提升权限' }), { key: 'Escape' });
+    expect(onDecide).toHaveBeenLastCalledWith('denyPermissions');
+  });
+
+  it('folds into one line with the result once the request is answered', async () => {
+    const onDecide = vi.fn();
+    const event = request('item/commandExecution/requestApproval', { command: 'ls' });
+    const view = render(<ApprovalCard event={event} onDecide={onDecide} />);
+    await userEvent.click(screen.getByRole('button', { name: '本会话允许' }));
+    // Answered, but the engine has not confirmed yet: the buttons stay out of reach.
+    expect((screen.getByRole('button', { name: '允许' }) as HTMLButtonElement).disabled).toBe(true);
+    view.rerender(<ApprovalCard event={event} resolved onDecide={onDecide} />);
+    expect(screen.getByRole('status').textContent).toBe('本会话已允许');
+    expect(screen.getByRole('group', { name: '请求执行命令' }).getAttribute('data-state')).toBe(
+      'done',
+    );
+    // Not allowed twice, and answered elsewhere it leaves no trace.
+    expect(screen.queryByRole('button', { name: '允许' })).toBeNull();
+    view.unmount();
+    const other = render(<ApprovalCard event={event} resolved onDecide={onDecide} />);
+    expect(other.container.textContent).toBe('');
   });
 });

@@ -1,15 +1,66 @@
 .sf-approval {
+  position: relative;
   margin: 8px 0;
   padding: 10px 12px;
   border: 1px solid var(--sf-border-subtle);
   border-radius: var(--sf-radius);
   background: var(--sf-surface-raised);
+  outline: none;
+  /* It asks for a decision, so it settles in with a little more presence than a message. */
+  animation: sf-approval-in var(--sf-motion-overlay) var(--sf-ease-pop);
+  transition: border-color var(--sf-motion-feedback) var(--sf-ease-standard);
+}
+/* One ring that fades out once, drawn on opacity only. */
+.sf-approval::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 2px solid var(--sf-accent);
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  animation: sf-approval-ring 1100ms var(--sf-ease-standard) 80ms 1;
+}
+.sf-approval[data-state='done']::after {
+  animation: none;
+}
+@keyframes sf-approval-in {
+  from {
+    opacity: 0;
+    scale: var(--sf-pop-from);
+  }
+}
+@keyframes sf-approval-ring {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.sf-approval:focus-visible {
+  border-color: var(--sf-accent);
 }
 .sf-approval-head {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
+}
+.sf-approval-result {
+  margin-left: auto;
+  color: var(--sf-text-muted);
+  font-size: 12px;
+  animation: sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter);
+}
+/* Decided: one quiet line. */
+.sf-approval[data-state='done'] {
+  padding-block: 7px;
+  background: transparent;
+  color: var(--sf-text-secondary);
 }
 .sf-approval-target {
   margin: 8px 0 0;
@@ -37,4 +88,15 @@
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 10px;
+}
+/* The keys it answers to, shown only while the card has the focus. */
+.sf-approval-hint {
+  margin: 8px 0 0;
+  color: var(--sf-text-muted);
+  font-size: 11px;
+  opacity: 0;
+  transition: opacity var(--sf-motion-feedback) var(--sf-ease-standard);
+}
+.sf-approval:focus-visible .sf-approval-hint {
+  opacity: 1;
 }

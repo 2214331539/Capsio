@@ -157,3 +157,46 @@
 .library-table-empty.sf-empty {
   gap: 0;
 }
+
+/* Quick actions at the end of a row: they appear with the pointer or focus on the row, over
+   the size column, and take the row's own background so the text beneath does not show. */
+.library-row {
+  position: relative;
+}
+.library-row-actions {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 14px;
+  background: linear-gradient(90deg, transparent, var(--sf-surface-hover) 14px);
+  opacity: 0;
+  pointer-events: none;
+  translate: 0 -50%;
+  transition: opacity var(--sf-motion-feedback) var(--sf-ease-standard);
+}
+.library-row.is-selected .library-row-actions {
+  background: linear-gradient(90deg, transparent, var(--sf-surface-selected) 14px);
+}
+.library-row:is(:hover, :focus-within) .library-row-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.library-row-actions .sf-button-icon {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  color: var(--sf-text-secondary);
+}
+.library-row-actions .sf-button-icon svg {
+  width: 14px;
+  height: 14px;
+}
+@media (hover: none) {
+  .library-row-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

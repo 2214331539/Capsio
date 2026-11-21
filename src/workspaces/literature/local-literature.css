@@ -351,29 +351,16 @@
   display: none;
 }
 
-/* The translated PDF beside the paper, and the progress while it is made. */
+/* The translated PDF beside the paper: it fades in once ready, in place of the progress. */
 .paper-translation-reader {
   display: flex;
   flex: 1;
   min-height: 0;
+  animation: sf-fade-in var(--sf-motion-content) var(--sf-ease-enter);
 }
 .paper-translation-reader > .pdf-reader {
   flex: 1;
   width: 100%;
-}
-.paper-translation-meter {
-  width: 180px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--sf-surface-selected);
-  overflow: hidden;
-}
-.paper-translation-meter > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--sf-accent);
-  transition: width 300ms ease;
 }
 
 /* Docked in the sidebar the library reads as one group: a quiet label, tools on hover. */
@@ -389,4 +376,115 @@
 .literature-sidebar.is-docked .library-root-toolbar > .sf-button:focus-visible,
 .literature-sidebar.is-docked .library-root-toolbar > .sf-button[aria-expanded='true'] {
   opacity: 1;
+}
+
+/* Several files selected: a bar rises over the bottom of the page, and sinks again. */
+.local-library-center {
+  position: relative;
+}
+.library-batch {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100% - 24px);
+  padding: 4px 6px 4px 12px;
+  border: 1px solid var(--sf-border-control);
+  border-radius: 10px;
+  background: var(--sf-surface-raised);
+  box-shadow: var(--sf-shadow-popover);
+  opacity: 0;
+  pointer-events: none;
+  translate: -50% 8px;
+  scale: var(--sf-pop-from);
+  transition:
+    opacity var(--sf-motion-exit) var(--sf-ease-exit),
+    translate var(--sf-motion-exit) var(--sf-ease-exit),
+    scale var(--sf-motion-exit) var(--sf-ease-exit);
+}
+.library-batch[data-open='true'] {
+  opacity: 1;
+  pointer-events: auto;
+  translate: -50% 0;
+  scale: 1;
+  transition:
+    opacity var(--sf-motion-overlay-fade) var(--sf-ease-enter),
+    translate var(--sf-motion-overlay) var(--sf-ease-pop),
+    scale var(--sf-motion-overlay) var(--sf-ease-pop);
+}
+.library-batch-count {
+  margin-right: 8px;
+  color: var(--sf-text-secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.library-batch .sf-button:not(.sf-button-icon) {
+  gap: 5px;
+  font-size: 12px;
+}
+.library-batch .sf-button svg {
+  width: 14px;
+  height: 14px;
+}
+.library-batch-danger:not(:disabled) {
+  color: var(--sf-status-danger);
+}
+
+/* Files dragged over the page: it says where they would land. Pointer events pass through,
+   so the tree and the table still take the drop. */
+.library-drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--sf-surface-canvas) 78%, transparent);
+  box-shadow: inset 0 0 0 2px var(--sf-accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--sf-motion-exit) var(--sf-ease-exit);
+}
+.library-drop-overlay[data-open='true'] {
+  opacity: 1;
+  transition: opacity var(--sf-motion-overlay-fade) var(--sf-ease-enter);
+}
+.library-drop-card {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 18px 28px;
+  border-radius: 12px;
+  background: var(--sf-surface-raised);
+  box-shadow: var(--sf-shadow-popover);
+  color: var(--sf-text-primary);
+  scale: var(--sf-pop-from);
+  transition: scale var(--sf-motion-exit) var(--sf-ease-exit);
+}
+.library-drop-overlay[data-open='true'] .library-drop-card {
+  scale: 1;
+  transition: scale var(--sf-motion-overlay) var(--sf-ease-pop);
+}
+.library-drop-card svg {
+  width: 22px;
+  height: 22px;
+  color: var(--sf-accent);
+}
+.library-drop-card strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.library-drop-card small {
+  max-width: 260px;
+  overflow: hidden;
+  color: var(--sf-text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.local-library {
+  position: relative;
 }

@@ -1125,35 +1125,43 @@
   color: var(--sf-text-muted);
   font-size: 12px;
 }
-.sf-ai-process > summary {
+.sf-ai-process-summary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   max-width: 100%;
   padding: 3px 0;
-  list-style: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
-.sf-ai-process > summary::-webkit-details-marker {
-  display: none;
+.sf-ai-process-summary[aria-disabled='true'] {
+  cursor: default;
 }
-.sf-ai-process > summary > span {
+.sf-ai-process-summary > span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sf-ai-process > summary:hover {
+.sf-ai-process-summary:not([aria-disabled='true']):hover {
   color: var(--sf-text-secondary);
 }
 .sf-ai-process-chevron {
   flex: none;
-  transition: transform var(--sf-motion-feedback) var(--sf-ease-standard);
+  transition: transform var(--sf-motion-content) var(--sf-ease-enter);
 }
-.sf-ai-process[open] > summary .sf-ai-process-chevron {
+.sf-ai-process[data-open='true'] .sf-ai-process-chevron {
   transform: rotate(90deg);
 }
-.sf-ai-process.is-running > summary {
+.sf-ai-process.is-running > .sf-ai-process-summary,
+.sf-ai-process[data-mood='waiting'] > .sf-ai-process-summary {
   color: var(--sf-text-secondary);
+}
+.sf-ai-process[data-mood='error'] > .sf-ai-process-summary {
+  color: var(--sf-status-danger);
 }
 .sf-ai-process-body {
   margin: 4px 0 8px 4px;
@@ -1198,9 +1206,7 @@
 }
 .sf-ai-steps li.is-inProgress::before {
   background: var(--sf-link);
-}
-.sf-ai-steps summary {
-  cursor: pointer;
+  animation: sf-pulse 1.1s var(--sf-ease-standard) infinite;
 }
 .sf-ai-steps pre {
   max-height: 180px;
@@ -1345,14 +1351,64 @@
 .sf-chat-frame .sf-chat-rail {
   overflow: visible;
 }
-.sf-ai-steps summary {
-  list-style: none;
+.sf-ai-step-toggle {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
-.sf-ai-steps summary::-webkit-details-marker {
-  display: none;
-}
-.sf-ai-steps summary:hover {
+.sf-ai-step-toggle:hover {
   color: var(--sf-text-primary);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* Composer: a file dragged over it says where it will land; chips arrive calmly; the send
+   button turns into a stop button by swapping its mark (StateLabel) and its colours. */
+.sf-ai-composer[data-dragging] {
+  border-color: var(--sf-accent);
+  box-shadow: 0 0 0 3px var(--sf-accent-soft);
+}
+.sf-ai-drop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--sf-surface-canvas) 84%, transparent);
+  color: var(--sf-text-secondary);
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--sf-motion-exit) var(--sf-ease-exit);
+}
+.sf-ai-composer[data-dragging] .sf-ai-drop {
+  opacity: 1;
+  transition: opacity var(--sf-motion-overlay-fade) var(--sf-ease-enter);
+}
+.sf-ai-attachment {
+  animation:
+    sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter),
+    sf-pop-scale var(--sf-motion-overlay) var(--sf-ease-pop);
+}
+.sf-ai-composer .sf-ai-send {
+  transition:
+    background-color var(--sf-motion-content) var(--sf-ease-standard),
+    box-shadow var(--sf-motion-content) var(--sf-ease-standard),
+    color var(--sf-motion-content) var(--sf-ease-standard);
+}
+.sf-ai-composer .sf-ai-send[data-state='stop'] {
+  background: var(--sf-surface-canvas);
+  color: var(--sf-text-primary);
+  box-shadow: inset 0 0 0 1.5px var(--sf-text-primary);
+}
+.sf-ai-composer .sf-ai-send .sf-state-label {
+  width: 100%;
+  height: 100%;
+  place-items: center;
 }

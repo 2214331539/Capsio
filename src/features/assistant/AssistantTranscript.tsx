@@ -1,13 +1,13 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { ArrowDown, LoaderCircle } from 'lucide-react';
-import { Mascot } from '../../components/ai/Mascot';
+import { Mascot, type MascotMood } from '../../components/ai/Mascot';
 import { ApprovalCard } from '../../components/ai/ApprovalCard';
 import { ChatMessageView } from '../../components/ai/ChatMessageView';
 import { Button } from '../../components/primitives';
 import type { ApprovalDecision, ApprovalRequest } from '../../platform/agent';
 import { t } from '../../i18n';
-import { initialAgentSession } from './agent-session';
+import { initialAgentSession, type AgentSessionSnapshot } from './agent-session';
 import type { AgentTask } from './agent-runtime';
 import type { ChatTask } from './chat-runtime';
 import type { ChatMessage, Conversation } from './model';
@@ -53,6 +53,19 @@ export function timeStamp(createdAt: string, previous?: string, now = new Date()
     day: at.getDate(),
     time,
   });
+}
+
+/** The mascot's face for what the turn is really doing: waiting on an approval, running a step,
+ *  thinking, then done or failed. Nothing before the first turn and after an interruption. */
+export function agentMood(state: AgentSessionSnapshot, pending: boolean): MascotMood | undefined {
+  if (state.approvals.length) return 'waiting';
+  if (pending) {
+    if (state.operations.some((op) => op.status === 'inProgress')) return 'working';
+    return state.thinkingSince && state.thoughtMs === null ? 'thinking' : 'working';
+  }
+  if (state.outcome === 'failed' || state.error) return 'error';
+  if (state.outcome === 'completed') return 'done';
+  return undefined;
 }
 
 interface Props {
@@ -136,6 +149,17 @@ export function AssistantTranscript({
       ? run
       : undefined;
   const operations = activeTask?.state.operations ?? [];
+  // An approval stays on the page after it is answered, folded into one line of result, until
+  // the next question is asked.
+  const asked = useRef({ turn: '', items: new Map<string, ApprovalRequest>() });
+  const askedApprovals = asked.current;
+  if (askedApprovals.turn !== `${conversation.id}:${lastQuestion}`) {
+    askedApprovals.turn = `${conversation.id}:${lastQuestion}`;
+    askedApprovals.items.clear();
+  }
+  for (const approval of agentState.approvals)
+    askedApprovals.items.set(String(approval.id), approval);
+  const pendingApprovals = new Set(agentState.approvals.map((approval) => String(approval.id)));
   // What the Agent is doing right now, e.g. "搜索网页：…".
   const current = [...operations].reverse().find((op) => op.status === 'inProgress');
   const marks = useMemo(
@@ -242,16 +266,19 @@ export function AssistantTranscript({
           )}
           {activeTask ? (
             <TurnProcess
-              running={agentPending && !agentState.approvals.length}
+              running={agentPending}
+              mood={agentMood(agentState, agentPending)}
               status={
-                agentState.phase === 'stopping'
-                  ? t('正在中止…')
-                  : activeTask.starting
-                    ? t('正在连接 Agent…')
-                    : (current?.label ??
-                      (agentState.thinkingSince && agentState.thoughtMs === null
-                        ? t('正在思考…')
-                        : undefined))
+                agentState.approvals.length
+                  ? t('等待审批')
+                  : agentState.phase === 'stopping'
+                    ? t('正在中止…')
+                    : activeTask.starting
+                      ? t('正在连接 Agent…')
+                      : (current?.label ??
+                        (agentState.thinkingSince && agentState.thoughtMs === null
+                          ? t('正在思考…')
+                          : undefined))
               }
               startedAt={activeTask.startedAt}
               reasoning={agentState.reasoning}
@@ -317,11 +344,12 @@ export function AssistantTranscript({
               <code>{agentState.unsupportedRequests.join(', ')}</code>
             </div>
           ) : null}
-          {agentState.approvals.map((approval) => (
+          {[...askedApprovals.items.values()].map((approval) => (
             <ApprovalCard
               key={String(approval.id)}
               event={approval}
               busy={busy}
+              resolved={!pendingApprovals.has(String(approval.id))}
               onDecide={(decision) => onDecide(approval, decision)}
             />
           ))}

@@ -996,6 +996,7 @@ export function RemoteWorkspace({
                   activeId={place.active}
                   onSelect={(id) => patch(project.id, { active: id })}
                   onClose={(id) => void closeTab(id)}
+                  onReorder={(tabs) => patch(project.id, { tabs })}
                 />
                 <div id="remote-editor-panel" role="tabpanel" className="remote-editor-panel">
                   {session ? (

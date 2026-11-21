@@ -1,9 +1,9 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { Languages } from 'lucide-react';
 import type { WorkContext } from '../../domain/context';
 import { t } from '../../i18n';
 import type { LibraryPaper } from '../../platform/library';
 import { translator, type TranslationStatus, type Translator } from '../../platform/translator';
+import { ProgressRing } from '../../features/translation/ProgressRing';
 
 const PdfReader = lazy(() => import('../../reader/PdfReader'));
 /** A translation finished on another device arrives by sync; look again now and then. */
@@ -81,24 +81,16 @@ export function PaperTranslation({
         </div>
       ) : (
         <div className="paper-translation-empty">
-          <Languages size={22} aria-hidden="true" />
+          <ProgressRing
+            size={30}
+            value={status?.state === 'translating' ? status.progress : undefined}
+            label={t('翻译进度')}
+          />
           <p role="status">
             {status?.state === 'translating' && status.progress > 0
               ? t('正在翻译 {progress}%', { progress: Math.round(status.progress) })
               : t('正在翻译…')}
           </p>
-          {status?.state === 'translating' ? (
-            <div
-              className="paper-translation-meter"
-              role="progressbar"
-              aria-label={t('翻译进度')}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(status.progress)}
-            >
-              <span style={{ width: `${Math.max(3, status.progress)}%` }} />
-            </div>
-          ) : null}
         </div>
       )}
     </section>

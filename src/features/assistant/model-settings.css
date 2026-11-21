@@ -190,3 +190,18 @@ dialog.settings-dialog.sf-model-settings-dialog {
 .sf-chatgpt-account .sf-model-settings-error {
   margin: 0;
 }
+
+/* "测试连接": the result fades in and its check springs in. */
+.sf-model-status > *,
+.sf-model-capabilities > * {
+  animation: sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter);
+}
+.sf-model-status > svg {
+  animation: sf-model-check var(--sf-motion-pop) var(--sf-ease-spring);
+}
+@keyframes sf-model-check {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+}

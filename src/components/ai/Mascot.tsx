@@ -10,9 +10,13 @@ import './mascot.css';
  *   inside a hovered button it jumps with a happy squint;
  * - `greeting`: hops and wiggles hello once, then idles;
  * - `thinking`: tilts and glances up and around;
- * - `working`: bobs and sways while its eyes scan.
+ * - `working`: bobs and sways while its eyes scan;
+ * - `waiting`: sits still and looks at you, leaning a little, for a decision that is yours;
+ * - `done`: one happy hop and squint, then idles;
+ * - `error`: a short shake, then droops with its eyes down.
  */
-export type MascotMood = 'idle' | 'greeting' | 'thinking' | 'working';
+export type MascotMood =
+  'idle' | 'greeting' | 'thinking' | 'working' | 'waiting' | 'done' | 'error';
 
 export type MascotPalette = { light: string; mid: string; edge: string; glow: string };
 

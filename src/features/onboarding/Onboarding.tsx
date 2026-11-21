@@ -76,7 +76,9 @@ export function centerSteps(store: WorkspaceStore, fresh: boolean): TourStep[] {
     {
       target: '[data-tour="account"]',
       title: t('设置与帮助'),
-      body: t('AI 模型、数据位置、账号和帮助都在这里，也能再看一遍导览。打开一个项目，继续认识里面的功能。'),
+      body: t(
+        'AI 模型、数据位置、账号和帮助都在这里，也能再看一遍导览。打开一个项目，继续认识里面的功能。',
+      ),
     },
   ];
 }
