@@ -1,0 +1,223 @@
+/* Toasts: one stack at the bottom centre of the window (the right side holds the AI input).
+   Inverse colours so they read over any page; they appear like other overlays and leave fast. */
+.sf-toaster {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: min(560px, calc(100vw - 32px));
+  translate: -50% 0;
+  pointer-events: none;
+}
+.sf-toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  max-width: 100%;
+  padding: 6px 8px 6px 14px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--sf-text-primary);
+  color: var(--sf-surface-canvas);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+  font-size: 12.5px;
+  line-height: 1.45;
+  pointer-events: auto;
+  animation:
+    sf-fade-in var(--sf-motion-overlay-fade) var(--sf-ease-enter),
+    sf-toast-rise var(--sf-motion-overlay) var(--sf-ease-pop);
+}
+.sf-toast[data-leaving] {
+  pointer-events: none;
+  animation: sf-toast-leave var(--sf-motion-exit) var(--sf-ease-exit) forwards;
+}
+@keyframes sf-toast-rise {
+  from {
+    translate: 0 8px;
+    scale: var(--sf-pop-from);
+  }
+}
+@keyframes sf-toast-leave {
+  to {
+    opacity: 0;
+    translate: 0 4px;
+    scale: var(--sf-pop-from);
+  }
+}
+.sf-toast-icon {
+  flex: none;
+  width: 15px;
+  height: 15px;
+}
+.sf-toast[data-tone='success'] .sf-toast-icon {
+  color: color-mix(in srgb, var(--sf-status-success) 70%, var(--sf-surface-canvas));
+}
+.sf-toast[data-tone='error'] .sf-toast-icon {
+  color: color-mix(in srgb, var(--sf-status-danger) 65%, var(--sf-surface-canvas));
+}
+.sf-toast-message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sf-toast-action,
+.sf-toast-close {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--sf-surface-canvas) 14%, transparent);
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--sf-motion-feedback) var(--sf-ease-standard);
+}
+.sf-toast-action {
+  padding: 0 10px;
+}
+.sf-toast-close {
+  width: 26px;
+  background: transparent;
+}
+.sf-toast-close svg {
+  width: 14px;
+  height: 14px;
+}
+.sf-toast-action:hover,
+.sf-toast-close:hover {
+  background: color-mix(in srgb, var(--sf-surface-canvas) 22%, transparent);
+}
+.sf-toast-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--sf-surface-canvas) 15%, transparent);
+}
+.sf-toast-progress > span {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  transform-origin: left;
+  transition: transform var(--sf-motion-content) var(--sf-ease-enter);
+}
+
+/* Collapse: height follows the content through a grid row, so nothing measures in JS. */
+.sf-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--sf-motion-content) var(--sf-ease-enter),
+    opacity var(--sf-motion-overlay-fade) var(--sf-ease-enter);
+}
+.sf-collapse[data-open='true'] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.sf-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* StateLabel: every label stacked in one cell; the active one fades and springs in. */
+.sf-state-label {
+  display: inline-grid;
+}
+.sf-state-label > span {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  opacity: 0;
+  scale: 0.7;
+  pointer-events: none;
+  transition:
+    opacity var(--sf-motion-overlay-fade) var(--sf-ease-enter),
+    scale var(--sf-motion-release) var(--sf-ease-spring);
+}
+.sf-state-label > span[data-on] {
+  opacity: 1;
+  scale: 1;
+  pointer-events: auto;
+}
+
+.sf-spinner {
+  display: inline-block;
+  flex: none;
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: sf-spin 700ms linear infinite;
+}
+@keyframes sf-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+/* A small dot that breathes while something runs. */
+.sf-pulse-dot {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: sf-pulse 1.1s var(--sf-ease-standard) infinite;
+}
+@keyframes sf-pulse {
+  50% {
+    opacity: 0.35;
+    scale: 0.7;
+  }
+}
+/* A row or line that should catch the eye once (jumped-to source line, new item). */
+.sf-flash {
+  animation: sf-flash 900ms var(--sf-ease-standard);
+}
+@keyframes sf-flash {
+  0%,
+  30% {
+    background-color: color-mix(in srgb, var(--sf-status-warning) 22%, transparent);
+  }
+}
+
+.sf-skeleton {
+  display: grid;
+  gap: 10px;
+  padding: 4px 0;
+}
+.sf-skeleton > span {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--sf-surface-hover) 0%,
+    var(--sf-surface-selected) 50%,
+    var(--sf-surface-hover) 100%
+  );
+  background-size: 200% 100%;
+  animation: sf-shimmer 1.4s linear infinite;
+}
+@keyframes sf-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
