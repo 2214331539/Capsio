@@ -80,3 +80,36 @@ it('keeps a single tab stop and opens files only on explicit activation', async 
   await user.keyboard('{End}');
   expect(document.activeElement).toBe(screen.getByRole('treeitem', { name: 'notes.md' }));
 });
+
+it('renames a row in place, selecting the name without its extension', async () => {
+  const user = userEvent.setup();
+  const commit = vi.fn();
+  function Example() {
+    const [value, setValue] = useState('notes.md');
+    return (
+      <TreeView
+        items={items}
+        label="rename"
+        collapsed={new Set()}
+        onOpen={() => {}}
+        onToggle={() => {}}
+        draft={{
+          id: 'notes.md',
+          kind: 'file',
+          parent: '',
+          value,
+          label: 'Name',
+          onChange: setValue,
+          onCommit: () => commit(value),
+          onCancel: () => {},
+        }}
+      />
+    );
+  }
+  render(<Example />);
+  expect(document.querySelector('[data-tree-id="notes.md"]')).toBeNull();
+  const field = screen.getByRole('textbox', { name: 'Name' }) as HTMLInputElement;
+  expect([field.selectionStart, field.selectionEnd]).toEqual([0, 5]);
+  await user.keyboard('todo{Enter}');
+  expect(commit).toHaveBeenCalledWith('todo.md');
+});

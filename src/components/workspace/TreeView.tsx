@@ -16,6 +16,8 @@ export interface TreeItem {
 
 /** A row being named in place, like a new folder in VS Code's explorer. */
 interface TreeDraft {
+  /** Renames this existing row in place; without it a new row is added under `parent`. */
+  id?: string;
   /** A folder unless given; only the icon differs. */
   kind?: 'file' | 'folder';
   parent: string;
@@ -69,7 +71,7 @@ export function TreeView({
   let draftDepth = 0;
   function collect(nodes: TreeItem[], parent?: string, depth = 0) {
     // The draft row sits after the last folder of its parent, before the files.
-    const here = draft && (parent ?? '') === draft.parent;
+    const here = draft && !draft.id && (parent ?? '') === draft.parent;
     const lastFolder = nodes.reduce((last, node, index) => (node.children ? index : last), -1);
     const mark = () => {
       draftAt = visible.length;
@@ -88,57 +90,66 @@ export function TreeView({
   useEffect(() => {
     committed.current = false;
   }, [draft?.error]);
-  const draftRow = draft ? (
-    <div
-      key="__draft__"
-      role="treeitem"
-      aria-level={draftDepth + 1}
-      aria-selected={false}
-      className="sf-tree-row sf-tree-draft"
-      style={{ paddingLeft: 8 + draftDepth * 16 }}
-    >
-      <span className="sf-tree-disclosure" aria-hidden="true" />
-      <span className="sf-tree-icon" aria-hidden="true">
-        {draft.kind === 'file' ? <FileText /> : <Folder />}
-      </span>
-      <span className="sf-tree-draft-field">
-        <input
-          className="sf-tree-input"
-          aria-label={draft.label}
-          aria-invalid={draft.error ? true : undefined}
-          value={draft.value}
-          autoFocus
-          spellCheck={false}
-          onFocus={() => (committed.current = false)}
-          onChange={(event) => draft.onChange(event.target.value)}
-          onKeyDown={(event) => {
-            // Keys belong to the text field, not the tree's copy, paste and menu shortcuts.
-            event.stopPropagation();
-            if (event.key === 'Enter') {
-              event.preventDefault();
+  const renderDraft = (depth: number, icon?: ReactNode) =>
+    draft ? (
+      <div
+        key="__draft__"
+        role="treeitem"
+        aria-level={depth + 1}
+        aria-selected={false}
+        className="sf-tree-row sf-tree-draft"
+        style={{ paddingLeft: 8 + depth * 16 }}
+      >
+        <span className="sf-tree-disclosure" aria-hidden="true" />
+        <span className="sf-tree-icon" aria-hidden="true">
+          {icon ?? (draft.kind === 'file' ? <FileText /> : <Folder />)}
+        </span>
+        <span className="sf-tree-draft-field">
+          <input
+            className="sf-tree-input"
+            aria-label={draft.label}
+            aria-invalid={draft.error ? true : undefined}
+            value={draft.value}
+            autoFocus
+            spellCheck={false}
+            ref={(input) => {
+              // Renaming selects the name without its extension, as file explorers do.
+              if (!input || !draft.id || input.dataset.selected) return;
+              input.dataset.selected = 'true';
+              const dot = draft.kind === 'file' ? input.value.lastIndexOf('.') : -1;
+              input.setSelectionRange(0, dot > 0 ? dot : input.value.length);
+            }}
+            onFocus={() => (committed.current = false)}
+            onChange={(event) => draft.onChange(event.target.value)}
+            onKeyDown={(event) => {
+              // Keys belong to the text field, not the tree's copy, paste and menu shortcuts.
+              event.stopPropagation();
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                committed.current = true;
+                draft.onCommit();
+              } else if (event.key === 'Escape') {
+                event.preventDefault();
+                committed.current = true;
+                draft.onCancel();
+              }
+            }}
+            onBlur={() => {
+              if (committed.current) return;
               committed.current = true;
-              draft.onCommit();
-            } else if (event.key === 'Escape') {
-              event.preventDefault();
-              committed.current = true;
-              draft.onCancel();
-            }
-          }}
-          onBlur={() => {
-            if (committed.current) return;
-            committed.current = true;
-            if (draft.value.trim() && !draft.error) draft.onCommit();
-            else draft.onCancel();
-          }}
-        />
-        {draft.error ? (
-          <span className="sf-tree-input-error" role="alert">
-            {draft.error}
-          </span>
-        ) : null}
-      </span>
-    </div>
-  ) : null;
+              if (draft.value.trim() && !draft.error) draft.onCommit();
+              else draft.onCancel();
+            }}
+          />
+          {draft.error ? (
+            <span className="sf-tree-input-error" role="alert">
+              {draft.error}
+            </span>
+          ) : null}
+        </span>
+      </div>
+    ) : null;
+  const draftRow = renderDraft(draftDepth);
   const tabStop =
     [focused, selectedId].find((id) => visible.some((row) => row.item.id === id)) ??
     visible[0]?.item.id;
@@ -178,6 +189,8 @@ export function TreeView({
       {visible.map(({ item, depth, position, size }, index) => {
         const folder = item.children !== undefined;
         const expanded = folder && !collapsed.has(item.id);
+        if (draft?.id === item.id)
+          return renderDraft(depth, item.icon ?? (folder ? <Folder /> : <FileText />));
         return [
           <Button
             key={item.id}
