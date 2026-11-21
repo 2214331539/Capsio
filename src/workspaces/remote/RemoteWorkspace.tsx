@@ -330,6 +330,15 @@ export function RemoteWorkspace({
   const [error, setError] = useState('');
   const [entries, setEntries] = useState<Record<string, RemoteEntry[] | 'loading' | undefined>>({});
   const [selected, setSelected] = useState<string | null>(null);
+  // A new file or folder is named in place in the tree, as in the experiments page.
+  const [draft, setDraft] = useState<{
+    kind: 'file' | 'folder';
+    parent: string;
+    value: string;
+    error?: string;
+  } | null>(null);
+  const [creating, setCreating] = useState(false);
+  useEffect(() => setDraft(null), [place?.connection?.id, place?.folder]);
   const [menu, setMenu] = useState<{ anchor: MenuAnchor; path: string } | null>(null);
   const [picking, setPicking] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -468,21 +477,39 @@ export function RemoteWorkspace({
     return entry?.kind === 'directory' ? entry.path : parentOf(selected);
   }
 
-  async function make(directory: boolean, folder = targetFolder()) {
-    if (!connection || !place) return;
-    const name = (await requestText(directory ? t('文件夹名称') : t('文件名'), ''))?.trim();
-    if (!name) return;
-    if (name.includes('/')) return setError(t('名称里不能有 /。'));
-    const path = joinPath(folder, name);
+  function make(directory: boolean, folder = targetFolder()) {
+    if (!connection || !place || creating) return;
+    if (folder !== place.folder && !place.expanded.includes(folder)) {
+      patch(project.id, { expanded: [...place.expanded, folder] });
+      if (entries[folder] === undefined) void load(folder);
+    }
+    setDraft({ kind: directory ? 'folder' : 'file', parent: folder, value: '' });
+  }
+
+  async function commitDraft() {
+    if (!connection || !place || !draft || creating) return;
+    const name = draft.value.trim();
+    if (!name) return setDraft(null);
+    if (name.includes('/') || name === '.' || name === '..')
+      return setDraft({ ...draft, error: t('名称里不能有 /。') });
+    const siblings = entries[draft.parent];
+    if (Array.isArray(siblings) && siblings.some((item) => nameOf(item.path) === name))
+      return setDraft({ ...draft, error: t('此位置已存在文件或文件夹“{name}”。', { name }) });
+    const path = joinPath(draft.parent, name);
+    setCreating(true);
     try {
-      await api.create(connection.id, path, directory);
-      if (folder !== place.folder && !place.expanded.includes(folder))
-        patch(project.id, { expanded: [...place.expanded, folder] });
-      await load(folder);
-      if (!directory) openFile(path);
+      await api.create(connection.id, path, draft.kind === 'folder');
+      await load(draft.parent);
+      setDraft(null);
+      if (draft.kind === 'file') openFile(path);
       setSelected(path);
     } catch (reason) {
-      fail(reason);
+      if (disconnected(reason)) {
+        setDraft(null);
+        fail(reason);
+      } else setDraft({ ...draft, error: remoteMessage(reason) });
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -644,10 +671,23 @@ export function RemoteWorkspace({
             >
               {entries[place.folder] === 'loading' || entries[place.folder] === undefined ? (
                 <p>{t('正在读取…')}</p>
-              ) : items(place.folder).length ? (
+              ) : items(place.folder).length || draft ? (
                 <TreeView
                   label={t('云主机文件')}
                   items={items(place.folder)}
+                  draft={
+                    draft
+                      ? {
+                          ...draft,
+                          // The tree's top level has no parent id.
+                          parent: draft.parent === place.folder ? '' : draft.parent,
+                          label: t(draft.kind === 'file' ? '文件名称' : '文件夹名称'),
+                          onChange: (value) => setDraft({ ...draft, value, error: undefined }),
+                          onCommit: () => void commitDraft(),
+                          onCancel: () => setDraft(null),
+                        }
+                      : null
+                  }
                   selectedId={selected ?? place.active}
                   collapsed={collapsed}
                   onToggle={toggle}

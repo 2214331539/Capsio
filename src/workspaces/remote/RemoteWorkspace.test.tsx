@@ -91,9 +91,11 @@ it('expands folders on demand, opens files and creates folders where selected', 
   await user.click(within(files).getByText('model.py'));
   expect(await screen.findByRole('tab', { name: /model\.py/ })).toBeTruthy();
   await waitFor(() => expect(api.read).toHaveBeenCalledWith('c1', '/home/pp/src/model.py'));
-  // A new folder goes into the selected file's folder.
+  // A new folder goes into the selected file's folder, named in place in the tree.
   await user.click(screen.getByRole('button', { name: '新建文件夹' }));
+  await user.type(within(files).getByRole('textbox', { name: '文件夹名称' }), 'results{Enter}');
   await waitFor(() => expect(api.create).toHaveBeenCalledWith('c1', '/home/pp/src/results', true));
+  expect(within(files).queryByRole('textbox')).toBeNull();
 });
 
 it('opens another folder on the host from the folder picker', async () => {
