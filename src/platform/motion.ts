@@ -1,13 +1,14 @@
-/** Things you press answer with a lively spring; things that appear (menus, dialogs, tooltips)
- *  open calmly and leave faster than they came. See docs/UI-UX/03-交互与动效.md. */
+/** The calm feel from the motion sample: presses give a little and settle without bouncing;
+ *  things that appear (menus, dialogs, tooltips) open from where they were asked for and leave
+ *  faster than they came. See docs/UI-UX/03-交互与动效.md. */
 export const motion = {
   feedback: 120,
-  /** Pressing down, and the spring back on release. */
-  press: 120,
-  release: 220,
+  /** Pressing down, and settling back on release. */
+  press: 90,
+  release: 150,
   /** A selection sliding between options; a badge popping in. */
-  selection: 320,
-  pop: 320,
+  selection: 210,
+  pop: 210,
   content: 220,
   navigation: 320,
   overlay: 210,
@@ -24,15 +25,15 @@ export const easing = {
   standard: 'cubic-bezier(0.42, 0, 0.58, 1)',
   enter: 'cubic-bezier(0.2, 0, 0, 1)',
   exit: 'cubic-bezier(0.4, 0, 1, 1)',
-  /** Overshoots a little: buttons, toggles, segmented controls. */
-  spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+  /** Barely overshoots: buttons, toggles, segmented controls. */
+  spring: 'cubic-bezier(0.25, 1.15, 0.5, 1)',
   /** Overshoots barely: menus, popovers, dialogs. */
   pop: 'cubic-bezier(0.25, 1.15, 0.5, 1)',
 } as const;
 
 export const scale = {
-  press: 0.93,
-  pressIcon: 0.82,
+  press: 0.97,
+  pressIcon: 0.9,
   /** Wide buttons shrink by at most this many pixels in total. */
   pressMaxShrink: 8,
   popFrom: 0.97,
