@@ -150,3 +150,20 @@ it('renames a file in place in the tree', async () => {
   );
   expect(within(files).queryByRole('textbox')).toBeNull();
 });
+
+it('reads the open folders again when the window comes back', async () => {
+  const user = userEvent.setup();
+  const api = fakeApi();
+  render(<RemoteWorkspace project={{ ...project, id: 'p6' }} onContext={vi.fn()} api={api} />);
+  const [gpu] = await screen.findAllByRole('button', { name: /gpu/ });
+  await user.click(gpu);
+  const files = await screen.findByRole('tree', { name: '云主机文件' });
+  // A file made on the server from the terminal.
+  vi.mocked(api.list).mockImplementation(async (_id, path) =>
+    path === '/home/pp'
+      ? [...(tree[path] ?? []), entry('/home/pp/results.csv', 'file')]
+      : (tree[path] ?? []),
+  );
+  fireEvent.focus(window);
+  expect(await within(files).findByText('results.csv')).toBeTruthy();
+});

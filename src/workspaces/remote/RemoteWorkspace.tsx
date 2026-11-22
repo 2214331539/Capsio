@@ -421,15 +421,18 @@ export function RemoteWorkspace({
     }
   }
 
-  async function load(path: string) {
+  /** `quiet`: a background refresh drops a folder that is gone without an error message;
+   *  a lost connection still shows its banner. */
+  async function load(path: string, quiet = false) {
     if (!connection) return;
     setEntries((all) => ({ ...all, [path]: all[path] ?? 'loading' }));
     try {
       const list = await api.list(connection.id, path);
       setEntries((all) => ({ ...all, [path]: list }));
     } catch (reason) {
-      setEntries((all) => ({ ...all, [path]: [] }));
-      fail(reason);
+      // A folder already listed stays on screen when reading it again fails.
+      setEntries((all) => ({ ...all, [path]: Array.isArray(all[path]) ? all[path] : [] }));
+      if (!quiet || disconnected(reason)) fail(reason);
     }
   }
   useEffect(() => {
@@ -439,6 +442,29 @@ export function RemoteWorkspace({
     for (const path of place.expanded) void load(path);
     // A new connection or folder reads afresh; expanding reads on its own.
   }, [place?.connection.id, place?.folder]);
+  // The server changes behind the tree (terminal commands, other tools). Open folders are read
+  // again when the window comes back, when the pointer returns to the tree and every 15 s while
+  // the page is visible; each listing is an SSH round trip, so not more often than every 3 s.
+  const lastRefresh = useRef(0);
+  const refreshTree = useRef(() => {});
+  refreshTree.current = () => {
+    if (!place || !viewActive || document.hidden || Date.now() - lastRefresh.current < 3000) return;
+    lastRefresh.current = Date.now();
+    void load(place.folder, true);
+    for (const path of place.expanded) if (entries[path] !== undefined) void load(path, true);
+  };
+  useEffect(() => {
+    if (!place || !viewActive) return;
+    const refresh = () => refreshTree.current();
+    const timer = window.setInterval(refresh, 15_000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [place?.connection.id, place?.folder, viewActive]);
 
   async function connect(event?: FormEvent, chosen = target, secret?: string) {
     event?.preventDefault();
@@ -754,6 +780,7 @@ export function RemoteWorkspace({
             </div>
             <div
               className="sf-resource-tree"
+              onPointerEnter={() => refreshTree.current()}
               onClick={(event) => {
                 if (!(event.target as Element).closest('[data-tree-id], button')) setSelected(null);
               }}
