@@ -4633,5 +4633,11 @@
   "已允许权限": ["已允许权限", "Permission granted"],
   "已拒绝权限": ["已拒绝权限", "Permission denied"],
   "Enter 允许 · Esc 拒绝": ["Enter 允许 · Esc 拒绝", "Enter to allow · Esc to decline"],
-  "松开添加到这条消息": ["松开添加到这条消息", "Release to add to this message"]
+  "松开添加到这条消息": ["松开添加到这条消息", "Release to add to this message"],
+  "继续": ["继续", "Continue"],
+  "任务已中止。": ["任务已中止。", "Stopped."],
+  "还有内容正在保存，请稍候再关闭。": [
+    "还有内容正在保存，请稍候再关闭。",
+    "Still saving. Close again in a moment."
+  ]
 }

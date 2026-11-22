@@ -382,38 +382,39 @@ impl AgentState {
                 };
                 let before = find_project(current);
                 let after = find_project(next);
+                let record = current["sessions"].as_array().and_then(|items| {
+                    items
+                        .iter()
+                        .find(|s| s["project"] == project_id && s["id"] == conversation)
+                });
+                // A conversation not saved yet (its skills are loading before the first
+                // message) cannot be touched by this save, and its busy slot must not hold up
+                // every other save.
+                let Some(record) = record else {
+                    continue;
+                };
                 let keeps_chat = next["sessions"].as_array().is_some_and(|items| {
                     items
                         .iter()
                         .any(|item| item["project"] == project_id && item["id"] == conversation)
                 });
-                let experiment = slot
-                    .try_lock()
-                    .ok()
-                    .and_then(|guard| {
-                        guard
-                            .as_ref()
-                            .and_then(|entry| entry.handle.experiment_id.clone())
-                    })
-                    .or_else(|| {
-                        current["sessions"]
-                            .as_array()
-                            .and_then(|items| {
-                                items
-                                    .iter()
-                                    .find(|s| s["project"] == project_id && s["id"] == conversation)
-                            })
-                            .and_then(|s| s["experimentId"].as_str())
-                            .map(str::to_owned)
-                    });
+                // The running task knows its folder; the saved record is only a fallback while
+                // the task is busy. A task with no experiment (AI workspace, project folder)
+                // must not be tied to one the record remembers from an earlier page.
+                let recorded = || record["experimentId"].as_str().map(str::to_owned);
+                let experiment = match slot.try_lock() {
+                    Ok(guard) => match guard.as_ref() {
+                        Some(entry) => entry.handle.experiment_id.clone(),
+                        None => recorded(),
+                    },
+                    Err(_) => recorded(),
+                };
                 // The inbox has no project entry; only its chat must survive.
                 let keeps_project = project_id == INBOX
                     || (before.is_some()
                         && after.is_some()
-                        && before.as_ref().map(|p| &p["path"])
-                            == after.as_ref().map(|p| &p["path"])
-                        && before.as_ref().map(|p| &p["repo"])
-                            == after.as_ref().map(|p| &p["repo"]));
+                        && before.as_ref().map(crate::research::configured_root)
+                            == after.as_ref().map(crate::research::configured_root));
                 if keeps_project
                     && keeps_chat
                     && crate::experiments::catalog::keeps_binding(

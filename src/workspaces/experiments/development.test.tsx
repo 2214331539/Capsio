@@ -101,7 +101,7 @@ it('does not republish unchanged snapshots while still observing task completion
   unsubscribe();
 });
 
-it('ends terminals and environment tasks on close after one confirmation, but not AI tasks', async () => {
+it('ends terminals and environment tasks on close without asking and leaves AI tasks to their runtime', async () => {
   const store = createWorkspaceStore(desktop);
   developmentStore.setState({
     terminals: [{ id: 't1', project: 'p1', status: 'running' } as TerminalInfo],
@@ -111,14 +111,10 @@ it('ends terminals and environment tasks on close after one confirmation, but no
   store.getState().setAgentTask('python:env', 'p1');
   const terminal = vi.spyOn(developmentApi, 'terminal').mockResolvedValue(undefined);
   const python = vi.spyOn(developmentApi, 'python').mockResolvedValue(undefined);
-  vi.mocked(confirmAction).mockResolvedValueOnce(false);
-  expect(await endBackgroundTasks(store)).toBe('');
-  expect(terminal).not.toHaveBeenCalled();
-  expect(await endBackgroundTasks(store)).toBeNull();
+  store.getState().setAgentTask('p1:chat', 'p1');
+  await endBackgroundTasks(store);
+  expect(confirmAction).not.toHaveBeenCalled();
   expect(terminal).toHaveBeenCalledWith('p1', { action: 'close', id: 't1' });
   expect(python).toHaveBeenCalledWith('p1', 'e1', { action: 'stop', id: 'env' });
-  expect(store.getState().agentTasks).toEqual({});
-  store.getState().setAgentTask('p1:chat', 'p1');
-  expect(await endBackgroundTasks(store)).toContain('AI 助手');
   expect(store.getState().agentTasks).toEqual({ 'p1:chat': 'p1' });
 });

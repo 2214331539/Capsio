@@ -115,14 +115,9 @@ fn displaced(info: &TerminalInfo, old: Option<&Value>, next: Option<&Value>) -> 
     let (Some(old), Some(next)) = (old, next) else {
         return true;
     };
-    let project = |data: &Value| {
-        data["projects"]
-            .as_array()
-            .and_then(|p| p.iter().find(|p| p["id"] == info.project))
-            .map(|p| (p["path"].clone(), p["repo"].clone()))
-    };
     !(super::catalog::keeps_binding(old, next, Some(&info.experiment_id))
-        && project(old) == project(next))
+        && crate::research::project_folder(old, &info.project)
+            == crate::research::project_folder(next, &info.project))
 }
 impl TerminalState {
     pub fn list(&self) -> Result<Vec<TerminalInfo>, String> {

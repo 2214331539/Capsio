@@ -37,6 +37,22 @@ export function getChatRuntime(store: WorkspaceStore, backend: ResearchBackend) 
 }
 const keyOf = (project: string, id: string) => `${project}:${id}`;
 
+/** Closing the app: answers still streaming stop and keep what arrived (see interruptAgents). */
+export async function cancelChats(store: WorkspaceStore, timeout = 4000) {
+  const deadline = Date.now() + timeout;
+  const all = [...(runtimes.get(store)?.values() ?? [])];
+  await Promise.allSettled(
+    all.flatMap((runtime) =>
+      [...runtime.tasks.values()]
+        .filter((task) => task.pending)
+        .map((task) => runtime.cancel(task)),
+    ),
+  );
+  const busy = () =>
+    all.some((runtime) => [...runtime.tasks.values()].some((task) => task.pending || task.saving));
+  while (Date.now() < deadline && busy()) await new Promise((resolve) => setTimeout(resolve, 100));
+}
+
 /** Network tasks belong to the workspace, including when its panel is closed. */
 export class ChatRuntime {
   readonly tasks = new Map<string, ChatTask>();

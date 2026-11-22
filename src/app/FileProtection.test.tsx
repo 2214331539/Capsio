@@ -10,7 +10,7 @@ import { createWorkspaceStore } from '../stores/workspace';
 import { getFileSession, type FileSession } from '../editor/sessions';
 import { App } from './App';
 import { codeContext } from '../workspaces/experiments/code-context';
-import { AgentRuntime } from '../features/assistant/agent-runtime';
+import { getAgentRuntime } from '../features/assistant/agent-runtime';
 import { newConversation } from '../features/assistant/model';
 import type { AgentBackend, AgentEvent } from '../platform/agent';
 
@@ -175,7 +175,7 @@ it('remembers the code view after opening a changed file and leaving the workspa
   ).toBeTruthy();
 });
 
-it('blocks native close and workspace replacement while a clean-looking file save is pending', async () => {
+it('waits for a pending file save before closing and blocks workspace replacement meanwhile', async () => {
   const { store, backend, workspace } = setup();
   await act(async () => {
     render(<App store={store} backend={backend} />);
@@ -202,17 +202,23 @@ it('blocks native close and workspace replacement while a clean-looking file sav
   });
   expect(workspace.restore).not.toHaveBeenCalled();
   const event = { preventDefault: vi.fn() };
-  await nativeWindow.close?.(event);
+  const closing = nativeWindow.close?.(event);
   expect(event.preventDefault).toHaveBeenCalled();
-  await userEvent.setup().click(screen.getByRole('button', { name: '关闭窗口' }));
   expect(nativeWindow.destroy).not.toHaveBeenCalled();
   await act(async () => {
     complete({ path: 'paper.md', content: 'submitted', version: 'v2' });
     await saving;
   });
+  // The save landed; the edit made after it is still unsaved, so closing asks first.
+  const prompt = await screen.findByRole('dialog', { name: '确认操作' });
+  await userEvent.setup().click(within(prompt).getByRole('button', { name: '取消' }));
+  await act(async () => {
+    await closing;
+  });
+  expect(nativeWindow.destroy).not.toHaveBeenCalled();
 });
 
-it('allows native close after an interrupted AI result is saved', async () => {
+it('closing stops a running AI turn, saves it as interrupted and then closes', async () => {
   const { store, backend } = setup();
   await act(async () => {
     render(<App store={store} backend={backend} />);
@@ -231,7 +237,7 @@ it('allows native close after an interrupted AI result is saved', async () => {
       });
     },
   } as unknown as AgentBackend;
-  const runtime = new AgentRuntime(store, agent);
+  const runtime = getAgentRuntime(store, agent);
   const chat = newConversation('p1');
   try {
     await act(async () => {
@@ -242,18 +248,12 @@ it('allows native close after an interrupted AI result is saved', async () => {
         '运行实验',
       );
     });
-    await act(async () => {
-      await nativeWindow.close?.({ preventDefault() {} });
-    });
-    expect(nativeWindow.destroy).not.toHaveBeenCalled();
-    await act(async () => {
-      await runtime.get('p1', chat.id)!.session.interrupt();
-    });
-    await waitFor(() => expect(store.getState().agentTasks).toEqual({}));
+    expect(Object.keys(store.getState().agentTasks)).toHaveLength(1);
     await act(async () => {
       await nativeWindow.close?.({ preventDefault() {} });
     });
     expect(nativeWindow.destroy).toHaveBeenCalledOnce();
+    expect(store.getState().agentTasks).toEqual({});
     expect(store.getState().data!.sessions.find((s) => s.id === chat.id)?.agentStatus).toBe(
       'interrupted',
     );

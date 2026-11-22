@@ -68,7 +68,8 @@ import {
   notifyFileRuntime,
   refreshProjectSessions,
 } from '../editor/sessions';
-import { agentFinishedEvent } from '../features/assistant/agent-runtime';
+import { agentFinishedEvent, interruptAgents } from '../features/assistant/agent-runtime';
+import { cancelChats } from '../features/assistant/chat-runtime';
 import type { Project } from '../domain/workspace';
 import type { WorkContext, WorkspaceId } from '../domain/context';
 import { workspaceStore, type WorkspaceStore } from '../stores/workspace';
@@ -252,7 +253,8 @@ function useCloseProtection(store: WorkspaceStore, backend: ResearchBackend) {
         store.getState().dirty ||
         store.getState().busy ||
         hasPendingFileOperations(backend) ||
-        Object.keys(store.getState().agentTasks).length
+        // The desktop app stops running tasks itself when it closes.
+        (!isTauri() && Object.keys(store.getState().agentTasks).length)
       ) {
         event.preventDefault();
         event.returnValue = '';
@@ -263,22 +265,28 @@ function useCloseProtection(store: WorkspaceStore, backend: ResearchBackend) {
     let closing = false;
     const cleanups: (() => void)[] = [];
     if (isTauri()) {
-      // Saves what can be saved and asks about the rest; true when the app may quit.
-      // Installing an update goes through it too.
+      // A save under way gets a few seconds to finish rather than keeping the window open.
+      const settled = async () => {
+        const deadline = Date.now() + 5000;
+        while (
+          (store.getState().busy || hasPendingFileOperations(backend)) &&
+          Date.now() < deadline
+        )
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        return !store.getState().busy && !hasPendingFileOperations(backend);
+      };
+      // Saves what can be saved and asks only about unsaved edits; true when the app may quit.
+      // Like ChatGPT, running AI turns are stopped and kept, ready for "继续" next time, and
+      // terminals, environment tasks and runs end without asking. Installing an update goes
+      // through it too.
       const readyToExit = async (): Promise<boolean> => {
         if (closing) return false;
-        const { busy } = store.getState();
-        if (busy || hasPendingFileOperations(backend)) return false;
-        if (Object.keys(store.getState().agentTasks).length) {
-          closing = true;
-          const blocked = await endBackgroundTasks(store).finally(() => (closing = false));
-          if (blocked !== null) {
-            if (blocked) store.setState({ error: translateError(blocked) });
-            return false;
-          }
-        }
         closing = true;
         try {
+          if (!(await settled())) {
+            store.setState({ error: t('还有内容正在保存，请稍候再关闭。') });
+            return false;
+          }
           if (!(await flushPaperNotes())) {
             store.setState({ error: t('论文笔记尚未保存，请重试或处理冲突后退出。') });
             return false;
@@ -287,10 +295,16 @@ function useCloseProtection(store: WorkspaceStore, backend: ResearchBackend) {
             store.setState({ error: t('文档尚未保存，请重试后退出。') });
             return false;
           }
-          return (
-            !store.getState().dirty ||
-            (await confirmAction(t('仍有未保存的内容。确认放弃这些修改并退出？')))
-          );
+          if (
+            store.getState().dirty &&
+            !(await confirmAction(t('仍有未保存的内容。确认放弃这些修改并退出？')))
+          )
+            return false;
+          await Promise.all([interruptAgents(store), cancelChats(store)]);
+          await endBackgroundTasks(store);
+          // Interrupted turns save their state; let that land before the window goes.
+          await settled();
+          return true;
         } catch (error) {
           store.setState({ error: translateError(String(error)) });
           return false;

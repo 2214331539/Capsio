@@ -61,6 +61,16 @@ export function getAgentRuntime(store: WorkspaceStore, agent: AgentBackend): Age
   return runtime;
 }
 
+/** Closing the app: every running turn stops as the stop button would stop it and is saved as
+ *  interrupted, ready for "继续" next time. Waits up to `timeout`; a turn that has not
+ *  answered by then is read back as interrupted on the next launch. */
+export async function interruptAgents(store: WorkspaceStore, timeout = 4000) {
+  const deadline = Date.now() + timeout;
+  await Promise.allSettled(
+    [...(runtimes.get(store)?.values() ?? [])].map((runtime) => runtime.interruptAll(deadline)),
+  );
+}
+
 /** Application-owned tasks: a panel only subscribes, never owns task lifetime. */
 export class AgentRuntime {
   readonly tasks = new Map<string, AgentTask>();
@@ -99,6 +109,17 @@ export class AgentRuntime {
   }
   pending(task: AgentTask) {
     return task.starting || task.saving || task.steering || hasPendingWork(task.state);
+  }
+  async interruptAll(deadline: number) {
+    await Promise.allSettled(
+      [...this.tasks.values()]
+        .filter((task) => hasPendingWork(task.state))
+        .map((task) => task.session.interrupt()),
+    );
+    while (Date.now() < deadline && [...this.tasks.values()].some((task) => this.pending(task))) {
+      await this.poll();
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
   }
   private ensureMonitor() {
     if (this.timer) return;

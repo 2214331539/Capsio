@@ -93,8 +93,18 @@ export function AssistantPanel({
   credentials = nativeCredentials,
 }: Props) {
   const data = useStore(store, (state) => state.data);
-  const selectedCodeRoot = useStore(codeContext, (state) => state.roots[scope]);
-  const selectedExperimentId = useStore(codeContext, (state) => state.experiments[scope]);
+  const rememberedRoot = useStore(codeContext, (state) => state.roots[scope]);
+  const rememberedExperiment = useStore(codeContext, (state) => state.experiments[scope]);
+  // The code folder remembered from the experiments page may since have been archived or
+  // removed; new conversations then use the project folder instead of failing on it.
+  const staleCode =
+    !!rememberedExperiment &&
+    !!data?.experiments &&
+    !data.experiments.some(
+      (item) => item.id === rememberedExperiment && item.project === scope && !item.archived,
+    );
+  const selectedCodeRoot = staleCode ? undefined : rememberedRoot;
+  const selectedExperimentId = staleCode ? undefined : rememberedExperiment;
   const model = data?.settings.model;
   const defaultSettings: AISettings = {
     endpoint: model?.endpoint ?? 'http://127.0.0.1:11434',
@@ -223,6 +233,8 @@ export function AssistantPanel({
   // Regenerate and edit ask a question again: it and everything after it are replaced.
   const [replacing, setReplacing] = useState<string | null>(null);
   const submitReplacement = useRef(false);
+  const submitContinue = useRef(false);
+  const reconnected = useRef(new Set<string>());
   function attachImages(files: File[]) {
     if (files.length + attachmentValues.current.length + pendingAttachments.current > 4) {
       setError(t('每条消息最多附带 4 个文件。'));
@@ -1038,6 +1050,27 @@ export function AssistantPanel({
     submitReplacement.current = false;
     void submitMessage();
   }, [prompt, replacing]);
+  // "继续" after an interrupted turn, the same way: the word goes in, then it is sent.
+  useEffect(() => {
+    if (!submitContinue.current || prompt !== t('继续')) return;
+    submitContinue.current = false;
+    void send();
+  }, [prompt]);
+  function continueTurn() {
+    if (prompt === t('继续')) {
+      void send();
+      return;
+    }
+    submitContinue.current = true;
+    setPrompt(t('继续'));
+  }
+  // A turn left running when the app closed is read back once, without sending anything, so
+  // the conversation is usable again at once instead of waiting for "恢复连接".
+  useEffect(() => {
+    if (!needsReconnect || !credentialsReady || reconnected.current.has(conversation.id)) return;
+    reconnected.current.add(conversation.id);
+    void runtime.resume(conversation, agentConnection);
+  }, [needsReconnect, credentialsReady, conversation.id]);
 
   function selectConversation(
     id: string,
@@ -1485,6 +1518,19 @@ export function AssistantPanel({
             onClick={() => void runtime.resume(conversation, agentConnection)}
           >
             {t('恢复连接')}
+          </Button>
+        </div>
+      ) : null}
+      {conversation.agentStatus === 'interrupted' && !agentPending && !needsReconnect ? (
+        <div className="sf-agent-sandbox-notice" role="status">
+          <span>{t('任务已中止。')}</span>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!!prompt.trim() && prompt !== t('继续')}
+            onClick={continueTurn}
+          >
+            {t('继续')}
           </Button>
         </div>
       ) : null}

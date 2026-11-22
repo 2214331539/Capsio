@@ -1542,3 +1542,37 @@ it('tells every turn which page it is sent from, also in a chat started on anoth
     await act(async () => runtime.dispose());
   }
 });
+
+it('offers 继续 after an interrupted turn and sends it', async () => {
+  const data = emptyWorkspace();
+  data.settings.model.model = 'fixture';
+  data.settings.model.provider = 'openai';
+  data.sessions.push({
+    id: 'stopped',
+    project: '__inbox__',
+    title: '跑实验',
+    context: [],
+    messages: [{ id: 'm1', role: 'user', text: '跑实验', createdAt: '' }],
+    updatedAt: '',
+    agentDomain: 'inbox',
+    agentStatus: 'interrupted',
+  } as never);
+  const store = createWorkspaceStore({
+    load: async () => ({ workspace: data, directory: 'test', legacyAvailable: false }),
+    save: async (value: Workspace) => value,
+  } as unknown as WorkspaceBackend);
+  await store.getState().load();
+  const agent = agentStub();
+  render(
+    <AssistantPanel
+      store={store}
+      backend={{ askAI: vi.fn() } as unknown as ResearchBackend}
+      agent={agent}
+      scope="__inbox__"
+      context={{ workspace: 'projects', title: '收集箱' }}
+    />,
+  );
+  expect(await screen.findByText('任务已中止。')).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole('button', { name: '继续' }));
+  await waitFor(() => expect(agent.startThread).toHaveBeenCalled());
+});

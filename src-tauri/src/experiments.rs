@@ -256,8 +256,8 @@ impl ExperimentState {
             };
             if before.is_none()
                 || after.is_none()
-                || before.as_ref().map(|p| &p["path"]) != after.as_ref().map(|p| &p["path"])
-                || before.as_ref().map(|p| &p["repo"]) != after.as_ref().map(|p| &p["repo"])
+                || before.as_ref().map(crate::research::configured_root)
+                    != after.as_ref().map(crate::research::configured_root)
                 || !keeps_experiment
             {
                 return Err("实验仍在运行，请停止后再删除项目、更换目录或恢复数据。".into());

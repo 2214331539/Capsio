@@ -14,6 +14,17 @@ pub(crate) fn configured_root(project: &serde_json::Value) -> Option<&str> {
     set("path").or_else(|| set("repo"))
 }
 
+/// The folder of project `id` in one version of the workspace, read as `configured_root` reads
+/// it: `None` when the project is absent, `Some(None)` when it uses its managed folder. Guards
+/// compare this, so a form that writes "" for an absent field moves nothing.
+pub(crate) fn project_folder(data: &serde_json::Value, id: &str) -> Option<Option<String>> {
+    data["projects"]
+        .as_array()?
+        .iter()
+        .find(|p| p["id"] == id)
+        .map(|p| configured_root(p).map(|path| path.trim().to_owned()))
+}
+
 pub(crate) fn project_root(
     storage: &Storage,
     files: &ResearchFiles,
@@ -1012,5 +1023,24 @@ mod tests {
         assert!(bounded_git(config).unwrap().0.success());
         assert!(git_status(root).is_err());
         assert!(!root.join("invalid-ran.txt").exists());
+    }
+
+    #[test]
+    fn a_form_writing_empty_fields_keeps_the_project_folder() {
+        let managed = serde_json::json!({"projects": [{"id": "p1"}]});
+        let blanked = serde_json::json!({"projects": [{"id": "p1", "path": "", "repo": " "}]});
+        assert_eq!(project_folder(&managed, "p1"), Some(None));
+        assert_eq!(
+            project_folder(&managed, "p1"),
+            project_folder(&blanked, "p1")
+        );
+        // The form copies a linked repo into path; the folder is the same.
+        let linked = serde_json::json!({"projects": [{"id": "p1", "repo": "F:/code"}]});
+        let copied =
+            serde_json::json!({"projects": [{"id": "p1", "path": "F:/code", "repo": "F:/code"}]});
+        assert_eq!(project_folder(&linked, "p1"), project_folder(&copied, "p1"));
+        let moved = serde_json::json!({"projects": [{"id": "p1", "path": "F:/other"}]});
+        assert_ne!(project_folder(&linked, "p1"), project_folder(&moved, "p1"));
+        assert_eq!(project_folder(&linked, "missing"), None);
     }
 }

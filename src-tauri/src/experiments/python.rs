@@ -421,7 +421,7 @@ impl PythonState {
     }
     pub fn protect(&self, old: Option<&Value>, next: Option<&Value>) -> Result<(), String> {
         for task in self.list()?.into_iter().filter(|t| t.status == "running") {
-            if !matches!((old,next),(Some(a),Some(b)) if super::catalog::keeps_binding(a,b,Some(&task.experiment_id)) && a["projects"].as_array().and_then(|ps|ps.iter().find(|p|p["id"]==task.project)).map(|p|(&p["path"],&p["repo"])) == b["projects"].as_array().and_then(|ps|ps.iter().find(|p|p["id"]==task.project)).map(|p|(&p["path"],&p["repo"])))
+            if !matches!((old,next),(Some(a),Some(b)) if super::catalog::keeps_binding(a,b,Some(&task.experiment_id)) && crate::research::project_folder(a,&task.project) == crate::research::project_folder(b,&task.project))
             {
                 return Err("请先停止环境任务，再移除实验、更换目录或迁移数据。".into());
             }
