@@ -102,6 +102,28 @@ pub enum Action {
         id: String,
     },
 }
+/// Cloud host shells share this registry under `remote:<host id>`. They run over SSH from
+/// the home folder and use no workspace data, so saving the workspace never affects them.
+pub(crate) const REMOTE_PREFIX: &str = "remote:";
+
+/// Whether saving `next` over `old` would move or remove the folder a running terminal works
+/// in. Without both versions (restore, import, moving the data folder) every local shell counts.
+fn displaced(info: &TerminalInfo, old: Option<&Value>, next: Option<&Value>) -> bool {
+    if info.experiment_id.starts_with(REMOTE_PREFIX) {
+        return false;
+    }
+    let (Some(old), Some(next)) = (old, next) else {
+        return true;
+    };
+    let project = |data: &Value| {
+        data["projects"]
+            .as_array()
+            .and_then(|p| p.iter().find(|p| p["id"] == info.project))
+            .map(|p| (p["path"].clone(), p["repo"].clone()))
+    };
+    !(super::catalog::keeps_binding(old, next, Some(&info.experiment_id))
+        && project(old) == project(next))
+}
 impl TerminalState {
     pub fn list(&self) -> Result<Vec<TerminalInfo>, String> {
         self.entries
@@ -118,24 +140,12 @@ impl TerminalState {
             .collect()
     }
     pub fn protect(&self, old: Option<&Value>, next: Option<&Value>) -> Result<(), String> {
-        for info in self.list()?.into_iter().filter(|i| i.status == "running") {
-            let keeps = match (old, next) {
-                (Some(old), Some(next)) => {
-                    super::catalog::keeps_binding(old, next, Some(&info.experiment_id))
-                        && old["projects"]
-                            .as_array()
-                            .and_then(|p| p.iter().find(|p| p["id"] == info.project))
-                            .map(|p| (&p["path"], &p["repo"]))
-                            == next["projects"]
-                                .as_array()
-                                .and_then(|p| p.iter().find(|p| p["id"] == info.project))
-                                .map(|p| (&p["path"], &p["repo"]))
-                }
-                _ => false,
-            };
-            if !keeps {
-                return Err("请先关闭此实验的终端，再移除实验、更换目录或迁移数据。".into());
-            }
+        if self
+            .list()?
+            .iter()
+            .any(|info| info.status == "running" && displaced(info, old, next))
+        {
+            return Err("请先关闭此实验的终端，再移除实验、更换目录或迁移数据。".into());
         }
         Ok(())
     }
@@ -473,4 +483,44 @@ pub async fn terminal_command<R: tauri::Runtime>(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn shell(experiment: &str) -> TerminalInfo {
+        TerminalInfo {
+            id: "t1".into(),
+            project: "p1".into(),
+            experiment_id: experiment.into(),
+            root: ".".into(),
+            name: "shell".into(),
+            profile: "bash".into(),
+            environment: None,
+            status: "running".into(),
+            exit_code: None,
+        }
+    }
+
+    #[test]
+    fn only_moving_its_folder_displaces_a_shell() {
+        let data = serde_json::json!({
+            "projects": [{"id": "p1", "path": "a"}],
+            "experiments": [{"id": "e1", "project": "p1", "root": "code", "source": "local"}],
+        });
+        let mut edited = data.clone();
+        edited["settings"] = serde_json::json!({"theme": "dark"});
+        let mut archived = data.clone();
+        archived["experiments"][0]["archived"] = serde_json::json!(true);
+        let local = shell("e1");
+        assert!(!displaced(&local, Some(&data), Some(&edited)));
+        assert!(displaced(&local, Some(&data), Some(&archived)));
+        assert!(displaced(&local, None, None));
+        // A cloud host shell must never block saving: it uses no workspace data.
+        let remote = shell(&format!("{REMOTE_PREFIX}h1"));
+        assert!(!displaced(&remote, Some(&data), Some(&edited)));
+        assert!(!displaced(&remote, Some(&data), Some(&archived)));
+        assert!(!displaced(&remote, None, None));
+    }
 }

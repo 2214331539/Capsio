@@ -811,7 +811,7 @@ pub async fn remote_terminal<R: tauri::Runtime>(
                 crate::experiments::terminal::TerminalInfo {
                     id: uuid::Uuid::new_v4().to_string(),
                     project: project_id,
-                    experiment_id: format!("remote:{id}"),
+                    experiment_id: format!("{}{id}", crate::experiments::terminal::REMOTE_PREFIX),
                     root: local.display().to_string(),
                     name: host,
                     profile: "ssh".into(),
