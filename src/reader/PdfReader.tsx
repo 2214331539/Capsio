@@ -67,6 +67,7 @@ export default function PdfReader({
   onQuote?: (text: string, page: number) => void;
 }) {
   const scroll = useRef<HTMLDivElement>(null);
+  const pages = useRef<HTMLDivElement>(null);
   const onContextRef = useRef(onContext);
   onContextRef.current = onContext;
   const positionKey = JSON.stringify([projectId, assetId]);
@@ -306,26 +307,62 @@ export default function PdfReader({
     window.addEventListener('scientify-pdf-page', handler);
     return () => window.removeEventListener('scientify-pdf-page', handler);
   }, [paperId, document]);
+  const widthRef = useRef(width);
+  widthRef.current = width;
+  // While the panel is being resized the drawn pages are only scaled as one layer on the GPU,
+  // around the top of the view so the reading position holds. Pages are laid out and drawn
+  // again once, at the final width, when the resizing stops.
+  const resizing = useRef(false);
   useEffect(() => {
     const host = scroll.current;
     if (!host) return;
-    let resizeTimer: ReturnType<typeof setTimeout>;
+    let settle: ReturnType<typeof setTimeout> | undefined;
+    const commit = (next: number) => {
+      const column = pages.current;
+      if (column) {
+        column.style.transform = '';
+        column.style.transformOrigin = '';
+        column.style.willChange = '';
+      }
+      resizing.current = false;
+      setWidth((previous) => {
+        if (previous !== next) {
+          const ratio = next / previous;
+          const at = pendingScroll.current ?? position.current;
+          pendingScroll.current = { ...at, top: at.top * ratio, left: at.left * ratio };
+        }
+        return next;
+      });
+    };
     const observer = new ResizeObserver((entries) => {
       // ResizeObserver reports the content box, already excluding padding
       // and the scrollbar gutter. Subtracting them again shrinks the page.
       const next = Math.max(1, Math.floor(entries[0].contentRect.width));
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        setWidth((previous) => {
-          if (previous !== next) pendingScroll.current ??= { ...position.current };
-          return next;
-        });
-      }, 80);
+      const column = pages.current;
+      clearTimeout(settle);
+      if (!column?.querySelector('.pdf-page-frame')) {
+        commit(next);
+        return;
+      }
+      if (!resizing.current) {
+        resizing.current = true;
+        column.style.willChange = 'transform';
+        column.style.transformOrigin = `0 ${Math.max(0, host.scrollTop - column.offsetTop)}px`;
+      }
+      // Pages are centred, or flush left once wider than the column; the scaled page lands
+      // where the page laid out at the new width will be.
+      const ratio = next / widthRef.current;
+      const room = column.clientWidth;
+      const page = column.querySelector<HTMLElement>('.pdf-page')?.offsetWidth ?? room;
+      const shift = Math.max(0, (room - page * ratio) / 2) - Math.max(0, (room - page) / 2) * ratio;
+      column.style.transform =
+        ratio === 1 ? '' : `translateX(${shift.toFixed(1)}px) scale(${ratio})`;
+      settle = setTimeout(() => commit(next), 160);
     });
     observer.observe(host);
     return () => {
       observer.disconnect();
-      clearTimeout(resizeTimer);
+      clearTimeout(settle);
     };
   }, []);
   useEffect(() => {
@@ -557,7 +594,7 @@ export default function PdfReader({
           aria-label={t('PDF 阅读区域')}
           onScroll={(event) => {
             setPicked(null);
-            if (pendingScroll.current) return;
+            if (pendingScroll.current || resizing.current) return;
             const host = event.currentTarget;
             let number = current.current.page;
             if (current.current.mode === 'continuous') {
@@ -581,48 +618,50 @@ export default function PdfReader({
               {t('正在读取 PDF…')}
             </div>
           )}
-          {document &&
-            (mode === 'paged'
-              ? [page]
-              : Array.from({ length: document.numPages }, (_, i) => i + 1)
-            ).map((number) => (
-              <PdfPageSurface
-                key={number}
-                document={document}
-                page={number}
-                width={width}
-                zoom={zoom}
-                title={title}
-                linkService={linkService!}
-                visible={mode === 'paged' || visible.has(number) || number === page}
-                onReady={ready}
-                onError={setError}
-                annotations={annotations.filter((a) => a.page === number - 1)}
-                activeAnnotation={opened?.id ?? null}
-                onAnnotation={(id, at) => {
-                  setPicked(null);
-                  setOpened({ id, at, edit: false });
-                }}
-                onSelection={(page, text, value, where) => {
-                  setSelection(value);
-                  setSelectionPage(page);
-                  setPicked(
-                    value && where?.box && where.rects.length
-                      ? { page, text: value, rects: where.rects, box: where.box }
-                      : null,
-                  );
-                  onContextRef.current({
-                    projectId,
-                    workspace: 'literature',
-                    title,
-                    resourceId: paperId,
-                    page,
-                    text,
-                    selection: value || undefined,
-                  });
-                }}
-              />
-            ))}
+          <div className="pdf-pages" ref={pages}>
+            {document &&
+              (mode === 'paged'
+                ? [page]
+                : Array.from({ length: document.numPages }, (_, i) => i + 1)
+              ).map((number) => (
+                <PdfPageSurface
+                  key={number}
+                  document={document}
+                  page={number}
+                  width={width}
+                  zoom={zoom}
+                  title={title}
+                  linkService={linkService!}
+                  visible={mode === 'paged' || visible.has(number) || number === page}
+                  onReady={ready}
+                  onError={setError}
+                  annotations={annotations.filter((a) => a.page === number - 1)}
+                  activeAnnotation={opened?.id ?? null}
+                  onAnnotation={(id, at) => {
+                    setPicked(null);
+                    setOpened({ id, at, edit: false });
+                  }}
+                  onSelection={(page, text, value, where) => {
+                    setSelection(value);
+                    setSelectionPage(page);
+                    setPicked(
+                      value && where?.box && where.rects.length
+                        ? { page, text: value, rects: where.rects, box: where.box }
+                        : null,
+                    );
+                    onContextRef.current({
+                      projectId,
+                      workspace: 'literature',
+                      title,
+                      resourceId: paperId,
+                      page,
+                      text,
+                      selection: value || undefined,
+                    });
+                  }}
+                />
+              ))}
+          </div>
         </div>
         {listOpen && record ? (
           <AnnotationList

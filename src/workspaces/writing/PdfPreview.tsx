@@ -42,11 +42,15 @@ function Page({
   number,
   size,
   scale,
+  drawScale,
 }: {
   document: PDFDocumentProxy;
   number: number;
   size: Size;
+  /** The page box follows the panel at once; the drawn bitmap stretches to it. */
   scale: number;
+  /** The resolution it is drawn at, which catches up when a resize stops. */
+  drawScale: number;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [visible, setVisible] = useState(false);
@@ -73,7 +77,7 @@ function Page({
     let task: { cancel(): void; promise: Promise<void> } | undefined;
     void document.getPage(number).then((page) => {
       if (cancelled || !canvas.current) return;
-      const viewport = page.getViewport({ scale });
+      const viewport = page.getViewport({ scale: drawScale });
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       // Drawn off screen, then swapped in whole: resizing a canvas clears it, which flashes white.
       const buffer = window.document.createElement('canvas');
@@ -102,7 +106,7 @@ function Page({
       cancelled = true;
       task?.cancel();
     };
-  }, [document, number, scale, visible]);
+  }, [document, number, drawScale, visible]);
   return (
     <div
       ref={host}
@@ -144,6 +148,12 @@ export function PdfPreview({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+  // Pages are drawn again only once a resize stops; while dragging, the drawn pages stretch.
+  const [drawWidth, setDrawWidth] = useState(width);
+  useEffect(() => {
+    const timer = setTimeout(() => setDrawWidth(width), document ? 160 : 0);
+    return () => clearTimeout(timer);
+  }, [width, document]);
   useEffect(() => {
     if (!data) return;
     let stale = false;
@@ -184,7 +194,9 @@ export function PdfPreview({
   }, [data]);
   useEffect(() => () => void loaded.current?.destroy(), []);
   const widest = Math.max(1, ...sizes.map((size) => size.width));
-  const scale = zoom === 'fit' ? Math.max(0.3, Math.min(3, (width - 32) / widest)) : zoom;
+  const fit = (room: number) => Math.max(0.3, Math.min(3, (room - 32) / widest));
+  const scale = zoom === 'fit' ? fit(width) : zoom;
+  const drawScale = zoom === 'fit' ? fit(drawWidth) : zoom;
   useLayoutEffect(() => {
     const element = scroller.current;
     if (element && keep.current !== null) {
@@ -270,7 +282,13 @@ export function PdfPreview({
                   );
                 }}
               >
-                <Page document={document} number={index + 1} size={size} scale={scale} />
+                <Page
+                  document={document}
+                  number={index + 1}
+                  size={size}
+                  scale={scale}
+                  drawScale={drawScale}
+                />
                 {highlight && highlight.page === index + 1 ? (
                   <div
                     key={highlight.at}

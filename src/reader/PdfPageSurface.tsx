@@ -17,6 +17,7 @@ import { pdfLinkLabel, type ReaderLinkService } from './pdf-links';
 import { t } from '../i18n';
 import type { PaperAnnotation } from '../platform/library';
 import { annotationAt, toBox, toPdfRects, type PdfRect } from './annotations';
+import { easing, motion, reducedMotion } from '../platform/motion';
 
 /** A selection on one page: its text, where it is in PDF points and on screen. */
 export type PageSelection = { rects: PdfRect[]; box: DOMRect | null };
@@ -155,9 +156,23 @@ export function PdfPageSurface({
             );
             await renderTask.promise;
             if (stale) return;
-            painted.current?.dispose();
-            host.replaceChildren(frame);
+            // The sharper page fades in over the scaled one, so the swap never flashes.
+            const previous = painted.current;
+            for (const child of [...host.children]) if (child !== previous?.node) child.remove();
+            host.append(frame);
             painted.current = { node: frame, scale, dispose: disposeLinks };
+            const retire = () => {
+              previous?.dispose();
+              previous?.node.remove();
+            };
+            if (previous && typeof frame.animate === 'function' && !reducedMotion())
+              void frame
+                .animate([{ opacity: 0 }, { opacity: 1 }], {
+                  duration: motion.overlayFade,
+                  easing: easing.enter,
+                })
+                .finished.then(retire, retire);
+            else retire();
             setLoading(false);
 
             const [textResult, annotationResult] = await Promise.all([textTask, annotationTask]);
@@ -315,9 +330,12 @@ export function PdfPageSurface({
       {visible && (
         <>
           {loading && (
-            <span className="pdf-loading" role="status">
-              {t('正在读取 PDF…')}
-            </span>
+            // Faint text lines at the page's own size until it is drawn.
+            <div className="pdf-page-skeleton" role="status" aria-label={t('正在读取 PDF…')}>
+              {Array.from({ length: 10 }, (_, index) => (
+                <span key={index} />
+              ))}
+            </div>
           )}
           <div
             className="pdf-page-surface"

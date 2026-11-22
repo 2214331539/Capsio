@@ -744,3 +744,42 @@
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
+
+/* A page not drawn yet: faint shimmering text lines at the page's own size, so scrolling or
+   resizing never shows an empty white sheet with a status label. */
+.pdf-page-skeleton {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2.4%;
+  padding: 12% 11%;
+  pointer-events: none;
+}
+.pdf-page-skeleton > span {
+  width: 100%;
+  height: 1.3%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #eceef1 0%, #f6f7f9 50%, #eceef1 100%);
+  background-size: 200% 100%;
+  animation: pdf-shimmer 1.4s linear infinite;
+}
+.pdf-page-skeleton > span:first-child {
+  width: 56%;
+  height: 2.2%;
+  margin-bottom: 3%;
+}
+.pdf-page-skeleton > span:nth-child(4n) {
+  width: 82%;
+}
+.pdf-page-skeleton > span:last-child {
+  width: 38%;
+}
+@keyframes pdf-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
