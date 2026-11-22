@@ -10,7 +10,7 @@ import { ChevronDown, FileText, Plus, X } from 'lucide-react';
 import { Button } from '../primitives';
 import { Menu, type MenuAnchor } from '../primitives/Menu';
 import { t } from '../../i18n';
-import { easing, motion, reducedMotion, scale } from '../../platform/motion';
+import { easing, motion, reducedMotion } from '../../platform/motion';
 import './document-tabs.css';
 
 type Tab = { id: string; title: string; pinned?: boolean; icon?: ReactNode };
@@ -55,6 +55,7 @@ export function DocumentTabs({
   const focusPending = useRef(false);
   const add = useRef<HTMLButtonElement>(null);
   const dragged = useRef(false);
+  const reordered = useRef(false);
   const [drag, setDrag] = useState<{ id: string; dx: number; to: number } | null>(null);
   const [overflow, setOverflow] = useState({ start: false, end: false });
   const [allMenu, setAllMenu] = useState<MenuAnchor | null>(null);
@@ -69,6 +70,8 @@ export function DocumentTabs({
   }, [activeId, tabs.length]);
 
   // New tabs rise in; tabs that moved (one closed or was dragged) slide to their new place.
+  // A new tab fades in, and after a drag the tabs slide to their new places. Closing a tab, or
+  // a title changing its width, moves the others at once: sliding then reads as shaking.
   useLayoutEffect(() => {
     const animate = mounted.current && !reducedMotion();
     for (const [id, card] of cards.current) {
@@ -76,23 +79,21 @@ export function DocumentTabs({
       const before = lastLeft.current.get(id);
       if (animate && typeof card.animate === 'function') {
         if (before === undefined)
-          card.animate(
-            [
-              { opacity: 0, translate: '0 6px' },
-              { opacity: 1, translate: '0 0' },
-            ],
-            { duration: motion.overlay, easing: easing.pop },
-          );
-        else if (before !== left && drag === null)
+          card.animate([{ opacity: 0 }, { opacity: 1 }], {
+            duration: motion.overlayFade,
+            easing: easing.enter,
+          });
+        else if (reordered.current && before !== left)
           card.animate([{ translate: `${before - left}px 0` }, { translate: '0 0' }], {
-            duration: motion.selection,
-            easing: easing.spring,
+            duration: motion.content,
+            easing: easing.enter,
           });
       }
       lastLeft.current.set(id, left);
     }
     for (const id of [...lastLeft.current.keys()])
       if (!cards.current.has(id)) lastLeft.current.delete(id);
+    reordered.current = false;
     mounted.current = true;
   });
 
@@ -116,6 +117,7 @@ export function DocumentTabs({
   }, [tabs.length]);
 
   /** Stable per tab, so the cleanup runs only when that tab leaves: it fades out in place. */
+  /** Stable per tab, so a re-render does not detach and attach it again. */
   function cardRef(id: string) {
     let callback = cardRefs.current.get(id);
     if (!callback) {
@@ -123,44 +125,13 @@ export function DocumentTabs({
         if (node) cards.current.set(id, node);
         return () => {
           if (cards.current.get(id) === node) cards.current.delete(id);
-          if (latest.current.some((tab) => tab.id === id)) return;
-          cardRefs.current.delete(id);
-          if (node) leave(node);
+          if (!latest.current.some((tab) => tab.id === id)) cardRefs.current.delete(id);
         };
       };
       cardRefs.current.set(id, callback);
     }
     return callback;
   }
-  function leave(card: HTMLDivElement) {
-    const host = strip.current;
-    if (!host?.isConnected || !card.isConnected || reducedMotion()) return;
-    if (typeof card.animate !== 'function') return;
-    const box = card.getBoundingClientRect();
-    const origin = host.getBoundingClientRect();
-    const ghost = card.cloneNode(true) as HTMLDivElement;
-    ghost.classList.add('document-tab-ghost');
-    ghost.setAttribute('aria-hidden', 'true');
-    ghost.inert = true;
-    Object.assign(ghost.style, {
-      left: `${box.left - origin.left}px`,
-      top: `${box.top - origin.top}px`,
-      width: `${box.width}px`,
-      height: `${box.height}px`,
-    });
-    host.append(ghost);
-    void ghost
-      .animate(
-        [
-          { opacity: 1, scale: '1' },
-          { opacity: 0, scale: String(scale.popFrom) },
-        ],
-        { duration: motion.exit, easing: easing.exit, fill: 'forwards' },
-      )
-      .finished.catch(() => {})
-      .then(() => ghost.remove());
-  }
-
   function startDrag(event: ReactPointerEvent<HTMLDivElement>, tab: Tab, index: number) {
     if (!onReorder || tab.pinned || event.button !== 0) return;
     if ((event.target as Element).closest('[data-tab-close]')) return;
@@ -199,6 +170,7 @@ export function DocumentTabs({
       if (!active) return;
       dragged.current = true;
       if (to !== index) {
+        reordered.current = true;
         const ids = tabs.map((item) => item.id).filter((id) => id !== tab.id);
         ids.splice(to, 0, tab.id);
         onReorder(ids);

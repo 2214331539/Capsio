@@ -107,14 +107,9 @@
   right: 0;
 }
 
-/* Opening, closing and dragging tabs (DocumentTabs animates; these hold the visuals). */
+/* Dragging tabs (DocumentTabs moves them; these hold the visuals). */
 .document-tabs {
   position: relative;
-}
-.document-tab-ghost {
-  position: absolute;
-  z-index: 0;
-  pointer-events: none;
 }
 .document-tab[data-dragging] {
   z-index: 2;

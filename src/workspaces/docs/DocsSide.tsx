@@ -75,7 +75,9 @@ export function DocsSide({
   const dragged = useRef<string | null>(null);
   const [error, setError] = useState('');
   const scroller = useRef<HTMLDivElement>(null);
-  useFlip(scroller);
+  // Rows glide only after a drag and drop; deleting or expanding moves them at once.
+  const glideUntil = useRef(0);
+  useFlip(scroller, glideUntil);
 
   useEffect(() => {
     const q = query.trim();
@@ -149,6 +151,7 @@ export function DocsSide({
           onDragLeave={() => setDrop((value) => (value?.id === page.id ? null : value))}
           onDrop={(event) => {
             event.preventDefault();
+            glideUntil.current = Date.now() + 1500;
             void dropOn(page, zoneOf(event));
           }}
           onContextMenu={(event) => {

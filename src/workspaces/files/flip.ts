@@ -7,8 +7,10 @@ const MOST_ROWS = 150;
  * Rows marked `data-flip="key"` inside `container` glide from where they were to where they are
  * after a render, so reordering, staging and expanding do not jump. A row that was not there
  * before simply appears. Only `translate` moves; the layout itself is already final.
+ * With `armedUntil` (a timestamp) rows only glide until then, e.g. right after a drop; at
+ * other times, such as a deleted row closing its gap, they move at once.
  */
-export function useFlip(container: RefObject<HTMLElement | null>) {
+export function useFlip(container: RefObject<HTMLElement | null>, armedUntil?: RefObject<number>) {
   const last = useRef(new Map<string, number>());
   const root = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
@@ -29,7 +31,8 @@ export function useFlip(container: RefObject<HTMLElement | null>) {
     const animate =
       typeof Element !== 'undefined' &&
       typeof Element.prototype.animate === 'function' &&
-      !reducedMotion();
+      !reducedMotion() &&
+      (!armedUntil || Date.now() < armedUntil.current);
     for (const row of rows) {
       const key = row.dataset.flip!;
       const top = row.getBoundingClientRect().top - origin;
