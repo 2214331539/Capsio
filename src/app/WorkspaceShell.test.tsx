@@ -1,6 +1,6 @@
 import { t } from '../i18n';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { emptyWorkspace, type Workspace } from '../domain/workspace';
 import { createNote } from '../features/notes/model';
@@ -369,4 +369,35 @@ it('opens manuscripts in writing and keeps the assistant draft across modules', 
   expect(screen.getByRole('textbox', { name: '向 AI 提问' })).toBe(draft);
   expect((draft as HTMLTextAreaElement).value).toBe('Keep my question');
   expect(backend.askAI).not.toHaveBeenCalled();
+});
+
+it('keeps answering in one project while another is open and shows the answer on return', async () => {
+  const { store, backend } = fixture();
+  let finish!: (value: string) => void;
+  vi.mocked(backend.askAI).mockImplementationOnce(
+    () =>
+      new Promise<string>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const user = userEvent.setup();
+  render(<App store={store} backend={backend} />);
+  await screen.findByRole('navigation', { name: '一级导航' });
+  await user.click(screen.getByLabelText('AI 助手', { selector: 'button' }));
+  let assistant = within(screen.getByRole('region', { name: 'AI 助手内容' }));
+  await user.click(assistant.getByRole('textbox', { name: '向 AI 提问' }));
+  await user.paste('Long question for project A');
+  await user.click(assistant.getByRole('button', { name: '发送' }));
+  await waitFor(() => expect(backend.askAI).toHaveBeenCalledTimes(1));
+
+  // Another project: nothing of project A shows, while A's answer finishes in the background.
+  await selectProject(user, 'Protein Study');
+  assistant = within(screen.getByRole('region', { name: 'AI 助手内容' }));
+  expect(assistant.queryByText('Long question for project A')).toBeNull();
+  await act(async () => finish('Answer finished in the background'));
+  expect(assistant.queryByText('Answer finished in the background')).toBeNull();
+
+  await selectProject(user, 'ToolHCL');
+  assistant = within(screen.getByRole('region', { name: 'AI 助手内容' }));
+  expect(await assistant.findByText('Answer finished in the background')).toBeTruthy();
 });
