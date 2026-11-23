@@ -85,7 +85,9 @@ pub fn engine_path() -> Result<PathBuf, String> {
         .into_iter()
         .chain(legacy)
         .find(|candidate| candidate.is_file())
-        .ok_or_else(|| "未找到内置 Agent 引擎，请先运行 pnpm install 或 pnpm run prepare:agent。".into())
+        .ok_or_else(|| {
+            "未找到内置 Agent 引擎，请先运行 pnpm install 或 pnpm run prepare:agent。".into()
+        })
 }
 
 /// Report the engine version without starting a session.
