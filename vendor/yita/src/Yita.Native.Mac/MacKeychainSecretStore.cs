@@ -7,7 +7,8 @@ namespace Yita.Native.Mac;
 /// <summary>Uses Security.framework directly; secrets never enter a command line or subprocess.</summary>
 public sealed class MacKeychainSecretStore : ISecretStore
 {
-    internal static string Service => Environment.GetEnvironmentVariable("CAPSIO_TRANSLATION_DATA") is null ? "com.yita.Yita" : "com.capsio.desktop.translation";
+    // Inside Capsio the keychain item keeps the name it had before the rename, so saved keys stay.
+    internal static string Service => Environment.GetEnvironmentVariable("CAPSIO_TRANSLATION_DATA") is null ? "com.yita.Yita" : "com.scientify.desktop.translation";
     internal const string ApiKeyAccount = "deepseek-api-key";
     private readonly IMacKeychainAccess _keychain;
 

@@ -5,18 +5,23 @@
 //
 //   node scripts/build-release.mjs
 //
-// The key is ~/.tauri/capsio-updater.key; its public half is in
-// tauri.conf.json. Its password comes from TAURI_SIGNING_PRIVATE_KEY_PASSWORD,
-// or on Windows from ~/.tauri/capsio-updater.password.dpapi. Without the key
-// installed copies can no longer be updated: keep a copy somewhere safe.
+// The key is ~/.tauri/capsio-updater.key (machines set up before the rename
+// keep it as scientify-updater.key); its public half is in tauri.conf.json.
+// Its password comes from TAURI_SIGNING_PRIVATE_KEY_PASSWORD, or on Windows
+// from the .password.dpapi file beside the key. Without the key installed
+// copies can no longer be updated: keep a copy somewhere safe.
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-const key = join(homedir(), '.tauri', 'capsio-updater.key');
-const passwordFile = join(homedir(), '.tauri', 'capsio-updater.password.dpapi');
+const keyName =
+  ['capsio', 'scientify'].find((name) =>
+    existsSync(join(homedir(), '.tauri', `${name}-updater.key`)),
+  ) ?? 'capsio';
+const key = join(homedir(), '.tauri', `${keyName}-updater.key`);
+const passwordFile = join(homedir(), '.tauri', `${keyName}-updater.password.dpapi`);
 const mac = process.platform === 'darwin';
 
 if (!existsSync(key)) throw new Error(`No update signing key at ${key}.`);
