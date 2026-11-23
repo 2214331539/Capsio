@@ -47,7 +47,7 @@ import { collaboration, officialModelProblem } from '../../platform/collaboratio
 import { OfficialModelNotice } from './OfficialModelNotice';
 import type { WorkspaceStore } from '../../stores/workspace';
 import type { AIProtocol } from '../../domain/workspace';
-import { hasPendingWork, initialAgentSession } from './agent-session';
+import { hasPendingWork, initialAgentSession, type AgentGoal } from './agent-session';
 import { getAgentRuntime } from './agent-runtime';
 import { getChatRuntime } from './chat-runtime';
 import { readAttachment } from './attachments';
@@ -82,6 +82,18 @@ interface Props {
   /** Injected so tests can drive key storage without a desktop backend. */
   credentials?: CredentialBackend;
 }
+
+/** What a background goal is doing, in the words of its status bar. */
+const goalStatus: Record<AgentGoal['status'], string> = {
+  active: '后台目标进行中',
+  paused: '后台目标已暂停',
+  blocked: '后台目标需要你处理',
+  usageLimited: '额度用完，后台目标已停',
+  budgetLimited: '预算用完，后台目标已停',
+  complete: '后台目标已完成',
+};
+const tokens = (value: number) =>
+  value >= 1000 ? `${(value / 1000).toFixed(value >= 10_000 ? 0 : 1)}k` : String(value);
 
 export function AssistantPanel({
   store,
@@ -185,6 +197,7 @@ export function AssistantPanel({
   const runtime = getAgentRuntime(store, agent);
   useSyncExternalStore(runtime.subscribe, runtime.getSnapshot);
   const activeTask = runtime.get(scope, conversation.id);
+  const goal = activeTask?.state.goal ?? null;
   const chatPending = !!chatTask?.pending;
   const agentState = activeTask?.state ?? initialAgentSession;
   const agentPending = !!activeTask && (activeTask.starting || hasPendingWork(agentState));
@@ -334,7 +347,10 @@ export function AssistantPanel({
     !!attachments?.length ||
     !!selectedSkills.length ||
     attachmentReads > 0;
-  const needsReconnect = conversation.agentStatus === 'running' && !activeTask;
+  // Left running when the app closed, or holding an active goal the engine should go on with.
+  const needsReconnect =
+    (conversation.agentStatus === 'running' || conversation.agentGoal?.status === 'active') &&
+    !activeTask;
   const permission = conversation.agentPermission ?? 'ask';
   const permissionDisabled =
     busy ||
@@ -1518,6 +1534,44 @@ export function AssistantPanel({
             onClick={() => void runtime.resume(conversation, agentConnection)}
           >
             {t('恢复连接')}
+          </Button>
+        </div>
+      ) : null}
+      {goal ? (
+        <div className="sf-agent-goal" role="status" data-status={goal.status}>
+          <span className="sf-agent-goal-dot" aria-hidden="true" />
+          <span className="sf-agent-goal-text">
+            <strong>{t(goalStatus[goal.status])}</strong>
+            <span title={goal.objective}>{goal.objective}</span>
+          </span>
+          <span className="sf-agent-goal-meta">
+            {t('已用 {tokens} token · {minutes} 分钟', {
+              tokens:
+                goal.tokenBudget !== null
+                  ? `${tokens(goal.tokensUsed)} / ${tokens(goal.tokenBudget)}`
+                  : tokens(goal.tokensUsed),
+              minutes: Math.max(1, Math.round(goal.timeUsedSeconds / 60)),
+            })}
+          </span>
+          {goal.status === 'active' ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void activeTask?.session.goal('set', { status: 'paused' })}
+            >
+              {t('暂停')}
+            </Button>
+          ) : goal.status === 'paused' ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void activeTask?.session.goal('set', { status: 'active' })}
+            >
+              {t('继续')}
+            </Button>
+          ) : null}
+          <Button variant="ghost" size="sm" onClick={() => void activeTask?.session.goal('clear')}>
+            {goal.status === 'active' || goal.status === 'paused' ? t('结束') : t('关闭')}
           </Button>
         </div>
       ) : null}

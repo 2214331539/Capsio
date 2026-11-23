@@ -5,6 +5,7 @@ import type { AIContentPart } from '../../platform/research';
 import type { WorkspaceStore } from '../../stores/workspace';
 import type { AgentDomain, AgentSkillRef, PermissionMode } from '../../platform/agent';
 import { asPermission } from './permissions';
+import type { AgentGoal } from './agent-session';
 
 export type ContextSnapshot = WorkContext & { capturedAt: string };
 export type ChatAttachment = {
@@ -52,6 +53,8 @@ export type Conversation = Entity & {
   agentPermission?: PermissionMode;
   experimentId?: string;
   agentStatus?: 'running' | 'completed' | 'failed' | 'interrupted';
+  /** The goal the engine was working toward when last saved; an active one resumes on open. */
+  agentGoal?: AgentGoal;
   agentRun?: {
     model: string;
     startedAt: string;

@@ -1112,6 +1112,65 @@ pub async fn agent_interrupt(
     })
     .await
 }
+/// The conversation's goal (Codex /goal): `get` reads it, `set` changes its objective, status
+/// or token budget, `clear` removes it. While a goal is active the engine takes further turns
+/// on its own whenever the thread is idle; their events arrive like any other turn's.
+#[tauri::command]
+pub async fn agent_goal(
+    app: tauri::AppHandle,
+    view: tauri::Webview,
+    project_id: String,
+    domain: String,
+    conversation_id: String,
+    thread_id: String,
+    action: String,
+    objective: Option<String>,
+    status: Option<String>,
+    token_budget: Option<i64>,
+) -> Result<Value, String> {
+    super::library::trusted(&view)?;
+    if objective
+        .as_ref()
+        .is_some_and(|text| text.trim().is_empty() || text.len() > 4000)
+    {
+        return Err("目标内容无效或过长。".into());
+    }
+    if status
+        .as_deref()
+        .is_some_and(|value| !["active", "paused", "complete"].contains(&value))
+    {
+        return Err("目标状态无效。".into());
+    }
+    blocking(move || {
+        with_entry(&app, &project_id, &domain, &conversation_id, |entry| {
+            entry.validate(&thread_id)?;
+            let (method, params) = match action.as_str() {
+                "get" => ("thread/goal/get", json!({"threadId": thread_id})),
+                "clear" => ("thread/goal/clear", json!({"threadId": thread_id})),
+                "set" => {
+                    let mut params = json!({"threadId": thread_id});
+                    if let Some(objective) = &objective {
+                        params["objective"] = json!(objective.trim());
+                    }
+                    if let Some(status) = &status {
+                        params["status"] = json!(status);
+                    }
+                    if let Some(budget) = token_budget {
+                        params["tokenBudget"] = if budget > 0 {
+                            json!(budget)
+                        } else {
+                            Value::Null
+                        };
+                    }
+                    ("thread/goal/set", params)
+                }
+                _ => return Err("未知的目标操作。".into()),
+            };
+            entry.session.call(method, params, HANDSHAKE_BUDGET)
+        })
+    })
+    .await
+}
 /// Drops a turn and everything after it from the thread's history, so a question
 /// can be asked again (regenerate) or replaced (edit). Files stay as they are.
 #[tauri::command]

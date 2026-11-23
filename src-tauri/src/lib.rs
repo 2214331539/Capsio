@@ -484,6 +484,7 @@ pub fn run() {
             agent::agent_start_turn,
             agent::agent_steer,
             agent::agent_interrupt,
+            agent::agent_goal,
             agent::agent_revert,
             agent::agent_events,
             agent::agent_respond,

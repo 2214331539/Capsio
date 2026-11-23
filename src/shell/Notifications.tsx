@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { useStore } from 'zustand';
-import { Bell, CircleArrowUp, CircleX, FlaskConical, TriangleAlert, UserPlus } from 'lucide-react';
+import {
+  Bell,
+  Bot,
+  CircleArrowUp,
+  CircleX,
+  FlaskConical,
+  TriangleAlert,
+  UserPlus,
+} from 'lucide-react';
 import { Button } from '../components/primitives';
 import { Popover } from '../components/primitives/Popover';
 import { t } from '../i18n';
@@ -22,6 +30,12 @@ import {
   useUpdate,
 } from '../features/update/updater';
 import { downloadShare } from '../features/update/UpdatePanel';
+import {
+  assistantNotices,
+  dismissAssistantNotice,
+  noticeText,
+  openConversation,
+} from '../features/assistant/notices';
 import './notifications.css';
 
 const dismissedKey = 'scientify.home.dismissed';
@@ -67,6 +81,7 @@ export function Notifications({
   const busy = useStore(store, (s) => s.busy);
   const cloud = useCloud();
   const update = useUpdate();
+  const assistantItems = useStore(assistantNotices, (state) => state.items);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [dismissed, setDismissed] = useState(readDismissed);
   const [error, setError] = useState('');
@@ -213,6 +228,29 @@ export function Notifications({
           },
         },
         { label: t('知道了'), run: () => dismiss(`run:${run.id}`) },
+      ],
+    });
+  }
+  // What the assistant finished out of sight (another project, a closed assistant, the tray).
+  for (const notice of assistantItems) {
+    const project = data.projects.find((item) => item.id === notice.projectId);
+    items.push({
+      key: `assistant:${notice.key}`,
+      tone: notice.kind === 'blocked' || notice.kind === 'budget' ? 'warn' : 'info',
+      icon: <Bot />,
+      title: noticeText(notice),
+      detail: [project?.name, relativeTime(notice.at)].filter(Boolean).join(' · '),
+      actions: [
+        {
+          label: t('查看'),
+          primary: true,
+          run: () => {
+            close();
+            dismissAssistantNotice(notice.key);
+            openConversation(notice.projectId, notice.conversationId);
+          },
+        },
+        { label: t('知道了'), run: () => dismissAssistantNotice(notice.key) },
       ],
     });
   }

@@ -1412,3 +1412,60 @@
   height: 100%;
   place-items: center;
 }
+
+/* A background goal (Codex /goal): its status, objective, usage and controls above the input. */
+.sf-agent-goal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 6px 6px 6px 10px;
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: 8px;
+  background: var(--sf-surface-canvas);
+  color: var(--sf-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.sf-agent-goal-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sf-text-muted);
+}
+.sf-agent-goal[data-status='active'] .sf-agent-goal-dot {
+  background: var(--sf-status-success);
+  animation: sf-pulse 1.1s var(--sf-ease-standard) infinite;
+}
+.sf-agent-goal[data-status='complete'] .sf-agent-goal-dot {
+  background: var(--sf-status-success);
+}
+.sf-agent-goal:is(
+    [data-status='blocked'],
+    [data-status='usageLimited'],
+    [data-status='budgetLimited']
+  )
+  .sf-agent-goal-dot {
+  background: var(--sf-status-warning);
+}
+.sf-agent-goal-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.sf-agent-goal-text strong {
+  color: var(--sf-text-primary);
+  font-weight: 500;
+}
+.sf-agent-goal-text span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sf-agent-goal-meta {
+  flex: none;
+  color: var(--sf-text-muted);
+  font-variant-numeric: tabular-nums;
+}

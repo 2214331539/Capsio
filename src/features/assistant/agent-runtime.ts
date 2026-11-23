@@ -10,6 +10,7 @@ import type {
 import type { WorkspaceStore } from '../../stores/workspace';
 import { t } from '../../i18n';
 import { PERSONAL_SCOPE } from '../notes/model';
+import { noticeAssistant, type AssistantNotice } from './notices';
 import {
   AgentSession,
   hasPendingWork,
@@ -68,6 +69,14 @@ export async function interruptAgents(store: WorkspaceStore, timeout = 4000) {
   const deadline = Date.now() + timeout;
   await Promise.allSettled(
     [...(runtimes.get(store)?.values() ?? [])].map((runtime) => runtime.interruptAll(deadline)),
+  );
+}
+
+/** Whether a conversation is working toward an active goal; closing the window then only hides
+ *  it, so the engine goes on. */
+export function hasActiveGoal(store: WorkspaceStore) {
+  return [...(runtimes.get(store)?.values() ?? [])].some((runtime) =>
+    [...runtime.tasks.values()].some((task) => task.state.goal?.status === 'active'),
   );
 }
 
@@ -151,14 +160,21 @@ export class AgentRuntime {
   private async pollTasks() {
     await Promise.allSettled(
       [...this.tasks.values()]
-        .filter((task) => !task.starting && hasPendingWork(task.state))
+        // A conversation with an active goal keeps listening: the engine may start a turn.
+        .filter(
+          (task) =>
+            !task.starting && (hasPendingWork(task.state) || task.state.goal?.status === 'active'),
+        )
         .map((task) => task.session.poll()),
     );
     await Promise.allSettled(
       [...this.tasks.values()]
         .filter(
           (task) =>
-            !this.pending(task) && !task.saveError && Date.now() - task.lastActivity > 60_000,
+            !this.pending(task) &&
+            !task.saveError &&
+            task.state.goal?.status !== 'active' &&
+            Date.now() - task.lastActivity > 60_000,
         )
         .map(async (task) => {
           // Reserve the task during release; a send cannot race process shutdown.
@@ -215,8 +231,26 @@ export class AgentRuntime {
       },
       connection,
       (state) => {
+        const previousTurn = task.state.turnId;
+        const previousGoal = task.state.goal?.status;
+        const previousApprovals = task.state.approvals.length;
         task.state = state;
+        // A turn that waits for approval while nobody watches needs the user.
+        if (!previousApprovals && state.approvals.length) this.notice(task, 'blocked');
+        const goal = state.goal?.status;
+        if (previousGoal === 'active' && goal && goal !== 'active' && goal !== 'paused')
+          this.notice(
+            task,
+            goal === 'complete' ? 'complete' : goal === 'budgetLimited' ? 'budget' : 'blocked',
+          );
         task.lastActivity = Date.now();
+        // An active goal started a turn on its own after the last one was saved; a whole turn
+        // may arrive in one batch, so the new turn id is the sign, not the phase.
+        if (task.finished && state.turnId && state.turnId !== previousTurn) {
+          task.finished = false;
+          task.startedAt = new Date().toISOString();
+          task.recovered = [];
+        }
         if (state.turnId && state.threadId)
           task.answerId = `agent:${state.threadId}:${state.turnId}`;
         // Starting finish synchronously reserves the save before a subscriber can send.
@@ -434,6 +468,8 @@ export class AgentRuntime {
     const task = this.create(seed, seed.agentDomain, connection);
     const opened = await task.session.open();
     if (opened) this.recover(task);
+    // An active goal carries on in the engine; the snapshot learns it from here.
+    if (opened && seed.agentGoal) await task.session.goal('get');
     if (!hasPendingWork(task.state))
       task.state = {
         ...task.state,
@@ -480,6 +516,7 @@ export class AgentRuntime {
       Object.assign(entry, chat, {
         agentCwd: task.state.cwd ?? chat.agentCwd,
         experimentId: task.session.handle?.experimentId ?? chat.experimentId,
+        agentGoal: task.state.goal ?? undefined,
       });
       if (terminal)
         Object.assign(entry, {
@@ -519,7 +556,22 @@ export class AgentRuntime {
     // The turn may have written files: open editors and file trees read them again.
     if (typeof window !== 'undefined')
       window.dispatchEvent(new CustomEvent(agentFinishedEvent, { detail: task.projectId }));
-    await this.persist(task, true);
+    const saved = await this.persist(task, true);
+    // A conversation with a goal reports when the goal ends, not after every turn.
+    if (saved && task.state.outcome === 'completed' && !task.state.goal) this.notice(task, 'done');
+  }
+  private notice(task: AgentTask, kind: AssistantNotice['kind']) {
+    const chat = this.store
+      .getState()
+      .data?.sessions.find(
+        (item) => item.id === task.conversationId && item.project === task.projectId,
+      );
+    noticeAssistant({
+      projectId: task.projectId,
+      conversationId: task.conversationId,
+      title: String(chat?.title ?? ''),
+      kind,
+    });
   }
   async retrySave(task: AgentTask) {
     if (task.saving) return;

@@ -68,7 +68,12 @@ import {
   notifyFileRuntime,
   refreshProjectSessions,
 } from '../editor/sessions';
-import { agentFinishedEvent, interruptAgents } from '../features/assistant/agent-runtime';
+import {
+  agentFinishedEvent,
+  hasActiveGoal,
+  interruptAgents,
+} from '../features/assistant/agent-runtime';
+import { openConversationEvent, watchAssistant } from '../features/assistant/notices';
 import { cancelChats } from '../features/assistant/chat-runtime';
 import type { Project } from '../domain/workspace';
 import type { WorkContext, WorkspaceId } from '../domain/context';
@@ -332,6 +337,11 @@ function useCloseProtection(store: WorkspaceStore, backend: ResearchBackend) {
       register(
         getCurrentWindow().onCloseRequested(async (event) => {
           event.preventDefault();
+          // A background goal keeps working: the window goes to the tray, whose 退出 quits.
+          if (hasActiveGoal(store)) {
+            await getCurrentWindow().hide();
+            return;
+          }
           await requestClose();
         }),
       );
@@ -840,6 +850,53 @@ export function App({
     window.addEventListener('scientify-open-project', open);
     return () => window.removeEventListener('scientify-open-project', open);
   }, []);
+  // A notice about a finished conversation opens it: its project where the user last was, with
+  // the assistant showing that conversation.
+  const latestUI = useRef(ui);
+  latestUI.current = ui;
+  useEffect(() => {
+    const open = (event: Event) => {
+      const detail = (event as CustomEvent<{ projectId?: string; conversationId?: string }>).detail;
+      const projectId = detail?.projectId;
+      const conversationId = detail?.conversationId;
+      if (!projectId || !conversationId) return;
+      if (isTauri())
+        void getCurrentWindow()
+          .show()
+          .catch(() => {});
+      const last = latestUI.current.locations[projectId]?.workspace;
+      if (latestUI.current.projectId === projectId) openTool('assistant');
+      else
+        latestOpenTarget.current(projectId, {
+          projectId,
+          workspace: !last || last === 'remote' || last === 'files' ? 'literature' : last,
+          tool: 'assistant',
+        });
+      // The project's assistant may mount a moment later; ask until it takes the conversation.
+      let tries = 0;
+      const select = () => {
+        let accepted = false;
+        window.dispatchEvent(
+          new CustomEvent('scientify-assistant-open-session', {
+            detail: { scope: projectId, id: conversationId, accept: () => (accepted = true) },
+          }),
+        );
+        if (!accepted && ++tries < 20) setTimeout(select, 100);
+      };
+      setTimeout(select, 0);
+    };
+    window.addEventListener(openConversationEvent, open);
+    return () => window.removeEventListener(openConversationEvent, open);
+  }, [openTool]);
+  // Notices are for what finished out of sight: another project, a closed assistant, or a
+  // window in the tray.
+  useEffect(() => {
+    const watched = project && ui.dockOpen && ui.dock === 'assistant' ? project.id : null;
+    const sync = () => watchAssistant(document.hidden ? null : watched);
+    sync();
+    document.addEventListener('visibilitychange', sync);
+    return () => document.removeEventListener('visibilitychange', sync);
+  }, [project?.id, ui.dockOpen, ui.dock]);
   // The assistant opens "账号与订阅" when the official models refuse a request.
   useEffect(() => {
     const open = (event: Event) => {

@@ -21,6 +21,15 @@ export type AgentOperation = { id: string; label: string; status: string; output
 export type AgentPlanStep = { step: string; status: string };
 /** A file the turn created, changed or deleted. */
 export type AgentFile = { path: string; kind: 'add' | 'update' | 'delete' };
+/** The conversation's goal (Codex /goal). While it is active the engine starts further turns
+ *  on its own whenever the conversation is idle, until it is complete or out of budget. */
+export type AgentGoal = {
+  objective: string;
+  status: 'active' | 'paused' | 'blocked' | 'usageLimited' | 'budgetLimited' | 'complete';
+  tokenBudget: number | null;
+  tokensUsed: number;
+  timeUsedSeconds: number;
+};
 export interface AgentSessionSnapshot {
   phase: AgentPhase;
   threadId: string | null;
@@ -42,6 +51,7 @@ export interface AgentSessionSnapshot {
   thoughtMs: number | null;
   files: AgentFile[];
   unsupportedRequests: string[];
+  goal: AgentGoal | null;
 }
 export const initialAgentSession: AgentSessionSnapshot = {
   phase: 'idle',
@@ -61,7 +71,34 @@ export const initialAgentSession: AgentSessionSnapshot = {
   thoughtMs: null,
   files: [],
   unsupportedRequests: [],
+  goal: null,
 };
+/** The fields that belong to one turn; a new turn starts them afresh. */
+const freshTurn = {
+  error: null,
+  agentText: '',
+  outcome: null,
+  approvals: [],
+  operations: [],
+  plan: [],
+  diff: '',
+  reasoning: '',
+  thinkingSince: null,
+  thoughtMs: null,
+  files: [],
+  unsupportedRequests: [],
+} satisfies Partial<AgentSessionSnapshot>;
+function goalOf(value: unknown): AgentGoal | null {
+  const goal = value && typeof value === 'object' ? (value as Record<string, any>) : null;
+  if (!goal || typeof goal.objective !== 'string') return null;
+  return {
+    objective: goal.objective,
+    status: goal.status,
+    tokenBudget: typeof goal.tokenBudget === 'number' ? goal.tokenBudget : null,
+    tokensUsed: Number(goal.tokensUsed) || 0,
+    timeUsedSeconds: Number(goal.timeUsedSeconds) || 0,
+  };
+}
 export function mergeApprovals(
   current: ApprovalRequest[],
   incoming: AgentEvent[],
@@ -179,8 +216,29 @@ export class AgentSession {
     for (const event of events) {
       const p = object(event.params);
       if (p.threadId && p.threadId !== state.threadId) continue;
+      if (event.method === 'thread/goal/updated') {
+        state.goal = goalOf(p.goal);
+        continue;
+      }
+      if (event.method === 'thread/goal/cleared') {
+        state.goal = null;
+        continue;
+      }
       const turn = object(p.turn);
       const incomingTurn = p.turnId ?? turn.id;
+      // The engine began a turn on its own (an active goal continuing): it becomes this
+      // conversation's current turn, as if it had been sent from here.
+      if (
+        event.method === 'turn/started' &&
+        incomingTurn &&
+        incomingTurn !== state.turnId &&
+        state.phase === 'idle' &&
+        !this.starting
+      ) {
+        this.textItems.clear();
+        this.resolvedRequests.clear();
+        state = { ...state, ...freshTurn, phase: 'running', turnId: incomingTurn };
+      }
       if (incomingTurn && state.turnId && incomingTurn !== state.turnId) continue;
       if (state.outcome) continue; // Ignore late events for an already completed turn.
       if (event.kind === 'request') {
@@ -394,6 +452,28 @@ export class AgentSession {
     };
     this.polling = work();
     return this.polling;
+  }
+  /** Reads, changes or removes the conversation's goal; the snapshot follows the engine. */
+  async goal(
+    action: 'get' | 'set' | 'clear',
+    change: {
+      objective?: string;
+      status?: 'active' | 'paused' | 'complete';
+      tokenBudget?: number;
+    } = {},
+  ): Promise<boolean> {
+    const threadId = this.snapshot.threadId;
+    if (!threadId || !this.agent.goal) return false;
+    try {
+      const result = object(
+        await this.agent.goal({ ...this.binding, threadId, action, ...change }),
+      );
+      this.set({ goal: action === 'clear' ? null : goalOf(result.goal) });
+      return true;
+    } catch (reason) {
+      this.set({ error: this.failure(reason) });
+      return false;
+    }
   }
   /** Forgets the turn `turnId` and everything after it, so a question can be asked again. */
   async revert(turnId: string): Promise<boolean> {

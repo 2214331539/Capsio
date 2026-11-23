@@ -157,6 +157,9 @@ pub fn arguments(connection: &Connection<'_>) -> Result<Vec<String>, String> {
         // import cross-thread memory in a CODEX_HOME shared by several projects.
         "features.memories=false".to_string(),
         "features.external_agent_memory_import=false".to_string(),
+        // A conversation can hold a goal: the engine keeps taking turns toward it while
+        // the thread is idle, within its token budget (Codex /goal).
+        "features.goals=true".to_string(),
         format!("model={}", quoted(connection.model.trim())),
         format!("model_provider={}", quoted(provider_id(connection))),
     ];

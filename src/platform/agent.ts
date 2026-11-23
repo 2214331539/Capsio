@@ -239,6 +239,17 @@ export interface AgentBackend {
     threadId: string;
     turnId: string;
   }): Promise<void>;
+  /** The conversation's goal (Codex /goal): read, change or remove it. */
+  goal?(request: {
+    projectId: string;
+    domain: AgentDomain;
+    conversationId: string;
+    threadId: string;
+    action: 'get' | 'set' | 'clear';
+    objective?: string;
+    status?: 'active' | 'paused' | 'complete';
+    tokenBudget?: number;
+  }): Promise<unknown>;
   /** Drops a turn and the ones after it from the thread's history (files stay). */
   revertTurn?(request: {
     projectId: string;
@@ -303,6 +314,7 @@ export const nativeAgent: AgentBackend = {
   steer: (request) => command('agent_steer', { ...request }),
   interrupt: ({ projectId, domain, conversationId, threadId, turnId }) =>
     command('agent_interrupt', { projectId, domain, conversationId, threadId, turnId }),
+  goal: (request) => command('agent_goal', { ...request }),
   revertTurn: ({ projectId, domain, conversationId, threadId, beforeTurnId }) =>
     command('agent_revert', { projectId, domain, conversationId, threadId, beforeTurnId }),
   events: (projectId, domain, conversationId, threadId) =>

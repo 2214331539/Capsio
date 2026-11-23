@@ -17,6 +17,7 @@ import type { AgentBackend, AgentEvent } from '../platform/agent';
 const nativeWindow = vi.hoisted(() => ({
   close: undefined as undefined | ((event: { preventDefault(): void }) => Promise<void>),
   destroy: vi.fn(),
+  hide: vi.fn(async () => {}),
   root: 'F:/old',
 }));
 vi.mock('@tauri-apps/api/event', () => ({
@@ -60,6 +61,8 @@ vi.mock('@tauri-apps/api/window', () => ({
       };
     },
     destroy: nativeWindow.destroy,
+    hide: nativeWindow.hide,
+    show: async () => {},
   }),
 }));
 vi.mock('../editor/CodeEditor', () => ({
@@ -376,4 +379,63 @@ it('opens the exact experiment source, remembers selection, and opens a recent n
   expect(await screen.findByRole('heading', { name: '文档' })).toBeTruthy();
   await user.click(moduleButton(t('Experiments')));
   expect(await screen.findByRole('heading', { name: 'Latest result' })).toBeTruthy();
+});
+
+it('hides to the tray instead of quitting while a background goal is active', async () => {
+  const { store, backend } = setup();
+  await act(async () => {
+    render(<App store={store} backend={backend} />);
+  });
+  await screen.findByLabelText('编辑 paper.md');
+  const events: AgentEvent[] = [];
+  const agent = {
+    startThread: async () => ({ threadId: 'thread', cwd: 'F:/old' }),
+    startTurn: async () => ({ turnId: 'turn', status: 'inProgress', events: [] }),
+    events: async () => events.splice(0),
+  } as unknown as AgentBackend;
+  const runtime = getAgentRuntime(store, agent);
+  const chat = newConversation('p1');
+  try {
+    await act(async () => {
+      await runtime.send(
+        chat,
+        'code',
+        { endpoint: 'http://localhost/v1', model: 'test', provider: 'openai' },
+        '训练跑完后分析',
+      );
+    });
+    events.push(
+      {
+        kind: 'notification',
+        method: 'thread/goal/updated',
+        params: {
+          threadId: 'thread',
+          goal: {
+            objective: '分析',
+            status: 'active',
+            tokenBudget: null,
+            tokensUsed: 0,
+            timeUsedSeconds: 0,
+          },
+        },
+      } as AgentEvent,
+      {
+        kind: 'notification',
+        method: 'turn/completed',
+        params: { threadId: 'thread', turn: { id: 'turn', status: 'completed' } },
+      } as AgentEvent,
+    );
+    await act(async () => {
+      await runtime.poll();
+    });
+    nativeWindow.hide.mockClear();
+    nativeWindow.destroy.mockClear();
+    await act(async () => {
+      await nativeWindow.close?.({ preventDefault() {} });
+    });
+    expect(nativeWindow.hide).toHaveBeenCalledOnce();
+    expect(nativeWindow.destroy).not.toHaveBeenCalled();
+  } finally {
+    runtime.dispose();
+  }
 });

@@ -4639,5 +4639,24 @@
   "还有内容正在保存，请稍候再关闭。": [
     "还有内容正在保存，请稍候再关闭。",
     "Still saving. Close again in a moment."
-  ]
+  ],
+  "后台目标进行中": ["后台目标进行中", "Background goal in progress"],
+  "后台目标已暂停": ["后台目标已暂停", "Background goal paused"],
+  "后台目标需要你处理": ["后台目标需要你处理", "Background goal needs you"],
+  "额度用完，后台目标已停": ["额度用完，后台目标已停", "Out of quota; background goal stopped"],
+  "预算用完，后台目标已停": ["预算用完，后台目标已停", "Out of budget; background goal stopped"],
+  "后台目标已完成": ["后台目标已完成", "Background goal complete"],
+  "已用 {tokens} token · {minutes} 分钟": [
+    "已用 {tokens} token · {minutes} 分钟",
+    "{tokens} tokens · {minutes} min"
+  ],
+  "暂停": ["暂停", "Pause"],
+  "结束": ["结束", "End"],
+  "后台目标完成：{title}": ["后台目标完成：{title}", "Background goal complete: {title}"],
+  "后台目标用完了预算：{title}": [
+    "后台目标用完了预算：{title}",
+    "Background goal ran out of budget: {title}"
+  ],
+  "AI 完成了：{title}": ["AI 完成了：{title}", "AI finished: {title}"],
+  "AI 需要你处理：{title}": ["AI 需要你处理：{title}", "AI needs you: {title}"]
 }
