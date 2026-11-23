@@ -44,7 +44,8 @@ import {
   type CredentialBackend,
 } from '../../platform/credentials';
 import { collaboration, officialModelProblem } from '../../platform/collaboration';
-import { OfficialModelNotice } from './OfficialModelNotice';
+import { OfficialModelNotice, openAccountSettings } from './OfficialModelNotice';
+import { startersFor } from './starters';
 import type { WorkspaceStore } from '../../stores/workspace';
 import type { AIProtocol } from '../../domain/workspace';
 import { hasPendingWork, initialAgentSession, type AgentGoal } from './agent-session';
@@ -168,6 +169,11 @@ export function AssistantPanel({
     : credential.slot === selectedSlot ||
       settings.provider === 'ollama' ||
       settings.provider === 'chatgpt';
+  // Nothing to answer with yet: no model chosen, or the official one while signed out.
+  const needsModel =
+    !settings.model.trim() ||
+    !settings.endpoint.trim() ||
+    (officialModel && credential.slot === selectedSlot && !credential.key);
   // Keys read back once per provider endpoint; a second open of the dialog must
   // not wait on the disk again.
   const keyCache = useRef(new Map<string, string>());
@@ -494,6 +500,27 @@ export function AssistantPanel({
     setDraftKey(apiKey);
     setSettingsError('');
     setShowSettings(true);
+  }
+  /** Signs in first if needed, then opens the model dialog on the official models. */
+  async function startWithAccount() {
+    const state = await collaboration.status().catch(() => null);
+    if (!state?.authenticated) {
+      openAccountSettings();
+      return;
+    }
+    const endpoint = officialEndpoint || state.endpoint;
+    const token = await recallKey('openai', endpoint, 'capsio').catch(() => '');
+    openSettings();
+    setSettingsDraft({
+      ...settings,
+      provider: 'openai',
+      serviceId: 'capsio',
+      endpoint,
+      model: '',
+      verification: undefined,
+    });
+    setProfileName(t('Capsio 官方模型'));
+    setDraftKey(token);
   }
   function openMenu(kind: AssistantMenu['kind'], trigger: HTMLButtonElement) {
     const r = trigger.getBoundingClientRect();
@@ -1524,6 +1551,38 @@ export function AssistantPanel({
         pinnedToBottom={pinnedToBottom}
         onSetupSandbox={agent.setupSandbox ? () => void setupWindowsSandbox() : undefined}
         onDecide={decideApproval}
+        empty={
+          needsModel ? (
+            <div className="sf-ai-start">
+              <span>{t('选一个模型就能开始。')}</span>
+              <Button variant="primary" size="sm" onClick={() => void startWithAccount()}>
+                {t('用 Capsio 账号开始')}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={openSettings}>
+                {t('用自己的模型')}
+              </Button>
+            </div>
+          ) : (
+            <div className="sf-ai-start">
+              <span>{t('提问，或描述要完成的任务')}</span>
+              <div className="sf-ai-starters">
+                {startersFor(context, scope === PERSONAL_SCOPE).map((text) => (
+                  <button
+                    key={text}
+                    type="button"
+                    className="sf-ai-starter"
+                    onClick={() => {
+                      setPrompt(text);
+                      composerRef.current?.focus();
+                    }}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        }
       />
       {needsReconnect ? (
         <div className="sf-agent-sandbox-notice" role="status">

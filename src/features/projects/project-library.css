@@ -269,13 +269,18 @@
   padding: 14px 14px 16px 22px;
   overflow: hidden;
   border-radius: 3px 8px 8px 3px;
-  background:
-    linear-gradient(155deg, rgb(255 255 255 / 16%), rgb(255 255 255 / 0%) 45%), var(--cover);
-  color: #fff;
+  /* A light wash of the cover colour under dark text; the spine carries the colour itself. */
+  --cover-wash: color-mix(in srgb, var(--cover) 10%, #fff);
+  --cover-deep: color-mix(in srgb, var(--cover) 22%, #fff);
+  --cover-ink: #17201c;
+  --cover-label: color-mix(in srgb, var(--cover) 62%, #111a17);
+  background: linear-gradient(160deg, var(--cover-wash), var(--cover-deep));
+  color: var(--cover-ink);
   text-align: left;
   box-shadow:
-    0 1px 2px rgb(0 0 0 / 14%),
-    0 14px 24px -14px rgb(0 0 0 / 45%);
+    inset 0 0 0 1px rgb(0 0 0 / 5%),
+    0 1px 2px rgb(0 0 0 / 8%),
+    0 14px 24px -14px rgb(0 0 0 / 28%);
   transition:
     transform var(--sf-motion-content) var(--sf-ease-pop),
     box-shadow var(--sf-motion-content) var(--sf-ease-pop);
@@ -285,18 +290,22 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 9px;
-  background: linear-gradient(
-    90deg,
-    rgb(0 0 0 / 24%),
-    rgb(255 255 255 / 10%) 70%,
-    rgb(0 0 0 / 12%)
-  );
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 14%), rgb(255 255 255 / 14%) 70%, rgb(0 0 0 / 8%)),
+    var(--cover);
+}
+.dark .project-cover-art {
+  --cover-wash: color-mix(in srgb, var(--cover) 16%, #1c1c1f);
+  --cover-deep: color-mix(in srgb, var(--cover) 30%, #1c1c1f);
+  --cover-ink: #ededef;
+  --cover-label: color-mix(in srgb, var(--cover) 55%, #fff);
 }
 .project-cover:hover:not(:disabled) .project-cover-art {
   transform: translateY(-3px);
   box-shadow:
-    0 1px 2px rgb(0 0 0 / 14%),
-    0 20px 30px -16px rgb(0 0 0 / 50%);
+    inset 0 0 0 1px rgb(0 0 0 / 5%),
+    0 1px 2px rgb(0 0 0 / 8%),
+    0 20px 30px -16px rgb(0 0 0 / 34%);
 }
 .project-cover-field {
   position: absolute;
@@ -307,7 +316,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 11px;
-  opacity: 0.72;
+  font-weight: 600;
+  color: var(--cover-label);
 }
 .project-cover-name {
   display: block;
@@ -341,9 +351,13 @@
   min-height: 26px;
   border: 0;
   border-radius: 6px;
-  background: rgb(0 0 0 / 22%);
-  color: #fff;
+  background: rgb(255 255 255 / 72%);
+  color: #17201c;
   opacity: 0;
+}
+.dark .project-menu-button.on-cover.sf-button {
+  background: rgb(0 0 0 / 38%);
+  color: #fff;
 }
 .project-book:hover .project-menu-button.on-cover,
 .project-menu-button.on-cover:focus-visible,
@@ -381,10 +395,14 @@
   height: 24px;
   flex: none;
   border-radius: 2px 4px 4px 2px;
-  background: var(--cover);
+  background: color-mix(in srgb, var(--cover) 18%, #fff);
   box-shadow:
-    inset 3px 0 0 rgb(0 0 0 / 22%),
-    0 1px 2px rgb(0 0 0 / 16%);
+    inset 3px 0 0 var(--cover),
+    inset 0 0 0 1px rgb(0 0 0 / 6%),
+    0 1px 2px rgb(0 0 0 / 10%);
+}
+.dark .project-mini-cover {
+  background: color-mix(in srgb, var(--cover) 30%, #1c1c1f);
 }
 /* Projects saved on another device: one row each, downloaded on request. */
 .project-elsewhere {

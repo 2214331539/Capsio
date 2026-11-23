@@ -134,6 +134,46 @@
 .sf-ai-conversation-empty > svg {
   color: var(--sf-text-disabled);
 }
+/* What an empty conversation offers: ways to begin, or a model to begin with. */
+.sf-ai-start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+}
+.sf-ai-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+}
+.sf-ai-starter {
+  padding: 7px 12px;
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: 10px;
+  background: var(--sf-surface-raised);
+  color: var(--sf-text-secondary);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--sf-motion-feedback) var(--sf-ease-standard),
+    border-color var(--sf-motion-feedback) var(--sf-ease-standard),
+    color var(--sf-motion-feedback) var(--sf-ease-standard);
+}
+.sf-ai-starter:hover {
+  border-color: var(--sf-border-control);
+  background: var(--sf-surface-hover);
+  color: var(--sf-text-primary);
+}
+.sf-ai-starter:focus-visible {
+  outline: 2px solid var(--sf-focus);
+  outline-offset: 1px;
+}
 .sf-chat-message {
   position: relative;
   width: fit-content;

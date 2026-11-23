@@ -1,4 +1,13 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { ArrowDown, LoaderCircle } from 'lucide-react';
 import { Mascot, type MascotMood } from '../../components/ai/Mascot';
@@ -84,6 +93,8 @@ interface Props {
   onEdit?(message: ChatMessage): void;
   /** Put the files the last turn changed back as they were. */
   onUndo?(): Promise<void>;
+  /** What an empty conversation offers under the mascot. */
+  empty?: ReactNode;
 }
 
 /** Message rendering owns scroll-following, while task actions stay in the panel. */
@@ -101,6 +112,7 @@ export function AssistantTranscript({
   onRegenerate,
   onEdit,
   onUndo,
+  empty,
 }: Props) {
   const messagesRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -228,7 +240,7 @@ export function AssistantTranscript({
           {!messages.length ? (
             <div className="sf-ai-conversation-empty">
               <Mascot size={56} mood="greeting" shadow />
-              {t('提问，或直接描述要在当前工作区完成的任务')}
+              {empty ?? t('提问，或直接描述要在当前工作区完成的任务')}
             </div>
           ) : (
             messages.map((message, index) => {

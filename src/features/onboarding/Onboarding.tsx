@@ -6,7 +6,8 @@ import type { WorkspaceStore } from '../../stores/workspace';
 import { restartApp, useDataLocation } from '../settings/DataLocation';
 import { Tour, type TourStep } from './Tour';
 
-const KEYS = { center: 'capsio.tour.center.v1', project: 'capsio.tour.project.v1' };
+// The project tour shows again once when its pages change (v2: five modules, 2026-11).
+const KEYS = { center: 'capsio.tour.center.v1', project: 'capsio.tour.project.v2' };
 type Which = keyof typeof KEYS;
 
 function seen(which: Which) {
@@ -87,8 +88,8 @@ export function projectSteps(): TourStep[] {
   return [
     {
       target: '.sf-nav',
-      title: t('四个模块'),
-      body: t('文献、代码、写作、文档，在这里切换。'),
+      title: t('五个模块'),
+      body: t('文献读论文，文档记想法，实验写代码、跑实验，写作编译 LaTeX，云主机连服务器。'),
     },
     {
       target: '[data-tour="import-library"]',
@@ -107,13 +108,13 @@ export function projectSteps(): TourStep[] {
     },
     {
       target: '[data-tour="notes"]',
-      title: t('文档'),
-      body: t('随手记想法，块、表格和链接都支持。'),
+      title: t('边看边记'),
+      body: t('在右侧打开项目文档，读论文、跑实验时随手记下。'),
     },
     {
       target: '[data-tour="assistant"]',
       title: t('AI 助手'),
-      body: t('它能读你的论文和代码，帮你查、帮你改。读论文时选中文字，可以高亮、批注或直接问它。'),
+      body: t('每个页面都能用：读论文、改代码、跑实验、写文档。不知道问什么，就点它给的起步问题。'),
     },
   ];
 }

@@ -4659,5 +4659,70 @@
   "Scientify 已更名为 Capsio，项目和设置都已接上。旧版 Scientify 可以卸载了。": [
     "Scientify 已更名为 Capsio，项目和设置都已接上。旧版 Scientify 可以卸载了。",
     "Scientify is now Capsio. Your projects and settings came along, and the old Scientify can be uninstalled."
+  ],
+  "帮我列一份这周的研究计划": ["帮我列一份这周的研究计划", "Draft a research plan for this week"],
+  "解释一个看不懂的概念": ["解释一个看不懂的概念", "Explain a concept I find confusing"],
+  "把一段中文改成学术英文": [
+    "把一段中文改成学术英文",
+    "Turn a Chinese passage into academic English"
+  ],
+  "总结这篇论文": ["总结这篇论文", "Summarize this paper"],
+  "找这篇论文的相关工作": ["找这篇论文的相关工作", "Find related work for this paper"],
+  "解释这篇论文用的方法": ["解释这篇论文用的方法", "Explain the method this paper uses"],
+  "按主题整理文献库里的论文": [
+    "按主题整理文献库里的论文",
+    "Group the papers in the library by topic"
+  ],
+  "推荐这个方向近两年的论文": ["推荐这个方向近两年的论文", "Recommend recent papers in this area"],
+  "比较两篇论文的方法": ["比较两篇论文的方法", "Compare the methods of two papers"],
+  "把最近的文档整理成一页周报": [
+    "把最近的文档整理成一页周报",
+    "Turn recent pages into a weekly report"
+  ],
+  "列出文档里还没解决的问题": [
+    "列出文档里还没解决的问题",
+    "List the open questions in these pages"
+  ],
+  "根据文献写一份综述提纲": ["根据文献写一份综述提纲", "Outline a review from the literature"],
+  "讲讲这个实验的代码结构": ["讲讲这个实验的代码结构", "Walk me through this experiment's code"],
+  "跑一次实验并汇报结果": ["跑一次实验并汇报结果", "Run the experiment and report the results"],
+  "找出训练脚本里可能的问题": [
+    "找出训练脚本里可能的问题",
+    "Find likely problems in the training script"
+  ],
+  "检查这一节的语言和表达": ["检查这一节的语言和表达", "Check the language in this section"],
+  "根据文献补一段相关工作": [
+    "根据文献补一段相关工作",
+    "Write a related-work paragraph from the literature"
+  ],
+  "修复 LaTeX 编译错误": ["修复 LaTeX 编译错误", "Fix the LaTeX compile errors"],
+  "解释一段服务器报错日志": ["解释一段服务器报错日志", "Explain an error log from the server"],
+  "写一个在服务器上跑实验的脚本": [
+    "写一个在服务器上跑实验的脚本",
+    "Write a script to run the experiment on the server"
+  ],
+  "把训练命令改成后台运行": [
+    "把训练命令改成后台运行",
+    "Make the training command run in the background"
+  ],
+  "帮我规划这个课题的下一步": ["帮我规划这个课题的下一步", "Plan the next steps for this project"],
+  "总结项目里已有的材料": ["总结项目里已有的材料", "Summarize what the project already has"],
+  "选一个模型就能开始。": ["选一个模型就能开始。", "Choose a model to begin."],
+  "用 Capsio 账号开始": ["用 Capsio 账号开始", "Start with a Capsio account"],
+  "用自己的模型": ["用自己的模型", "Use my own model"],
+  "提问，或描述要完成的任务": ["提问，或描述要完成的任务", "Ask, or describe a task"],
+  "五个模块": ["五个模块", "Five modules"],
+  "文献读论文，文档记想法，实验写代码、跑实验，写作编译 LaTeX，云主机连服务器。": [
+    "文献读论文，文档记想法，实验写代码、跑实验，写作编译 LaTeX，云主机连服务器。",
+    "Literature for reading papers, Docs for notes, Experiments for code and runs, Writing for LaTeX, Cloud host for servers."
+  ],
+  "边看边记": ["边看边记", "Notes on the side"],
+  "在右侧打开项目文档，读论文、跑实验时随手记下。": [
+    "在右侧打开项目文档，读论文、跑实验时随手记下。",
+    "Open the project docs on the right and jot things down while you read or run experiments."
+  ],
+  "每个页面都能用：读论文、改代码、跑实验、写文档。不知道问什么，就点它给的起步问题。": [
+    "每个页面都能用：读论文、改代码、跑实验、写文档。不知道问什么，就点它给的起步问题。",
+    "Works on every page: reading papers, editing code, running experiments, writing docs. Not sure what to ask? Pick one of its starters."
   ]
 }

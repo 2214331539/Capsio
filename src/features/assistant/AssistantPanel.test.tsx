@@ -72,6 +72,26 @@ it('opens the same translation session without sending or overwriting another pr
   expect(second.value).toBe('Other project draft');
 });
 
+it('offers the Capsio account when no model is chosen yet', async () => {
+  const data = emptyWorkspace();
+  const store = createWorkspaceStore({
+    load: async () => ({ workspace: data, directory: 'test', legacyAvailable: false }),
+    save: async (value: Workspace) => value,
+    restore: async () => data,
+    migrateLegacy: async () => data,
+    importWorkspace: async () => null,
+    exportWorkspace: async () => true,
+    chooseDirectory: async () => null,
+  });
+  await store.getState().load();
+  render(
+    <AssistantPanel store={store} backend={{} as ResearchBackend} scope="p1" context={context} />,
+  );
+  expect(screen.getByRole('button', { name: '用 Capsio 账号开始' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: '用自己的模型' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '总结这篇论文' })).toBeNull();
+});
+
 it('starts a paper-tools upgrade chat in the old literature root after navigating to code', async () => {
   const data = emptyWorkspace();
   data.projects.push({ id: 'p1', name: 'project', question: '', createdAt: '', space: 'personal' });
@@ -937,7 +957,13 @@ it('routes a workspace prompt through the harness without a mode toggle', async 
     />,
   );
   expect(screen.queryByRole('button', { name: '切换到 Agent 模式' })).toBeNull();
-  expect(screen.getByText('提问，或直接描述要在当前工作区完成的任务')).toBeTruthy();
+  expect(screen.getByText('提问，或描述要完成的任务')).toBeTruthy();
+  // A way to begin on this page goes into the composer for editing, not straight out.
+  await userEvent.setup().click(screen.getByRole('button', { name: '比较两篇论文的方法' }));
+  expect((screen.getByLabelText('向 AI 提问') as HTMLTextAreaElement).value).toBe(
+    '比较两篇论文的方法',
+  );
+  await userEvent.setup().clear(screen.getByLabelText('向 AI 提问'));
   await userEvent.setup().type(screen.getByLabelText('向 AI 提问'), '读取当前项目');
   await userEvent.setup().click(screen.getByRole('button', { name: '发送' }));
   await waitFor(() => expect(startThread).toHaveBeenCalledOnce());
