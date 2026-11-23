@@ -1,6 +1,6 @@
 // Grants and revokes admin access from the server's shell; the admin pages
 // cannot raise anyone's role. Run with the service's environment, e.g.
-//   sudo -u scientify env $(sudo cat /etc/scientify-collab.env | xargs) node src/admin-cli.mjs list
+//   sudo -u capsio env $(sudo cat /etc/capsio-collab.env | xargs) node src/admin-cli.mjs list
 //   ... node src/admin-cli.mjs grant 13800000000 owner      (owner or viewer)
 //   ... node src/admin-cli.mjs revoke 13800000000
 

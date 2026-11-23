@@ -64,7 +64,7 @@ const check = (value, label) => {
 page.on('pageerror', (error) => errors.push(error.message));
 page.on('console', (message) => {
   consoleMessages.push(`${message.type()}: ${message.text()}`);
-  if (process.env.SCIENTIFY_UI_DEBUG) console.log(`[reader] ${message.text()}`);
+  if (process.env.CAPSIO_UI_DEBUG) console.log(`[reader] ${message.text()}`);
 });
 page.on('requestfailed', (request) =>
   failedRequests.push({ url: request.url(), error: request.failure()?.errorText }),
@@ -105,7 +105,7 @@ createRoot(document.getElementById('root')).render(React.createElement(React.Fra
 ));
 </script></body></html>`,
   );
-  const url = process.env.SCIENTIFY_UI_URL || 'http://127.0.0.1:1420';
+  const url = process.env.CAPSIO_UI_URL || 'http://127.0.0.1:1420';
   await page.goto(`${url}/.test-artifacts/reader-ui/${fixtureName}`, {
     waitUntil: 'commit',
     timeout: 60_000,

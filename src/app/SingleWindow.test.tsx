@@ -62,7 +62,7 @@ function fixture() {
 
 it('starts in the project center and opens a project in the same window', async () => {
   localStorage.setItem(
-    'scientify.ui.v2.main',
+    'capsio.ui.v2.main',
     JSON.stringify({ version: 2, projectId: 'p1', locations: {} }),
   );
   const { store } = fixture();

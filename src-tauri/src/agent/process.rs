@@ -12,7 +12,7 @@ use std::process::{Command, Stdio};
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 
-const TRIPLE: &str = env!("SCIENTIFY_TARGET");
+const TRIPLE: &str = env!("CAPSIO_TARGET");
 
 /// The bundled engine communicates over stdio. On Windows it must not create
 /// a visible console window every time a user starts an Agent task.
@@ -235,8 +235,8 @@ impl EngineSession {
             "initialize",
             serde_json::json!({
                 "clientInfo": {
-                    "name": "scientify",
-                    "title": "Scientify",
+                    "name": "capsio",
+                    "title": "Capsio",
                     "version": env!("CARGO_PKG_VERSION")
                 },
                 "capabilities": {

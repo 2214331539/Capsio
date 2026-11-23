@@ -23,7 +23,7 @@ window.changes=[]; createRoot(document.getElementById('root')).render(React.crea
 </script></div></body></html>`,
   );
   await page.goto(
-    `${process.env.SCIENTIFY_UI_URL}/.test-artifacts/notes-ui/${file.slice(dir.length + 1).replaceAll('\\\\', '/')}`,
+    `${process.env.CAPSIO_UI_URL}/.test-artifacts/notes-ui/${file.slice(dir.length + 1).replaceAll('\\\\', '/')}`,
     { waitUntil: 'commit' },
   );
   await page.locator('.sf-md-rendered').first().waitFor();

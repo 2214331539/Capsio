@@ -28,8 +28,8 @@ export type CloudSnapshot = {
   fetchedAt: string | null;
 };
 
-const cacheKey = 'scientify.cloud.cache';
-const seenKey = 'scientify.cloud.seen';
+const cacheKey = 'capsio.cloud.cache';
+const seenKey = 'capsio.cloud.seen';
 
 function cached(): Pick<CloudSnapshot, 'projects' | 'members' | 'fetchedAt'> {
   try {

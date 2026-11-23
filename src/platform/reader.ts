@@ -16,7 +16,7 @@ export async function outlineMetadata(
       outline: save ?? null,
       expectedRevision: revision ?? null,
     });
-  const key = `scientify.pdf-outline.v1.${fingerprint}`;
+  const key = `capsio.pdf-outline.v1.${fingerprint}`;
   const raw = localStorage.getItem(key);
   if (!save) return { outline: raw ? JSON.parse(raw) : null, revision: raw };
   if (raw !== revision) throw new Error('目录已在其他窗口更新，请重新载入。');

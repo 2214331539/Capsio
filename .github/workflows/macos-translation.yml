@@ -29,14 +29,14 @@ jobs:
       - run: node --test scripts/prepare-agent.test.mjs
       - run: pnpm exec vitest run src/features/translation
       - name: Host bridge checks (no desktop capture)
-        run: cargo test -p scientify translation --lib --locked --features custom-protocol
+        run: cargo test -p capsio translation --lib --locked --features custom-protocol
       - run: dotnet test vendor/yita/tests/Yita.Native.Mac.Tests -c Release
       - run: dotnet test vendor/yita/tests/Yita.Desktop.Tests -c Release
       - name: Build the native application
         run: pnpm tauri build --bundles app
       - name: Archive local acceptance build
-        run: ditto -c -k --sequesterRsrc --keepParent target/release/bundle/macos/Scientify.app Scientify-macOS.zip
+        run: ditto -c -k --sequesterRsrc --keepParent target/release/bundle/macos/Capsio.app Capsio-macOS.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: Scientify-macOS-local-acceptance
-          path: Scientify-macOS.zip
+          name: Capsio-macOS-local-acceptance
+          path: Capsio-macOS.zip

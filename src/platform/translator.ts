@@ -14,7 +14,7 @@ export type TranslationEvent = {
 };
 
 function command<T>(name: string, args?: Record<string, unknown>): Promise<T> {
-  if (!isTauri()) return Promise.reject(new Error('全文翻译只能在 Scientify 桌面应用中使用。'));
+  if (!isTauri()) return Promise.reject(new Error('全文翻译只能在 Capsio 桌面应用中使用。'));
   return invoke<T>(name, args);
 }
 

@@ -81,8 +81,8 @@ type Place = {
   expanded: string[];
 };
 const places = createStore<Record<string, Place | undefined>>(() => ({}));
-const RECENT_KEY = 'scientify.remote.recent';
-const PANEL_KEY = 'scientify.remote.panelHeight';
+const RECENT_KEY = 'capsio.remote.recent';
+const PANEL_KEY = 'capsio.remote.panelHeight';
 
 type Recent = { target: string; folder?: string };
 function recentHosts(): Recent[] {

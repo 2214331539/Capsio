@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 // Tauri 2's CachedIcon uses ICO entry 0 for the runtime window icon.
 // Keep original PNG payloads, but put the highest-resolution frame first.
 const source = new URL('../src-tauri/icons/source/', import.meta.url);
-const original = readFileSync(new URL('scientify.ico', source));
+const original = readFileSync(new URL('capsio.ico', source));
 if (original.readUInt16LE(0) !== 0 || original.readUInt16LE(2) !== 1)
   throw new Error('Expected a Windows ICO source.');
 const frames = new Map();
@@ -15,8 +15,7 @@ for (let i = 0; i < original.readUInt16LE(4); i++) {
   if (start + length > original.length) throw new Error('Truncated ICO frame.');
   frames.set(size, original.subarray(start, start + length));
 }
-for (const size of [96, 192])
-  frames.set(size, readFileSync(new URL(`scientify-${size}.png`, source)));
+for (const size of [96, 192]) frames.set(size, readFileSync(new URL(`capsio-${size}.png`, source)));
 const ordered = [...frames].sort(([a], [b]) => b - a);
 const header = Buffer.alloc(6 + 16 * ordered.length);
 header.writeUInt16LE(1, 2);
@@ -46,6 +45,6 @@ console.log(
 );
 
 // icon.icns and icon.png come from `pnpm tauri icon` run on
-// docs/品牌/Scientify-Logo-Kit/desktop/dark/scientify-1024.png. They carry
+// docs/品牌/Capsio-Logo-Kit/desktop/dark/capsio-1024.png. They carry
 // frames up to 1024 px, so they must not be rebuilt from the 256 px frames
 // above.

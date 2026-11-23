@@ -40,7 +40,7 @@ export async function handleBilling(request, response, context, path, url) {
       return {
         id: model.id,
         object: 'model',
-        owned_by: 'scientify',
+        owned_by: 'capsio',
         name: `${model.name} · ${times}${available ? '' : ` · ${availableTo(model)}可用`}`,
         multiplier: times,
         tier: model.tier,

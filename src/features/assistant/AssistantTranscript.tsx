@@ -110,7 +110,7 @@ export function AssistantTranscript({
   const openLink = useCallback(
     (url: string) =>
       window.dispatchEvent(
-        new CustomEvent('scientify-preview-url', { detail: { projectId: scope, url } }),
+        new CustomEvent('capsio-preview-url', { detail: { projectId: scope, url } }),
       ),
     [scope],
   );
@@ -119,7 +119,7 @@ export function AssistantTranscript({
   const onOpenFile = useCallback(
     (path: string) =>
       window.dispatchEvent(
-        new CustomEvent('scientify-preview-file', { detail: { projectId: scope, path } }),
+        new CustomEvent('capsio-preview-file', { detail: { projectId: scope, path } }),
       ),
     [scope],
   );

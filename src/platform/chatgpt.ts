@@ -19,7 +19,7 @@ export type ChatGPTUsage = { primary: ChatGPTWindow; secondary: ChatGPTWindow };
 export type ChatGPTSignIn = { success: boolean; error: string | null };
 
 function command<T>(name: string): Promise<T> {
-  if (!isTauri()) return Promise.reject(new Error('ChatGPT 账号只能在 Scientify 桌面应用中登录。'));
+  if (!isTauri()) return Promise.reject(new Error('ChatGPT 账号只能在 Capsio 桌面应用中登录。'));
   return invoke<T>(name);
 }
 

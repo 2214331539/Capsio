@@ -1,10 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 fn main() {
     // OpenSSH asks for a password through SSH_ASKPASS; for a cloud host connection
-    // Scientify is that program and answers with the password it was handed.
-    if std::env::var_os("SCIENTIFY_ASKPASS").is_some() {
+    // Capsio is that program and answers with the password it was handed.
+    if std::env::var_os("CAPSIO_ASKPASS").is_some() {
         use std::io::Write;
-        let secret = std::env::var("SCIENTIFY_ASKPASS_SECRET").unwrap_or_default();
+        let secret = std::env::var("CAPSIO_ASKPASS_SECRET").unwrap_or_default();
         let mut out = std::io::stdout();
         let _ = writeln!(out, "{secret}");
         let _ = out.flush();
@@ -13,9 +13,9 @@ fn main() {
     let args: Vec<_> = std::env::args_os().collect();
     if args
         .get(1)
-        .is_some_and(|value| value == "--scientify-migrate-storage")
+        .is_some_and(|value| value == "--capsio-migrate-storage")
     {
-        match scientify_lib::migrate_storage_offline() {
+        match capsio_lib::migrate_storage_offline() {
             Ok(()) => std::process::exit(0),
             Err(error) => {
                 eprintln!("{error}");
@@ -23,14 +23,11 @@ fn main() {
             }
         }
     }
-    if args
-        .get(1)
-        .is_some_and(|value| value == "--scientify-runner")
-    {
+    if args.get(1).is_some_and(|value| value == "--capsio-runner") {
         let result = args
             .get(2)
             .ok_or_else(|| "运行请求文件缺失。".to_string())
-            .and_then(|path| scientify_lib::run_managed_experiment(std::path::Path::new(path)));
+            .and_then(|path| capsio_lib::run_managed_experiment(std::path::Path::new(path)));
         match result {
             Ok(code) => std::process::exit(code),
             Err(error) => {
@@ -39,5 +36,5 @@ fn main() {
             }
         }
     }
-    scientify_lib::run();
+    capsio_lib::run();
 }

@@ -27,7 +27,7 @@ export async function translationConversation(
   let entity = store.getState().data?.sessions.find((item) => item.id === request.conversationId);
   if (!entity && request.op === 'create') {
     const data = store.getState().data;
-    if (!data) throw new Error('Scientify 工作区尚未载入。');
+    if (!data) throw new Error('Capsio 工作区尚未载入。');
     const profile = data.settings.modelProfiles?.find(
       (p) => p.id === data.settings.defaultModelProfileId,
     );
@@ -58,8 +58,7 @@ export async function translationConversation(
     entity = store.getState().data?.sessions.find((item) => item.id === chat.id);
   }
   if (!entity) throw new Error('此会话已删除，请重新打开问答窗口。');
-  if (entity.project !== scope)
-    throw new Error('请先返回此问答所属的 Scientify 项目，再继续对话。');
+  if (entity.project !== scope) throw new Error('请先返回此问答所属的 Capsio 项目，再继续对话。');
   let chat = asConversation(entity);
   if (!chat.translationContext) throw new Error('此会话不属于翻译问答。');
   if (request.op === 'send' || request.op === 'retry') {
@@ -72,13 +71,13 @@ export async function translationConversation(
       throw new Error('当前没有需要重试的回答。');
     const settings = chat.modelSelection?.settings;
     if (!settings?.model || !settings.endpoint)
-      throw new Error('请在 Scientify 的 AI 助手中配置模型。');
+      throw new Error('请在 Capsio 的 AI 助手中配置模型。');
     const apiKey = await credentials.load({
       provider: settings.provider,
       endpoint: settings.endpoint,
     });
     if (!apiKey && settings.provider !== 'ollama')
-      throw new Error('请在 Scientify 的 AI 助手中配置模型密钥。');
+      throw new Error('请在 Capsio 的 AI 助手中配置模型密钥。');
     // Loading credentials yields: the sidebar may delete, rename, or finish another turn meanwhile.
     const current = store.getState().data?.sessions.find((item) => item.id === chat.id);
     if (!current) throw new Error('此会话已删除，请重新打开问答窗口。');

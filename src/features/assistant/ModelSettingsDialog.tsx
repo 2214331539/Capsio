@@ -76,7 +76,7 @@ export function ModelSettingsDialog({
               <span>{t('删除连接')}</span>
             </Button>
           ) : null}
-          <span className="settings-brand">Scientify</span>
+          <span className="settings-brand">Capsio</span>
         </nav>
       }
     >
@@ -139,7 +139,7 @@ export function ModelConnectionForm({
     ? modelServices.filter((item) => services.includes(item.id))
     : modelServices;
   // The official models use the signed-in account; there is no address or key to fill in.
-  const official = service.id === 'scientify';
+  const official = service.id === 'capsio';
   // A ChatGPT plan signs in through the browser; it has no address or key.
   const account = service.id === 'chatgpt';
   const [signedIn, setSignedIn] = useState(false);
@@ -220,7 +220,7 @@ export function ModelConnectionForm({
       return;
     }
     if (official && !apiKey.trim()) {
-      setFailure(t('请先登录 Scientify 账号。'));
+      setFailure(t('请先登录 Capsio 账号。'));
       return;
     }
     if (!account && (!value.endpoint.trim() || (value.provider !== 'ollama' && !apiKey.trim()))) {
@@ -366,7 +366,7 @@ export function ModelConnectionForm({
                     provider: item.provider,
                     serviceId: item.id,
                     endpoint:
-                      item.id === 'scientify'
+                      item.id === 'capsio'
                         ? officialEndpoint || item.endpoints[0]?.url || ''
                         : (item.endpoints[0]?.url ?? ''),
                     model: '',
@@ -410,7 +410,7 @@ export function ModelConnectionForm({
             ) : null}
             {official ? (
               <p className="settings-note">
-                {t('使用登录的 Scientify 账号，不需要密钥，按点数计费。')}
+                {t('使用登录的 Capsio 账号，不需要密钥，按点数计费。')}
               </p>
             ) : null}
             {!account && !official && service.endpoints.length > 1 && (

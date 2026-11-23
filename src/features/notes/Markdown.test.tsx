@@ -47,7 +47,7 @@ it('routes clicked web sources to the application browser and keeps page links i
   const onPage = vi.fn();
   render(
     <Markdown onLink={onLink} onPage={onPage}>
-      {'[source](https://example.com/paper) [page](scientify-page:2)'}
+      {'[source](https://example.com/paper) [page](capsio-page:2)'}
     </Markdown>,
   );
   screen.getByRole('link', { name: 'source' }).click();
@@ -84,7 +84,7 @@ it('keeps invalid formulas readable and blocks trusted HTML commands and remote 
 
 it('preserves paper page links beside math and shares formula rendering with file previews', () => {
   const onPage = vi.fn();
-  const view = render(<Markdown onPage={onPage}>{'$x$ [page](scientify-page:3)'}</Markdown>);
+  const view = render(<Markdown onPage={onPage}>{'$x$ [page](capsio-page:3)'}</Markdown>);
   screen.getByRole('button', { name: 'page' }).click();
   expect(onPage).toHaveBeenCalledExactlyOnceWith(3);
   view.rerender(

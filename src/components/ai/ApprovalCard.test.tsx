@@ -48,10 +48,7 @@ describe('ApprovalCard', () => {
   });
 
   it('asks again for every Git action and note edit', () => {
-    for (const method of [
-      'scientify/git/requestApproval',
-      'scientify/notes/requestApproval',
-    ] as const) {
+    for (const method of ['capsio/git/requestApproval', 'capsio/notes/requestApproval'] as const) {
       render(<ApprovalCard event={request(method, {})} onDecide={vi.fn()} />);
       expect(screen.queryByRole('button', { name: '允许' })).not.toBeNull();
       expect(screen.queryByRole('button', { name: '本会话允许' })).toBeNull();
@@ -83,7 +80,7 @@ describe('ApprovalCard', () => {
 
   it('tells a new note apart from a change to an existing one', () => {
     const note = (action: string) =>
-      request('scientify/notes/requestApproval', {
+      request('capsio/notes/requestApproval', {
         action,
         command: '论文总结',
         reason: '## 方法',

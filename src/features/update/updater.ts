@@ -46,8 +46,8 @@ export function useUpdate() {
 
 const FIRST_CHECK = 10_000;
 const EVERY = 6 * 3600_000;
-const prefsKey = 'scientify.update';
-const deviceKey = 'scientify.device';
+const prefsKey = 'capsio.update';
+const deviceKey = 'capsio.device';
 
 type Prefs = { autoDownload: boolean; skipped?: string };
 
@@ -175,7 +175,7 @@ async function run(manual: boolean) {
   } catch (reason) {
     if (manual) set({ phase: 'error', error: describeUpdateError(reason) });
     else if (before.phase === 'checking') set({ phase: 'idle' });
-    console.warn('Scientify update check failed', reason);
+    console.warn('Capsio update check failed', reason);
   }
 }
 

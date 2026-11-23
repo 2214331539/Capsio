@@ -1,12 +1,12 @@
-# Scientify
+# Capsio
 
 **A local research workspace, organized around your project.**
 
 Read papers, keep notes, edit and run Python experiments, and revisit the parameters, logs, and outputs of each run in one desktop workspace.
 
-[简体中文](README.md) · [Contributing](CONTRIBUTING.md) · [Roadmap](ROADMAP.md) · [Issues](https://github.com/2214331539/Scientify/issues) · [License](LICENSE)
+[简体中文](README.md) · [Contributing](CONTRIBUTING.md) · [Roadmap](ROADMAP.md) · [Issues](https://github.com/2214331539/Capsio/issues) · [License](LICENSE)
 
-> **Early alpha for Windows x64 and macOS Apple Silicon.** Download pre-releases from [GitHub Releases](https://github.com/2214331539/Scientify/releases). Windows is unsigned; the Mac preview is ad-hoc signed and not notarized. Intel Mac, Linux, and mobile builds are not provided.
+> **Early alpha for Windows x64 and macOS Apple Silicon.** Download pre-releases from [GitHub Releases](https://github.com/2214331539/Capsio/releases). Windows is unsigned; the Mac preview is ad-hoc signed and not notarized. Intel Mac, Linux, and mobile builds are not provided.
 
 ## What you can do
 
@@ -24,11 +24,11 @@ Start with a small task: **create a project → connect papers and code → take
 
 ## Download
 
-Open [Releases](https://github.com/2214331539/Scientify/releases) and download `Scientify_<version>_windows_x64_setup.exe` from the newest pre-release. Node.js and Rust are not needed to use the installed app. Windows 10 / 11 x64 is required; the installer downloads WebView2 if it is missing. Install Python and Git separately when using their respective features.
+Open [Releases](https://github.com/2214331539/Capsio/releases) and download `Capsio_<version>_windows_x64_setup.exe` from the newest pre-release. Node.js and Rust are not needed to use the installed app. Windows 10 / 11 x64 is required; the installer downloads WebView2 if it is missing. Install Python and Git separately when using their respective features.
 
-On Apple Silicon (M-series) Macs with macOS 14+, download `Scientify_<version>_macos_arm64.dmg` and drag Scientify into Applications. If macOS blocks this unnotarized preview, verify the download source and use System Settings → Privacy & Security → Open Anyway. Do not disable Gatekeeper. Verify the download using `shasum -a 256 <installer>` and `SHA256SUMS.txt`.
+On Apple Silicon (M-series) Macs with macOS 14+, download `Capsio_<version>_macos_arm64.dmg` and drag Capsio into Applications. If macOS blocks this unnotarized preview, verify the download source and use System Settings → Privacy & Security → Open Anyway. Do not disable Gatekeeper. Verify the download using `shasum -a 256 <installer>` and `SHA256SUMS.txt`.
 
-The Windows alpha installer is not code-signed and Windows may display an unknown-publisher warning. Compare `Get-FileHash <installer> -Algorithm SHA256` with the release's `SHA256SUMS.txt` to verify integrity. Before updating, close Scientify and back up `ScientifyData` and externally linked folders. Automatic updates are not available yet.
+The Windows alpha installer is not code-signed and Windows may display an unknown-publisher warning. Compare `Get-FileHash <installer> -Algorithm SHA256` with the release's `SHA256SUMS.txt` to verify integrity. Before updating, close Capsio and back up `CapsioData` and externally linked folders. Automatic updates are not available yet.
 
 ## Run from source
 
@@ -37,8 +37,8 @@ On Windows x64, install Node.js 24 LTS, pnpm 10.11.0, stable Rust, and the [Taur
 For macOS, use native arm64 Node and Rust, macOS 14+, and Xcode Command Line Tools (`xcode-select --install`). The commands below are shared.
 
 ```sh
-git clone https://github.com/2214331539/Scientify.git
-cd Scientify
+git clone https://github.com/2214331539/Capsio.git
+cd Capsio
 corepack enable
 corepack prepare pnpm@10.11.0 --activate
 pnpm install --frozen-lockfile
@@ -53,7 +53,7 @@ Build a local desktop executable:
 pnpm tauri build --no-bundle
 ```
 
-On Windows, run `Scientify-MVP.cmd`. This repository launcher is not an installer. Use `node node_modules/@tauri-apps/cli/tauri.js build --bundles nsis -- --locked` to build an NSIS installer. The release workflow runs checks and isolated installer smoke tests before publishing; signing and automatic updates remain planned. See the [release and branch guide](docs/技术方案/版本发布与分支管理.md).
+On Windows, run `Capsio-MVP.cmd`. This repository launcher is not an installer. Use `node node_modules/@tauri-apps/cli/tauri.js build --bundles nsis -- --locked` to build an NSIS installer. The release workflow runs checks and isolated installer smoke tests before publishing; signing and automatic updates remain planned. See the [release and branch guide](docs/技术方案/版本发布与分支管理.md).
 
 On Mac, use `node node_modules/@tauri-apps/cli/tauri.js build --bundles app,dmg -- --locked`; the DMG is in `target/release/bundle/dmg/`.
 
@@ -61,7 +61,7 @@ On Mac, use `node node_modules/@tauri-apps/cli/tauri.js build --bundles app,dmg 
 
 ## Data and execution
 
-PDFs, adjacent paper notes, and code stay in local folders. Windows release builds store application data in `ScientifyData/` near the writable installation. Mac builds use `~/Library/Application Support/Scientify/ScientifyData/`, outside the app bundle. Development builds use a `ScientifyDevData/` folder next to the checkout, shared by every worktree.
+PDFs, adjacent paper notes, and code stay in local folders. Windows release builds store application data in `CapsioData/` near the writable installation. Mac builds use `~/Library/Application Support/Capsio/CapsioData/`, outside the app bundle. Development builds use a `CapsioDevData/` folder next to the checkout, shared by every worktree.
 
 **JSON export excludes PDFs and source files.** Back up the application data and every externally linked directory. See the [desktop guide](docs/使用说明/桌面使用说明.md) for details.
 
@@ -98,6 +98,6 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 
 ## License and acknowledgements
 
-Original Scientify code and documentation are available under [Apache-2.0](LICENSE). Contributors retain their copyright. Third-party code and assets retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No trademark rights or endorsement are granted for modified distributions.
+Original Capsio code and documentation are available under [Apache-2.0](LICENSE). Contributors retain their copyright. Third-party code and assets retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No trademark rights or endorsement are granted for modified distributions.
 
-Built with Tauri, React, CodeMirror, PDF.js, xterm.js, OpenAI Codex, and other open-source projects. Scientify is independent and is not officially affiliated with their maintainers or organizations.
+Built with Tauri, React, CodeMirror, PDF.js, xterm.js, OpenAI Codex, and other open-source projects. Capsio is independent and is not officially affiliated with their maintainers or organizations.

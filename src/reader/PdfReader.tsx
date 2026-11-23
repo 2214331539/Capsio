@@ -80,9 +80,9 @@ export default function PdfReader({
     try {
       page = Math.max(
         1,
-        Math.trunc(Number(localStorage.getItem(`scientify.reader.${assetId}`)) || page),
+        Math.trunc(Number(localStorage.getItem(`capsio.reader.${assetId}`)) || page),
       );
-      if (!cached && localStorage.getItem('scientify.reader.mode') === 'continuous')
+      if (!cached && localStorage.getItem('capsio.reader.mode') === 'continuous')
         mode = 'continuous';
     } catch {
       /* Optional reading preferences. */
@@ -250,7 +250,7 @@ export default function PdfReader({
     pendingScroll.current = { ...position.current, mode: next };
     setMode(next);
     try {
-      localStorage.setItem('scientify.reader.mode', next);
+      localStorage.setItem('capsio.reader.mode', next);
     } catch {
       /* Optional preference. */
     }
@@ -304,8 +304,8 @@ export default function PdfReader({
       const target = (event as CustomEvent<{ paperId: string; page: number }>).detail;
       if (target?.paperId === paperId) navigate(target.page);
     };
-    window.addEventListener('scientify-pdf-page', handler);
-    return () => window.removeEventListener('scientify-pdf-page', handler);
+    window.addEventListener('capsio-pdf-page', handler);
+    return () => window.removeEventListener('capsio-pdf-page', handler);
   }, [paperId, document]);
   const widthRef = useRef(width);
   widthRef.current = width;
@@ -421,7 +421,7 @@ export default function PdfReader({
       text: text || undefined,
     });
     try {
-      localStorage.setItem(`scientify.reader.${assetId}`, String(page));
+      localStorage.setItem(`capsio.reader.${assetId}`, String(page));
     } catch {
       /* Optional location. */
     }
@@ -698,7 +698,7 @@ export default function PdfReader({
               .map((line) => `> ${line}`)
               .join('\n');
             window.dispatchEvent(
-              new CustomEvent('scientify-assistant-ask', {
+              new CustomEvent('capsio-assistant-ask', {
                 detail: {
                   scope: projectId,
                   draft: `${quote}\n> —— ${title}，${t('第 {page} 页', { page: picked.page })}\n\n`,

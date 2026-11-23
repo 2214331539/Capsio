@@ -18,7 +18,7 @@ export type BrowserTab = {
  * The first page of every embedded browser tab: the home page of the search
  * engine chosen in Settings (browser.rs `HOME_ADDRESS`).
  */
-export const DEFAULT_BROWSER_URL = 'scientify:home';
+export const DEFAULT_BROWSER_URL = 'capsio:home';
 /** The search engines the address bar can use; `settings.browserSearch`. */
 export const SEARCH_ENGINES = [
   ['google', 'Google'],
@@ -34,7 +34,7 @@ export const browserEvents = (event: string, callback: (tab: BrowserTab) => void
 export async function openBrowserSource(projectId: string, address: string) {
   const tab = await browserCommand<BrowserTab>({ op: 'openUrl', project_id: projectId, address });
   window.dispatchEvent(
-    new CustomEvent('scientify-open-browser', { detail: { projectId, tabId: tab.id } }),
+    new CustomEvent('capsio-open-browser', { detail: { projectId, tabId: tab.id } }),
   );
 }
 

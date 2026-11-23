@@ -1,6 +1,6 @@
 use super::AppState;
+use capsio_core::library::{Binding, LocalLibrary, Note, Operation, Scan};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
-use scientify_core::library::{Binding, LocalLibrary, Note, Operation, Scan};
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -169,7 +169,7 @@ pub async fn library_read_file(
     view: tauri::Webview,
     project_id: String,
     path: String,
-) -> Result<scientify_core::research::FileContent, String> {
+) -> Result<capsio_core::research::FileContent, String> {
     trusted(&view)?;
     let service = app.state::<LibraryState>().service.clone();
     tauri::async_runtime::spawn_blocking(move || service.read_file(&project_id, &path))
@@ -309,7 +309,7 @@ pub async fn library_import_bytes(
     let destination: Destination = serde_json::from_str(
         request
             .headers()
-            .get("x-scientify-file")
+            .get("x-capsio-file")
             .and_then(|value| value.to_str().ok())
             .ok_or("缺少拖入文件信息。")?,
     )
@@ -323,7 +323,7 @@ pub async fn library_import_bytes(
     let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
         return Err("拖入文件内容无效。".into());
     };
-    if bytes.len() as u64 > scientify_core::library::PDF_LIMIT {
+    if bytes.len() as u64 > capsio_core::library::PDF_LIMIT {
         return Err("文件名无效或文件超过 150 MiB。".into());
     }
     let bytes = bytes.clone();

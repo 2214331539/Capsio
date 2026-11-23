@@ -47,8 +47,8 @@ jobs:
       - name: Prepare assets and build frontend
         run: pnpm run build
         env:
-          SCIENTIFY_TEX_WARMUP: skip # bundled TeX packages are for release builds
-          SCIENTIFY_SKIP_BABELDOC: '1' # so is the full-text translation engine
+          CAPSIO_TEX_WARMUP: skip # bundled TeX packages are for release builds
+          CAPSIO_SKIP_BABELDOC: '1' # so is the full-text translation engine
       - name: Formatting
         run: pnpm format:check
       - name: Type checking
@@ -62,7 +62,7 @@ jobs:
       - name: Browser integration tests
         run: pnpm test:ui
         env:
-          SCIENTIFY_BROWSER_CHANNEL: chromium
+          CAPSIO_BROWSER_CHANNEL: chromium
       - name: Rust formatting
         run: cargo fmt --all --check
       - name: Rust tests

@@ -1,5 +1,5 @@
 use crate::AppState;
-use scientify_core::storage::write_atomic_bytes;
+use capsio_core::storage::write_atomic_bytes;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};

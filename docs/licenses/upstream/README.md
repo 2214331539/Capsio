@@ -12,7 +12,7 @@ review and update this map rather than reuse a notice for a different version.
   parent package (`esbuild`, `rollup`, `@napi-rs/canvas`, `@tauri-apps/cli`).
 - `selectors` declares MPL-2.0 in its Cargo manifest and source headers. The
   complete license is Mozilla's canonical text. Its exact source commit is
-  linked in `sources.json`; Scientify does not modify this dependency.
+  linked in `sources.json`; Capsio does not modify this dependency.
 - `stackback` is used by the test toolchain only. Its source and npm archive
   contain an MIT declaration but no separate license text. The supplemental
   record identifies this limitation explicitly; it is not a runtime component.

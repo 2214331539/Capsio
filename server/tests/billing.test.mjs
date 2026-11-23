@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { createDb, initDb } from '../src/db.mjs';
 import { createServer } from '../src/server.mjs';
-import { sealKey, forgetModels } from '../src/billing/models.mjs';
+import { sealKey, openKey, forgetModels } from '../src/billing/models.mjs';
 import { resetLimits } from '../src/billing/limits.mjs';
 import { runJobs } from '../src/jobs.mjs';
 import { hashSecret } from '../src/jwt.mjs';
@@ -464,4 +464,9 @@ test('a channel lists its upstream models, and picked ones are added unlisted', 
   // A second import of the same name gets its own ID.
   const again = await call('POST', '/admin/api/models/import', { headers: owner.headers, body: { channelId: 'main', models: [{ upstream: 'Qwen/Qwen3-32B' }] } });
   assert.equal(again.body.models[0].id, 'qwen/qwen3-32b-2');
+});
+
+test('channel keys stored before the rename still open', () => {
+  const sealed = 'BwcHBwcHBwcHBwcH8apczsqb4IbkBJvYYTSv155HtJnr7Gwhu+YT9lE+N1M=';
+  assert.equal(openKey({ jwtSecret: 'b'.repeat(40) }, sealed), 'sk-before-rename');
 });

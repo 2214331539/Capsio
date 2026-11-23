@@ -12,7 +12,7 @@
 //! Edits made by the AI agent or other programs are found by the scan, so no
 //! save hook has to report them.
 
-use scientify_core::{library::LocalLibrary, research::ResearchFiles, storage::Storage};
+use capsio_core::{library::LocalLibrary, research::ResearchFiles, storage::Storage};
 pub(crate) mod resolution;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
@@ -201,7 +201,7 @@ fn save_state(data: &Path, project: &str, state: &ProjectSync) -> Result<(), Str
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     }
     let bytes = serde_json::to_vec_pretty(state).map_err(|error| error.to_string())?;
-    scientify_core::storage::write_atomic_bytes(&path, &bytes)
+    capsio_core::storage::write_atomic_bytes(&path, &bytes)
 }
 
 /// A folder that changed since the last sync is a new place: forget what was tracked there
@@ -913,7 +913,7 @@ fn apply_records(
             apply_action(&mut next, project, action)?;
         }
         next["revision"] = json!(revision + 1);
-        next["updatedAt"] = json!(scientify_core::workspace::now());
+        next["updatedAt"] = json!(capsio_core::workspace::now());
         match storage.save(next, revision) {
             Ok(saved) => return Ok(saved),
             Err(error) if error.contains("已发生变化") => continue,
@@ -1230,7 +1230,7 @@ pub(crate) async fn sync(
                             domain: domain.name().into(),
                             path: path.into(),
                             copy: copy.clone(),
-                            at: scientify_core::workspace::now(),
+                            at: capsio_core::workspace::now(),
                             local: None,
                         });
                         outcome.conflicts += 1;
@@ -1275,7 +1275,7 @@ pub(crate) async fn sync(
                             domain: domain.name().into(),
                             path: path.into(),
                             copy: copy_id,
-                            at: scientify_core::workspace::now(),
+                            at: capsio_core::workspace::now(),
                             local: local_snapshot,
                         });
                         outcome.conflicts += 1;
@@ -1544,7 +1544,7 @@ pub(crate) async fn sync(
         None => cursor,
     };
 
-    outcome.last_sync_at = scientify_core::workspace::now();
+    outcome.last_sync_at = capsio_core::workspace::now();
     state.last_sync_at = Some(outcome.last_sync_at.clone());
     state.last_error = outcome.errors.first().cloned();
     state.skipped = outcome.skipped;
@@ -1716,7 +1716,7 @@ pub(crate) mod memory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use scientify_core::workspace;
+    use capsio_core::workspace;
 
     const PROJECT: &str = "project-shared-01";
 
@@ -1772,7 +1772,7 @@ mod tests {
     impl Machine {
         fn new(id: &str, role: &str) -> Self {
             let temp = tempfile::tempdir().unwrap();
-            let storage = Storage::open(temp.path().join("ScientifyData/workspace")).unwrap();
+            let storage = Storage::open(temp.path().join("CapsioData/workspace")).unwrap();
             let files = ResearchFiles::new(storage.directory().to_path_buf());
             let library = LocalLibrary::new(storage.directory().to_path_buf());
             let documents = temp.path().join("Documents");
@@ -2428,7 +2428,7 @@ mod tests {
     impl Live {
         fn new(id: &str, project: &str) -> Self {
             let temp = tempfile::tempdir().unwrap();
-            let storage = Storage::open(temp.path().join("ScientifyData/workspace")).unwrap();
+            let storage = Storage::open(temp.path().join("CapsioData/workspace")).unwrap();
             let files = ResearchFiles::new(storage.directory().to_path_buf());
             let library = LocalLibrary::new(storage.directory().to_path_buf());
             let mut data = workspace::empty();
@@ -2515,18 +2515,18 @@ mod tests {
     /// Same account on two devices against a running server, with files going
     /// through OSS. Use a number from the server's DEV_SMS_PHONES: it signs in
     /// with DEV_SMS_CODE (default 123456) and receives no SMS. Run
-    /// `SCIENTIFY_E2E_ENDPOINT=http://127.0.0.1:8090 SCIENTIFY_E2E_PHONE=<number>
-    /// cargo test -p scientify --lib live_server -- --ignored`.
+    /// `CAPSIO_E2E_ENDPOINT=http://127.0.0.1:8090 CAPSIO_E2E_PHONE=<number>
+    /// cargo test -p capsio --lib live_server -- --ignored`.
     #[tokio::test]
     #[ignore]
     async fn live_server_keeps_one_account_in_sync_on_two_devices() {
-        let Ok(endpoint) = std::env::var("SCIENTIFY_E2E_ENDPOINT") else {
+        let Ok(endpoint) = std::env::var("CAPSIO_E2E_ENDPOINT") else {
             return;
         };
-        let phone = std::env::var("SCIENTIFY_E2E_PHONE")
-            .expect("SCIENTIFY_E2E_PHONE: a number listed in the server's DEV_SMS_PHONES");
+        let phone = std::env::var("CAPSIO_E2E_PHONE")
+            .expect("CAPSIO_E2E_PHONE: a number listed in the server's DEV_SMS_PHONES");
         let phone = phone.as_str();
-        let code = std::env::var("SCIENTIFY_E2E_CODE").unwrap_or_else(|_| "123456".into());
+        let code = std::env::var("CAPSIO_E2E_CODE").unwrap_or_else(|_| "123456".into());
         let project = format!("live-{}", uuid::Uuid::new_v4());
         let first = Live::new("device-a", &project);
         let second = Live::new("device-b", &project);

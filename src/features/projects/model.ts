@@ -3,7 +3,7 @@ import { isSyncedProject } from '../../platform/collaboration';
 import { locale, t } from '../../i18n';
 
 /** Local space of projects that are shared with other people. */
-export const COLLABORATION_TEAM_ID = 'scientify-collaboration';
+export const COLLABORATION_TEAM_ID = 'capsio-collaboration';
 
 export type CenterPage = 'mine' | 'team';
 export const CENTER_PAGES: CenterPage[] = ['mine', 'team'];
@@ -37,7 +37,7 @@ export function ensureCollaborationTeam(data: Workspace) {
       id: COLLABORATION_TEAM_ID,
       name: '团队协作',
       color: '#56746a',
-      description: 'Scientify collaboration projects',
+      description: 'Capsio collaboration projects',
     });
 }
 
@@ -80,7 +80,7 @@ export function coverTone(project: Pick<Project, 'id' | 'color'>) {
   return toneOf(coverColor(project));
 }
 
-const openedKey = 'scientify.projects.opened';
+const openedKey = 'capsio.projects.opened';
 /** When each project was last opened from this window; kept per device. */
 export function readOpened(): Record<string, string> {
   try {

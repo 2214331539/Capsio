@@ -204,7 +204,7 @@ it('honors a note-source page target instead of a cached tab position', async ()
   await user.click(screen.getByRole('button', { name: '下一页' }));
   await waitFor(() => expect(context.mock.lastCall?.[0].page).toBe(2));
   host.unmount();
-  localStorage.setItem('scientify.reader.asset', '1');
+  localStorage.setItem('capsio.reader.asset', '1');
   context.mockClear();
   render(reader);
   await waitFor(() =>
@@ -234,15 +234,12 @@ it('scrolls across pages, switches mode at the current page and follows source l
   expect((screen.getByRole('spinbutton', { name: '页码' }) as HTMLInputElement).value).toBe('2');
   expect(scroll.scrollTop).toBe(56);
   await user.click(screen.getByRole('button', { name: '切换为连续滚动' }));
-  fireEvent(
-    window,
-    new CustomEvent('scientify-pdf-page', { detail: { paperId: 'paper', page: 1 } }),
-  );
+  fireEvent(window, new CustomEvent('capsio-pdf-page', { detail: { paperId: 'paper', page: 1 } }));
   await waitFor(() =>
     expect((screen.getByRole('spinbutton', { name: '页码' }) as HTMLInputElement).value).toBe('1'),
   );
   expect(backend.readPdf).toHaveBeenCalledTimes(1);
-  expect(localStorage.getItem('scientify.reader.mode')).toBe('continuous');
+  expect(localStorage.getItem('capsio.reader.mode')).toBe('continuous');
 });
 
 it('renders web links with PDF.js and opens them without navigating the application', async () => {
@@ -391,7 +388,7 @@ it('opens a persistent directory, searches collapsed sections and navigates whil
 });
 
 it('says it returned to the last page when a paper is opened again, and offers the first page', async () => {
-  localStorage.setItem('scientify.reader.resumed', '2');
+  localStorage.setItem('capsio.reader.resumed', '2');
   const user = userEvent.setup();
   const context = vi.fn();
   const backend: PdfBackend = { readPdf: vi.fn(async () => new Uint8Array([1])) };
@@ -417,7 +414,7 @@ it('says it returned to the last page when a paper is opened again, and offers t
   // Said once per paper and session: opening it again does not repeat it.
   view.unmount();
   clearToasts();
-  localStorage.setItem('scientify.reader.resumed', '2');
+  localStorage.setItem('capsio.reader.resumed', '2');
   render(paper);
   await waitFor(() => expect(context).toHaveBeenCalled());
   expect(screen.queryByText('已回到上次读到的第 2 页')).toBeNull();

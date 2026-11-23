@@ -148,7 +148,7 @@ export function GlobalDock({
                   target.onToolChange('assistant');
                   let accepted = false;
                   window.dispatchEvent(
-                    new CustomEvent('scientify-assistant-open-session', {
+                    new CustomEvent('capsio-assistant-open-session', {
                       detail: {
                         scope: target.scope,
                         id,

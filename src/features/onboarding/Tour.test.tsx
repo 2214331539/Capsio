@@ -92,10 +92,10 @@ it('shows the center tour once, and again from Help', async () => {
     </>,
   );
   await act(async () => vi.advanceTimersByTime(800));
-  expect(screen.getByRole('heading', { name: '欢迎使用 Scientify' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: '欢迎使用 Capsio' })).toBeTruthy();
   fireEvent.keyDown(window, { key: 'Escape' });
   expect(screen.queryByRole('dialog', { name: '功能导览' })).toBeNull();
-  expect(localStorage.getItem('scientify.tour.center.v1')).toBe('done');
+  expect(localStorage.getItem('capsio.tour.center.v1')).toBe('done');
   view.rerender(
     <>
       <Window />
@@ -105,7 +105,7 @@ it('shows the center tour once, and again from Help', async () => {
   await act(async () => vi.advanceTimersByTime(800));
   expect(screen.queryByRole('dialog', { name: '功能导览' })).toBeNull();
   act(() => {
-    window.dispatchEvent(new Event('scientify-start-tour'));
+    window.dispatchEvent(new Event('capsio-start-tour'));
   });
-  expect(screen.getByRole('heading', { name: '欢迎使用 Scientify' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: '欢迎使用 Capsio' })).toBeTruthy();
 });

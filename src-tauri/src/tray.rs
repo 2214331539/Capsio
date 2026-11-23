@@ -14,20 +14,20 @@ pub fn update<R: Runtime>(app: &tauri::AppHandle<R>, status: &Value) {
         status["enabled"].as_bool(),
     ) {
         if let Err(error) = toggle.0.set_checked(enabled) {
-            eprintln!("Scientify tray update: {error}");
+            eprintln!("Capsio tray update: {error}");
         }
     }
 }
 
 pub fn install<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
-    let show = MenuItem::with_id(app, "show", "打开 Scientify", true, None::<&str>)?;
+    let show = MenuItem::with_id(app, "show", "打开 Capsio", true, None::<&str>)?;
     let enabled =
         CheckMenuItem::with_id(app, "selection", "启用划词翻译", true, true, None::<&str>)?;
     let clipboard = MenuItem::with_id(app, "clipboard", "翻译剪贴板", true, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", "翻译设置…", true, None::<&str>)?;
     let repair = MenuItem::with_id(app, "repair", "修复划词捕获", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
-    let quit = MenuItem::with_id(app, "quit", "退出 Scientify", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "退出 Capsio", true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
         &[
@@ -35,8 +35,8 @@ pub fn install<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
         ],
     )?;
     app.manage(TranslationToggle(enabled));
-    let mut tray = TrayIconBuilder::with_id("scientify")
-        .tooltip("Scientify · 划词翻译")
+    let mut tray = TrayIconBuilder::with_id("capsio")
+        .tooltip("Capsio · 划词翻译")
         .menu(&menu)
         .on_menu_event(|app, event| {
             let id = event.id.as_ref().to_owned();
@@ -47,7 +47,7 @@ pub fn install<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
                         let window = host.get_webview_window("main").ok_or("主窗口不可用。")?;
                         window.unminimize().and_then(|_| window.show()).and_then(|_| window.set_focus()).map_err(|e| e.to_string())?;
                         // Use the frontend's existing dirty-file and running-task guard.
-                        return host.emit_to(tauri::EventTarget::webview(window.label()), "scientify-exit-requested", ()).map_err(|e| e.to_string());
+                        return host.emit_to(tauri::EventTarget::webview(window.label()), "capsio-exit-requested", ()).map_err(|e| e.to_string());
                     }
                     if id == "show" {
                         let window = host.get_webview_window("main").ok_or("主窗口不可用。")?;
@@ -61,7 +61,7 @@ pub fn install<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
                     crate::yita::command(&host, action).await.map(|_| ())
                 }.await;
                 if let Err(error) = result {
-                    rfd::AsyncMessageDialog::new().set_title("Scientify 翻译").set_description(error).set_level(rfd::MessageLevel::Error).show().await;
+                    rfd::AsyncMessageDialog::new().set_title("Capsio 翻译").set_description(error).set_level(rfd::MessageLevel::Error).show().await;
                 }
             });
         });

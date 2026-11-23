@@ -121,7 +121,7 @@ async function fixture(requestedPaper?: string) {
     pdf: async () => new Uint8Array(),
     readFile: vi.fn(async (_p, path) => ({
       path,
-      content: '# Local notes\n\nOpened in Scientify.',
+      content: '# Local notes\n\nOpened in Capsio.',
       version: 'v1',
     })),
     note: async () => ({ content: 'existing note', revision: 'v1' }),
@@ -424,7 +424,7 @@ it('moves a Ctrl-selected bundle and keeps paired notes with their PDFs', async 
     copy: false,
   });
   expect(transfer.setData).toHaveBeenCalledWith(
-    'application/x-scientify-library',
+    'application/x-capsio-library',
     '["a.pdf","b.pdf"]',
   );
   expect(screen.queryByRole('button', { name: '刷新' })).toBeNull();

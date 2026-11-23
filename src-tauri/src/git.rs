@@ -1,6 +1,6 @@
 //! Standard Git semantics over a validated project/worktree root.
 use crate::{code, research, AppState};
-use scientify_core::{
+use capsio_core::{
     research::{reject_links, ResearchFiles},
     storage::Storage,
 };
@@ -135,7 +135,7 @@ pub(crate) fn protect_internal_data(storage: &Storage, path: &Path) -> Result<()
     if container.starts_with(path)
         || (path.starts_with(container) && !(path.starts_with(&projects) && path != projects))
     {
-        return Err("worktree 不能访问 Scientify 的内部数据、凭据或浏览缓存目录。".into());
+        return Err("worktree 不能访问 Capsio 的内部数据、凭据或浏览缓存目录。".into());
     }
     Ok(())
 }
@@ -629,7 +629,7 @@ fn action_for(root: &Path, input: &Action, agent: bool) -> Result<String, String
             }
         }
         "stash-save" => {
-            let message = input.message.as_deref().unwrap_or("Scientify");
+            let message = input.message.as_deref().unwrap_or("Capsio");
             if message.len() > 4000 || message.contains('\0') {
                 return Err("Stash 说明无效。".into());
             }
@@ -873,7 +873,7 @@ mod tests {
         let data = tempfile::tempdir().unwrap();
         let storage = Storage::open(data.path().join("data")).unwrap();
         let files = ResearchFiles::new(storage.directory().to_path_buf());
-        let mut workspace = scientify_core::workspace::empty();
+        let mut workspace = capsio_core::workspace::empty();
         workspace["projects"] = serde_json::json!([{"id":"p1","name":"Fixture","space":"personal","question":"test","createdAt":"2026-10-02","path":root}]);
         workspace["revision"] = serde_json::json!(1);
         storage.save(workspace, 0).unwrap();
@@ -902,10 +902,10 @@ mod tests {
     fn managed_project_never_inherits_the_installation_repository() {
         let parent = fixture();
         let parent_root = parent.path().canonicalize().unwrap();
-        let storage = Storage::open(parent_root.join("ScientifyData/workspace")).unwrap();
+        let storage = Storage::open(parent_root.join("CapsioData/workspace")).unwrap();
         let files = ResearchFiles::new(storage.directory().to_path_buf());
         let managed = files.project_root("p1", None).unwrap();
-        let mut workspace = scientify_core::workspace::empty();
+        let mut workspace = capsio_core::workspace::empty();
         workspace["projects"] = serde_json::json!([{"id":"p1","name":"Fixture","space":"personal","question":"test","createdAt":"2026-10-02"}]);
         workspace["revision"] = serde_json::json!(1);
         storage.save(workspace, 0).unwrap();
@@ -947,7 +947,7 @@ mod tests {
         assert!(target.join(".git").is_file());
         let browser = data.path().join("browser-profile");
         std::fs::create_dir_all(&browser).unwrap();
-        let mut workspace = scientify_core::workspace::empty();
+        let mut workspace = capsio_core::workspace::empty();
         workspace["projects"] = serde_json::json!([{"id":"p1","name":"Fixture","space":"personal","question":"test","createdAt":"2026-10-02","path":browser}]);
         workspace["revision"] = serde_json::json!(1);
         storage.save(workspace, 0).unwrap();

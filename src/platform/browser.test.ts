@@ -2,7 +2,7 @@ import { beforeEach, expect, it } from 'vitest';
 import { emptyWorkspace } from '../domain/workspace';
 import { browserResearch, browserWorkspace } from './browser';
 
-const key = 'scientify.mvp.preview.workspace.v1';
+const key = 'capsio.mvp.preview.workspace.v1';
 beforeEach(() => localStorage.clear());
 
 it('treats object prototype names as ordinary filenames', async () => {

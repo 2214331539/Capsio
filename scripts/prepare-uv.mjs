@@ -23,7 +23,7 @@ const manifest = JSON.parse(readFileSync(join(root, 'scripts', 'uv-assets.json')
 
 function target() {
   const triple =
-    process.env.SCIENTIFY_CODEX_TRIPLE ||
+    process.env.CAPSIO_CODEX_TRIPLE ||
     {
       'win32-x64': 'x86_64-pc-windows-msvc',
       'darwin-arm64': 'aarch64-apple-darwin',

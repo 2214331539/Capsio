@@ -117,20 +117,20 @@ it('opens a requested note only in its scope and only after saving the current d
   save.mockRejectedValueOnce(new Error('来源切换时保存失败'));
   await act(async () => {
     window.dispatchEvent(
-      new CustomEvent('scientify-open-note', { detail: { scope: 'p1', id: target.id } }),
+      new CustomEvent('capsio-open-note', { detail: { scope: 'p1', id: target.id } }),
     );
   });
   await screen.findByText('来源切换时保存失败');
   expect((screen.getByLabelText('笔记标题') as HTMLInputElement).value).toBe('项目一笔记');
   await act(async () => {
     window.dispatchEvent(
-      new CustomEvent('scientify-open-note', { detail: { scope: 'p2', id: target.id } }),
+      new CustomEvent('capsio-open-note', { detail: { scope: 'p2', id: target.id } }),
     );
   });
   expect((screen.getByLabelText('笔记标题') as HTMLInputElement).value).toBe('项目一笔记');
   await act(async () => {
     window.dispatchEvent(
-      new CustomEvent('scientify-open-note', { detail: { scope: 'p1', id: target.id } }),
+      new CustomEvent('capsio-open-note', { detail: { scope: 'p1', id: target.id } }),
     );
   });
   await waitFor(() =>

@@ -138,7 +138,7 @@ function fixture({ failSaves = false } = {}) {
   };
   // Exercise migration from the previous UI session, including an open assistant.
   localStorage.setItem(
-    'scientify.ui.v1',
+    'capsio.ui.v1',
     JSON.stringify({
       version: 1,
       projectId: 'p1',

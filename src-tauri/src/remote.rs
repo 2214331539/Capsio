@@ -235,7 +235,7 @@ impl Session {
             return Err(format!("{GONE}连接已断开，请重新连接。"));
         }
         channel.counter += 1;
-        let token = format!("SCIENTIFY{}N{}", std::process::id(), channel.counter);
+        let token = format!("CAPSIO{}N{}", std::process::id(), channel.counter);
         let command = format!(
             "( {script}\n) </dev/null 2>&1\nprintf '\\036%s %s\\036\\n' '{token}' \"$?\"\n"
         );
@@ -327,7 +327,7 @@ fn greet(session: &Session) -> Result<String, String> {
             std::thread::sleep(Duration::from_millis(150));
             let said = session.stderr();
             #[cfg(test)]
-            if std::env::var_os("SCIENTIFY_SSH_VERBOSE").is_some() {
+            if std::env::var_os("CAPSIO_SSH_VERBOSE").is_some() {
                 eprintln!("{said}");
             }
             let last = said.lines().last().unwrap_or("").to_string();
@@ -353,7 +353,7 @@ fn greet(session: &Session) -> Result<String, String> {
 fn connect(target: &str, password: Option<&str>) -> Result<(Session, String), String> {
     let mut command = Command::new(ssh_program());
     #[cfg(test)]
-    if std::env::var_os("SCIENTIFY_SSH_VERBOSE").is_some() {
+    if std::env::var_os("CAPSIO_SSH_VERBOSE").is_some() {
         command.arg("-v");
     }
     command
@@ -365,7 +365,7 @@ fn connect(target: &str, password: Option<&str>) -> Result<(Session, String), St
         let me = std::env::current_exe().map_err(|e| e.to_string())?;
         // Tests run without the app's executable; they name it.
         #[cfg(test)]
-        let me = std::env::var_os("SCIENTIFY_ASKPASS_PROGRAM")
+        let me = std::env::var_os("CAPSIO_ASKPASS_PROGRAM")
             .map(PathBuf::from)
             .unwrap_or(me);
 
@@ -373,8 +373,8 @@ fn connect(target: &str, password: Option<&str>) -> Result<(Session, String), St
             .env("SSH_ASKPASS", me)
             .env("SSH_ASKPASS_REQUIRE", "force")
             .env("DISPLAY", ":0")
-            .env("SCIENTIFY_ASKPASS", "1")
-            .env("SCIENTIFY_ASKPASS_SECRET", password);
+            .env("CAPSIO_ASKPASS", "1")
+            .env("CAPSIO_ASKPASS_SECRET", password);
     }
     let session = Session::start(target, command)?;
     let home = greet(&session)?;
@@ -562,7 +562,7 @@ fn write(
     };
     // Written beside the file first; an existing file keeps its permissions.
     let script = format!(
-        "{VERSION}\nf={file}\n{check}t=\"$f.scientify-$$\"\nbase64 -d > \"$t\" <<'__SCIENTIFY_B64__' || {{ rm -f \"$t\"; echo '写入失败。'; exit 5; }}\n{}\n__SCIENTIFY_B64__\nif [ -e \"$f\" ]; then cat \"$t\" > \"$f\" && rm -f \"$t\"; else mv -f \"$t\" \"$f\"; fi || {{ rm -f \"$t\"; echo '写入失败。'; exit 6; }}\nv \"$f\"",
+        "{VERSION}\nf={file}\n{check}t=\"$f.capsio-$$\"\nbase64 -d > \"$t\" <<'__CAPSIO_B64__' || {{ rm -f \"$t\"; echo '写入失败。'; exit 5; }}\n{}\n__CAPSIO_B64__\nif [ -e \"$f\" ]; then cat \"$t\" > \"$f\" && rm -f \"$t\"; else mv -f \"$t\" \"$f\"; fi || {{ rm -f \"$t\"; echo '写入失败。'; exit 6; }}\nv \"$f\"",
         lines.join("\n")
     );
     let output = session.ok(&script, SLOW)?;
@@ -929,14 +929,14 @@ mod tests {
         assert_eq!(resolve(&session, &format!("{root}/.")).unwrap(), root);
     }
 
-    /// `SCIENTIFY_SSH_TARGET=host cargo test -p scientify -- --ignored live_ssh`: connects
+    /// `CAPSIO_SSH_TARGET=host cargo test -p capsio -- --ignored live_ssh`: connects
     /// with keys and lists the home folder; nothing on the host changes.
     #[test]
     #[ignore]
     fn live_ssh() {
-        let target = std::env::var("SCIENTIFY_SSH_TARGET").expect("SCIENTIFY_SSH_TARGET");
+        let target = std::env::var("CAPSIO_SSH_TARGET").expect("CAPSIO_SSH_TARGET");
         let started = Instant::now();
-        let password = std::env::var("SCIENTIFY_SSH_PASSWORD").ok();
+        let password = std::env::var("CAPSIO_SSH_PASSWORD").ok();
         let (session, home) = connect(&target, password.as_deref()).unwrap();
         println!("connected in {:?}, home {home}", started.elapsed());
         let started = Instant::now();

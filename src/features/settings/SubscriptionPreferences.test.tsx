@@ -124,7 +124,7 @@ it('reads the gateway codes out of an error and offers a way forward', async () 
   expect(officialModelProblem('网络错误')).toBeNull();
   const user = userEvent.setup();
   const opened = vi.fn();
-  window.addEventListener('scientify-open-settings', opened);
+  window.addEventListener('capsio-open-settings', opened);
   const choose = vi.fn();
   render(
     <OfficialModelNotice problem="quota_exhausted" onChooseModel={choose} onReconnect={() => {}} />,
@@ -133,5 +133,5 @@ it('reads the gateway codes out of an error and offers a way forward', async () 
   expect((opened.mock.calls[0][0] as CustomEvent).detail).toBe('account');
   await user.click(screen.getByRole('button', { name: '改用自己的密钥' }));
   expect(choose).toHaveBeenCalled();
-  window.removeEventListener('scientify-open-settings', opened);
+  window.removeEventListener('capsio-open-settings', opened);
 });

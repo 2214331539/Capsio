@@ -12,7 +12,7 @@ for (const [file, value] of [
   ['package.json', jsonVersion('package.json')],
   ['src-tauri/tauri.conf.json', jsonVersion('src-tauri/tauri.conf.json')],
   ['src-tauri/Cargo.toml', cargoVersion('src-tauri/Cargo.toml')],
-  ['crates/scientify-core/Cargo.toml', cargoVersion('crates/scientify-core/Cargo.toml')],
+  ['crates/capsio-core/Cargo.toml', cargoVersion('crates/capsio-core/Cargo.toml')],
 ]) {
   if (value !== version) throw new Error(`${file}: ${value} does not match ${version}`);
 }

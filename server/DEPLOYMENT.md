@@ -1,4 +1,4 @@
-# Scientify collaboration service deployment
+# Capsio collaboration service deployment
 
 The service is small: PostgreSQL stores accounts, membership and the current
 state of every synced file and record; Alibaba OSS stores file contents; one
@@ -45,8 +45,8 @@ distribution archive except the application itself.
 
 ```bash
 sudo apt-get install -y postgresql nginx nodejs acme.sh
-sudo useradd --system --home-dir /opt/scientify-collab --shell /usr/sbin/nologin scientify
-sudo mkdir -p /opt/scientify-collab/server /var/www/acme
+sudo useradd --system --home-dir /opt/capsio-collab --shell /usr/sbin/nologin capsio
+sudo mkdir -p /opt/capsio-collab/server /var/www/acme
 ```
 
 Node 20 or newer is recommended. Ubuntu 24.04 ships Node 18, which runs the
@@ -60,19 +60,19 @@ Use a dedicated role and database; never share another service's database.
 
 ```bash
 pw=$(openssl rand -hex 24)
-sudo -u postgres psql -c "CREATE ROLE scientify_app LOGIN PASSWORD '$pw'"
-sudo -u postgres createdb -O scientify_app scientify
+sudo -u postgres psql -c "CREATE ROLE capsio_app LOGIN PASSWORD '$pw'"
+sudo -u postgres createdb -O capsio_app capsio
 ```
 
 The service creates and upgrades its tables on start.
 
 ## 3. Environment
 
-Write `/etc/scientify-collab.env`, mode 600, owned by `scientify`. Start
+Write `/etc/capsio-collab.env`, mode 600, owned by `capsio`. Start
 from `.env.example`. Required:
 
 - `NODE_ENV=production`, `HOST=127.0.0.1`, `PORT=8081`, `TRUST_PROXY=true`
-- `DATABASE_URL=postgresql://scientify_app:<pw>@127.0.0.1:5432/scientify`
+- `DATABASE_URL=postgresql://capsio_app:<pw>@127.0.0.1:5432/capsio`
 - `JWT_SECRET`, from `openssl rand -hex 32`
 - `OSS_BUCKET`, `OSS_REGION` (for example `cn-hangzhou`), `OSS_ENDPOINT`
   (`https://oss-cn-hangzhou.aliyuncs.com`), `OSS_ACCESS_KEY_ID`,
@@ -97,8 +97,8 @@ copy it, so the server never fetches packages:
 pnpm install --prod --frozen-lockfile --ignore-workspace --config.node-linker=hoisted
 tar -czf server.tgz package.json pnpm-lock.yaml src node_modules
 # on the host
-sudo tar -xzf server.tgz -C /opt/scientify-collab/server
-sudo chown -R root:root /opt/scientify-collab/server
+sudo tar -xzf server.tgz -C /opt/capsio-collab/server
+sudo chown -R root:root /opt/capsio-collab/server
 ```
 
 The code stays owned by root; the service account only reads it.
@@ -106,9 +106,9 @@ The code stays owned by root; the service account only reads it.
 ## 5. Service
 
 ```bash
-sudo install -m 644 deploy/scientify-collab.service /etc/systemd/system/
+sudo install -m 644 deploy/capsio-collab.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now scientify-collab
+sudo systemctl enable --now capsio-collab
 curl http://127.0.0.1:8081/v1/health   # {"ok":true,...,"database":"ok"}
 ```
 
@@ -118,17 +118,17 @@ Install the three files under `deploy/nginx/`:
 
 | File | Destination |
 | --- | --- |
-| `scientify-limits.conf` | `/etc/nginx/conf.d/`: per-address limits (sign-in codes 6/min, API 30/s) |
-| `scientify-proxy.conf` | `/etc/nginx/snippets/`: proxy headers, including `X-Real-IP` |
-| `scientify-site.conf` | `/etc/nginx/sites-available/scientify`, linked into `sites-enabled` |
+| `capsio-limits.conf` | `/etc/nginx/conf.d/`: per-address limits (sign-in codes 6/min, API 30/s) |
+| `capsio-proxy.conf` | `/etc/nginx/snippets/`: proxy headers, including `X-Real-IP` |
+| `capsio-site.conf` | `/etc/nginx/sites-available/capsio`, linked into `sites-enabled` |
 
 The site serves `/.well-known/acme-challenge/` from `/var/www/acme` on port
 80 and the API on 443 with a 16 MiB body limit; Nginx's default 1 MiB would
 reject larger sync pushes.
 
 On a host where another site already serves port 443 for the address, leave
-its server blocks alone. Install `scientify-8443.conf` as
-`/etc/nginx/conf.d/scientify.conf` instead of the site file, with its
+its server blocks alone. Install `capsio-8443.conf` as
+`/etc/nginx/conf.d/capsio.conf` instead of the site file, with its
 certificate lines pointing at that site's certificate for the address. The
 API then listens on 8443; the other site's renewals reload Nginx, so this
 server picks up the new certificate as well. The cloud firewall must allow TCP
@@ -144,7 +144,7 @@ sudo acme.sh --issue --server letsencrypt -d <ip-or-domain> -w /var/www/acme \
   --cert-profile shortlived --days 3          # IP certificates: shortlived profile
 sudo mkdir -p /etc/nginx/tls && sudo chmod 700 /etc/nginx/tls
 sudo acme.sh --install-cert -d <ip-or-domain> --ecc \
-  --key-file /etc/nginx/tls/scientify.key --fullchain-file /etc/nginx/tls/scientify.crt \
+  --key-file /etc/nginx/tls/capsio.key --fullchain-file /etc/nginx/tls/capsio.crt \
   --reloadcmd "systemctl reload nginx"
 ```
 
@@ -166,22 +166,22 @@ sudo systemctl daemon-reload && sudo systemctl enable --now acme-renew.timer
 3. Two desktop clients on the same account open one cloud project; a note,
    a PDF and a code file edited on one device appear on the other.
 
-Point desktop builds at the service with `SCIENTIFY_COLLAB_ENDPOINT` at build
+Point desktop builds at the service with `CAPSIO_COLLAB_ENDPOINT` at build
 time, or change the address under Settings → Collaboration.
 
 ## 8. Admin pages and official models
 
 The admin pages ship in `admin/` next to `src/`, and `deploy/update.sh`
 uploads both. Nginx must pass `/admin` to the service: the two `/admin`
-locations in `scientify-8443.conf` and `scientify-site.conf`. Then grant the
+locations in `capsio-8443.conf` and `capsio-site.conf`. Then grant the
 first administrator from the host; the account must already exist. The tool
 runs with the service's own environment file, read by systemd as the service
 reads it:
 
 ```bash
-sudo systemd-run --quiet --wait --pipe --uid=scientify --gid=scientify \
-  -p EnvironmentFile=/etc/scientify-collab.env \
-  -p WorkingDirectory=/opt/scientify-collab/server \
+sudo systemd-run --quiet --wait --pipe --uid=capsio --gid=capsio \
+  -p EnvironmentFile=/etc/capsio-collab.env \
+  -p WorkingDirectory=/opt/capsio-collab/server \
   /usr/bin/node src/admin-cli.mjs grant 13800000000 owner
 ```
 

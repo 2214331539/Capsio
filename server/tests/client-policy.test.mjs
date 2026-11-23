@@ -12,7 +12,7 @@ test('versions compare as releases do, previews before their release', () => {
 
 test('apps below the minimum are asked to update; older ones without a version pass', () => {
   const config = { minClientVersion: '0.4.0-alpha.1', recommendedClientVersion: '0.4.0-alpha.2' };
-  const request = (version) => ({ headers: version ? { 'x-scientify-version': version } : {} });
+  const request = (version) => ({ headers: version ? { 'x-capsio-version': version } : {} });
   assert.throws(() => requireSupportedClient(request('0.3.9'), config), (error) => {
     assert.equal(error.status, 426);
     assert.equal(error.code, 'client_outdated');
@@ -26,4 +26,11 @@ test('apps below the minimum are asked to update; older ones without a version p
   assert.equal(clientPolicy({}).minimum, null);
   assert.ok(clientPolicy({}).syncDomains.includes('writing'));
   assert.ok(clientPolicy({}).syncDomains.includes('ai'));
+});
+
+test('apps from before the rename are judged by the old header name', () => {
+  const config = { minClientVersion: '0.4.0-alpha.1' };
+  const old = (version) => ({ headers: { 'x-scientify-version': version } });
+  assert.throws(() => requireSupportedClient(old('0.3.9'), config), (error) => error.status === 426);
+  assert.doesNotThrow(() => requireSupportedClient(old('0.5.0-alpha.3'), config));
 });

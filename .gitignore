@@ -10,6 +10,9 @@ src-tauri/gen/
 public/pdfjs/
 src-tauri/binaries/
 src/generated/
+CapsioData/
+capsio-storage.json
+# Left by Scientify, the name before Capsio.
 ScientifyData/
 scientify-storage.json
 .scientify-storage.lock

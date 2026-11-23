@@ -159,7 +159,7 @@ export function AssistantPanel({
 
   const [credential, setCredential] = useState({ slot: '', key: '', stored: false });
   const selectedSlot = credentialSlot(settings.provider, settings.endpoint);
-  const officialModel = settings.serviceId === 'scientify';
+  const officialModel = settings.serviceId === 'capsio';
   // A key belongs to its endpoint even during an asynchronous session switch.
   const apiKey = credential.slot === selectedSlot ? credential.key : '';
   const keyStored = credential.slot === selectedSlot && credential.stored;
@@ -427,7 +427,7 @@ export function AssistantPanel({
   const recallKey = useCallback(
     async (provider: AIProtocol, endpoint: string, serviceId?: string) => {
       const slot = credentialSlot(provider, endpoint);
-      if (serviceId === 'scientify') {
+      if (serviceId === 'capsio') {
         const token = await collaboration.modelToken();
         keyCache.current.set(slot, token);
         return token;
@@ -481,7 +481,7 @@ export function AssistantPanel({
     ++profileRecall.current;
     setMenu(null);
     setSettingsDraft(
-      settings.serviceId === 'scientify' && officialEndpoint
+      settings.serviceId === 'capsio' && officialEndpoint
         ? { ...settings, endpoint: officialEndpoint }
         : settings,
     );
@@ -1135,8 +1135,8 @@ export function AssistantPanel({
       detail.accept();
       requestAnimationFrame(() => composerRef.current?.focus());
     };
-    window.addEventListener('scientify-assistant-open-session', open);
-    return () => window.removeEventListener('scientify-assistant-open-session', open);
+    window.addEventListener('capsio-assistant-open-session', open);
+    return () => window.removeEventListener('capsio-assistant-open-session', open);
   });
   // "Ask AI" on a passage: the question starts with it, ready to finish and send.
   useEffect(() => {
@@ -1147,8 +1147,8 @@ export function AssistantPanel({
       setPrompt([current, detail.draft].filter(Boolean).join('\n\n'));
       requestAnimationFrame(() => composerRef.current?.focus());
     };
-    window.addEventListener('scientify-assistant-ask', ask);
-    return () => window.removeEventListener('scientify-assistant-ask', ask);
+    window.addEventListener('capsio-assistant-ask', ask);
+    return () => window.removeEventListener('capsio-assistant-ask', ask);
   });
 
   async function setupWindowsSandbox() {
@@ -1175,7 +1175,7 @@ export function AssistantPanel({
   }
 
   async function decideApproval(approval: ApprovalRequest, decision: ApprovalDecision) {
-    if (approval.method === 'scientify/git/requestApproval' && decision === 'accept') {
+    if (approval.method === 'capsio/git/requestApproval' && decision === 'accept') {
       const params = approval.params as {
         cwd?: string;
         request?: { kind?: string; target?: string };
@@ -1197,7 +1197,7 @@ export function AssistantPanel({
       }
     }
     await activeTask?.session.decide(approval, decision);
-    if (approval.method === 'scientify/git/requestApproval')
+    if (approval.method === 'capsio/git/requestApproval')
       await reloadDirectorySessions(backend, scope, agentState.cwd ?? undefined);
   }
 
@@ -1234,8 +1234,8 @@ export function AssistantPanel({
       if (!document.querySelector('.sf-dock-session:not([hidden]) .sf-assistant-panel')) return;
       if (!conversationActionsDisabled) selectConversation('', '');
     };
-    window.addEventListener('scientify-new-conversation', onNewConversation);
-    return () => window.removeEventListener('scientify-new-conversation', onNewConversation);
+    window.addEventListener('capsio-new-conversation', onNewConversation);
+    return () => window.removeEventListener('capsio-new-conversation', onNewConversation);
   }, [conversationActionsDisabled, selectConversation]);
 
   // Points a turn on the official models used: the balance before and after it.

@@ -37,7 +37,7 @@ const liveSessions = new Map<string, LocalSession>();
 export function saveLocalSession(project: string, session: LocalSession) {
   liveSessions.set(project, session);
   try {
-    localStorage.setItem(`scientify.library.${project}`, JSON.stringify(session));
+    localStorage.setItem(`capsio.library.${project}`, JSON.stringify(session));
   } catch {
     /* Optional state. */
   }
@@ -46,7 +46,7 @@ export function readLocalSession(project: string): LocalSession {
   const live = liveSessions.get(project);
   if (live) return live;
   try {
-    const s = JSON.parse(localStorage.getItem(`scientify.library.${project}`) ?? 'null');
+    const s = JSON.parse(localStorage.getItem(`capsio.library.${project}`) ?? 'null');
     if (s && Array.isArray(s.tabs) && Array.isArray(s.notes))
       return {
         ...emptyLocalSession(),

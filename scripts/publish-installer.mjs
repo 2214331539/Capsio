@@ -23,14 +23,17 @@ import { signatureV4 } from '../server/src/oss.mjs';
 
 const BUCKET = process.env.DOWNLOAD_BUCKET ?? 'soundingx-download-package';
 const REGION = process.env.DOWNLOAD_REGION ?? 'cn-beijing';
-const PREFIX = process.env.DOWNLOAD_PREFIX ?? 'scientify';
+const PREFIX = process.env.DOWNLOAD_PREFIX ?? 'capsio';
 const HOST = `${BUCKET}.oss-${REGION}.aliyuncs.com`;
 // The address built into release builds (src-tauri/tauri.updater.conf.json).
 const MANIFEST = `${PREFIX}/updates/preview/latest.json`;
+// Capsio was called Scientify; copies installed under that name still check this one, so
+// every manifest is written there too and those copies update to Capsio.
+const RENAMED_MANIFEST = 'scientify/updates/preview/latest.json';
 // The website's download buttons point at these names under latest/.
 const LATEST = {
-  windows_x64: 'Scientify_windows_x64_setup.exe',
-  macos_arm64: 'Scientify_macos_arm64.dmg',
+  windows_x64: 'Capsio_windows_x64_setup.exe',
+  macos_arm64: 'Capsio_macos_arm64.dmg',
 };
 // The updater's names for the platforms.
 const TARGETS = { windows_x64: 'windows-x86_64', macos_arm64: 'darwin-aarch64' };
@@ -151,7 +154,7 @@ async function publishManifest(version, platforms, keys) {
     ? readFileSync(notesFile, 'utf8').trim()
     : same
       ? current.notes
-      : `Scientify ${version}`;
+      : `Capsio ${version}`;
   const rolloutOption = option('--rollout');
   const rollout =
     rolloutOption !== undefined ? Number(rolloutOption) : same ? (current.rollout ?? 100) : 100;
@@ -167,6 +170,7 @@ async function publishManifest(version, platforms, keys) {
   const body = Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`Update manifest (${Object.keys(manifest.platforms).join(', ')}, ${rollout}%):`);
   await upload('latest.json', MANIFEST, keys, body);
+  if (RENAMED_MANIFEST !== MANIFEST) await upload('latest.json', RENAMED_MANIFEST, keys, body);
 }
 
 const directory = '.release';
@@ -205,7 +209,7 @@ for (const name of staged) {
   );
   await upload(file, `${PREFIX}/latest/${LATEST[label]}`, keys);
   // Windows updates with the installer itself; macOS with the app as a .tar.gz.
-  const update = label === 'macos_arm64' ? `Scientify_${version}_${label}.app.tar.gz` : name;
+  const update = label === 'macos_arm64' ? `Capsio_${version}_${label}.app.tar.gz` : name;
   if (!existsSync(join(directory, `${update}.sig`))) {
     console.log(`  no ${update}.sig: not offered as an update`);
     continue;

@@ -30,7 +30,7 @@ function describe(event: ApprovalRequest): {
   target: string;
 } {
   const params = (event.params ?? {}) as ApprovalParams;
-  if (event.method === 'scientify/git/requestApproval') {
+  if (event.method === 'capsio/git/requestApproval') {
     return {
       icon: GitBranch,
       title: t('请求执行 Git 操作'),
@@ -38,7 +38,7 @@ function describe(event: ApprovalRequest): {
       target: text(params.command),
     };
   }
-  if (event.method === 'scientify/docs/requestApproval') {
+  if (event.method === 'capsio/docs/requestApproval') {
     return {
       icon: FileWarning,
       title: params.action === 'create' ? t('请求新建文档') : t('请求修改文档'),
@@ -46,7 +46,7 @@ function describe(event: ApprovalRequest): {
       target: text(params.command),
     };
   }
-  if (event.method === 'scientify/notes/requestApproval') {
+  if (event.method === 'capsio/notes/requestApproval') {
     return {
       icon: FileWarning,
       title: params.action === 'create' ? t('请求新建笔记') : t('请求修改笔记'),

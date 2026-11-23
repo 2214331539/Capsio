@@ -122,9 +122,9 @@ export const APPROVAL_METHODS = [
   'item/commandExecution/requestApproval',
   'item/fileChange/requestApproval',
   'item/permissions/requestApproval',
-  'scientify/git/requestApproval',
-  'scientify/notes/requestApproval',
-  'scientify/docs/requestApproval',
+  'capsio/git/requestApproval',
+  'capsio/notes/requestApproval',
+  'capsio/docs/requestApproval',
 ] as const;
 
 export type ApprovalMethod = (typeof APPROVAL_METHODS)[number];
@@ -132,11 +132,11 @@ export type ApprovalRequest = Extract<AgentEvent, { kind: 'request' }> & {
   method: ApprovalMethod;
 };
 
-/** Actions Scientify performs itself (Git, note edits); each request is approved on its own. */
+/** Actions Capsio performs itself (Git, note edits); each request is approved on its own. */
 export const HOST_APPROVAL_METHODS: ReadonlySet<ApprovalMethod> = new Set([
-  'scientify/git/requestApproval',
-  'scientify/notes/requestApproval',
-  'scientify/docs/requestApproval',
+  'capsio/git/requestApproval',
+  'capsio/notes/requestApproval',
+  'capsio/docs/requestApproval',
 ]);
 
 export function isApprovalRequest(event: AgentEvent): event is ApprovalRequest {
@@ -294,7 +294,7 @@ export function domainForWorkspace(workspace: WorkspaceId | 'projects'): AgentDo
 function command<T>(name: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri()) {
     return Promise.reject(
-      new Error('请通过 pnpm start 启动 Scientify 桌面应用。浏览器预览没有内置 Agent 引擎。'),
+      new Error('请通过 pnpm start 启动 Capsio 桌面应用。浏览器预览没有内置 Agent 引擎。'),
     );
   }
   return invoke<T>(name, args);
@@ -332,7 +332,7 @@ export const nativeAgent: AgentBackend = {
       (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`,
     );
     return invoke('agent_attachment_save', await file.arrayBuffer(), {
-      headers: { 'x-scientify-file': metadata },
+      headers: { 'x-capsio-file': metadata },
     });
   },
 };

@@ -42,12 +42,12 @@ public sealed class TranscriptMarkdownTests
         var window = new Window { Content = text, Width = 380, Height = 400 };
         try
         {
-            ScientifyAppearance.Apply(window.Resources, AppSettings.Default, false);
+            CapsioAppearance.Apply(window.Resources, AppSettings.Default, false);
             window.Background = Avalonia.Media.Brushes.White;
             text.Foreground = Avalonia.Media.Brushes.Black;
             window.Show(); window.UpdateLayout();
             Assert.InRange(table.Bounds.Width, 0, 380);
-            ReferenceLayoutTests.Capture(window, "scientify-markdown-table");
+            ReferenceLayoutTests.Capture(window, "capsio-markdown-table");
         }
         finally { window.Close(); }
     }

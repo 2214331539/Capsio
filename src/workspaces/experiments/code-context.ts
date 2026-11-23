@@ -6,7 +6,7 @@ import { gitApi, type GitSnapshot } from '../../platform/git';
 import type { Project, Experiment } from '../../domain/workspace';
 import { errorMessage } from '../../domain/errors';
 // Selection is navigation state. Persisted native conversations own their original cwd.
-function rememberedRoots(key = 'scientify.code.worktrees.v1'): Record<string, string> {
+function rememberedRoots(key = 'capsio.code.worktrees.v1'): Record<string, string> {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(key) ?? '{}');
     if (value && typeof value === 'object' && !Array.isArray(value))
@@ -25,12 +25,12 @@ export const codeContext = createStore<{
   experiments: Record<string, string>;
 }>(() => ({
   roots: rememberedRoots(),
-  experiments: rememberedRoots('scientify.code.experiments.v1'),
+  experiments: rememberedRoots('capsio.code.experiments.v1'),
 }));
 codeContext.subscribe((state) => {
   try {
-    localStorage.setItem('scientify.code.worktrees.v1', JSON.stringify(state.roots));
-    localStorage.setItem('scientify.code.experiments.v1', JSON.stringify(state.experiments));
+    localStorage.setItem('capsio.code.worktrees.v1', JSON.stringify(state.roots));
+    localStorage.setItem('capsio.code.experiments.v1', JSON.stringify(state.experiments));
   } catch {
     /* The current selection stays usable. */
   }
@@ -79,12 +79,12 @@ export function useCodeWorkspace(project: Project, experiment?: Experiment) {
     const changed = (event: Event) => {
       if ((event as CustomEvent).detail === project.id) refresh();
     };
-    window.addEventListener('scientify-project-files-changed', changed);
+    window.addEventListener('capsio-project-files-changed', changed);
     window.addEventListener('focus', refresh);
     return () => {
       alive = false;
       stop?.();
-      window.removeEventListener('scientify-project-files-changed', changed);
+      window.removeEventListener('capsio-project-files-changed', changed);
       window.removeEventListener('focus', refresh);
     };
   }, [project.id, refresh]);

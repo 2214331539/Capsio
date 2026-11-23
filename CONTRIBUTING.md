@@ -1,4 +1,4 @@
-# Contributing to Scientify
+# Contributing to Capsio
 
 欢迎贡献代码、文档、翻译、可复现的 Bug 报告与可公开分发的科研示例。中文和英文 Issue / PR 均可。参与前请阅读[行为规范](CODE_OF_CONDUCT.md)。
 
@@ -6,7 +6,7 @@ Contributions in Chinese or English are welcome. Small fixes can go directly to 
 
 ## 选择一个任务
 
-先搜索 [Issues](https://github.com/2214331539/Scientify/issues)，避免重复报告。提交新需求时描述实际任务、当前障碍和期望结果。小修复可直接发 PR；新页面、架构、数据迁移或权限变更先讨论范围，避免完成大量工作后无法合入。
+先搜索 [Issues](https://github.com/2214331539/Capsio/issues)，避免重复报告。提交新需求时描述实际任务、当前障碍和期望结果。小修复可直接发 PR；新页面、架构、数据迁移或权限变更先讨论范围，避免完成大量工作后无法合入。
 
 适合首次贡献的工作包括：改进文档、补充翻译、修复已复现的焦点与键盘问题、完善错误提示，以及补充有意义的回归验证。任务未被认领时，可以说明准备采取的方案，不需要等待分配权限。
 
@@ -17,9 +17,9 @@ Contributions in Chinese or English are welcome. Small fixes can go directly to 
 Fork 仓库，克隆自己的 fork，再添加上游：
 
 ```powershell
-git clone https://github.com/YOUR-USERNAME/Scientify.git
-cd Scientify
-git remote add upstream https://github.com/2214331539/Scientify.git
+git clone https://github.com/YOUR-USERNAME/Capsio.git
+cd Capsio
+git remote add upstream https://github.com/2214331539/Capsio.git
 git switch -c fix/describe-the-change
 corepack enable
 corepack prepare pnpm@10.11.0 --activate
@@ -51,7 +51,7 @@ pnpm start
 
 首次启动或构建会下载固定版本的 Agent 引擎并生成协议类型。请使用 `pnpm run build` 准备资源后再运行检查；仅执行 `pnpm install` 不会生成这些文件。`pnpm dev` 是隔离的前端预览，仍会执行资源准备脚本，不能验证原生能力。
 
-开发构建使用源码目录旁边的 `ScientifyDevData/`，所有工作树共用；`pnpm dev:data` 查看它和正式数据的位置。自动测试必须使用临时目录或夹具，不能拿真实研究项目、模型密钥或浏览器资料作测试数据。
+开发构建使用源码目录旁边的 `CapsioDevData/`，所有工作树共用；`pnpm dev:data` 查看它和正式数据的位置。自动测试必须使用临时目录或夹具，不能拿真实研究项目、模型密钥或浏览器资料作测试数据。
 
 ## 代码边界
 
@@ -80,9 +80,9 @@ git diff --check
 
 前端格式遵循 Prettier；可以对修改的文件运行 `pnpm exec prettier --write <files>`。不要为小修复重排无关文件。
 
-`pnpm test:ui` 会启动一个临时 Vite 服务，依次检查实验、Git、PDF 和图片输入夹具，完成或失败后关闭它自己创建的服务。可用 `pnpm test:ui reader`、`pnpm test:ui experiments` 或 `pnpm test:ui git` 单独运行。已有预览服务可通过 `SCIENTIFY_UI_URL` 复用，脚本不会关闭该服务。报告和截图写入已忽略的 `.test-artifacts/`。
+`pnpm test:ui` 会启动一个临时 Vite 服务，依次检查实验、Git、PDF 和图片输入夹具，完成或失败后关闭它自己创建的服务。可用 `pnpm test:ui reader`、`pnpm test:ui experiments` 或 `pnpm test:ui git` 单独运行。已有预览服务可通过 `CAPSIO_UI_URL` 复用，脚本不会关闭该服务。报告和截图写入已忽略的 `.test-artifacts/`。
 
-浏览器验证使用受 pnpm lockfile 管理的 Playwright（Apache-2.0，仅开发依赖，不打包进应用）。Windows 默认使用已安装的 Edge；其他平台先执行 `pnpm exec playwright install chromium`。`SCIENTIFY_BROWSER_CHANNEL=chromium` 选择 Playwright 浏览器，`SCIENTIFY_BROWSER_PATH` 可以指定本机浏览器路径。CI 使用 Chromium，不依赖开发者私有的 `.test-tools/` 目录或固定 C 盘路径。上述测试不会请求真实模型服务。
+浏览器验证使用受 pnpm lockfile 管理的 Playwright（Apache-2.0，仅开发依赖，不打包进应用）。Windows 默认使用已安装的 Edge；其他平台先执行 `pnpm exec playwright install chromium`。`CAPSIO_BROWSER_CHANNEL=chromium` 选择 Playwright 浏览器，`CAPSIO_BROWSER_PATH` 可以指定本机浏览器路径。CI 使用 Chromium，不依赖开发者私有的 `.test-tools/` 目录或固定 C 盘路径。上述测试不会请求真实模型服务。
 
 根据改动选择验证：文档只检查事实和链接；行为变更补能发现回归的测试；原生文件、进程、浏览器及窗口行为还需桌面验证。测试记录说明真实调用和夹具的区别。没有验证的平台或场景应在 PR 中明确标注。
 

@@ -19,7 +19,7 @@ const paths = {
 };
 const icon = name => '<svg aria-hidden="true" viewBox="0 0 24 24">'+paths[name]+'</svg>';
 const esc = text => text.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const logo = '<img src="../../../../public/brand/scientify-light.png" alt="">';
+const logo = '<img src="../../../../public/brand/capsio-light.png" alt="">';
 const projects = [
   {name:'主动智能体',en:'AGENCY & REASONING',subtitle:'Learning when to act',color:'sage',papers:24,notes:8,date:'今天 10:42 打开',favorite:true},
   {name:'长期记忆',en:'MEMORY & RETRIEVAL',subtitle:'From context to continuity',color:'clay',papers:16,notes:5,date:'昨天打开',favorite:true},
@@ -30,7 +30,7 @@ let view='projects',panel='ai',panelOpen=true,stream=null,page=4,zoom=100;
 let libraryManual=false,toastTimer,filter='all',reverse=false;
 $('#theme-toggle').innerHTML=icon('sun');
 $('#projects-view').innerHTML=`
-  <aside class="sidebar"><a href="#projects" class="brand" data-view="projects">${logo}<strong>Scientify</strong></a>
+  <aside class="sidebar"><a href="#projects" class="brand" data-view="projects">${logo}<strong>Capsio</strong></a>
   <button class="search-launch" data-search>${icon('search')}<span>搜索你的研究</span><kbd>Ctrl K</kbd></button>
   <nav class="main-nav" aria-label="项目中心"><button class="selected" data-view="projects">${icon('grid')}我的项目<span id="nav-count">3</span></button><button data-toast="团队协作页面将在后续视觉方案中展开">${icon('users')}团队项目</button><button data-toast="收集箱沿用现有产品功能，本页只演示主要布局">${icon('inbox')}收集箱<span>2</span></button></nav>
   <div class="sidebar-label">收藏的项目</div><button class="favorite" data-open="主动智能体"><i class="dot sage"></i>主动智能体</button><button class="favorite" data-open="长期记忆"><i class="dot clay"></i>长期记忆</button>
@@ -46,7 +46,7 @@ $('#projects-view').innerHTML=`
 function renderProjects(){
   let items=projects.filter(p=>filter==='all'||p.favorite);
   if(reverse)items=[...items].reverse();
-  $('#project-collection').innerHTML=items.map(p=>`<article class="book-item"><button class="book-link" data-open="${esc(p.name)}"><div class="cover ${p.color}"><div class="cover-top">SCIENTIFY RESEARCH<span>0${projects.indexOf(p)+1}</span></div><div class="cover-pattern" aria-hidden="true"></div><div class="cover-title"><small>${esc(p.en)}</small><strong>${esc(p.name)}</strong><span>${esc(p.subtitle)}</span></div><span class="cover-bottom">研究札记 ${icon('arrow')}</span></div><div class="book-info"><h2>${esc(p.name)}</h2><p>${p.papers} 篇文献 <span>·</span> ${p.notes} 篇笔记</p><small>${p.date}</small></div></button></article>`).join('');
+  $('#project-collection').innerHTML=items.map(p=>`<article class="book-item"><button class="book-link" data-open="${esc(p.name)}"><div class="cover ${p.color}"><div class="cover-top">CAPSIO RESEARCH<span>0${projects.indexOf(p)+1}</span></div><div class="cover-pattern" aria-hidden="true"></div><div class="cover-title"><small>${esc(p.en)}</small><strong>${esc(p.name)}</strong><span>${esc(p.subtitle)}</span></div><span class="cover-bottom">研究札记 ${icon('arrow')}</span></div><div class="book-info"><h2>${esc(p.name)}</h2><p>${p.papers} 篇文献 <span>·</span> ${p.notes} 篇笔记</p><small>${p.date}</small></div></button></article>`).join('');
   $('#project-count').textContent=String(projects.length).padStart(2,'0');
   $('#nav-count').textContent=$('#filter-count').textContent=projects.length;
 }
@@ -56,7 +56,7 @@ $('#reader-view').innerHTML=`
   <div class="research-body"><header class="research-header"><div class="breadcrumbs"><span id="project-name">主动智能体</span><span>/</span><strong>文献阅读</strong></div><div class="header-actions"><button class="icon" data-search aria-label="搜索" title="搜索 Ctrl K">${icon('search')}</button><button class="quiet sync" data-sync>${icon('cloud')}<span>已同步</span></button><button class="quiet panel-trigger" data-panel="notes">${icon('note')}笔记</button><button class="primary panel-trigger" data-panel="ai">${icon('ai')}AI 助手</button></div></header>
   <div class="research-columns"><aside class="library" aria-label="文献列表"><div class="library-header"><strong>文献库 <span>24</span></strong><button class="icon" id="library-close" aria-label="收起文献列表">${icon('panel')}</button></div><label class="library-search">${icon('search')}<input id="paper-filter" placeholder="查找文献" aria-label="查找文献"></label><p class="sidebar-label">主动决策与上下文</p><div class="paper-list">${papers.map((p,i)=>`<button class="paper-item ${i===0?'selected':''}" data-paper="${p}" title="${p}">${icon('doc')}<span><strong>${p}</strong><small>${i===0?'2026 · 读至第 4 页':'2026 · 示例文献'}</small></span></button>`).join('')}</div><div class="library-foot"><i class="dot sage"></i>本地文献 <span>24 篇</span></div></aside>
   <main class="reader"><div class="document-tab"><span>${icon('doc')}<strong id="document-name">Learning when to act</strong></span><button class="icon" id="outline-toggle" aria-label="标题目录" aria-expanded="false">${icon('list')}</button></div><div class="paper-scroll" id="paper-scroll"><article class="paper" id="paper">
-  <div class="paper-kicker">RESEARCH NOTES <span>SCIENTIFY DEMO / 2026</span></div><h1 id="paper-title">Learning when to act</h1><p class="paper-subtitle">A framework for context-aware proactive assistance</p><p class="authors">Scientify Research · 示例论文，非真实出版物</p>
+  <div class="paper-kicker">RESEARCH NOTES <span>CAPSIO DEMO / 2026</span></div><h1 id="paper-title">Learning when to act</h1><p class="paper-subtitle">A framework for context-aware proactive assistance</p><p class="authors">Capsio Research · 示例论文，非真实出版物</p>
   <section id="abstract"><h2>Abstract</h2><p>Useful assistance begins with understanding when help is needed. We explore a framework that separates the decision to intervene from the generation of a response, while preserving a continuous view of the surrounding context.</p></section>
   <section id="method"><h2>1. From observation to action</h2><p>A proactive system should remain attentive without interrupting unnecessarily. The timing policy considers the current context, the expected benefit of an intervention, and the cost of distracting the user.</p><figure><div class="flow-diagram"><div><span>01</span>Observe<small>持续感知</small></div><b>→</b><div class="flow-emphasis"><span>02</span>Decide<small>判断时机</small></div><b>→</b><div><span>03</span>Respond<small>执行与反馈</small></div></div><figcaption>Figure 1. Separate timing decisions from response generation.</figcaption></figure><p>This separation allows the observation stream to continue while an earlier response is being produced. Memory provides continuity; the timing policy selects the moment to act.</p></section>
   <section id="discussion"><h2>2. Design implications</h2><p>Evaluation should account for both helpful interventions and appropriate silence. A system that responds more often is not necessarily more useful. The objective is timely, grounded assistance.</p><blockquote>Understanding when to remain silent is part of understanding when to help.</blockquote></section><div class="paper-page">4</div></article></div>

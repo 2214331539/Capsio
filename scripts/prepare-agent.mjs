@@ -7,7 +7,7 @@ import { download } from './download.mjs';
 
 // Codex is redistributed as an unmodified upstream release artifact. This version
 // is the single source of truth; bump it together with THIRD_PARTY_NOTICES.
-const CODEX_VERSION = process.env.SCIENTIFY_CODEX_VERSION || '0.158.0';
+const CODEX_VERSION = process.env.CAPSIO_CODEX_VERSION || '0.158.0';
 export function engineTarget(platform, architecture, override) {
   const triple =
     override ||
@@ -23,7 +23,7 @@ export function engineTarget(platform, architecture, override) {
 const { triple: TRIPLE, suffix } = engineTarget(
   process.platform,
   process.arch,
-  process.env.SCIENTIFY_CODEX_TRIPLE,
+  process.env.CAPSIO_CODEX_TRIPLE,
 );
 
 // The engine ships as upstream's whole package, not the bare executable: codex finds the

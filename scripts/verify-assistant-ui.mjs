@@ -47,7 +47,7 @@ await store.getState().load();
 const queues=new Map();
 const agent={
   skills:async request=>{window.skillRequests.push(request);return {skills:[{name:'paper-review',path:'F:/fixture/.agents/skills/paper-review/SKILL.md',description:'Review a paper using local materials',enabled:true}],errors:[]};},
-  startThread:async(projectId,domain,connection,options)=>({projectId,domain,conversationId:options.conversationId,threadId:options.conversationId,cwd:'F:/fixture',model:connection.model,modelProvider:'scientify',instructionSources:[],sandbox:options.permission==='full'?'dangerFullAccess':'workspaceWrite'}),
+  startThread:async(projectId,domain,connection,options)=>({projectId,domain,conversationId:options.conversationId,threadId:options.conversationId,cwd:'F:/fixture',model:connection.model,modelProvider:'capsio',instructionSources:[],sandbox:options.permission==='full'?'dangerFullAccess':'workspaceWrite'}),
   startTurn:async request=>{window.turns.push(request);return {turnId:'turn-'+request.conversationId,status:'inProgress',events:[]};},
   events:async(_project,_domain,id)=>queues.get(id)?.splice(0)??[],
   interrupt:async request=>{window.stops.push(request);queues.set(request.conversationId,[{kind:'notification',method:'turn/completed',params:{threadId:request.threadId,turn:{id:request.turnId,status:'interrupted'}}}]);},
@@ -56,7 +56,7 @@ const agent={
 createRoot(document.getElementById('root')).render(React.createElement(AssistantPanel,{store,backend:{},agent,scope:'fixture',context:{projectId:'fixture',workspace:'experiments',title:'Fixture'}}));
 </script></body></html>`,
   );
-  const url = process.env.SCIENTIFY_UI_URL || 'http://127.0.0.1:1420';
+  const url = process.env.CAPSIO_UI_URL || 'http://127.0.0.1:1420';
   await page.goto(`${url}/.test-artifacts/assistant-ui/${fixtureName}`, {
     waitUntil: 'commit',
     timeout: 60_000,

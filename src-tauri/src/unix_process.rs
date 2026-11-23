@@ -1,4 +1,4 @@
-//! Process groups belong only to children created by Scientify.
+//! Process groups belong only to children created by Capsio.
 pub(crate) struct Group(Option<i32>);
 impl Group {
     pub fn new(pid: u32) -> Self {

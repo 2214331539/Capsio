@@ -6,7 +6,7 @@ import type { WorkspaceStore } from '../../stores/workspace';
 import { restartApp, useDataLocation } from '../settings/DataLocation';
 import { Tour, type TourStep } from './Tour';
 
-const KEYS = { center: 'scientify.tour.center.v1', project: 'scientify.tour.project.v1' };
+const KEYS = { center: 'capsio.tour.center.v1', project: 'capsio.tour.project.v1' };
 type Which = keyof typeof KEYS;
 
 function seen(which: Which) {
@@ -59,7 +59,7 @@ function DataChoice({ store }: { store: WorkspaceStore }) {
 export function centerSteps(store: WorkspaceStore, fresh: boolean): TourStep[] {
   return [
     {
-      title: t('欢迎使用 Scientify'),
+      title: t('欢迎使用 Capsio'),
       body: t('读文献、写代码、写论文，都在一个窗口里。花一分钟认识一下。'),
       content: fresh ? <DataChoice store={store} /> : undefined,
     },
@@ -98,7 +98,7 @@ export function projectSteps(): TourStep[] {
     {
       target: '[data-tour="browser"]',
       title: t('内置浏览器'),
-      body: t('查资料、下论文，不用离开 Scientify。'),
+      body: t('查资料、下论文，不用离开 Capsio。'),
     },
     {
       target: '[data-tour="share"]',
@@ -153,8 +153,8 @@ export function Onboarding({
       setFresh(false);
       setRunning(which);
     };
-    window.addEventListener('scientify-start-tour', replay);
-    return () => window.removeEventListener('scientify-start-tour', replay);
+    window.addEventListener('capsio-start-tour', replay);
+    return () => window.removeEventListener('capsio-start-tour', replay);
   }, [which]);
   if (!running) return null;
   return (

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Scientify",
+  "productName": "Capsio",
   "version": "0.5.0-alpha.3",
-  "identifier": "com.scientify.desktop",
+  "identifier": "com.capsio.desktop",
   "build": {
     "beforeDevCommand": "pnpm prepare:translation && pnpm dev",
     "devUrl": "http://127.0.0.1:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Scientify",
+        "title": "Capsio",
         "width": 1440,
         "height": 900,
         "minWidth": 1000,

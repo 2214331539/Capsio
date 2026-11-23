@@ -1,28 +1,28 @@
 <p align="center">
-  <img src="docs/品牌/Scientify-Logo-Kit/web/icon-192.png" width="88" alt="Scientify logo" />
+  <img src="docs/品牌/Capsio-Logo-Kit/web/icon-192.png" width="88" alt="Capsio logo" />
 </p>
 
-# Scientify
+# Capsio
 
 **一个入口，贯穿科研全过程。**
 
 面向计算型研究者的本地科研工具。在同一个项目里阅读论文、记录思考、编辑和运行 Python 实验，并可配置地在本地使用AI辅助。
 
-[English](README.en.md) · [快速开始](#快速开始) · [使用文档](docs/使用说明/桌面使用说明.md) · [参与贡献](CONTRIBUTING.md) · [路线图](ROADMAP.md) · [问题反馈](https://github.com/2214331539/Scientify/issues)
+[English](README.en.md) · [快速开始](#快速开始) · [使用文档](docs/使用说明/桌面使用说明.md) · [参与贡献](CONTRIBUTING.md) · [路线图](ROADMAP.md) · [问题反馈](https://github.com/2214331539/Capsio/issues)
 
 ![Stage: Alpha](https://img.shields.io/badge/stage-alpha-orange)
 ![Desktop: Windows x64 and macOS arm64](https://img.shields.io/badge/desktop-Windows_x64_%7C_macOS_arm64-blue)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
-> **当前是早期开发版本。** Windows x64 与 macOS Apple Silicon 安装包通过 [GitHub Releases](https://github.com/2214331539/Scientify/releases) 分发，标记为 Pre-release。Windows 尚未签名；Mac 为 ad-hoc 签名、未公证预览版。不提供 Intel Mac、Linux 或移动端安装包。
+> **当前是早期开发版本。** Windows x64 与 macOS Apple Silicon 安装包通过 [GitHub Releases](https://github.com/2214331539/Capsio/releases) 分发，标记为 Pre-release。Windows 尚未签名；Mac 为 ad-hoc 签名、未公证预览版。不提供 Intel Mac、Linux 或移动端安装包。
 
-## 为什么做 Scientify
+## 为什么做 Capsio
 
 完成一个科研项目需要去Arxiv上搜论文，用本地PDF阅读器打开，用ChatGPT翻译和理解，再去Google Scholar搜论文。确定论文思路以后有不得不打开VScode跑实验代码，又要拿Git做版本管理，多个baseline还得开多个文件夹，忙到最后打开Overleaf开始写论文...
 
 流程太繁琐了，工具太分散了，需要一个统一入口。
 
-这个入口就是Scientify：
+这个入口就是Capsio：
 
 - **本地文件可以继续使用。** 文献是 PDF，单篇论文笔记是相邻的 Markdown 文件，代码保留在托管或自行关联的目录里。
 - **每次实验都有记录。** 查看实际命令、环境、代码状态、日志和产物；手动运行无需模型密钥。
@@ -48,27 +48,27 @@
 
 ### 下载安装
 
-在 [Releases](https://github.com/2214331539/Scientify/releases) 打开最新的预发布版本，按设备选择安装包。普通使用无需安装 Node.js 或 Rust。
+在 [Releases](https://github.com/2214331539/Capsio/releases) 打开最新的预发布版本，按设备选择安装包。普通使用无需安装 Node.js 或 Rust。
 
 | 平台 | 文件 | 安装方式 |
 | --- | --- | --- |
-| Windows 10 / 11 x64 | `Scientify_<版本>_windows_x64_setup.exe` | 运行安装器 |
-| macOS 14+ Apple Silicon（M 系列） | `Scientify_<版本>_macos_arm64.dmg` | 打开 DMG，将 Scientify 拖入 Applications |
+| Windows 10 / 11 x64 | `Capsio_<版本>_windows_x64_setup.exe` | 运行安装器 |
+| macOS 14+ Apple Silicon（M 系列） | `Capsio_<版本>_macos_arm64.dmg` | 打开 DMG，将 Capsio 拖入 Applications |
 
 Mac 首次打开可能被系统阻止。确认下载来源后，在系统设置 → 隐私与安全性中使用“仍要打开”；无需关闭 Gatekeeper。可用 `shasum -a 256 <安装包>` 对照发布页校验值。
 
 - 适用于 Windows 10 / 11 x64；缺少 WebView2 时系统需要联网安装运行时。
 - Python 与 Git 按需自行安装。阅读论文与笔记无需模型密钥；AI 使用自己的模型服务配置。
 - 当前程序未签名，Windows 可能显示“未知发布者”。发布说明附 SHA-256，可使用 `Get-FileHash <压缩包路径> -Algorithm SHA256` 核对完整性。
-- 更新前关闭应用并备份 `ScientifyData` 和关联的外部目录，再运行新版本。第一版暂不提供自动更新。
+- 更新前关闭应用并备份 `CapsioData` 和关联的外部目录，再运行新版本。第一版暂不提供自动更新。
 
 ### 从源码运行桌面版
 
 共同依赖为 [Node.js 24 LTS](https://nodejs.org/)、pnpm 10.11.0、Rust stable。Windows x64 还需 [MSVC C++ Build Tools 和 WebView2](https://v2.tauri.app/start/prerequisites/#windows)；Apple Silicon Mac 需要 macOS 14+ 与 [Xcode Command Line Tools](https://v2.tauri.app/start/prerequisites/#macos)（`xcode-select --install`）。使用原生 arm64 的 Node / Rust，不通过 Rosetta 构建。
 
 ```powershell
-git clone https://github.com/2214331539/Scientify.git
-cd Scientify
+git clone https://github.com/2214331539/Capsio.git
+cd Capsio
 corepack enable
 corepack prepare pnpm@10.11.0 --activate
 pnpm install --frozen-lockfile
@@ -83,7 +83,7 @@ pnpm start
 pnpm tauri build --no-bundle
 ```
 
-Windows 构建后运行 `Scientify-MVP.cmd`。该脚本从仓库构建目录选择最新程序，本身不是安装包。Windows NSIS 打包命令为 `node node_modules/@tauri-apps/cli/tauri.js build --bundles nsis -- --locked`，产物位于 `target/release/bundle/nsis/`。自动发布和分支约定见[版本发布说明](docs/技术方案/版本发布与分支管理.md)，签名与自动更新仍在[路线图](ROADMAP.md)中。
+Windows 构建后运行 `Capsio-MVP.cmd`。该脚本从仓库构建目录选择最新程序，本身不是安装包。Windows NSIS 打包命令为 `node node_modules/@tauri-apps/cli/tauri.js build --bundles nsis -- --locked`，产物位于 `target/release/bundle/nsis/`。自动发布和分支约定见[版本发布说明](docs/技术方案/版本发布与分支管理.md)，签名与自动更新仍在[路线图](ROADMAP.md)中。
 
 Mac 打包命令为 `node node_modules/@tauri-apps/cli/tauri.js build --bundles app,dmg -- --locked`，产物位于 `target/release/bundle/dmg/`。本机无证书时使用 ad-hoc 签名。
 
@@ -92,7 +92,7 @@ Mac 打包命令为 `node node_modules/@tauri-apps/cli/tauri.js build --bundles 
 ## 数据与 AI
 
 - PDF、相邻论文笔记和代码保留在本地目录。应用元数据、项目研究笔记和运行记录由本地数据目录管理。
-- Windows 正式构建默认在可写安装目录附近使用 `ScientifyData/`；Mac 默认使用 `~/Library/Application Support/Scientify/ScientifyData/`。设置中可以安排数据迁移。开发构建使用源码目录旁边的 `ScientifyDevData/`，所有工作树共用，见[开发与验收流程](docs/开发流程/开发与验收流程.md)。
+- Windows 正式构建默认在可写安装目录附近使用 `CapsioData/`；Mac 默认使用 `~/Library/Application Support/Capsio/CapsioData/`。设置中可以安排数据迁移。开发构建使用源码目录旁边的 `CapsioDevData/`，所有工作树共用，见[开发与验收流程](docs/开发流程/开发与验收流程.md)。
 - **JSON 导出不包含 PDF 和源码。** 完整备份需要复制应用数据和外部关联目录；详细步骤见[数据说明](docs/使用说明/桌面使用说明.md#数据与文件)。
 - 使用远程模型时，选定材料或 Agent 读取的内容可能发送给所配置的服务商，费用遵循该服务商规则。本地优先不等于所有功能离线运行。
 - 当前模型密钥保存在本机未加密的凭据文件中。不要分享整个数据目录、浏览器资料或带密钥的日志；该限制与报告方式见[安全说明](SECURITY.md)。
@@ -116,7 +116,7 @@ Mac 打包命令为 `node node_modules/@tauri-apps/cli/tauri.js build --bundles 
 ```text
 src/                     React 工作区、编辑器、PDF 阅读器与类型化 IPC
 src-tauri/               桌面窗口、文件、进程、浏览器与 Agent 集成
-crates/scientify-core/   本地存储、校验与文件事务
+crates/capsio-core/   本地存储、校验与文件事务
 scripts/                 资源准备和验收工具
 docs/                    产品设计、UI/UX、技术方案与开发流程
 ```
@@ -141,6 +141,6 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 - [路线图](ROADMAP.md)：当前重点和接受贡献的方向。
 - [安全说明](SECURITY.md)：已知边界及私密报告方式。
 
-Scientify 原创代码与文档采用 [Apache License 2.0](LICENSE)。贡献者保留各自版权；第三方组件遵循其原始许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。许可证不授予 Scientify 名称或标识的商标使用权，也不代表对衍生发行版的官方背书。
+Capsio 原创代码与文档采用 [Apache License 2.0](LICENSE)。贡献者保留各自版权；第三方组件遵循其原始许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。许可证不授予 Capsio 名称或标识的商标使用权，也不代表对衍生发行版的官方背书。
 
-感谢 Tauri、React、CodeMirror、PDF.js、xterm.js、OpenAI Codex 和其他依赖的维护者。Scientify 是独立项目，与这些项目及其维护组织无官方隶属关系。
+感谢 Tauri、React、CodeMirror、PDF.js、xterm.js、OpenAI Codex 和其他依赖的维护者。Capsio 是独立项目，与这些项目及其维护组织无官方隶属关系。

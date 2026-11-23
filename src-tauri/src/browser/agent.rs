@@ -41,7 +41,7 @@ pub(crate) fn operate(
     if cancelled() {
         return Err("网页任务已中止。".into());
     }
-    if tool == "scientify_browser_tabs" {
+    if tool == "capsio_browser_tabs" {
         let _: Empty = serde_json::from_value(args).map_err(|e| e.to_string())?;
         let mut tabs: Vec<_> = owner_tabs(app, owner)?
             .into_iter()
@@ -51,12 +51,12 @@ pub(crate) fn operate(
         return Ok(json!({"tabs":tabs}));
     }
     let tab = match tool {
-        "scientify_browser_read" => {
+        "capsio_browser_read" => {
             let input: Read = serde_json::from_value(args).map_err(|e| e.to_string())?;
             scoped(app, owner, project, &input.tab_id)?
         }
-        "scientify_browser_open" | "scientify_browser_search" => {
-            let (tab_id, address) = if tool == "scientify_browser_open" {
+        "capsio_browser_open" | "capsio_browser_search" => {
+            let (tab_id, address) = if tool == "capsio_browser_open" {
                 let input: Open = serde_json::from_value(args).map_err(|e| e.to_string())?;
                 let parsed = tauri::Url::parse(&input.url)
                     .map_err(|_| "请输入完整的 HTTP 或 HTTPS 链接。")?;

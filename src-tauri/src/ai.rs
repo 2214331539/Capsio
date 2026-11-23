@@ -264,7 +264,7 @@ pub(crate) fn text_connection(data: &Value) -> Result<Value, String> {
         .into_iter()
         .flatten()
         .filter(|p| p["provider"] != "chatgpt" && p["model"].as_str().is_some_and(valid_model))
-        .min_by_key(|p| p["serviceId"] != "scientify")
+        .min_by_key(|p| p["serviceId"] != "capsio")
         .map(|p| {
             let mut value = p.clone();
             if let Some(fields) = value.as_object_mut() {
@@ -274,7 +274,7 @@ pub(crate) fn text_connection(data: &Value) -> Result<Value, String> {
             value
         })
         .ok_or_else(|| {
-            "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Scientify 官方模型）。"
+            "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Capsio 官方模型）。"
                 .into()
         })
 }
@@ -862,7 +862,7 @@ pub(crate) mod tests {
         data["settings"]["modelProfiles"] = json!([
             {"id":"c","name":"ChatGPT","provider":"chatgpt","endpoint":"","model":"gpt"},
             {"id":"o","name":"Own","provider":"openai","endpoint":"https://a.example/v1","model":"m"},
-            {"id":"s","name":"Official","provider":"openai","serviceId":"scientify","endpoint":"https://s.example","model":"s"},
+            {"id":"s","name":"Official","provider":"openai","serviceId":"capsio","endpoint":"https://s.example","model":"s"},
         ]);
         let chosen = text_connection(&data).unwrap();
         assert_eq!(chosen["model"], "s");

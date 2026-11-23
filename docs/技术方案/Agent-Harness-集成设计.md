@@ -1,6 +1,6 @@
 # Agent Harness 集成设计
 
-本文规定 Scientify 从「单轮对话」升级为「本地可执行代理」的集成方案：内置 Codex 作为执行引擎，保留用户自配模型服务商，按工作区隔离记忆与操作边界。
+本文规定 Capsio 从「单轮对话」升级为「本地可执行代理」的集成方案：内置 Codex 作为执行引擎，保留用户自配模型服务商，按工作区隔离记忆与操作边界。
 
 文档状态：M1/M2 核心链路已落地并通过编译与单元测试。当前 AI 面板已经接入本地 Agent、内联审批、凭据回填和自动路由；真实服务商、域绑定、Windows 沙箱配置和打包后的桌面端行为仍需人工验收。第 0 节说明范围与当前事实，后续各节是实施依据。技术栈与长期架构以 [总体架构](总体架构.md) 第 0 节为准；本文只补充 Agent 相关的边界与契约。AI 助手的产品设计见 [AI 助手](../产品设计/页面/07-AI助手.md)。
 
@@ -13,8 +13,8 @@
 现有能力中与本文直接相关的是：
 
 - 模型服务商与连接验证已实现：OpenAI、Anthropic、Gemini、DeepSeek、通义千问、Moonshot、硅基流动、OpenRouter、Ollama 和自定义服务，测试连接时获取模型列表。
-- 项目文件访问由 `crates/scientify-core/src/research.rs` 的 `ResearchFiles` 提供，含路径围栏、revision 校验与二进制拒绝。
-- 文献库由 `crates/scientify-core/src/library.rs` 的 `LocalLibrary` 提供，含稳定绑定、相邻笔记配对与事务恢复清单。
+- 项目文件访问由 `crates/capsio-core/src/research.rs` 的 `ResearchFiles` 提供，含路径围栏、revision 校验与二进制拒绝。
+- 文献库由 `crates/capsio-core/src/library.rs` 的 `LocalLibrary` 提供，含稳定绑定、相邻笔记配对与事务恢复清单。
 - 文件会话与冲突保护在 `src/editor/sessions.ts`，正文所有权归 `FileSession`。
 - 全局辅助栏在 `src/shell/GlobalDock.tsx`，AI 与笔记共用固定顶栏与重叠内容层。
 
@@ -70,7 +70,7 @@ flowchart TB
   WS --> DATA
   CODEX -->|读写| LIT[文献根目录]
   CODEX -->|读写| REPO[项目代码目录]
-  LIT -.notify.-> LIB[crates/scientify-core library]
+  LIT -.notify.-> LIB[crates/capsio-core library]
   REPO -.notify.-> FS[src/editor/sessions.ts]
 ```
 
@@ -175,7 +175,7 @@ type AgentBinding = {
 | 项目与线程的映射索引 | 1 个 | `<data>/agent/threads.json` |
 | 服务商 API 密钥 | 1 个 | `<data>/credentials.json`（明文），见 §4.7 |
 
-`<data>` 指现有数据目录：debug 为源码目录旁边的 `ScientifyDevData/workspace/`，release 为应用数据目录下的 `workspace/`。
+`<data>` 指现有数据目录：debug 为源码目录旁边的 `CapsioDevData/workspace/`，release 为应用数据目录下的 `workspace/`。
 
 每个 `CODEX_HOME` 下各自持有 `config.toml`、`auth.json` 与 `sessions/`。两个 home 即得到硬隔离：线程历史、配置、凭据互不可见。
 
@@ -187,9 +187,9 @@ type AgentBinding = {
 
 **Git 仓库检查。** 引擎默认要求工作目录是 Git 仓库。文献根通常不是。文献域必须显式关闭该检查，否则首个任务无法启动。
 
-**Windows 沙箱状态。** `workspace-write` 依赖 Codex 的 Windows 沙箱。第一次建立线程前，Scientify 调用 `windowsSandbox/readiness`；若返回 `notConfigured` 或 `updateRequired`，自动尝试 Codex 的 `elevated` setup，并等待 `windowsSandbox/setupCompleted`，失败后再尝试 `unelevated`。两种实现都失败时仍允许阅读和分析，但线程必须明确显示 `readOnly`，并保留内联重试入口。不能默默改用 `danger-full-access`，因为那会破坏按工作区隔离的安全承诺。官方说明见 [Windows sandbox](https://developers.openai.com/codex/windows.md)。
+**Windows 沙箱状态。** `workspace-write` 依赖 Codex 的 Windows 沙箱。第一次建立线程前，Capsio 调用 `windowsSandbox/readiness`；若返回 `notConfigured` 或 `updateRequired`，自动尝试 Codex 的 `elevated` setup，并等待 `windowsSandbox/setupCompleted`，失败后再尝试 `unelevated`。两种实现都失败时仍允许阅读和分析，但线程必须明确显示 `readOnly`，并保留内联重试入口。不能默默改用 `danger-full-access`，因为那会破坏按工作区隔离的安全承诺。官方说明见 [Windows sandbox](https://developers.openai.com/codex/windows.md)。
 
-**凭据重复。** 两个 home 需要各写一份服务商配置。由 Scientify 的模型设置作为唯一事实来源，写入时同步两个 home，用户只配置一次。
+**凭据重复。** 两个 home 需要各写一份服务商配置。由 Capsio 的模型设置作为唯一事实来源，写入时同步两个 home，用户只配置一次。
 
 **`project.repo` 与 `project.path` 不一致。** 若两者指向不同目录，「一个域一个 cwd」的模型不再成立。约定二者必须一致，并在项目设置中选择仓库时一并校正文件根，避免出现「编辑器改的是 A，Git 状态看的是 B」。
 
@@ -207,7 +207,7 @@ type AgentBinding = {
 2. 密钥不写进 `workspace.json`，`workspace.json` 仍可安全地分享或备份。
 3. 不引入操作系统钥匙串依赖：本阶段目标是纯本地、单机可用，避免在没有凭据管理服务的环境下无法启动。
 
-代价必须写清楚：任何能读取该文件的本地进程都能读到密钥。文件只存在于本机，应用自身不把它发往任何地方；引擎进程通过环境变量 `SCIENTIFY_AGENT_KEY` 拿到密钥，`config.toml` 只写变量名。若后续需要更强保护，可在此文件之上加系统钥匙串后端，而调用方接口（`secret_save` / `secret_load` / `secret_clear`）不变。
+代价必须写清楚：任何能读取该文件的本地进程都能读到密钥。文件只存在于本机，应用自身不把它发往任何地方；引擎进程通过环境变量 `CAPSIO_AGENT_KEY` 拿到密钥，`config.toml` 只写变量名。若后续需要更强保护，可在此文件之上加系统钥匙串后端，而调用方接口（`secret_save` / `secret_load` / `secret_clear`）不变。
 
 ## 5. Rust 侧模块
 
@@ -228,7 +228,7 @@ src-tauri/src/agent/
   commands.rs    #[tauri::command] 集合
 ```
 
-`workspace.rs` 只负责把 Scientify 概念翻译成引擎参数，不承载引擎语义。将来替换引擎时，改动应收敛在 `process.rs`、`protocol.rs` 与 `commands.rs`，`session.rs` 与 `audit.rs` 保持不变。
+`workspace.rs` 只负责把 Capsio 概念翻译成引擎参数，不承载引擎语义。将来替换引擎时，改动应收敛在 `process.rs`、`protocol.rs` 与 `commands.rs`，`session.rs` 与 `audit.rs` 保持不变。
 
 ### 5.2 三处同步登记
 
@@ -310,7 +310,7 @@ export interface AgentBackend {
 
 ### 6.2 事件流用 Tauri 唤醒事件 + 恢复队列
 
-一轮任务的事件是高频流。Tauri 2 的 Channel 为该场景设计，优于现有的 `listen`。既有 `library-changed` 与 `scientify:browser` 属于低频粗粒度事件，继续使用 `@tauri-apps/api/event`。
+一轮任务的事件是高频流。Tauri 2 的 Channel 为该场景设计，优于现有的 `listen`。既有 `library-changed` 与 `capsio:browser` 属于低频粗粒度事件，继续使用 `@tauri-apps/api/event`。
 
 Codex `app-server` 使用 stdio JSON-RPC，不是 HTTP SSE。Rust reader 线程把通知和审批放入按 session 保存的恢复队列，同时发出 `agent-event` Tauri 唤醒事件；前端收到事件后立即调用 `agent_events(projectId, domain)` 排空队列。面板保留低频轮询作为断线恢复，因此增量不会依赖固定的 1 秒延迟，也不会因为 webview 短暂丢事件而丢失审批。`agent_events` 仍是唯一的队列消费接口，推送只负责唤醒。
 
@@ -366,7 +366,7 @@ Agent 直接写磁盘，不经过应用的文件会话层。理由是引擎的�
 
 **执行前的草稿检查。** 若某文件在 `FileSession` 中存在未保存草稿，而 Agent 即将修改同一路径，版本校验只能防止覆盖，无法挽回用户已做的编辑。任务开始前应检查目标路径是否存在 dirty 会话，存在则要求用户先保存或放弃。
 
-**文献配对。** `crates/scientify-core/src/library.rs` 中 PDF 与相邻 `.notes.md` 是配对管理的。外部改名已有指纹重关联，但「移动 PDF 未带走笔记」这一分支需要专门覆盖测试。
+**文献配对。** `crates/capsio-core/src/library.rs` 中 PDF 与相邻 `.notes.md` 是配对管理的。外部改名已有指纹重关联，但「移动 PDF 未带走笔记」这一分支需要专门覆盖测试。
 
 绑定笔记不存放在 `.scientify` 目录：例如 `paper.pdf` 的笔记实际是文献根目录下的 `paper.notes.md`；`.scientify/library.json` 只保存相对路径、绑定 id 和 PDF 指纹，`.scientify/operation.json` 只在事务进行中保存恢复清单。PDF 与笔记都不存在时，左栏会显示可重新关联的失联记录；用户可以用“移除失联记录”清理索引，不会删除仍存在的文件。
 
@@ -399,7 +399,7 @@ Agent 会话正文不进入 `workspace.json`。现有工作区保存是全量克
 | 审计记录 | `<data>/agent/audit/` |
 | 审批挂起状态 | 内存，进程退出即失效 |
 
-`<data>/agent/threads.json` 由 `session.rs` 串行写入并使用原子替换，参照 `crates/scientify-core/src/storage.rs` 的既有做法。
+`<data>/agent/threads.json` 由 `session.rs` 串行写入并使用原子替换，参照 `crates/capsio-core/src/storage.rs` 的既有做法。
 
 ## 10. 实施阶段
 
@@ -439,7 +439,7 @@ Agent 会话正文不进入 `workspace.json`。现有工作区保存是全量克
 
 ### 已核实的集成方式
 
-Scientify 分发未修改的 Codex 0.158.0 上游程序，通过本地 app-server 的 stdio JSON-RPC 操作。引擎负责线程历史、模型调用、工具循环与执行策略；Scientify 的 React 界面、Tauri 命令和应用 runtime 负责输入、消息展示、草稿、审批与任务管理。接入开源 harness 并不会自动获得 ChatGPT 桌面端的完整界面与服务。
+Capsio 分发未修改的 Codex 0.158.0 上游程序，通过本地 app-server 的 stdio JSON-RPC 操作。引擎负责线程历史、模型调用、工具循环与执行策略；Capsio 的 React 界面、Tauri 命令和应用 runtime 负责输入、消息展示、草稿、审批与任务管理。接入开源 harness 并不会自动获得 ChatGPT 桌面端的完整界面与服务。
 
 依据：[官方 app-server 协议](https://learn.chatgpt.com/docs/app-server)、[Codex 开放 harness 与客户端职责](https://developers.openai.com/blog/codex-as-a-platform)。本仓库生成的 `src/generated/agent-protocol/v2/TurnSteerParams.ts` 也确认锁定版本支持 `expectedTurnId`。
 

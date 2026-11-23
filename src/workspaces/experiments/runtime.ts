@@ -65,7 +65,7 @@ export const experimentOutput = createStore<{ revisions: Record<string, number> 
   revisions: {},
 }));
 export function openExecution(projectId: string, runId: string) {
-  window.dispatchEvent(new CustomEvent('scientify-open-run', { detail: { projectId, runId } }));
+  window.dispatchEvent(new CustomEvent('capsio-open-run', { detail: { projectId, runId } }));
 }
 export function useExecutions(store: WorkspaceStore, enabled = true) {
   const snapshot = useStore(executionStore);

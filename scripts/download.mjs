@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process';
  * The URL travels through the environment to keep it out of the command string.
  */
 export function download(url, destination) {
-  const env = { ...process.env, SCIENTIFY_DL_URL: url, SCIENTIFY_DL_OUT: destination };
+  const env = { ...process.env, CAPSIO_DL_URL: url, CAPSIO_DL_OUT: destination };
   const command =
     process.platform === 'win32'
       ? [
@@ -17,7 +17,7 @@ export function download(url, destination) {
             '-NoProfile',
             '-NonInteractive',
             '-Command',
-            "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri $env:SCIENTIFY_DL_URL -OutFile $env:SCIENTIFY_DL_OUT -MaximumRedirection 5",
+            "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri $env:CAPSIO_DL_URL -OutFile $env:CAPSIO_DL_OUT -MaximumRedirection 5",
           ],
         ]
       : ['curl', ['-fsSL', '--retry', '3', '-o', destination, url]];

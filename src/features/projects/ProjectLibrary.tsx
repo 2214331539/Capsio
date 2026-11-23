@@ -83,10 +83,10 @@ export function ProjectLibrary({
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ProjectFilter>('all');
   const [sort, setSort] = useState<ProjectSort>(() =>
-    readSetting('scientify.projects.sort', ['opened', 'updated', 'name', 'created'], 'opened'),
+    readSetting('capsio.projects.sort', ['opened', 'updated', 'name', 'created'], 'opened'),
   );
   const [view, setView] = useState<'grid' | 'list'>(() =>
-    readSetting('scientify.projects.view', ['grid', 'list'], 'grid'),
+    readSetting('capsio.projects.view', ['grid', 'list'], 'grid'),
   );
   const [context, setContext] = useState<{ project: Project; anchor: MenuAnchor } | null>(null);
   const [sortMenu, setSortMenu] = useState<MenuAnchor | null>(null);
@@ -103,7 +103,7 @@ export function ProjectLibrary({
   const total = projects.length;
   function choose(next: 'grid' | 'list') {
     setView(next);
-    writeSetting('scientify.projects.view', next);
+    writeSetting('capsio.projects.view', next);
   }
   /** Archives or brings back a project at once; the toast takes it back. */
   async function toggle(project: Project, key: 'archived') {
@@ -433,7 +433,7 @@ export function ProjectLibrary({
             variant="ghost"
             onClick={() => {
               setSort(value);
-              writeSetting('scientify.projects.sort', value);
+              writeSetting('capsio.projects.sort', value);
               setSortMenu(null);
             }}
           >

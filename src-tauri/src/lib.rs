@@ -1,4 +1,4 @@
-use scientify_core::storage::{read_workspace, Storage};
+use capsio_core::storage::{read_workspace, Storage};
 use serde::Serialize;
 use serde_json::Value;
 use std::{path::PathBuf, sync::Arc};
@@ -42,7 +42,7 @@ mod writing;
 
 struct AppState {
     storage: Arc<Storage>,
-    files: Arc<scientify_core::research::ResearchFiles>,
+    files: Arc<capsio_core::research::ResearchFiles>,
     legacy: PathBuf,
 }
 
@@ -79,7 +79,7 @@ async fn workspace_save<R: tauri::Runtime>(
     let storage = state.storage.clone();
     let files = state.files.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        let workspace = scientify_core::workspace::validate(workspace)?;
+        let workspace = capsio_core::workspace::validate(workspace)?;
         let current = storage.load()?;
         // A stale window must hear "reload", not a permission error about changes it never made.
         let revision = current
@@ -159,7 +159,7 @@ async fn workspace_import(
         let Some(file) = app
             .dialog()
             .file()
-            .add_filter("Scientify JSON", &["json"])
+            .add_filter("Capsio JSON", &["json"])
             .blocking_pick_file()
         else {
             return Ok(None);
@@ -190,8 +190,8 @@ async fn workspace_export(
         let Some(file) = app
             .dialog()
             .file()
-            .add_filter("Scientify JSON", &["json"])
-            .set_file_name("scientify-workspace.json")
+            .add_filter("Capsio JSON", &["json"])
+            .set_file_name("capsio-workspace.json")
             .blocking_save_file()
         else {
             return Ok(false);
@@ -236,7 +236,7 @@ fn app_context<R: tauri::Runtime>() -> tauri::Context<R> {
 pub fn run() {
     let builder = tauri::Builder::default();
     #[cfg(debug_assertions)]
-    let isolated_smoke = std::env::var_os("SCIENTIFY_NATIVE_SMOKE").is_some();
+    let isolated_smoke = std::env::var_os("CAPSIO_NATIVE_SMOKE").is_some();
     #[cfg(not(debug_assertions))]
     let isolated_smoke = false;
     let mut context = app_context::<tauri::Wry>();
@@ -300,7 +300,7 @@ pub fn run() {
         .setup(move |app| {
             let (directory, location) = data_location::prepare().map_err(|error| {
                 rfd::MessageDialog::new()
-                    .set_title("Scientify 数据位置")
+                    .set_title("Capsio 数据位置")
                     .set_level(rfd::MessageLevel::Error)
                     .set_description(format!(
                         "{error}\n请确认安装目录可写、目标文件夹为空，且旧应用已关闭。"
@@ -310,13 +310,13 @@ pub fn run() {
             })?;
             let profile = location.container.join("ui-profile");
             if let Err(error) = agent::scratch::Scratch::cleanup_expired(&location.container) {
-                eprintln!("Scientify 过期临时目录清理失败：{error}");
+                eprintln!("Capsio 过期临时目录清理失败：{error}");
             }
             app.manage(location);
             let legacy = app
                 .path()
                 .data_dir()?
-                .join("scientify-desktop-sample/workspace");
+                .join("capsio-desktop-sample/workspace");
             app.manage(library::LibraryState::new(directory.clone()));
             app.manage(agent::AgentState::default());
             app.manage(ai::stream::ChatState::default());
@@ -328,9 +328,7 @@ pub fn run() {
                 directory.join("environment-tasks"),
             ));
             app.manage(AppState {
-                files: Arc::new(scientify_core::research::ResearchFiles::new(
-                    directory.clone(),
-                )),
+                files: Arc::new(capsio_core::research::ResearchFiles::new(directory.clone())),
                 storage: Arc::new(Storage::open(directory).map_err(std::io::Error::other)?),
                 legacy,
             });
@@ -340,7 +338,7 @@ pub fn run() {
                 if !data.to_string_lossy().contains(".test-artifacts") {
                     return Err("native smoke requires an isolated test directory".into());
                 }
-                if std::env::var_os("SCIENTIFY_NATIVE_UI").is_some() {
+                if std::env::var_os("CAPSIO_NATIVE_UI").is_some() {
                     literature_smoke::seed_ui(app.handle())?;
                 }
             }
@@ -353,7 +351,7 @@ pub fn run() {
             }
             yita::refresh(app.handle());
             #[cfg(debug_assertions)]
-            if isolated_smoke && std::env::var_os("SCIENTIFY_NATIVE_UI").is_none() {
+            if isolated_smoke && std::env::var_os("CAPSIO_NATIVE_UI").is_none() {
                 literature_smoke::start(app.handle().clone());
             }
             Ok(())
@@ -402,6 +400,7 @@ pub fn run() {
             workspace_export,
             choose_directory,
             data_location::storage_location,
+            data_location::renamed_app_removable,
             data_location::storage_schedule,
             data_location::storage_cancel,
             data_location::storage_adopt,
@@ -522,5 +521,5 @@ pub fn run() {
             collaboration::collaboration_resolve_conflict,
         ])
         .run(context)
-        .expect("Scientify failed to start");
+        .expect("Capsio failed to start");
 }

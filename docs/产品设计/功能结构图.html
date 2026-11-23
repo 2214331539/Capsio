@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scientify 产品功能结构图</title>
+<title>Capsio 产品功能结构图</title>
 <!--
-  Scientify 产品功能结构图。用浏览器直接打开，离线可用。
+  Capsio 产品功能结构图。用浏览器直接打开，离线可用。
   功能内容在下方 id="source" 的文本里，每缩进两个空格是一层：
     名称 [已有|部分|待做] [P0|P1|P2] {相关文档路径} | 一句话说明
   状态只写在最末一层；上层的状态和统计自动汇总。
@@ -107,7 +107,7 @@ aside.hidden{display:none}
 </head>
 <body>
 <header>
-  <h1>Scientify 产品功能结构图</h1>
+  <h1>Capsio 产品功能结构图</h1>
   <span class="sub">产品 → 大模块 → 子模块 → 具体功能 · 2026-11-04</span>
   <label class="search"><span aria-hidden="true">⌕</span><input id="q" type="search" placeholder="搜索功能，回车跳到下一个" autocomplete="off"><span class="cnt" id="qcount"></span><button type="button" id="qprev" title="上一个（Shift+回车）">↑</button><button type="button" id="qnext" title="下一个（回车）">↓</button></label>
   <div class="zoom"><button type="button" class="btn icon" id="zout" title="缩小（-）">−</button><span class="pct" id="pct">100%</span><button type="button" class="btn icon" id="zin" title="放大（+）">+</button><button type="button" class="btn" id="fit" title="适应窗口（0）">适应窗口</button><button type="button" class="btn" id="panelbtn" title="显示或隐藏右侧面板">面板</button></div>
@@ -131,7 +131,7 @@ aside.hidden{display:none}
 </main>
 
 <script type="text/plain" id="source">
-Scientify | 本地优先、以项目为中心的科研工作台：把读过的文献、自己的判断、实验结果和论文正文连在一起，研究的依据和过程随时可追溯。
+Capsio | 本地优先、以项目为中心的科研工作台：把读过的文献、自己的判断、实验结果和论文正文连在一起，研究的依据和过程随时可追溯。
   项目中心 {页面/01-项目中心.md} | 启动后的第一个窗口：决定今天做哪项研究，管理项目、团队、收集箱和账号。
     侧栏 [已有] | 搜索入口、首页、我的项目、团队项目、收集箱、收藏的项目；左下角是账号、帮助、设置。
     首页 [P1] | 打开应用的第一页，只显示真实内容，没有欢迎横幅和统计卡片。
@@ -203,7 +203,7 @@ Scientify | 本地优先、以项目为中心的科研工作台：把读过的�
       关联文件夹 [部分] | 文献文件夹现在在文献页单独关联，目标是在这里统一管理。
       成员与共享入口 [待做] | 打开成员与共享。
       归档与删除 [已有] | 删除前说明后果。
-  文献 {页面/03-文献.md} | 管理和阅读项目的论文；PDF 和论文笔记留在用户自己的文件夹，Scientify 只记录位置和阅读信息。
+  文献 {页面/03-文献.md} | 管理和阅读项目的论文；PDF 和论文笔记留在用户自己的文件夹，Capsio 只记录位置和阅读信息。
     文献库 | 侧栏选范围，主区是列表，右侧是详情。
       智能分组 [待做] [P1] | 全部、未读、在读、已读、收藏、最近添加、有笔记、缺少元数据，按状态自动归组。
       文件夹树 [已有] | 关联磁盘目录，展开、拖动整理，文件变化自动更新。
@@ -309,7 +309,7 @@ Scientify | 本地优先、以项目为中心的科研工作台：把读过的�
       并行与后台 [已有] | 同时最多 8 个运行；切换页面、项目、对话都不影响；后台任务列表可单独停止。
       停止 [已有] | 先发中断，长时间停不下来时提供强制结束。
       实时日志 [已有] | 停在底部时跟随新输出；显示最后 256 KB，单次超过 64 MB 时停止运行并说明。
-      产物 [已有] | 收集脚本写进 SCIENTIFY_RUN_DIR 的文件，预览图片、表格和文本，不执行任何代码。
+      产物 [已有] | 收集脚本写进 CAPSIO_RUN_DIR 的文件，预览图片、表格和文本，不执行任何代码。
       意外退出处理 [已有] | 应用意外退出后，结果无法确认的运行标为“中断”，不会自动重跑。
       GPU 队列与批量参数 [待做] [P2] | GPU 槽位、排队、参数组合和随机种子。
       远程计算 [待做] [P2] | 把实验交给云端算力，结果回到运行记录。
@@ -396,7 +396,7 @@ Scientify | 本地优先、以项目为中心的科研工作台：把读过的�
     模型与连接 | 用哪个模型、怎样连接。
       服务商 [已有] | OpenAI、Anthropic、Gemini、DeepSeek、通义千问、Moonshot、硅基流动、OpenRouter、Ollama、自定义。
       测试与验证 [已有] | 测试连接并获取模型列表，分别验证聊天能力和 Agent 能力。
-      官方模型 [已有] | 登录后可以使用 Scientify 官方模型，不需要自己的密钥。
+      官方模型 [已有] | 登录后可以使用 Capsio 官方模型，不需要自己的密钥。
       设置中的 AI 模型分区 [已有] [P0] | 设置 → AI 模型：连接列表、默认连接、新建和编辑、验证结果。
       用量与费用 [待做] [P2] | 按连接统计请求次数和花费。
     结果沉淀 | 让 AI 的产出变成研究资产。
@@ -407,9 +407,9 @@ Scientify | 本地优先、以项目为中心的科研工作台：把读过的�
   划词翻译 {页面/10-全局功能.md} | 由内置的 Yita 提供，在任何软件里选中文字就能翻译，追问可以转到 AI 助手。
     翻译浮窗 [已有] | 语言切换、原文和译文、解释、纠错、只看原文、固定、移动和缩放，译文逐字显示。
     触发方式 [已有] | 在任意软件里选中文字；或按 Ctrl+Shift+T 翻译剪贴板。
-    问答浮窗 [已有] | 在浮窗里追问；箭头把同一个对话转到 Scientify 的 AI 助手，不重复发送，也不覆盖草稿。
-    常驻菜单 [已有] | 托盘（Windows）或菜单栏（macOS）图标：打开 Scientify、翻译剪贴板、暂停划词、翻译设置、修复取词。
-    外观跟随主题 [已有] | 浮窗使用 Scientify 的明暗主题和标志。
+    问答浮窗 [已有] | 在浮窗里追问；箭头把同一个对话转到 Capsio 的 AI 助手，不重复发送，也不覆盖草稿。
+    常驻菜单 [已有] | 托盘（Windows）或菜单栏（macOS）图标：打开 Capsio、翻译剪贴板、暂停划词、翻译设置、修复取词。
+    外观跟随主题 [已有] | 浮窗使用 Capsio 的明暗主题和标志。
     macOS 授权引导 [待做] [P0] | 检查“辅助功能”权限，没有时引导打开系统设置；设置里显示授权状态。
     关闭窗口后继续可用 [待做] [P0] | Windows 留在托盘、macOS 留在菜单栏，没有打开窗口时也能划词。
     排除指定软件 [待做] | 在这些软件里不触发划词。
@@ -422,7 +422,7 @@ Scientify | 本地优先、以项目为中心的科研工作台：把读过的�
     云端项目 | 服务器上有一份的项目。
       新建团队项目 [已有] | 在团队页创建。
       个人项目上云 [已有] | 项目 ID 不变，原文件夹继续使用。
-      多设备取回 [已有] | 另一台设备登录同一账号后进入项目，文献放到“文档/Scientify/项目名”。
+      多设备取回 [已有] | 另一台设备登录同一账号后进入项目，文献放到“文档/Capsio/项目名”。
       删除云端项目 [待做] | 只有所有者可以删除；服务端也还没有。
       转让所有权 [待做] | 把项目交给另一位成员。
     成员与角色 [P0] | 一个项目的成员和权限。
@@ -488,10 +488,10 @@ Scientify | 本地优先、以项目为中心的科研工作台：把读过的�
     立即生效 [部分] | 部分分区还要点“保存偏好”，计划统一为改了就生效。
   数据与安全 {页面/09-设置与数据.md} | 数据放在哪、怎样备份、怎样不丢、怎样不泄露。
     数据位置 | 应用数据和研究文件分开存放。
-      应用数据目录 [已有] | Windows 在安装目录旁的 ScientifyData，macOS 在 Application Support/Scientify。
+      应用数据目录 [已有] | Windows 在安装目录旁的 CapsioData，macOS 在 Application Support/Capsio。
       文件留在原处 [已有] | 文献 PDF、论文笔记和关联的代码文件夹不搬走。
       更改位置 [已有] | 选择空文件夹，下次启动迁移，逐个文件校验后切换，迁移前可以取消。
-      开发版独立数据 [已有] | 开发版使用 ScientifyDevData，不会碰正式数据。
+      开发版独立数据 [已有] | 开发版使用 CapsioDevData，不会碰正式数据。
     备份与恢复 | 防止数据丢失。
       JSON 导出与导入 [已有] | 只含记录和附件索引，不含 PDF 和代码；导入前自动备份。
       恢复最近备份 [已有] | 回到上一次保存的内容，当前主文件另存保留。
@@ -521,7 +521,7 @@ Scientify | 本地优先、以项目为中心的科研工作台：把读过的�
       代码签名 [待做] [P0] | 避免系统提示“未知发布者”。
     macOS [P0] | Apple Silicon；窗口已改用系统标题栏，菜单栏、设置窗口和统一工具栏待做。
       红绿灯与统一工具栏 [部分] [P0] | 已用系统标题栏和红绿灯，不再画右上角的三个按钮；工具栏和标题栏还没合一。
-      原生菜单栏 [待做] [P0] | Scientify、文件、编辑、显示、前往、窗口、帮助，每项显示快捷键。
+      原生菜单栏 [待做] [P0] | Capsio、文件、编辑、显示、前往、窗口、帮助，每项显示快捷键。
       独立设置窗口 [待做] [P0] | ⌘, 打开，顶部分区图标，改动立即生效。
       sheet 式对话框 [待做] | 确认和表单从工具栏下方滑出。
       关闭窗口后留在菜单栏 [待做] [P0] | 关闭最后一个窗口不退出，⌘Q 才退出。
@@ -1048,7 +1048,7 @@ Scientify | 本地优先、以项目为中心的科研工作台：把读过的�
     const panel = $('panel');
     if (!n) {
       const c = ROOT.count;
-      panel.innerHTML = '<div class="path">产品功能结构</div><h2>Scientify</h2><p class="desc">' + esc(ROOT.desc) + '</p>' +
+      panel.innerHTML = '<div class="path">产品功能结构</div><h2>Capsio</h2><p class="desc">' + esc(ROOT.desc) + '</p>' +
         '<h3>整体完成度 · 共 ' + c.total + ' 项具体功能</h3>' + barHtml(c) + '<div class="slegend"><span><span class="dot have"></span>已有 ' + c.have + '</span><span><span class="dot part"></span>部分 ' + c.part + '</span><span><span class="dot todo"></span>待做 ' + c.todo + '</span></div>' +
         '<h3>' + ROOT.children.length + ' 个大模块（点击查看）</h3>' + childList(ROOT) +
         '<h3>怎么看</h3><ul class="tips"><li><b>缩放</b>：滚轮或触控板双指；<b>平移</b>：按住拖动。</li><li><b>聚焦</b>：双击一个模块，只看这一支；顶部面包屑或 Esc 返回。</li><li><b>展开</b>：点节点旁的圆圈；或用上方“展开到”。</li><li><b>聚光</b>：选中节点后，其他分支变淡。</li><li><b>筛选</b>：只看某种现状或某个优先级，其余变淡。</li><li><b>键盘</b>：方向键移动选中，空格展开或收起，F 聚焦，+ / − 缩放，0 适应窗口。</li></ul>' +
@@ -1056,7 +1056,7 @@ Scientify | 本地优先、以项目为中心的科研工作台：把读过的�
       return;
     }
     const chain = ancestors(n).reverse();
-    const path = chain.map((p) => '<a data-sel="' + p.id + '">' + esc(p === ROOT ? 'Scientify' : p.label) + '</a>').join('<span>›</span>');
+    const path = chain.map((p) => '<a data-sel="' + p.id + '">' + esc(p === ROOT ? 'Capsio' : p.label) + '</a>').join('<span>›</span>');
     const doc = docOf(n);
     let html = '<div class="path">' + (path || '产品') + '</div><h2><i style="background:' + (n.depth === 0 ? '#1f2328' : n.color) + '"></i>' + esc(n.label) + '</h2>' +
       '<div class="pills"><span class="pill ' + n.status + '">' + STATUS_NAME[n.status] + '</span>' + (n.pri ? '<span class="pill ' + n.pri + '">' + n.pri + '</span>' : '') + '</div>' +

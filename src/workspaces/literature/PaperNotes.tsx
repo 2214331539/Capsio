@@ -120,7 +120,7 @@ export function PaperNotes({
           disabled={!selection?.selection || selection.resourceId !== id}
           onClick={() =>
             session.edit(
-              `${state.content}${state.content ? '\n\n' : ''}> ${selection?.selection?.replaceAll('\n', '\n> ')}\n\n[${t('页码')} ${selection?.page ?? 1}](scientify-page:${selection?.page ?? 1})\n`,
+              `${state.content}${state.content ? '\n\n' : ''}> ${selection?.selection?.replaceAll('\n', '\n> ')}\n\n[${t('页码')} ${selection?.page ?? 1}](capsio-page:${selection?.page ?? 1})\n`,
             )
           }
         >

@@ -230,7 +230,7 @@ export function createWorkspaceStore(backend: WorkspaceBackend) {
       if (get().busy || get().dirty || Object.keys(get().agentTasks).length)
         throw new Error(t('请先保存内容并结束任务，再更改数据位置。'));
       if (!backend.scheduleStorage || !backend.cancelStorage || (adopt && !backend.adoptStorage))
-        throw new Error(t('请在 Scientify 桌面版更改数据位置。'));
+        throw new Error(t('请在 Capsio 桌面版更改数据位置。'));
       exclusive = true;
       set({ busy: true });
       try {

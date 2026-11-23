@@ -13,7 +13,7 @@ export interface WorkspaceBackend {
   storageLocation?(): Promise<StorageLocation>;
   scheduleStorage?(directory: string): Promise<StorageLocation>;
   cancelStorage?(): Promise<StorageLocation>;
-  /** From the next start, use a folder that already holds Scientify data. */
+  /** From the next start, use a folder that already holds Capsio data. */
   adoptStorage?(directory: string): Promise<StorageLocation>;
 }
 
@@ -26,7 +26,7 @@ export interface StorageLocation {
 function command<T>(name: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri())
     return Promise.reject(
-      new Error(t('请通过 pnpm start 启动 Scientify 桌面应用。浏览器预览没有本地数据访问能力。')),
+      new Error(t('请通过 pnpm start 启动 Capsio 桌面应用。浏览器预览没有本地数据访问能力。')),
     );
   return invoke<T>(name, args);
 }

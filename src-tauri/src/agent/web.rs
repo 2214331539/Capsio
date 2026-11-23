@@ -16,15 +16,15 @@ const BODY_LIMIT: usize = 8 * 1024 * 1024;
 pub fn handles(tool: &str) -> bool {
     matches!(
         tool,
-        "scientify_web_search" | "scientify_web_fetch" | "scientify_search_papers"
+        "capsio_web_search" | "capsio_web_fetch" | "capsio_search_papers"
     )
 }
 
 pub fn specifications() -> Vec<Value> {
     [
-        ("scientify_web_search", "Search the web (Bing) without opening a browser tab. Returns result titles, URLs and snippets. Fast; use it first for current facts, news, documentation and anything to cite. Read a result with scientify_web_fetch before relying on details.", json!({"query":{"type":"string"},"count":{"type":"integer","minimum":1,"maximum":10}}), vec!["query"]),
-        ("scientify_web_fetch", "Fetch an HTTP/HTTPS page without a browser tab and return its title and main text (navigation and ads removed), plus links in the content. For pages that need JavaScript or a login, use scientify_browser_open instead.", json!({"url":{"type":"string"},"maxChars":{"type":"integer","minimum":1000,"maximum":60000}}), vec!["url"]),
-        ("scientify_search_papers", "Search scholarly papers by keywords, title, author or DOI (OpenAlex), or arXiv (source=arxiv, also arXiv ids). Returns title, authors, year, venue, citation count, DOI, landing URL, open PDF URL and abstract.", json!({"query":{"type":"string"},"source":{"type":"string","enum":["openalex","arxiv"]},"limit":{"type":"integer","minimum":1,"maximum":20}}), vec!["query"]),
+        ("capsio_web_search", "Search the web (Bing) without opening a browser tab. Returns result titles, URLs and snippets. Fast; use it first for current facts, news, documentation and anything to cite. Read a result with capsio_web_fetch before relying on details.", json!({"query":{"type":"string"},"count":{"type":"integer","minimum":1,"maximum":10}}), vec!["query"]),
+        ("capsio_web_fetch", "Fetch an HTTP/HTTPS page without a browser tab and return its title and main text (navigation and ads removed), plus links in the content. For pages that need JavaScript or a login, use capsio_browser_open instead.", json!({"url":{"type":"string"},"maxChars":{"type":"integer","minimum":1000,"maximum":60000}}), vec!["url"]),
+        ("capsio_search_papers", "Search scholarly papers by keywords, title, author or DOI (OpenAlex), or arXiv (source=arxiv, also arXiv ids). Returns title, authors, year, venue, citation count, DOI, landing URL, open PDF URL and abstract.", json!({"query":{"type":"string"},"source":{"type":"string","enum":["openalex","arxiv"]},"limit":{"type":"integer","minimum":1,"maximum":20}}), vec!["query"]),
     ]
     .into_iter()
     .map(|(name, description, properties, required)| json!({"type":"function","name":name,"description":description,"inputSchema":{"type":"object","properties":properties,"required":required,"additionalProperties":false}}))
@@ -34,12 +34,12 @@ pub fn specifications() -> Vec<Value> {
 pub fn operate(tool: &str, args: &Value) -> Result<Value, String> {
     tauri::async_runtime::block_on(async {
         match tool {
-            "scientify_web_search" => {
+            "capsio_web_search" => {
                 let input: Search =
                     serde_json::from_value(args.clone()).map_err(|e| e.to_string())?;
                 search(&input.query, input.count.unwrap_or(8).clamp(1, 10)).await
             }
-            "scientify_web_fetch" => {
+            "capsio_web_fetch" => {
                 let input: Fetch =
                     serde_json::from_value(args.clone()).map_err(|e| e.to_string())?;
                 fetch(
@@ -145,7 +145,7 @@ async fn search(query: &str, count: usize) -> Result<Value, String> {
     let (_, _, html) = get(url.as_str()).await?;
     let results = bing_results(&html, count);
     if results.is_empty() {
-        return Err("必应没有返回结果（可能要求验证）。可以换个说法再搜，或用 scientify_browser_search 在浏览器里搜索。".into());
+        return Err("必应没有返回结果（可能要求验证）。可以换个说法再搜，或用 capsio_browser_search 在浏览器里搜索。".into());
     }
     Ok(json!({"query":query,"engine":"bing","results":results,"source":"untrusted-web-search"}))
 }
@@ -214,7 +214,7 @@ async fn fetch(address: &str, limit: usize) -> Result<Value, String> {
     let (final_url, kind, body) = get(url.as_str()).await?;
     if kind.contains("pdf") || body.starts_with("%PDF") {
         return Ok(
-            json!({"url":final_url,"contentType":"application/pdf","text":"","note":"这是 PDF 文件，没有直接读取。可以用 scientify_browser_open 打开，或下载到项目后再读。","source":"untrusted-web-page"}),
+            json!({"url":final_url,"contentType":"application/pdf","text":"","note":"这是 PDF 文件，没有直接读取。可以用 capsio_browser_open 打开，或下载到项目后再读。","source":"untrusted-web-page"}),
         );
     }
     if !kind.is_empty()
@@ -567,24 +567,24 @@ mod tests {
 mod live {
     use super::*;
 
-    /// Reaches Bing, OpenAlex, arXiv and a real page: `cargo test -p scientify --lib web::live -- --ignored`.
+    /// Reaches Bing, OpenAlex, arXiv and a real page: `cargo test -p capsio --lib web::live -- --ignored`.
     #[test]
     #[ignore]
     fn the_real_services_answer() {
         let search = operate(
-            "scientify_web_search",
+            "capsio_web_search",
             &json!({"query":"Attention Is All You Need"}),
         )
         .unwrap();
         assert!(search["results"].as_array().unwrap().len() >= 3, "{search}");
         let page = operate(
-            "scientify_web_fetch",
+            "capsio_web_fetch",
             &json!({"url":"https://www.rust-lang.org/"}),
         )
         .unwrap();
         assert!(page["text"].as_str().unwrap().contains("Rust"), "{page}");
         let papers = operate(
-            "scientify_search_papers",
+            "capsio_search_papers",
             &json!({"query":"attention is all you need","limit":3}),
         )
         .unwrap();
@@ -592,7 +592,7 @@ mod live {
             !papers["results"].as_array().unwrap().is_empty(),
             "{papers}"
         );
-        let arxiv = operate("scientify_search_papers", &json!({"query":"1706.03762"})).unwrap();
+        let arxiv = operate("capsio_search_papers", &json!({"query":"1706.03762"})).unwrap();
         assert_eq!(
             arxiv["results"][0]["title"], "Attention Is All You Need",
             "{arxiv}"

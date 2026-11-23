@@ -22,9 +22,9 @@ pub fn seed_ui(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>>
         root.join("References/second.pdf"),
         include_bytes!("../tests/fixtures/mvp.pdf"),
     )?;
-    let mut data = scientify_core::workspace::empty();
+    let mut data = capsio_core::workspace::empty();
     data["revision"] = 1.into();
-    data["projects"] = serde_json::json!([{"id":"smoke-project","name":"Scientify v0.4 验收","question":"Isolated fixture","createdAt":"2026-09-26","space":"personal"}]);
+    data["projects"] = serde_json::json!([{"id":"smoke-project","name":"Capsio v0.4 验收","question":"Isolated fixture","createdAt":"2026-09-26","space":"personal"}]);
     storage.save(data, 0).map_err(std::io::Error::other)?;
     app.state::<crate::library::LibraryState>()
         .service
@@ -44,7 +44,7 @@ pub fn start(app: tauri::AppHandle) {
             .cloned()
             .collect::<Vec<_>>();
         let report = serde_json::json!({"passed":result.is_ok(),"probes":result.as_ref().ok(),"error":result.as_ref().err(),"browser":browser,"checks":["isolated library mount","paired notes persisted","native HTTP navigation/title","agent rendered page extraction and source links","agent browser project/window isolation","agent browser cancellation","native history","remote IPC denied","HTTP 429 document retained and recovery","view hide/show/close"]});
-        if let Some(path) = std::env::var_os("SCIENTIFY_NATIVE_REPORT") {
+        if let Some(path) = std::env::var_os("CAPSIO_NATIVE_REPORT") {
             let _ = fs::write(path, serde_json::to_vec_pretty(&report).unwrap());
         }
         app.exit(if report["passed"] == true { 0 } else { 1 });
@@ -62,7 +62,7 @@ fn wait(mut condition: impl FnMut() -> bool) -> Result<(), String> {
 }
 fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String> {
     let data =
-        PathBuf::from(std::env::var_os("SCIENTIFY_DATA_DIR").ok_or("isolated data path required")?);
+        PathBuf::from(std::env::var_os("CAPSIO_DATA_DIR").ok_or("isolated data path required")?);
     if !data.is_absolute() || !data.to_string_lossy().contains(".test-artifacts") {
         return Err("native smoke must use .test-artifacts".into());
     }
@@ -137,7 +137,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         app,
         "main",
         "smoke-project",
-        "scientify_browser_read",
+        "capsio_browser_read",
         serde_json::json!({"tabId":tab.id}),
         || false,
     )?;
@@ -156,7 +156,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         app,
         "main",
         "other-project",
-        "scientify_browser_read",
+        "capsio_browser_read",
         serde_json::json!({"tabId":tab.id}),
         || false,
     )
@@ -168,7 +168,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         app,
         "workspace",
         "smoke-project",
-        "scientify_browser_read",
+        "capsio_browser_read",
         serde_json::json!({"tabId":tab.id}),
         || false,
     )
@@ -180,7 +180,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         app,
         "main",
         "smoke-project",
-        "scientify_browser_read",
+        "capsio_browser_read",
         serde_json::json!({"tabId":tab.id}),
         || true,
     )
@@ -192,7 +192,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         app,
         "main",
         "smoke-project",
-        "scientify_browser_open",
+        "capsio_browser_open",
         serde_json::json!({"url":format!("http://{address}/redirect")}),
         || false,
     )?;
@@ -204,7 +204,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         app,
         "main",
         "smoke-project",
-        "scientify_browser_open",
+        "capsio_browser_open",
         serde_json::json!({"tabId":opened_id,"url":format!("http://{address}/login")}),
         || false,
     )
@@ -217,7 +217,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         app,
         "main",
         "smoke-project",
-        "scientify_browser_open",
+        "capsio_browser_open",
         serde_json::json!({"tabId":opened_id,"url":format!("http://{address}/limited")}),
         || false,
     )
@@ -229,7 +229,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         app,
         "main",
         "smoke-project",
-        "scientify_browser_open",
+        "capsio_browser_open",
         serde_json::json!({"tabId":opened_id,"url":format!("http://{address}/two")}),
         || false,
     )?;
@@ -241,7 +241,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         app,
         "main",
         "smoke-project",
-        "scientify_browser_read",
+        "capsio_browser_read",
         serde_json::json!({"tabId":opened_id}),
         || false,
     )
@@ -290,7 +290,7 @@ fn run(app: &tauri::AppHandle) -> Result<Vec<crate::browser::BrowserTab>, String
         crate::browser::get(app, "main", &tab.id)
             .is_ok_and(|t| t.title == "Native one" && !t.loading && t.error.is_none())
     })?;
-    if let Ok(urls) = std::env::var("SCIENTIFY_BROWSER_PROBE_URLS") {
+    if let Ok(urls) = std::env::var("CAPSIO_BROWSER_PROBE_URLS") {
         for address in urls.split(',') {
             let url = crate::browser::resolve_address(address, crate::browser::search_engine(app))?
                 .ok_or("probe URL required")?;

@@ -1,6 +1,6 @@
 use super::*;
 use crate::{ipc_smoke::invoke, AppState};
-use scientify_core::{research::ResearchFiles, storage::Storage};
+use capsio_core::{research::ResearchFiles, storage::Storage};
 use serde_json::{json, Value};
 use std::{
     path::PathBuf,
@@ -21,7 +21,7 @@ fn real_python_environment_terminal_and_formal_run_work_without_a_model() {
     std::fs::create_dir(&root).unwrap();
     std::fs::create_dir(&other).unwrap();
     let storage = Arc::new(Storage::open(fixture.path().join("data/workspace")).unwrap());
-    let mut data = scientify_core::workspace::empty();
+    let mut data = capsio_core::workspace::empty();
     data["projects"] =
         json!([{"id":"p1","name":"Research","question":"","createdAt":"now","path":root}]);
     data["revision"] = json!(1);
@@ -157,14 +157,14 @@ fn real_python_environment_terminal_and_formal_run_work_without_a_model() {
         json!({"workspace":data,"expectedRevision":2}),
     );
     // A wheel made from stdlib exercises real pip installation without Internet.
-    let wheel_script="import zipfile,sys; p=sys.argv[1]; d='scientify_fixture-0.1.0.dist-info/'; z=zipfile.ZipFile(p,'w'); z.writestr('scientify_fixture/__init__.py','value = 42\\n'); z.writestr(d+'METADATA','Metadata-Version: 2.1\\nName: scientify-fixture\\nVersion: 0.1.0\\n'); z.writestr(d+'WHEEL','Wheel-Version: 1.0\\nGenerator: Scientify\\nRoot-Is-Purelib: true\\nTag: py3-none-any\\n'); z.writestr(d+'RECORD',''); z.close()";
-    let wheel = root.join("scientify_fixture-0.1.0-py3-none-any.whl");
+    let wheel_script="import zipfile,sys; p=sys.argv[1]; d='capsio_fixture-0.1.0.dist-info/'; z=zipfile.ZipFile(p,'w'); z.writestr('capsio_fixture/__init__.py','value = 42\\n'); z.writestr(d+'METADATA','Metadata-Version: 2.1\\nName: capsio-fixture\\nVersion: 0.1.0\\n'); z.writestr(d+'WHEEL','Wheel-Version: 1.0\\nGenerator: Capsio\\nRoot-Is-Purelib: true\\nTag: py3-none-any\\n'); z.writestr(d+'RECORD',''); z.close()";
+    let wheel = root.join("capsio_fixture-0.1.0-py3-none-any.whl");
     let mut command = std::process::Command::new(&base);
     command.args(["-c", wheel_script, wheel.to_str().unwrap()]);
     crate::local_process::capture(&mut command, Duration::from_secs(10)).unwrap();
     std::fs::write(
         root.join("requirements.txt"),
-        "./scientify_fixture-0.1.0-py3-none-any.whl\n",
+        "./capsio_fixture-0.1.0-py3-none-any.whl\n",
     )
     .unwrap();
     wait_task(
@@ -176,13 +176,13 @@ fn real_python_environment_terminal_and_formal_run_work_without_a_model() {
         .as_array()
         .unwrap()
         .iter()
-        .any(|p| p["name"] == "scientify-fixture"));
+        .any(|p| p["name"] == "capsio-fixture"));
     let other_packages = py("other", json!({"action":"packages"}));
     assert!(!other_packages
         .as_array()
         .unwrap()
         .iter()
-        .any(|p| p["name"] == "scientify-fixture"));
+        .any(|p| p["name"] == "capsio-fixture"));
     std::fs::write(
         root.join("input.py"),
         "name=input('Name: '); print('HELLO-'+name, flush=True)\n",
@@ -201,9 +201,9 @@ fn real_python_environment_terminal_and_formal_run_work_without_a_model() {
     .is_err());
     term(json!({"action":"resize","id":id,"cols":110,"rows":28}));
     let input = if cfg!(windows) {
-        "\u{1b}[1;1RScientify\r"
+        "\u{1b}[1;1RCapsio\r"
     } else {
-        "Scientify\r"
+        "Capsio\r"
     };
     term(json!({"action":"input","id":id,"data":input}));
     let deadline = Instant::now() + Duration::from_secs(15);
@@ -218,7 +218,7 @@ fn real_python_environment_terminal_and_formal_run_work_without_a_model() {
                 .decode(chunk["data"].as_str().unwrap())
                 .unwrap(),
         );
-        if String::from_utf8_lossy(&transcript).contains("HELLO-Scientify") {
+        if String::from_utf8_lossy(&transcript).contains("HELLO-Capsio") {
             break;
         }
         assert!(
@@ -323,7 +323,7 @@ fn real_python_environment_terminal_and_formal_run_work_without_a_model() {
         assert!(Instant::now() < deadline);
         std::thread::sleep(Duration::from_millis(60));
     }
-    std::fs::write(root.join("service.py"),"import os,json,http.server,socketserver\nfrom scientify_fixture import value\nclass Handler(http.server.BaseHTTPRequestHandler):\n def do_GET(self):\n  self.send_response(200); self.end_headers(); self.wfile.write(b'SCIENTIFY-LOCAL')\nwith socketserver.TCPServer(('127.0.0.1',0),Handler) as s:\n p=os.environ['SCIENTIFY_RUN_DIR']; json.dump({'fixture':value,'port':s.server_address[1]},open(os.path.join(p,'metrics.json'),'w')); print('ready',flush=True); s.serve_forever()\n").unwrap();
+    std::fs::write(root.join("service.py"),"import os,json,http.server,socketserver\nfrom capsio_fixture import value\nclass Handler(http.server.BaseHTTPRequestHandler):\n def do_GET(self):\n  self.send_response(200); self.end_headers(); self.wfile.write(b'CAPSIO-LOCAL')\nwith socketserver.TCPServer(('127.0.0.1',0),Handler) as s:\n p=os.environ['CAPSIO_RUN_DIR']; json.dump({'fixture':value,'port':s.server_address[1]},open(os.path.join(p,'metrics.json'),'w')); print('ready',flush=True); s.serve_forever()\n").unwrap();
     let run = call(
         "experiment_start",
         json!({"projectId":"p1","configuration":{"id":"service","name":"Local service","executable":"python","args":["service.py"],"cwd":"."}}),
@@ -361,7 +361,7 @@ fn real_python_environment_terminal_and_formal_run_work_without_a_model() {
         .unwrap();
     let mut response = String::new();
     socket.read_to_string(&mut response).unwrap();
-    assert!(response.contains("SCIENTIFY-LOCAL"));
+    assert!(response.contains("CAPSIO-LOCAL"));
     call("experiment_stop", json!({"runId":run["id"]}));
     let deadline = Instant::now() + Duration::from_secs(8);
     loop {

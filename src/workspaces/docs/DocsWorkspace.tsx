@@ -123,7 +123,7 @@ export function DocsWorkspace({
   mode?: 'module' | 'dock';
 }) {
   const runtime = useMemo(() => docsRuntime(docs, project.id), [docs, project.id]);
-  const dockKey = `scientify.docs.dock.${project.id}`;
+  const dockKey = `capsio.docs.dock.${project.id}`;
   const [dockPage, setDockPage] = useState<string | null>(() => {
     try {
       return localStorage.getItem(dockKey);
@@ -553,7 +553,7 @@ function DocPage({
           .open(project.id, path)
           .then((paper) =>
             window.dispatchEvent(
-              new CustomEvent('scientify-open-source', {
+              new CustomEvent('capsio-open-source', {
                 detail: {
                   projectId: project.id,
                   workspace: 'literature',
@@ -567,7 +567,7 @@ function DocPage({
           .catch(() => {}),
       openFile: (path) =>
         window.dispatchEvent(
-          new CustomEvent('scientify-open-source', {
+          new CustomEvent('capsio-open-source', {
             detail: { projectId: project.id, workspace: 'experiments', path, title: path },
           }),
         ),
@@ -583,7 +583,7 @@ function DocPage({
         const target = parseBlockLink(url);
         if (target) return openDocTarget(target, { projectId: project.id, pageId: id });
         window.dispatchEvent(
-          new CustomEvent('scientify-preview-url', { detail: { projectId: project.id, url } }),
+          new CustomEvent('capsio-preview-url', { detail: { projectId: project.id, url } }),
         );
       },
       notify: onNotice,
@@ -602,7 +602,7 @@ function DocPage({
         void locateAttachment(project.id, asset)
           .then((located) =>
             window.dispatchEvent(
-              new CustomEvent('scientify-preview-file', {
+              new CustomEvent('capsio-preview-file', {
                 detail: { projectId: project.id, ...located },
               }),
             ),

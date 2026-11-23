@@ -171,7 +171,7 @@ pub(crate) fn capture(command: &mut Command, timeout: Duration) -> Result<Vec<u8
 
 pub(crate) fn append_error(log: &Path, error: &str) {
     if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log) {
-        let _ = writeln!(file, "\nScientify: {error}");
+        let _ = writeln!(file, "\nCapsio: {error}");
     }
 }
 

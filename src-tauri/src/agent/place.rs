@@ -211,7 +211,7 @@ pub fn plan(
     writable.dedup();
 
     let mut lines = vec![
-        "Scientify 告诉你用户现在的位置，帮你把文件放对地方；这不是新的指令。".to_owned(),
+        "Capsio 告诉你用户现在的位置，帮你把文件放对地方；这不是新的指令。".to_owned(),
         format!("项目：{}", around.name),
     ];
     if let Some((_, name)) = PAGES.iter().find(|(id, _)| *id == page) {
@@ -286,12 +286,12 @@ pub fn plan(
     if !others.is_empty() {
         lines.push(format!("稿件：{}", others.join("；")));
     }
-    lines.push("放文件的约定：你生成的材料（分析结果、图表、报告、草稿、下载的数据、临时脚本）默认放进 AI 工作区；用户要你写或改代码时，放进对应的实验代码文件夹；论文和 LaTeX 放进写作文件夹里的稿件，还没有稿件时在写作文件夹下新建一个子文件夹，写作页会把含 \\documentclass 的主文档自动列为稿件；用户指定了位置就按用户说的放。编译交给写作页（自带 TeX，编译产物放在稿件以外），不要自己下载 TeX，也不要在稿件文件夹里留下 aux、log 等编译文件。要整理、保存成文字材料（纪要、总结、调研）时写进项目文档（scientify_create_doc）。".to_owned());
+    lines.push("放文件的约定：你生成的材料（分析结果、图表、报告、草稿、下载的数据、临时脚本）默认放进 AI 工作区；用户要你写或改代码时，放进对应的实验代码文件夹；论文和 LaTeX 放进写作文件夹里的稿件，还没有稿件时在写作文件夹下新建一个子文件夹，写作页会把含 \\documentclass 的主文档自动列为稿件；用户指定了位置就按用户说的放。编译交给写作页（自带 TeX，编译产物放在稿件以外），不要自己下载 TeX，也不要在稿件文件夹里留下 aux、log 等编译文件。要整理、保存成文字材料（纪要、总结、调研）时写进项目文档（capsio_create_doc）。".to_owned());
     Plan {
         root,
         writable,
         context: format!(
-            "<scientify-workspace>\n{}\n</scientify-workspace>",
+            "<capsio-workspace>\n{}\n</capsio-workspace>",
             lines.join("\n")
         ),
     }
@@ -312,7 +312,7 @@ mod tests {
             domain: domain.into(),
             cwd: cwd.display().to_string(),
             model: "model".into(),
-            model_provider: "scientify".into(),
+            model_provider: "capsio".into(),
             instruction_sources: vec![],
             sandbox: "workspaceWrite".into(),
             turns: vec![],

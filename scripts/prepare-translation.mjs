@@ -14,7 +14,7 @@ const rid =
       ? `osx-${process.arch}`
       : null;
 if (!rid) throw new Error('Yita selection translation currently supports Windows and macOS.');
-const dotnet = process.env.SCIENTIFY_DOTNET ?? 'dotnet';
+const dotnet = process.env.CAPSIO_DOTNET ?? 'dotnet';
 // macOS ties privacy grants (Accessibility, Input Monitoring) and Keychain access to the
 // signature. With APPLE_SIGNING_IDENTITY set, the helper and the component are signed
 // with it, so grants survive updates; a different identity builds them again.
@@ -35,13 +35,13 @@ function hashDirectory(path) {
 }
 hashDirectory(source);
 for (const asset of [
-  'public/brand/scientify-light.png',
-  'public/brand/scientify-dark.png',
+  'public/brand/capsio-light.png',
+  'public/brand/capsio-dark.png',
   'src-tauri/icons/icon.ico',
 ])
   fingerprint.update(asset).update(readFileSync(join(root, asset)));
 const hash = fingerprint.digest('hex');
-const stamp = join(output, 'scientify-source.sha256');
+const stamp = join(output, 'capsio-source.sha256');
 const exe = join(output, process.platform === 'win32' ? 'Yita.Desktop.exe' : 'Yita.Desktop');
 function run(command, args) {
   const result = spawnSync(command, args, { cwd: source, stdio: 'inherit', windowsHide: true });
@@ -148,7 +148,7 @@ if (!existsSync(exe) || !existsSync(stamp) || readFileSync(stamp, 'utf8') !== ha
 const cargoTarget = resolve(root, process.env.CARGO_TARGET_DIR ?? 'target');
 for (const mode of ['debug', 'release']) {
   const destination = join(cargoTarget, mode, 'yita');
-  const destinationStamp = join(destination, 'scientify-source.sha256');
+  const destinationStamp = join(destination, 'capsio-source.sha256');
   if (!existsSync(destinationStamp) || readFileSync(destinationStamp, 'utf8') !== hash)
     cpSync(output, destination, { recursive: true });
 }

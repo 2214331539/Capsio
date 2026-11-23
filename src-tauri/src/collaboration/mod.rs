@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 const FILE_NAME: &str = "collaboration.json";
 const AUTH_FILE_NAME: &str = "collaboration-auth.json";
-pub(crate) const DEFAULT_ENDPOINT: &str = match option_env!("SCIENTIFY_COLLAB_ENDPOINT") {
+pub(crate) const DEFAULT_ENDPOINT: &str = match option_env!("CAPSIO_COLLAB_ENDPOINT") {
     Some(endpoint) => endpoint,
     None => "https://124.221.115.83:8443",
 };
@@ -81,7 +81,7 @@ fn read(state: &AppState) -> Result<CollaborationState, String> {
 
 fn write(state: &AppState, value: &CollaborationState) -> Result<(), String> {
     let bytes = serde_json::to_vec_pretty(value).map_err(|error| error.to_string())?;
-    scientify_core::storage::write_atomic_bytes(&path(state), &bytes)
+    capsio_core::storage::write_atomic_bytes(&path(state), &bytes)
 }
 
 fn read_auth(state: &AppState) -> Result<Option<AuthTokens>, String> {
@@ -97,7 +97,7 @@ fn read_auth(state: &AppState) -> Result<Option<AuthTokens>, String> {
 
 fn write_auth(state: &AppState, value: &AuthTokens) -> Result<(), String> {
     let bytes = serde_json::to_vec_pretty(value).map_err(|error| error.to_string())?;
-    scientify_core::storage::write_atomic_bytes(&auth_path(state), &bytes)
+    capsio_core::storage::write_atomic_bytes(&auth_path(state), &bytes)
 }
 
 fn clear_auth(state: &AppState) -> Result<(), String> {
@@ -173,7 +173,7 @@ async fn request_json(
     // The service asks apps below its minimum version to update (server client-policy.mjs).
     let mut request = client
         .request(method, url)
-        .header("x-scientify-version", env!("CARGO_PKG_VERSION"));
+        .header("x-capsio-version", env!("CARGO_PKG_VERSION"));
     if let Some(token) = token {
         request = request.bearer_auth(token);
     }
@@ -498,7 +498,14 @@ pub async fn collaboration_contact<R: tauri::Runtime>(
 ) -> Result<Value, String> {
     trusted(&view)?;
     let endpoint = read(&state)?.endpoint;
-    auth_request(&state, &endpoint, "/support/contact", reqwest::Method::GET, None).await
+    auth_request(
+        &state,
+        &endpoint,
+        "/support/contact",
+        reqwest::Method::GET,
+        None,
+    )
+    .await
 }
 
 /// Changes the account's name: what the sidebar shows and other members see.
@@ -511,7 +518,14 @@ pub async fn collaboration_set_name<R: tauri::Runtime>(
     trusted(&view)?;
     let endpoint = read(&state)?.endpoint;
     let payload = serde_json::json!({ "name": name });
-    auth_request(&state, &endpoint, "/me", reqwest::Method::PATCH, Some(payload)).await
+    auth_request(
+        &state,
+        &endpoint,
+        "/me",
+        reqwest::Method::PATCH,
+        Some(payload),
+    )
+    .await
 }
 
 /// Keeps the tokens of a sign-in response and turns collaboration on.
@@ -1167,9 +1181,9 @@ mod tests {
     fn app_state(dir: &std::path::Path) -> crate::AppState {
         std::fs::create_dir_all(dir.join("data")).unwrap();
         let storage =
-            std::sync::Arc::new(scientify_core::storage::Storage::open(dir.join("data")).unwrap());
+            std::sync::Arc::new(capsio_core::storage::Storage::open(dir.join("data")).unwrap());
         crate::AppState {
-            files: std::sync::Arc::new(scientify_core::research::ResearchFiles::new(
+            files: std::sync::Arc::new(capsio_core::research::ResearchFiles::new(
                 storage.directory().into(),
             )),
             storage,

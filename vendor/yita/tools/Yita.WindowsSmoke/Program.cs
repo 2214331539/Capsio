@@ -15,7 +15,7 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        if (Environment.GetEnvironmentVariable("SCIENTIFY_UIA_FIXTURE_READY") is { Length: > 0 } signal)
+        if (Environment.GetEnvironmentVariable("CAPSIO_UIA_FIXTURE_READY") is { Length: > 0 } signal)
             return RunWorkerFixture(signal);
         if (args.FirstOrDefault() == "--worker-cancellation") return CheckWorkerCancellation();
         if (args.FirstOrDefault() == "--fixture") return RunFixture();
@@ -102,8 +102,8 @@ internal static class Program
 
     private static int CheckWorkerCancellation()
     {
-        var signal = Path.Combine(Path.GetTempPath(), "scientify-uia-" + Guid.NewGuid().ToString("N"));
-        Environment.SetEnvironmentVariable("SCIENTIFY_UIA_FIXTURE_READY", signal);
+        var signal = Path.Combine(Path.GetTempPath(), "capsio-uia-" + Guid.NewGuid().ToString("N"));
+        Environment.SetEnvironmentVariable("CAPSIO_UIA_FIXTURE_READY", signal);
         try
         {
             using var reader = new WindowsUiAutomationWorkerClient(() => Environment.ProcessPath);
@@ -120,7 +120,7 @@ internal static class Program
             return 0;
         }
         catch (Exception error) { Console.Error.WriteLine(error); return 1; }
-        finally { Environment.SetEnvironmentVariable("SCIENTIFY_UIA_FIXTURE_READY", null); File.Delete(signal); }
+        finally { Environment.SetEnvironmentVariable("CAPSIO_UIA_FIXTURE_READY", null); File.Delete(signal); }
     }
     private static int RunFixture()
     {

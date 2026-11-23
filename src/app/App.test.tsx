@@ -18,7 +18,7 @@ it('retains a dock wider than 760px and adapts its bounds when the window shrink
       createdAt: '2026-10-07',
     });
     localStorage.setItem(
-      'scientify.ui.v2',
+      'capsio.ui.v2',
       JSON.stringify({
         version: 2,
         projectId: 'wide-dock',
@@ -212,7 +212,7 @@ it.each([
       chooseDirectory: async () => null,
     };
     localStorage.setItem(
-      'scientify.ui.v1',
+      'capsio.ui.v1',
       JSON.stringify({
         version: 1,
         projectId: 'restore-project',

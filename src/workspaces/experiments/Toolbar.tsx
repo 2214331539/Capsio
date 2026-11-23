@@ -421,11 +421,7 @@ export function CloneDialog({
           <label>
             {t('保存位置')}
             <div className="sf-experiment-directory-input">
-              <Input
-                readOnly
-                value={parent || t('Scientify 数据目录')}
-                aria-label={t('保存位置')}
-              />
+              <Input readOnly value={parent || t('Capsio 数据目录')} aria-label={t('保存位置')} />
               <Button
                 type="button"
                 iconOnly

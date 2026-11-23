@@ -5,5 +5,5 @@
     "src",
     "tests"
   ],
-  "integration": "Scientify embedded mode; local changes documented in README.scientify.md"
+  "integration": "Capsio embedded mode; local changes documented in README.capsio.md"
 }

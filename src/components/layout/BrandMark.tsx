@@ -6,7 +6,7 @@ export function BrandMark() {
     <span className="brand-mark" aria-hidden="true">
       <img
         className="brand-mark-light"
-        src="/brand/scientify-light.png"
+        src="/brand/capsio-light.png"
         alt=""
         width={24}
         height={24}
@@ -14,7 +14,7 @@ export function BrandMark() {
       />
       <img
         className="brand-mark-dark"
-        src="/brand/scientify-dark.png"
+        src="/brand/capsio-dark.png"
         alt=""
         width={24}
         height={24}

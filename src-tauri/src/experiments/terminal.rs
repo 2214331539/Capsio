@@ -197,7 +197,7 @@ impl TerminalState {
             command.env(key, value);
         }
         command.env("TERM", "xterm-256color");
-        // Children inherit "ignore Ctrl+C" from this process. When Scientify was
+        // Children inherit "ignore Ctrl+C" from this process. When Capsio was
         // itself started with Ctrl+C disabled, the shell or Python in the terminal
         // would never see Ctrl+C, so restore normal handling before spawning.
         #[cfg(windows)]

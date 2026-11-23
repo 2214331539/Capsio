@@ -56,7 +56,7 @@ fn path(directory: &Path) -> PathBuf {
 }
 
 fn read(directory: &Path) -> Result<Store, String> {
-    scientify_core::research::reject_links(&path(directory))?;
+    capsio_core::research::reject_links(&path(directory))?;
     match std::fs::read(path(directory)) {
         Ok(bytes) => {
             let mut store: Store = serde_json::from_slice(&bytes)
@@ -70,12 +70,12 @@ fn read(directory: &Path) -> Result<Store, String> {
 }
 
 fn write(directory: &Path, store: &Store) -> Result<(), String> {
-    scientify_core::research::reject_links(directory)?;
+    capsio_core::research::reject_links(directory)?;
     std::fs::create_dir_all(directory).map_err(|e| format!("无法创建数据目录：{e}"))?;
     let target = path(directory);
     let pending = target.with_extension("pending.json");
-    scientify_core::research::reject_links(&target)?;
-    scientify_core::research::reject_links(&pending)?;
+    capsio_core::research::reject_links(&target)?;
+    capsio_core::research::reject_links(&pending)?;
     let text = serde_json::to_vec_pretty(store).map_err(|e| format!("无法写入凭据：{e}"))?;
     std::fs::write(&pending, text).map_err(|e| format!("无法写入凭据：{e}"))?;
     std::fs::rename(&pending, &target).map_err(|e| format!("无法写入凭据：{e}"))
@@ -165,7 +165,7 @@ mod tests {
 
     fn temporary() -> PathBuf {
         let directory = std::env::temp_dir().join(format!(
-            "scientify-credentials-{}-{:?}",
+            "capsio-credentials-{}-{:?}",
             std::process::id(),
             std::thread::current().id()
         ));

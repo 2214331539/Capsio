@@ -34,7 +34,7 @@ export function UpdatePanel() {
         ? t('正在下载 {version}…', { version: state.version ?? '' })
         : t('正在下载 {version}：{share}%', { version: state.version ?? '', share }),
     ready: t('{version} 已下载，重启后完成更新', { version: state.version ?? '' }),
-    installing: t('正在安装，Scientify 会自动重启…'),
+    installing: t('正在安装，Capsio 会自动重启…'),
     error: state.error ?? '',
   }[state.phase];
   const offered = ['available', 'downloading', 'ready'].includes(state.phase);

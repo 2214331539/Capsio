@@ -5,9 +5,9 @@
 //
 //   node scripts/build-release.mjs
 //
-// The key is ~/.tauri/scientify-updater.key; its public half is in
+// The key is ~/.tauri/capsio-updater.key; its public half is in
 // tauri.conf.json. Its password comes from TAURI_SIGNING_PRIVATE_KEY_PASSWORD,
-// or on Windows from ~/.tauri/scientify-updater.password.dpapi. Without the key
+// or on Windows from ~/.tauri/capsio-updater.password.dpapi. Without the key
 // installed copies can no longer be updated: keep a copy somewhere safe.
 
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -15,8 +15,8 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-const key = join(homedir(), '.tauri', 'scientify-updater.key');
-const passwordFile = join(homedir(), '.tauri', 'scientify-updater.password.dpapi');
+const key = join(homedir(), '.tauri', 'capsio-updater.key');
+const passwordFile = join(homedir(), '.tauri', 'capsio-updater.password.dpapi');
 const mac = process.platform === 'darwin';
 
 if (!existsSync(key)) throw new Error(`No update signing key at ${key}.`);
@@ -28,9 +28,9 @@ function password() {
     throw new Error('Set TAURI_SIGNING_PRIVATE_KEY_PASSWORD to the update key password.');
   const script =
     'Add-Type -AssemblyName System.Security; [Console]::Out.Write([Text.Encoding]::UTF8.GetString(' +
-    '[Security.Cryptography.ProtectedData]::Unprotect([IO.File]::ReadAllBytes($env:SCIENTIFY_KEY_PASSWORD_FILE), $null, "CurrentUser")))';
+    '[Security.Cryptography.ProtectedData]::Unprotect([IO.File]::ReadAllBytes($env:CAPSIO_KEY_PASSWORD_FILE), $null, "CurrentUser")))';
   return execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
-    env: { ...process.env, SCIENTIFY_KEY_PASSWORD_FILE: passwordFile },
+    env: { ...process.env, CAPSIO_KEY_PASSWORD_FILE: passwordFile },
     encoding: 'utf8',
   });
 }

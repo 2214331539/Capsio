@@ -1,5 +1,5 @@
 // Which app versions the service still serves. The app sends its version in
-// `x-scientify-version`; below MIN_CLIENT_VERSION its requests are refused with
+// `x-capsio-version`; below MIN_CLIENT_VERSION its requests are refused with
 // `client_outdated`, so sync and the official models pause until it updates.
 // Raise the minimum only when the interface stops being compatible. Versions
 // from before the header (0.3.0-alpha.5 and older) are let through.
@@ -38,12 +38,13 @@ export function clientPolicy(config) {
 
 /** Refuses requests from an app older than the minimum. */
 export function requireSupportedClient(request, config) {
-  const version = request.headers['x-scientify-version'];
+  // Clients from before the rename (Scientify) send the old header name.
+  const version = request.headers['x-capsio-version'] ?? request.headers['x-scientify-version'];
   if (!version || !config.minClientVersion) return;
   if (compareVersions(String(version), config.minClientVersion) < 0)
     throw fail(
       426,
-      `这个版本的 Scientify（${version}）太旧了，请在“设置 → 关于”里更新到最新版。`,
+      `这个版本的 Capsio（${version}）太旧了，请在“设置 → 关于”里更新到最新版。`,
       'client_outdated',
     );
 }

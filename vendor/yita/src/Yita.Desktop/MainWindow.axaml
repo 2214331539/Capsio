@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Window x:Class="Yita.Desktop.MainWindow" Title="Scientify · Translation" Icon="avares://Yita.Desktop/Assets/Scientify.ico" Width="980" Height="760" MinWidth="760" MinHeight="500" WindowStartupLocation="CenterScreen" ShowInTaskbar="True" UseLayoutRounding="True" FontFamily="{DynamicResource InterfaceFont}" FontSize="14" Background="{DynamicResource AppWindowBackgroundBrush}" Foreground="{DynamicResource AppTextBrush}" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" CanResize="True" RenderOptions.TextRenderingMode="Antialias" x:CompileBindings="False">
+<Window x:Class="Yita.Desktop.MainWindow" Title="Capsio · Translation" Icon="avares://Yita.Desktop/Assets/Capsio.ico" Width="980" Height="760" MinWidth="760" MinHeight="500" WindowStartupLocation="CenterScreen" ShowInTaskbar="True" UseLayoutRounding="True" FontFamily="{DynamicResource InterfaceFont}" FontSize="14" Background="{DynamicResource AppWindowBackgroundBrush}" Foreground="{DynamicResource AppTextBrush}" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" CanResize="True" RenderOptions.TextRenderingMode="Antialias" x:CompileBindings="False">
   <Grid x:Name="SettingsRoot" Background="{DynamicResource AppWindowBackgroundBrush}">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
@@ -275,7 +275,7 @@
                         <ColumnDefinition Width="Auto" />
                       </Grid.ColumnDefinitions>
                       <ComboBox x:Name="ColorThemeComboBox" SelectionChanged="ColorThemeComboBox_SelectionChanged">
-                        <ComboBoxItem Content="Scientify · Graphite" Tag="yita" />
+                        <ComboBoxItem Content="Capsio · Graphite" Tag="yita" />
                         <ComboBoxItem Content="Ocean blue" Tag="ocean" />
                         <ComboBoxItem Content="Violet" Tag="violet" />
                         <ComboBoxItem Content="Emerald" Tag="emerald" />
@@ -334,7 +334,7 @@
                   <StackPanel>
                     <TextBlock Tag="loc:HighlightPalette" Text="Highlight palette" Classes="label" LineHeight="19" />
                     <ComboBox x:Name="HighlightPaletteComboBox" SelectionChanged="HighlightPaletteComboBox_SelectionChanged">
-                      <ComboBoxItem Content="Scientify · Soft emphasis" Tag="yita" />
+                      <ComboBoxItem Content="Capsio · Soft emphasis" Tag="yita" />
                       <ComboBoxItem Content="Clarity" Tag="clarity" />
                       <ComboBoxItem Content="Morandi" Tag="morandi" />
                       <ComboBoxItem Content="Ocean" Tag="ocean" />
@@ -374,7 +374,7 @@
             </Border>
           </StackPanel>
           <StackPanel x:Name="ModelPage" Margin="0,0,0,10" IsVisible="False">
-            <TextBlock x:Name="HostModelNotice" IsVisible="False" TextWrapping="Wrap" Margin="0,0,0,16" Text="模型与 API 密钥由 Scientify 的 AI 助手统一管理。翻译、解释、问答与总结使用相同的服务配置，各自独立运行。" />
+            <TextBlock x:Name="HostModelNotice" IsVisible="False" TextWrapping="Wrap" Margin="0,0,0,16" Text="模型与 API 密钥由 Capsio 的 AI 助手统一管理。翻译、解释、问答与总结使用相同的服务配置，各自独立运行。" />
               <Border x:Name="ProviderFields" Margin="0,14,0,0" Classes="card">
               <StackPanel>
                 <TextBlock Tag="loc:TranslationServiceTitle" Text="Translation service" Classes="section" LineHeight="20" />

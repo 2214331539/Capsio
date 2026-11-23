@@ -60,7 +60,7 @@ it('opens the same translation session without sending or overwriting another pr
   const accept = vi.fn();
   act(() =>
     window.dispatchEvent(
-      new CustomEvent('scientify-assistant-open-session', {
+      new CustomEvent('capsio-assistant-open-session', {
         detail: { scope: 'p1', id: 'translation-session', draft: 'Follow-up draft', accept },
       }),
     ),
@@ -104,7 +104,7 @@ it('starts a paper-tools upgrade chat in the old literature root after navigatin
       domain,
       cwd: options.workspaceRoot ?? 'C:/papers',
       model: connection.model,
-      modelProvider: 'scientify',
+      modelProvider: 'capsio',
       instructionSources: [],
       paperTools: false,
     })),
@@ -1228,7 +1228,7 @@ it('creates parallel chats, keeps the first binding after navigation, and saves 
       projectId,
       cwd: 'C:/' + domain,
       model: connection.model,
-      modelProvider: 'scientify',
+      modelProvider: 'capsio',
       instructionSources: [],
     })),
     startTurn: vi.fn(async (request) => ({
@@ -1372,7 +1372,7 @@ it('continues a translation chat with the agent inside a project and shows the m
       domain,
       cwd: 'C:/papers',
       model: connection.model,
-      modelProvider: 'scientify',
+      modelProvider: 'capsio',
       instructionSources: [],
       paperTools: true,
     })),
@@ -1388,7 +1388,7 @@ it('continues a translation chat with the agent inside a project and shows the m
     expect(screen.getByText('Agent')).toBeTruthy();
     act(() =>
       window.dispatchEvent(
-        new CustomEvent('scientify-assistant-open-session', {
+        new CustomEvent('capsio-assistant-open-session', {
           detail: { scope: 'p1', id: 'translation-session', draft: '总结全文', accept: vi.fn() },
         }),
       ),
@@ -1490,7 +1490,7 @@ it('tells every turn which page it is sent from, also in a chat started on anoth
       domain,
       cwd: options.workspaceRoot ?? 'C:/papers',
       model: connection.model,
-      modelProvider: 'scientify',
+      modelProvider: 'capsio',
       instructionSources: [],
       paperTools: true,
     })),

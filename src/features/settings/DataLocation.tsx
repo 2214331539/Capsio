@@ -11,7 +11,7 @@ export const plainPath = (path: string) =>
 
 /**
  * Where this installation keeps its data, and the two ways to change it: move
- * into an empty folder, or use a folder that already holds Scientify data (from
+ * into an empty folder, or use a folder that already holds Capsio data (from
  * another installation). Both take effect on the next start.
  */
 export function useDataLocation(store: WorkspaceStore) {

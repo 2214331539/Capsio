@@ -58,7 +58,7 @@ fn assistant_context_obeys_generated_acl_and_reads_only_the_bound_library_and_no
     let root = temp.path().join("papers");
     std::fs::create_dir(&root).unwrap();
     std::fs::write(root.join("paper.pdf"), b"%PDF-1.4 fixture").unwrap();
-    let mut data = scientify_core::workspace::empty();
+    let mut data = capsio_core::workspace::empty();
     data["projects"] = json!([{"id":"papers-project","name":"fixture","space":"personal","question":"","createdAt":""}]);
     data["revision"] = json!(1);
     storage.save(data, 0).unwrap();
@@ -77,7 +77,7 @@ fn assistant_context_obeys_generated_acl_and_reads_only_the_bound_library_and_no
         .unwrap();
     let app = mock_builder()
         .manage(AppState {
-            files: Arc::new(scientify_core::research::ResearchFiles::new(
+            files: Arc::new(capsio_core::research::ResearchFiles::new(
                 storage.directory().to_path_buf(),
             )),
             storage,
@@ -186,7 +186,7 @@ fn literature_mutations_share_directory_leases_with_agent_tasks() {
     let root = temp.path().join("papers");
     std::fs::create_dir(&root).unwrap();
     let storage = Arc::new(Storage::open(temp.path().join("data")).unwrap());
-    let mut data = scientify_core::workspace::empty();
+    let mut data = capsio_core::workspace::empty();
     data["projects"] = json!([{"id":"papers-project","name":"Papers","space":"personal","createdAt":"now","question":""}]);
     data["revision"] = json!(1);
     storage.save(data, 0).unwrap();
@@ -196,7 +196,7 @@ fn literature_mutations_share_directory_leases_with_agent_tasks() {
     let binding = library.service.open("papers-project", "a.pdf").unwrap();
     let app = mock_builder()
         .manage(AppState {
-            files: Arc::new(scientify_core::research::ResearchFiles::new(
+            files: Arc::new(capsio_core::research::ResearchFiles::new(
                 storage.directory().to_path_buf(),
             )),
             storage,
@@ -283,10 +283,10 @@ fn literature_mutations_share_directory_leases_with_agent_tasks() {
 fn experiment_registration_uses_native_acl_and_enables_only_its_own_projects_root() {
     let temp = tempfile::tempdir().unwrap();
     let storage = Arc::new(Storage::open(temp.path().join("data/workspace")).unwrap());
-    let files = Arc::new(scientify_core::research::ResearchFiles::new(
+    let files = Arc::new(capsio_core::research::ResearchFiles::new(
         storage.directory().to_path_buf(),
     ));
-    let mut data = scientify_core::workspace::empty();
+    let mut data = capsio_core::workspace::empty();
     data["projects"] = json!([{"id":"p1","name":"Research","space":"personal","question":"","createdAt":"now"},{"id":"p2","name":"Other","space":"personal","question":"","createdAt":"now"}]);
     data["revision"] = json!(1);
     storage.save(data, 0).unwrap();
@@ -378,11 +378,11 @@ fn git_commands_enforce_acl_and_use_the_selected_registered_worktree() {
     std::fs::create_dir(&root).unwrap();
     let root = root.canonicalize().unwrap();
     let storage = Arc::new(Storage::open(temp.path().join("data")).unwrap());
-    let mut data = scientify_core::workspace::empty();
+    let mut data = capsio_core::workspace::empty();
     data["projects"] = json!([{"id":"git-project","name":"Git","space":"personal","createdAt":"2026-10-02","question":"fixture","path":root}]);
     data["revision"] = json!(1);
     storage.save(data, 0).unwrap();
-    let files = Arc::new(scientify_core::research::ResearchFiles::new(
+    let files = Arc::new(capsio_core::research::ResearchFiles::new(
         storage.directory().to_path_buf(),
     ));
     let app = mock_builder()
@@ -509,13 +509,11 @@ fn experiment_commands_use_workspace_only_acl_and_real_processes() {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path().join("workspace");
     let storage = Arc::new(Storage::open(directory.clone()).unwrap());
-    let mut data = scientify_core::workspace::empty();
+    let mut data = capsio_core::workspace::empty();
     data["projects"] = json!([{"id":"execution-project","name":"Execution","question":"Test","createdAt":"2026-10-01","space":"personal"}]);
     data["revision"] = json!(1);
     storage.save(data, 0).unwrap();
-    let files = Arc::new(scientify_core::research::ResearchFiles::new(
-        directory.clone(),
-    ));
+    let files = Arc::new(capsio_core::research::ResearchFiles::new(directory.clone()));
     let root = files.project_root("execution-project", None).unwrap();
     std::fs::create_dir_all(&root).unwrap();
     let app = mock_builder()
@@ -744,9 +742,7 @@ fn ipc_acl_and_local_file_pdf_workflow_are_wired() {
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path().join("workspace");
     let storage = Arc::new(Storage::open(directory.clone()).unwrap());
-    let files = Arc::new(scientify_core::research::ResearchFiles::new(
-        directory.clone(),
-    ));
+    let files = Arc::new(capsio_core::research::ResearchFiles::new(directory.clone()));
     let app = mock_builder()
         .manage(agent::AgentState::default())
         .manage(experiments::ExperimentState::new(
@@ -783,7 +779,7 @@ fn ipc_acl_and_local_file_pdf_workflow_are_wired() {
         .deserialize()
         .unwrap();
     assert!(initial["workspace"].is_null());
-    let mut workspace = scientify_core::workspace::empty();
+    let mut workspace = capsio_core::workspace::empty();
     workspace["projects"] = json!([{"id":"smoke-project","name":"IPC smoke","question":"Local persistence?","createdAt":"2026-09-23"}]);
     workspace["revision"] = json!(1);
     let saved: Value = invoke(
@@ -957,7 +953,7 @@ fn storage_location_commands_are_local_only_and_schedule_without_replacing_servi
     let temporary = tempfile::tempdir().unwrap();
     let installation = temporary.path().join("install");
     std::fs::create_dir(&installation).unwrap();
-    let locator = scientify_core::storage_location::Locator::new(
+    let locator = capsio_core::storage_location::Locator::new(
         installation,
         temporary.path().join("roaming"),
         temporary.path().join("local"),

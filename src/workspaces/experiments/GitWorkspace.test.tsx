@@ -181,14 +181,14 @@ it('protects existing unscoped manuscript drafts from manual Git overwrites', as
 });
 it('suggests an app-managed worktree directory and submits the standard branch and target', async () => {
   const props = await setup();
-  props.store.setState({ directory: 'F:/ScientifyData/workspace' });
+  props.store.setState({ directory: 'F:/CapsioData/workspace' });
   render(<GitWorkspace projectId="p1" {...props} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole('button', { name: '工作树' }));
   await user.click(screen.getByRole('button', { name: '创建工作树' }));
   expect(props.store.getState().dirty).toBe(false);
   await user.type(screen.getByLabelText('分支名称'), 'feature/new-loss');
-  const target = 'F:/ScientifyData/workspace/projects/p1-worktrees/feature-new-loss';
+  const target = 'F:/CapsioData/workspace/projects/p1-worktrees/feature-new-loss';
   expect((screen.getByLabelText('工作树目录（新的绝对路径）') as HTMLInputElement).value).toBe(
     target,
   );

@@ -15,7 +15,7 @@ import './sign-in.css';
 
 /** The server lets one number ask for a new code once a minute. */
 const RESEND_SECONDS = 60;
-const methodKey = 'scientify.sign-in.method';
+const methodKey = 'capsio.sign-in.method';
 
 type View = 'login' | 'register' | 'reset';
 type Method = 'code' | 'password';
@@ -28,7 +28,7 @@ export function passwordProblem(password: string) {
 }
 
 /**
- * The account page: Scientify shows only this while nobody is signed in, at first launch and
+ * The account page: Capsio shows only this while nobody is signed in, at first launch and
  * after signing out. Sign in by SMS code or password, register, or reset a forgotten password.
  */
 export function SignInPage() {
@@ -140,11 +140,7 @@ export function SignInPage() {
   }
 
   const title =
-    view === 'register'
-      ? t('注册 Scientify')
-      : view === 'reset'
-        ? t('找回密码')
-        : t('登录 Scientify');
+    view === 'register' ? t('注册 Capsio') : view === 'reset' ? t('找回密码') : t('登录 Capsio');
   const action =
     view === 'register' ? t('注册') : view === 'reset' ? t('重置密码并登录') : t('登录');
   return (
@@ -152,7 +148,7 @@ export function SignInPage() {
       <header className="sign-in-topbar" data-tauri-drag-region>
         <span className="sign-in-brand" data-tauri-drag-region>
           <BrandMark />
-          Scientify
+          Capsio
         </span>
         <span className="spacer" data-tauri-drag-region />
         <WindowControls />
@@ -191,7 +187,7 @@ export function SignInPage() {
           )}
           {native ? null : (
             <p className="sign-in-error" role="alert">
-              {t('登录需要在 Scientify 桌面应用中使用。')}
+              {t('登录需要在 Capsio 桌面应用中使用。')}
             </p>
           )}
           <div className="sign-in-field">

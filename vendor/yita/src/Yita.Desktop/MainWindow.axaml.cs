@@ -110,7 +110,7 @@ public sealed partial class MainWindow : Window
             if (_usePlatformMemory) await InitializeMemoryAsync();
             if (_permissionService is not null) await RefreshPlatformPermissionsAsync();
             if (_shuttingDown) return;
-            if (ScientifyBridge.IsEmbedded) _settings = HostedModel(_settings);
+            if (CapsioBridge.IsEmbedded) _settings = HostedModel(_settings);
             PopulateSettings();
             ApplyRuntimeSettings();
         }
@@ -181,9 +181,9 @@ public sealed partial class MainWindow : Window
         UpdateThemePreview();
         UpdateMemoryStatus();
         UpdateAiHistoryControls();
-        if (ScientifyBridge.IsEmbedded)
+        if (CapsioBridge.IsEmbedded)
         {
-            Title = "Scientify · 翻译设置";
+            Title = "Capsio · 翻译设置";
             ProviderFields.IsVisible = false;
             HostModelNotice.IsVisible = true;
             StartWithWindowsCheckBox.IsEnabled = false;
@@ -364,7 +364,7 @@ public sealed partial class MainWindow : Window
         LocalizeCombo(TranslationModeComboBox, [("fast", "Fast", "快速"), ("balanced", "Balanced", "均衡"), ("precise", "Precise", "精确")]);
         LocalizeCombo(TranslationToneComboBox, [("natural", "Natural", "自然"), ("formal", "Formal", "正式"), ("concise", "Concise", "简洁"), ("academic", "Academic", "学术"), ("technical", "Technical", "技术")]);
         LocalizeCombo(AiSummaryRangeComboBox, [("today", "Today", "今天"), ("last-7-days", "Last 7 days", "最近 7 天"), ("all", "All", "全部")]);
-        LocalizeCombo(ColorThemeComboBox, [("yita", "Scientify · Graphite", "Scientify · 石墨"), ("ocean", "Ocean blue", "深海蓝"), ("violet", "Violet", "紫罗兰"), ("emerald", "Emerald", "翡翠绿"), ("sunset", "Warm orange", "暖橙色"), ("rose", "Rose", "玫瑰红"), ("custom", "Custom", "自定义")]);
+        LocalizeCombo(ColorThemeComboBox, [("yita", "Capsio · Graphite", "Capsio · 石墨"), ("ocean", "Ocean blue", "深海蓝"), ("violet", "Violet", "紫罗兰"), ("emerald", "Emerald", "翡翠绿"), ("sunset", "Warm orange", "暖橙色"), ("rose", "Rose", "玫瑰红"), ("custom", "Custom", "自定义")]);
         LocalizeCombo(PopupVisualStyleComboBox, [("minimal", "Minimal", "极简"), ("bubble", "Bubble", "气泡"),
             ("bubble-v2", "Bubble 2.0", "气泡 2.0"), ("bubble-v3", "Bubble 3.0 · Glass", "气泡 3.0 · 液态玻璃"),
             ("bubble-v3-color", "Bubble 3.0 · Color Glass", "气泡 3.0 · 彩色玻璃")]);
@@ -377,7 +377,7 @@ public sealed partial class MainWindow : Window
         ToolTip.SetTip(CustomAccentColorTextBox, L("CustomColorTooltip"));
         SettingsStatusText.IsVisible = _settingsFailure is not null;
         SettingsStatusText.Text = _settingsFailure == SettingsFailureKind.NewerVersion
-            ? Localize("These settings require a newer Scientify version. Editing is disabled; the file has been preserved.", "设置来自更高版本的 Scientify，已禁止保存并保留原文件，请更新软件。")
+            ? Localize("These settings require a newer Capsio version. Editing is disabled; the file has been preserved.", "设置来自更高版本的 Capsio，已禁止保存并保留原文件，请更新软件。")
             : Localize("Settings could not be read. Saving is disabled; the file has been preserved.", "无法读取设置，已禁止保存并保留原文件。请检查或恢复设置文件。");
         SaveSettingsButton.IsEnabled = _settingsFailure is null;
         UpdateInputAvailability();
@@ -487,7 +487,7 @@ public sealed partial class MainWindow : Window
         var palette = ThemeCatalog.Resolve(ReadCombo(ColorThemeComboBox), CustomAccentColorTextBox.Text);
         ThemePreviewBorder.Background = ReferenceTheme.Brush(palette.Accent);
         var style = ReadCombo(PopupVisualStyleComboBox);
-        if (ScientifyBridge.IsEmbedded)
+        if (CapsioBridge.IsEmbedded)
         {
             var resources = new ResourceDictionary();
             ReferenceTheme.Apply(resources, (_settings with
@@ -505,7 +505,7 @@ public sealed partial class MainWindow : Window
             PopupStylePreviewTextSurface.Background = Brushes.Transparent;
             PopupStylePreviewTail.IsVisible = false;
             PopupStyleGlassHint.IsVisible = true;
-            PopupStyleGlassHint.Text = Localize("Scientify surfaces follow the app theme, with fine edges and soft shadows.", "跟随 Scientify 明暗主题，以细边框和柔和阴影区分层次。");
+            PopupStyleGlassHint.Text = Localize("Capsio surfaces follow the app theme, with fine edges and soft shadows.", "跟随 Capsio 明暗主题，以细边框和柔和阴影区分层次。");
             return;
         }
         var bubble = PopupVisualStyleCatalog.IsBubble(style);
@@ -623,7 +623,7 @@ public sealed partial class MainWindow : Window
 
     internal async Task<bool> ShowMessageAsync(string message, bool confirm = false)
     {
-        var dialog = new Window { Title = "Scientify", Width = 420, SizeToContent = SizeToContent.Height,
+        var dialog = new Window { Title = "Capsio", Width = 420, SizeToContent = SizeToContent.Height,
             CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner,
             FontFamily = DesktopFontResolver.InterfaceFont, FontSize = 14,
             Background = (IBrush)Application.Current!.Resources["AppCardBackgroundBrush"]!, Foreground = (IBrush)Application.Current.Resources["AppTextBrush"]! };

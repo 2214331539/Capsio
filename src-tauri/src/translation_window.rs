@@ -64,7 +64,7 @@ pub(crate) async fn conversation<R: Runtime>(
     if request.op == "open" {
         let window = app
             .get_webview_window(owner)
-            .ok_or("Scientify 主窗口不可用。")?;
+            .ok_or("Capsio 主窗口不可用。")?;
         window
             .unminimize()
             .and_then(|_| window.show())
@@ -97,8 +97,8 @@ pub(crate) async fn conversation<R: Runtime>(
         .map_err(|e| e.to_string())?;
         tokio::time::timeout(Duration::from_secs(20), received)
             .await
-            .map_err(|_| "Scientify 会话响应超时，请重试。".to_owned())?
-            .map_err(|_| "Scientify 会话窗口已关闭。".to_owned())
+            .map_err(|_| "Capsio 会话响应超时，请重试。".to_owned())?
+            .map_err(|_| "Capsio 会话窗口已关闭。".to_owned())
     }
     .await;
     state

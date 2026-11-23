@@ -4,10 +4,10 @@ use sha2::{Digest, Sha256};
 
 pub fn specifications() -> Vec<Value> {
     [
-        ("scientify_list_notes", "List saved global/project Markdown notes in this conversation's project. Paper notes remain adjacent .notes.md files in the literature workspace. No access to other projects or the personal inbox.", json!({}), vec![]),
-        ("scientify_read_note", "Read a saved project note and its version before editing. Returns Markdown and a version token; never edit workspace.json directly.", json!({"id":{"type":"string"}}), vec!["id"]),
-        ("scientify_write_note", "Update an existing project note with Markdown. Must use the expectedVersion from read_note. Ask mode requires user approval; full mode writes directly. Preserve relative image references. Concurrent edits cause a conflict, never overwrite them blindly.", json!({"id":{"type":"string"},"expectedVersion":{"type":"string"},"title":{"type":"string"},"body":{"type":"string"}}), vec!["id","expectedVersion","title","body"]),
-        ("scientify_create_note", "Create a new project note with a title and Markdown body, for example to save a paper summary or reading notes the user asked to keep. Ask mode requires user approval; full mode writes directly. Returns the new note id and version.", json!({"title":{"type":"string"},"body":{"type":"string"}}), vec!["title","body"]),
+        ("capsio_list_notes", "List saved global/project Markdown notes in this conversation's project. Paper notes remain adjacent .notes.md files in the literature workspace. No access to other projects or the personal inbox.", json!({}), vec![]),
+        ("capsio_read_note", "Read a saved project note and its version before editing. Returns Markdown and a version token; never edit workspace.json directly.", json!({"id":{"type":"string"}}), vec!["id"]),
+        ("capsio_write_note", "Update an existing project note with Markdown. Must use the expectedVersion from read_note. Ask mode requires user approval; full mode writes directly. Preserve relative image references. Concurrent edits cause a conflict, never overwrite them blindly.", json!({"id":{"type":"string"},"expectedVersion":{"type":"string"},"title":{"type":"string"},"body":{"type":"string"}}), vec!["id","expectedVersion","title","body"]),
+        ("capsio_create_note", "Create a new project note with a title and Markdown body, for example to save a paper summary or reading notes the user asked to keep. Ask mode requires user approval; full mode writes directly. Returns the new note id and version.", json!({"title":{"type":"string"},"body":{"type":"string"}}), vec!["title","body"]),
     ].into_iter().map(|(name,description,properties,required)| json!({"type":"function","name":name,"description":description,"inputSchema":{"type":"object","properties":properties,"required":required,"additionalProperties":false}})).collect()
 }
 fn version(note: &Value) -> String {
@@ -31,30 +31,30 @@ fn content(args: &Value) -> Result<(&str, &str), String> {
 pub fn writes(tool: &Value) -> bool {
     matches!(
         tool.as_str(),
-        Some("scientify_write_note" | "scientify_create_note")
+        Some("capsio_write_note" | "capsio_create_note")
     )
 }
 
 pub fn operate(
-    storage: &scientify_core::storage::Storage,
+    storage: &capsio_core::storage::Storage,
     project: &str,
     tool: &str,
     args: &Value,
 ) -> Result<Value, String> {
-    if matches!(tool, "scientify_create_note" | "scientify_write_note") {
+    if matches!(tool, "capsio_create_note" | "capsio_write_note") {
         crate::collaboration::permissions::require_write(storage, project, "record")?;
     }
     let mut data = storage.load()?.ok_or("工作区尚未载入。")?;
     let revision = data["revision"].as_u64().ok_or("工作区版本无效。")?;
     let records = data["records"].as_array_mut().ok_or("笔记记录无效。")?;
-    if tool == "scientify_list_notes" {
+    if tool == "capsio_list_notes" {
         return Ok(
             json!({"notes":records.iter().filter(|n| n["project"] == project && n["deletedAt"].is_null() && n["migratedTo"].is_null()).map(|n| json!({"id":n["id"],"title":n["title"],"updatedAt":n["updatedAt"]})).collect::<Vec<_>>()}),
         );
     }
-    if tool == "scientify_create_note" {
+    if tool == "capsio_create_note" {
         let (title, body) = content(args)?;
-        let now = scientify_core::workspace::now();
+        let now = capsio_core::workspace::now();
         let note = json!({"id":uuid::Uuid::new_v4().to_string(),"project":project,"title":title,"body":body,"type":"note","status":"draft","createdAt":now,"updatedAt":now,"sources":[]});
         let result = json!({"id":note["id"],"version":version(&note),"saved":true});
         records.push(note);
@@ -73,7 +73,7 @@ pub fn operate(
                 && n["migratedTo"].is_null()
         })
         .ok_or("笔记不存在或不属于当前项目。")?;
-    if tool == "scientify_read_note" {
+    if tool == "capsio_read_note" {
         if note["body"].as_str().unwrap_or_default().len() > 128 * 1024 {
             return Err("笔记过长，请在编辑器中选取需要修改的段落。".into());
         }
@@ -81,7 +81,7 @@ pub fn operate(
             json!({"id":note["id"],"title":note["title"],"body":note["body"],"version":version(note)}),
         );
     }
-    if tool != "scientify_write_note" {
+    if tool != "capsio_write_note" {
         return Err("未知笔记操作。".into());
     }
     if args["expectedVersion"].as_str() != Some(version(note).as_str()) {
@@ -90,10 +90,10 @@ pub fn operate(
     let (title, body) = content(args)?;
     note["title"] = json!(title);
     note["body"] = json!(body);
-    note["updatedAt"] = json!(scientify_core::workspace::now());
+    note["updatedAt"] = json!(capsio_core::workspace::now());
     let result = json!({"id":id,"version":version(note),"saved":true});
     data["revision"] = json!(revision + 1);
-    data["updatedAt"] = json!(scientify_core::workspace::now());
+    data["updatedAt"] = json!(capsio_core::workspace::now());
     storage.save(data, revision)?;
     Ok(result)
 }
@@ -117,13 +117,13 @@ pub fn queue<R: tauri::Runtime>(
         if entry.permission == PermissionMode::Full {
             return Ok(Some(event.clone()));
         }
-        let id = json!(format!("scientify-note:{}", uuid::Uuid::new_v4()));
-        let action = if params["tool"] == "scientify_create_note" {
+        let id = json!(format!("capsio-note:{}", uuid::Uuid::new_v4()));
+        let action = if params["tool"] == "capsio_create_note" {
             "create"
         } else {
             "update"
         };
-        let approval = json!({"kind":"request","method":"scientify/notes/requestApproval","id":id,"params":{"threadId":entry.handle.thread_id,"turnId":entry.active_turn,"action":action,"command":params["arguments"]["title"],"reason":params["arguments"]["body"]}});
+        let approval = json!({"kind":"request","method":"capsio/notes/requestApproval","id":id,"params":{"threadId":entry.handle.thread_id,"turnId":entry.active_turn,"action":action,"command":params["arguments"]["title"],"reason":params["arguments"]["body"]}});
         entry.host_requests.insert(id.to_string(), event.clone());
         entry.requests.insert(id.to_string(), approval.clone());
         entry.host_events.push(approval);
@@ -155,7 +155,7 @@ pub fn complete<R: tauri::Runtime>(
                 params["tool"].as_str().unwrap_or_default(),
                 &params["arguments"],
             )
-        } else if params["tool"] == "scientify_create_note" {
+        } else if params["tool"] == "capsio_create_note" {
             Err("用户拒绝了新建这篇笔记。".into())
         } else {
             Err("用户拒绝了本次笔记修改。".into())
@@ -188,9 +188,9 @@ mod tests {
     #[test]
     fn note_tools_reject_other_projects_and_stale_versions() {
         let temp = tempfile::tempdir().unwrap();
-        let storage = scientify_core::storage::Storage::open(temp.path().join("data")).unwrap();
-        let mut data = scientify_core::workspace::empty();
-        let now = scientify_core::workspace::now();
+        let storage = capsio_core::storage::Storage::open(temp.path().join("data")).unwrap();
+        let mut data = capsio_core::workspace::empty();
+        let now = capsio_core::workspace::now();
         data["projects"] =
             json!([{"id":"p","name":"P","question":"","createdAt":now,"updatedAt":now}]);
         data["records"] = json!([
@@ -200,29 +200,29 @@ mod tests {
         data["revision"] = json!(1);
         storage.save(data, 0).unwrap();
         // Notes in the recycle bin are invisible to the agent.
-        let listed = operate(&storage, "p", "scientify_list_notes", &json!({})).unwrap();
+        let listed = operate(&storage, "p", "capsio_list_notes", &json!({})).unwrap();
         assert_eq!(listed["notes"].as_array().unwrap().len(), 1);
-        assert!(operate(&storage, "p", "scientify_read_note", &json!({"id":"gone"})).is_err());
-        assert!(operate(&storage, "other", "scientify_read_note", &json!({"id":"n"})).is_err());
-        let read = operate(&storage, "p", "scientify_read_note", &json!({"id":"n"})).unwrap();
+        assert!(operate(&storage, "p", "capsio_read_note", &json!({"id":"gone"})).is_err());
+        assert!(operate(&storage, "other", "capsio_read_note", &json!({"id":"n"})).is_err());
+        let read = operate(&storage, "p", "capsio_read_note", &json!({"id":"n"})).unwrap();
         let args = json!({"id":"n","title":"Updated","body":"# Heading\n\n$A_b$\n\n![figure](images/a.png)","expectedVersion":read["version"]});
-        assert!(operate(&storage, "p", "scientify_write_note", &args).is_ok());
-        assert!(operate(&storage, "p", "scientify_write_note", &args).is_err());
+        assert!(operate(&storage, "p", "capsio_write_note", &args).is_ok());
+        assert!(operate(&storage, "p", "capsio_write_note", &args).is_err());
         assert_eq!(
-            operate(&storage, "p", "scientify_read_note", &json!({"id":"n"})).unwrap()["body"],
+            operate(&storage, "p", "capsio_read_note", &json!({"id":"n"})).unwrap()["body"],
             args["body"]
         );
         let created = operate(
             &storage,
             "p",
-            "scientify_create_note",
+            "capsio_create_note",
             &json!({"title":"Summary","body":"## Method"}),
         )
         .unwrap();
         let note = operate(
             &storage,
             "p",
-            "scientify_read_note",
+            "capsio_read_note",
             &json!({"id":created["id"]}),
         )
         .unwrap();
@@ -233,17 +233,17 @@ mod tests {
         assert!(operate(
             &storage,
             "other",
-            "scientify_read_note",
+            "capsio_read_note",
             &json!({"id":created["id"]})
         )
         .is_err());
         assert!(operate(
             &storage,
             "p",
-            "scientify_create_note",
+            "capsio_create_note",
             &json!({"title":" ","body":""})
         )
         .is_err());
-        assert!(writes(&json!("scientify_create_note")) && !writes(&json!("scientify_read_note")));
+        assert!(writes(&json!("capsio_create_note")) && !writes(&json!("capsio_read_note")));
     }
 }

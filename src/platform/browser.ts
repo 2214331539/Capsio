@@ -3,8 +3,8 @@ import type { WorkspaceBackend } from './desktop';
 import type { FileContent, ResearchBackend, ResearchFile } from './research';
 import { emptyWorkspace, normalizeExperiments, type Workspace } from '../domain/workspace';
 
-const DATA_KEY = 'scientify.mvp.preview.workspace.v1';
-const FILE_KEY = 'scientify.mvp.preview.files.v1';
+const DATA_KEY = 'capsio.mvp.preview.workspace.v1';
+const FILE_KEY = 'capsio.mvp.preview.files.v1';
 function readWorkspace(): Workspace | null {
   const raw = localStorage.getItem(DATA_KEY);
   if (!raw) return null;
@@ -84,10 +84,7 @@ export const browserWorkspace: WorkspaceBackend = {
     throw new Error(t('为避免附件路径混用，请在桌面应用中导入工作区。'));
   },
   exportWorkspace: async () => {
-    download(
-      JSON.stringify(readWorkspace() ?? emptyWorkspace(), null, 2),
-      'scientify-preview.json',
-    );
+    download(JSON.stringify(readWorkspace() ?? emptyWorkspace(), null, 2), 'capsio-preview.json');
     return true;
   },
   chooseDirectory: async () => {
@@ -111,7 +108,7 @@ function checkPath(path: string) {
 }
 async function assets<T>(operation: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   const database = await new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open('scientify-mvp-preview', 1);
+    const request = indexedDB.open('capsio-mvp-preview', 1);
     request.onupgradeneeded = () => request.result.createObjectStore('assets');
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);

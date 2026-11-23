@@ -182,7 +182,7 @@ async function handle(request, response, context) {
   try {
     if (request.method === 'GET' && path === '/v1/health') {
       await db.query('SELECT 1');
-      return send(response, 200, { ok: true, service: 'scientify-collaboration', database: 'ok' });
+      return send(response, 200, { ok: true, service: 'capsio-collaboration', database: 'ok' });
     }
     if (request.method === 'GET' && path === '/v1/client-policy')
       return send(response, 200, clientPolicy(config));
@@ -560,7 +560,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const stopJobs = startJobs(db);
   const server = createServer(config, db);
   server.listen(config.port, config.host, () => {
-    console.log(`Scientify collaboration server listening on ${config.host}:${config.port}`);
+    console.log(`Capsio collaboration server listening on ${config.host}:${config.port}`);
   });
   const close = async () => {
     stopJobs();

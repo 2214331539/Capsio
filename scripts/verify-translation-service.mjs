@@ -15,7 +15,7 @@ const binary = join(
   process.platform === 'win32' ? 'Yita.Desktop.exe' : 'Yita.Desktop',
 );
 const child = spawn(binary, [], {
-  env: { ...process.env, SCIENTIFY_TRANSLATION_DATA: data },
+  env: { ...process.env, CAPSIO_TRANSLATION_DATA: data },
   stdio: ['pipe', 'pipe', 'pipe'],
   windowsHide: true,
 });
@@ -110,6 +110,6 @@ try {
     'Native packaged smoke passed: isolated data, real streaming pipes, superseded request cancellation, popup reuse, and EOF shutdown.',
   );
 } finally {
-  // Only this script-owned fixture process can be stopped; never the user's Scientify app.
+  // Only this script-owned fixture process can be stopped; never the user's Capsio app.
   if (child.exitCode === null) child.kill();
 }

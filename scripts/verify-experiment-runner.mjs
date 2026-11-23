@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 assert.equal(process.platform, 'win32', 'This verifies the Windows release runner.');
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const executable = resolve(repository, process.argv[2] ?? 'target/release/scientify.exe');
+const executable = resolve(repository, process.argv[2] ?? 'target/release/capsio.exe');
 const engine = join(repository, 'src-tauri/release-resources/codex/bin/codex.exe');
 assert.ok(existsSync(executable), 'Build the release application first.');
 assert.ok(existsSync(engine), 'Prepare the bundled Codex engine first.');
@@ -36,7 +36,7 @@ try { writeFileSync(process.argv[2], 'changed'); } catch { blocked = true; }
 if (!blocked) throw new Error('External write was allowed.');
 console.log('outside-write-blocked');
 await new Promise(resolve => setTimeout(resolve, 600));
-writeFileSync(join(process.env.SCIENTIFY_RUN_DIR, 'metrics.json'), JSON.stringify({accuracy: 0.9}));
+writeFileSync(join(process.env.CAPSIO_RUN_DIR, 'metrics.json'), JSON.stringify({accuracy: 0.9}));
 console.log('finished');
 `,
 );
@@ -105,7 +105,7 @@ let heartbeat;
 const observed = new Set();
 try {
   await call('initialize', {
-    clientInfo: { name: 'scientify_release_verification', version: '0.3.0' },
+    clientInfo: { name: 'capsio_release_verification', version: '0.3.0' },
     capabilities: { experimentalApi: true },
   });
   child.stdin.write(JSON.stringify({ method: 'initialized' }) + '\n');
@@ -130,11 +130,11 @@ try {
     if (existsSync(log)) observed.add(readFileSync(log, 'utf8'));
   }, 100);
   const result = await call('command/exec', {
-    command: [executable, '--scientify-runner', request],
+    command: [executable, '--capsio-runner', request],
     processId: 'release-runner-fixture',
     cwd: root,
     disableTimeout: true,
-    env: { SCIENTIFY_RUN_DIR: artifacts },
+    env: { CAPSIO_RUN_DIR: artifacts },
     sandboxPolicy: {
       type: 'workspaceWrite',
       writableRoots: [root, artifacts],

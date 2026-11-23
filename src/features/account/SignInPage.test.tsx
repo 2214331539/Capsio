@@ -45,9 +45,9 @@ afterEach(() => {
 it('is a page of its own with no way around it, and signs in with an SMS code', async () => {
   const user = userEvent.setup();
   const changed = vi.fn();
-  window.addEventListener('scientify-collaboration-state-changed', changed);
+  window.addEventListener('capsio-collaboration-state-changed', changed);
   render(<SignInPage />);
-  expect(await screen.findByRole('main', { name: '登录 Scientify' })).toBeTruthy();
+  expect(await screen.findByRole('main', { name: '登录 Capsio' })).toBeTruthy();
   expect(screen.queryByRole('button', { name: '返回' })).toBeNull();
   expect(screen.queryByText(/自托管/)).toBeNull();
   await waitFor(() => expect(api.status).toHaveBeenCalled());
@@ -66,7 +66,7 @@ it('is a page of its own with no way around it, and signs in with an SMS code', 
     expect(api.signIn).toHaveBeenCalledWith(endpoint, 'code', '13800138000', { code: '123456' }),
   );
   expect(changed).toHaveBeenCalled();
-  window.removeEventListener('scientify-collaboration-state-changed', changed);
+  window.removeEventListener('capsio-collaboration-state-changed', changed);
 });
 
 it('signs in with a password and remembers that choice', async () => {
@@ -95,7 +95,7 @@ it('registers with a code and a confirmed password', async () => {
   const user = userEvent.setup();
   render(<SignInPage />);
   await user.click(await screen.findByRole('button', { name: '注册' }));
-  expect(screen.getByRole('main', { name: '注册 Scientify' })).toBeTruthy();
+  expect(screen.getByRole('main', { name: '注册 Capsio' })).toBeTruthy();
   await user.type(screen.getByLabelText('手机号'), '13800138000');
   await user.type(screen.getByLabelText('验证码'), '123456');
   await user.type(screen.getByLabelText('密码'), 'onlyletters');
@@ -132,7 +132,7 @@ it('resets a forgotten password and shows what the server says', async () => {
   await user.click(screen.getByRole('button', { name: '重置密码并登录' }));
   expect(await screen.findByRole('alert')).toHaveProperty('textContent', '这个手机号还没有注册。');
   await user.click(screen.getByRole('button', { name: '返回登录' }));
-  expect(screen.getByRole('main', { name: '登录 Scientify' })).toBeTruthy();
+  expect(screen.getByRole('main', { name: '登录 Capsio' })).toBeTruthy();
 });
 
 it('reads phone numbers, passwords and failures the way people write and expect them', () => {

@@ -18,7 +18,7 @@ if (selected.some((suite) => !Object.hasOwn(suites, suite)))
   throw new Error(`Unknown UI suite. Choose: ${Object.keys(suites).join(', ')}`);
 let server;
 try {
-  let url = process.env.SCIENTIFY_UI_URL;
+  let url = process.env.CAPSIO_UI_URL;
   if (!url) {
     const reservation = createServer();
     reservation.listen(0, '127.0.0.1');
@@ -63,7 +63,7 @@ try {
     const child = spawn(process.execPath, [suites[suite]], {
       windowsHide: true,
       stdio: 'inherit',
-      env: { ...process.env, SCIENTIFY_UI_URL: url },
+      env: { ...process.env, CAPSIO_UI_URL: url },
     });
     const [code, signal] = await once(child, 'exit');
     if (code !== 0) throw new Error(`${suite} UI verification failed: ${code ?? signal}`);

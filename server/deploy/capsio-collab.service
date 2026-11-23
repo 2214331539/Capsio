@@ -1,0 +1,24 @@
+[Unit]
+Description=Capsio collaboration API
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=capsio
+Group=capsio
+WorkingDirectory=/opt/capsio-collab/server
+EnvironmentFile=/etc/capsio-collab.env
+# Node 20 or newer; Ubuntu 26.04 ships it as /usr/bin/node.
+ExecStart=/usr/bin/node src/server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+# systemd creates /var/lib/capsio-collab owned by the service user.
+StateDirectory=capsio-collab
+
+[Install]
+WantedBy=multi-user.target

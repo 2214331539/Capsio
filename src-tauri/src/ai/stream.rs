@@ -18,7 +18,7 @@ impl ChatState {
                     }
                 }
             }
-            Err(error) => eprintln!("Scientify 翻译请求清理失败：{error}"),
+            Err(error) => eprintln!("Capsio 翻译请求清理失败：{error}"),
         }
     }
 }

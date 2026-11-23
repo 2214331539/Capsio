@@ -1,5 +1,5 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="using:Yita.Desktop" x:Class="Yita.Desktop.QuestionAnswerWindow" Title="Scientify · AI" Icon="avares://Yita.Desktop/Assets/Scientify.ico" x:ClassModifier="internal" Width="520" Height="360" MinWidth="360" MinHeight="240" MaxWidth="860" MaxHeight="720"
+        xmlns:local="using:Yita.Desktop" x:Class="Yita.Desktop.QuestionAnswerWindow" Title="Capsio · AI" Icon="avares://Yita.Desktop/Assets/Capsio.ico" x:ClassModifier="internal" Width="520" Height="360" MinWidth="360" MinHeight="240" MaxWidth="860" MaxHeight="720"
         SystemDecorations="None" TransparencyLevelHint="Transparent" Background="Transparent" ShowActivated="False"
         ShowInTaskbar="False" Topmost="True" CanResize="True" FontFamily="{DynamicResource InterfaceFont}" KeyDown="WindowKeyDown" PointerWheelChanged="WindowPointerWheelChanged">
   <Grid Margin="{DynamicResource ConversationMargin}" RowDefinitions="Auto,*">
@@ -35,7 +35,7 @@
           <Grid ColumnDefinitions="*,Auto,Auto">
             <TextBox x:Name="QuestionInputTextBox" Classes="qa-input" FontSize="12" MinHeight="24" MaxHeight="86" Padding="6,2" Background="Transparent" BorderThickness="0" AcceptsReturn="True" TextWrapping="Wrap" Watermark="Ask a follow-up…" />
             <Button x:Name="SendButton" Grid.Column="1" MinWidth="50" Margin="8,0,0,0" Classes="reading-action qa-action" Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource AccentTextBrush}" Content="Ask" Click="SendClick" />
-            <Button x:Name="ScientifyAssistantButton" Grid.Column="2" IsVisible="False" Width="32" Margin="6,0,0,0" Classes="reading-action qa-action" Click="AssistantClick">
+            <Button x:Name="CapsioAssistantButton" Grid.Column="2" IsVisible="False" Width="32" Margin="6,0,0,0" Classes="reading-action qa-action" Click="AssistantClick">
               <Path Width="14" Height="14" Stretch="Uniform" Stroke="{DynamicResource PopupTextBrush}" StrokeThickness="1.8" Data="M4,20 L20,4 M7,4 H20 V17" />
             </Button>
           </Grid>

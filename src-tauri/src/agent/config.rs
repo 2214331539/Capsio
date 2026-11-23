@@ -1,4 +1,4 @@
-//! Translate Scientify's model settings into the engine's configuration.
+//! Translate Capsio's model settings into the engine's configuration.
 //!
 //! Two decisions are load-bearing here:
 //!
@@ -9,10 +9,10 @@
 //!    rather than written out and left to fail at request time.
 
 /// Environment variable the engine reads the API key from.
-pub const KEY_ENV: &str = "SCIENTIFY_AGENT_KEY";
+pub const KEY_ENV: &str = "CAPSIO_AGENT_KEY";
 
 /// Provider id passed in per-process configuration overrides.
-const PROVIDER_ID: &str = "scientify";
+const PROVIDER_ID: &str = "capsio";
 
 /// Signed in with a ChatGPT plan instead of an API key (account.rs). The engine's
 /// built-in OpenAI provider then talks to ChatGPT with that sign-in.
@@ -64,7 +64,7 @@ fn mcp_name(name: &str) -> bool {
 }
 
 /// `-c` overrides adding the MCP servers turned on in Settings, the tools the
-/// Agent gets beyond Scientify's own: a command it starts (with arguments and
+/// Agent gets beyond Capsio's own: a command it starts (with arguments and
 /// environment) or a server it reaches by URL.
 pub fn mcp_arguments(servers: &serde_json::Value) -> Vec<String> {
     let mut args = Vec::new();
@@ -182,14 +182,14 @@ pub fn arguments(connection: &Connection<'_>) -> Result<Vec<String>, String> {
 
 fn provider_overrides(endpoint: &str) -> [String; 5] {
     [
-        format!("model_providers.{PROVIDER_ID}.name=\"Scientify\""),
+        format!("model_providers.{PROVIDER_ID}.name=\"Capsio\""),
         format!(
             "model_providers.{PROVIDER_ID}.base_url={}",
             quoted(endpoint)
         ),
         format!("model_providers.{PROVIDER_ID}.wire_api=\"responses\""),
         format!("model_providers.{PROVIDER_ID}.requires_openai_auth=false"),
-        // Always override a possible env_key left by older Scientify versions.
+        // Always override a possible env_key left by older Capsio versions.
         format!("model_providers.{PROVIDER_ID}.env_key={}", quoted(KEY_ENV)),
     ]
 }

@@ -105,7 +105,7 @@ export const nativeLibrary: LibraryBackend = {
       (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`,
     );
     return invoke('library_import_bytes', await file.arrayBuffer(), {
-      headers: { 'x-scientify-file': metadata },
+      headers: { 'x-capsio-file': metadata },
     });
   },
   references: (projectId) => localCommand('library_references', { projectId }),

@@ -24,6 +24,7 @@
     "allow-workspace-export",
     "allow-choose-directory",
     "allow-storage-location",
+    "allow-renamed-app-removable",
     "allow-storage-schedule",
     "allow-storage-cancel",
     "allow-storage-adopt",

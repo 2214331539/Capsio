@@ -44,8 +44,8 @@ import './sidebar.css';
 export type SettingsSection =
   'general' | 'models' | 'shortcuts' | 'collaboration' | 'account' | 'about';
 
-const guideUrl = `https://github.com/2214331539/Scientify/blob/main/docs/${encodeURIComponent('使用说明')}/${encodeURIComponent('桌面使用说明')}.md`;
-const issuesUrl = 'https://github.com/2214331539/Scientify/issues';
+const guideUrl = `https://github.com/2214331539/Capsio/blob/main/docs/${encodeURIComponent('使用说明')}/${encodeURIComponent('桌面使用说明')}.md`;
+const issuesUrl = 'https://github.com/2214331539/Capsio/issues';
 
 function openExternal(url: string) {
   if (isTauri()) void browserCommand({ op: 'external', address: url }).catch(() => {});
@@ -212,7 +212,7 @@ export function SidebarFooter({ onSettings }: { onSettings(section: SettingsSect
           variant="ghost"
           onClick={() => {
             setMenu(null);
-            window.dispatchEvent(new Event('scientify-start-tour'));
+            window.dispatchEvent(new Event('capsio-start-tour'));
           }}
         >
           <Compass />
@@ -229,7 +229,7 @@ export function SidebarFooter({ onSettings }: { onSettings(section: SettingsSect
         </Button>
         <Button role="menuitem" variant="ghost" onClick={() => go('about')}>
           <CircleHelp />
-          {t('关于 Scientify')}
+          {t('关于 Capsio')}
         </Button>
         {signedIn ? (
           <>

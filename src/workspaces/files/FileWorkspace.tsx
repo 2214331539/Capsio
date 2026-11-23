@@ -91,7 +91,7 @@ type FileWorkspaceProps = {
   editorExtensions?: (path: string) => Extension[];
 };
 const fileName = (path: string) => path.split('/').pop() || path;
-const resourceEvent = 'scientify-project-files-changed';
+const resourceEvent = 'capsio-project-files-changed';
 
 function useRuntime(backend: ResearchBackend) {
   const runtime = getFileRuntime(backend);

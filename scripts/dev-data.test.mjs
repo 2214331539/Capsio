@@ -17,31 +17,31 @@ function workspace(dir, files) {
 }
 
 test('every checkout shares the development data next to it', () => {
-  const root = join('repos', 'Scientify-Desktop');
-  assert.equal(developmentWorkspace({}, root), join('repos', 'ScientifyDevData', 'workspace'));
-  assert.match(developmentWorkspace({ SCIENTIFY_DATA_DIR: 'elsewhere' }, root), /elsewhere$/);
+  const root = join('repos', 'Capsio-Desktop');
+  assert.equal(developmentWorkspace({}, root), join('repos', 'CapsioDevData', 'workspace'));
+  assert.match(developmentWorkspace({ CAPSIO_DATA_DIR: 'elsewhere' }, root), /elsewhere$/);
 });
 
 test('the release data follows the storage pointer, else the default container', () => {
-  const root = mkdtempSync(join(tmpdir(), 'scientify-checkout-'));
-  assert.equal(releaseWorkspace('win32', root), join(root, 'ScientifyData', 'workspace'));
+  const root = mkdtempSync(join(tmpdir(), 'capsio-checkout-'));
+  assert.equal(releaseWorkspace('win32', root), join(root, 'CapsioData', 'workspace'));
   writeFileSync(
-    join(root, 'scientify-storage.json'),
-    JSON.stringify({ directory: '\\\\?\\F:\\Data\\ScientifyData', pending: null, cleanup: [] }),
+    join(root, 'capsio-storage.json'),
+    JSON.stringify({ directory: '\\\\?\\F:\\Data\\CapsioData', pending: null, cleanup: [] }),
   );
-  assert.equal(releaseWorkspace('win32', root), join('F:\\Data\\ScientifyData', 'workspace'));
-  const home = mkdtempSync(join(tmpdir(), 'scientify-home-'));
+  assert.equal(releaseWorkspace('win32', root), join('F:\\Data\\CapsioData', 'workspace'));
+  const home = mkdtempSync(join(tmpdir(), 'capsio-home-'));
   assert.equal(
     releaseWorkspace('darwin', root, home),
-    join(home, 'Library', 'Application Support', 'Scientify', 'ScientifyData', 'workspace'),
+    join(home, 'Library', 'Application Support', 'Capsio', 'CapsioData', 'workspace'),
   );
 });
 
 test('a refresh copies the research data and keeps each instance its own sign-in', () => {
-  const base = mkdtempSync(join(tmpdir(), 'scientify-data-'));
-  const release = join(base, 'ScientifyData', 'workspace');
-  const development = join(base, 'ScientifyDevData', 'workspace');
-  const team = { id: 'scientify-collaboration', name: 'Team' };
+  const base = mkdtempSync(join(tmpdir(), 'capsio-data-'));
+  const release = join(base, 'CapsioData', 'workspace');
+  const development = join(base, 'CapsioDevData', 'workspace');
+  const team = { id: 'capsio-collaboration', name: 'Team' };
   workspace(release, {
     'workspace.json': JSON.stringify({
       revision: 381,
@@ -84,21 +84,21 @@ test('a refresh copies the research data and keeps each instance its own sign-in
 });
 
 test('paths move between data folders the way the app relocates them', () => {
-  const from = String.raw`F:\Data\ScientifyData`;
-  const to = String.raw`F:\Data\ScientifyDevData`;
+  const from = String.raw`F:\Data\CapsioData`;
+  const to = String.raw`F:\Data\CapsioDevData`;
   const move = (text) => relocatePath(text, from, to, true);
   assert.equal(
-    move(String.raw`F:\Data\ScientifyData\workspace\projects\p`),
-    String.raw`F:\Data\ScientifyDevData\workspace\projects\p`,
+    move(String.raw`F:\Data\CapsioData\workspace\projects\p`),
+    String.raw`F:\Data\CapsioDevData\workspace\projects\p`,
   );
   // The \\?\ prefix stays, letter case is ignored and the suffix keeps its own case.
   assert.equal(
-    move(String.raw`\\?\f:\data\scientifydata\Workspace`),
-    String.raw`\\?\F:\Data\ScientifyDevData\Workspace`,
+    move(String.raw`\\?\f:\data\capsiodata\Workspace`),
+    String.raw`\\?\F:\Data\CapsioDevData\Workspace`,
   );
-  assert.equal(move('F:/Data/ScientifyData/agent/x.jsonl'), `${to}/agent/x.jsonl`);
+  assert.equal(move('F:/Data/CapsioData/agent/x.jsonl'), `${to}/agent/x.jsonl`);
   assert.equal(move(from), to);
-  assert.equal(move(String.raw`F:\Data\ScientifyDataOld\workspace`), null);
+  assert.equal(move(String.raw`F:\Data\CapsioDataOld\workspace`), null);
   assert.equal(move(String.raw`D:\AScience\Proactive`), null);
   assert.equal(
     relocatePath('/Users/a/Data/x', '/Users/a/Data', '/Users/a/Dev', false),
@@ -108,9 +108,9 @@ test('paths move between data folders the way the app relocates them', () => {
 });
 
 test('a refresh points the copied bindings, sessions and history at the development folder', () => {
-  const base = mkdtempSync(join(tmpdir(), 'scientify-move-'));
-  const releaseRoot = join(base, 'ScientifyData');
-  const devRoot = join(base, 'ScientifyDevData');
+  const base = mkdtempSync(join(tmpdir(), 'capsio-move-'));
+  const releaseRoot = join(base, 'CapsioData');
+  const devRoot = join(base, 'CapsioDevData');
   const release = join(releaseRoot, 'workspace');
   const development = join(devRoot, 'workspace');
   const project = join(release, 'projects', 'p1');

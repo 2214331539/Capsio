@@ -2,7 +2,7 @@ import { useId } from 'react';
 import './mascot.css';
 
 /**
- * Scientify's AI assistant: a soft 3D ball with two eyes, the dot that rises
+ * Capsio's AI assistant: a soft 3D ball with two eyes, the dot that rises
  * out of the "开箱" logo come alive. Drawn in SVG so it stays sharp from a 14 px
  * button icon to the empty-state portrait.
  *

@@ -32,7 +32,7 @@ use {
 };
 fn trace(message: impl std::fmt::Display) {
     #[cfg(debug_assertions)]
-    if let Some(report) = std::env::var_os("SCIENTIFY_NATIVE_REPORT") {
+    if let Some(report) = std::env::var_os("CAPSIO_NATIVE_REPORT") {
         use std::io::Write;
         if let Ok(mut f) = std::fs::OpenOptions::new()
             .create(true)
@@ -60,13 +60,13 @@ fn parse_proxy_url(raw: &str) -> Result<tauri::Url, String> {
             && url.fragment().is_none()
     });
     url.ok_or_else(|| {
-        "SCIENTIFY_BROWSER_PROXY 必须是无凭据的 http://host:port 或 socks5://host:port。".into()
+        "CAPSIO_BROWSER_PROXY 必须是无凭据的 http://host:port 或 socks5://host:port。".into()
     })
 }
 fn configure_browser_proxy<R: tauri::Runtime>(
     builder: WebviewBuilder<R>,
 ) -> Result<WebviewBuilder<R>, String> {
-    match std::env::var("SCIENTIFY_BROWSER_PROXY") {
+    match std::env::var("CAPSIO_BROWSER_PROXY") {
         Ok(raw) if !raw.trim().is_empty() => Ok(builder.proxy_url(parse_proxy_url(&raw)?)),
         _ => Ok(builder),
     }
@@ -120,7 +120,7 @@ const ENGINES: [(&str, &str, &str, &str); 3] = [
     ),
 ];
 /// The address the app gives for "the search engine's home page".
-pub const HOME_ADDRESS: &str = "scientify:home";
+pub const HOME_ADDRESS: &str = "capsio:home";
 
 /// The chosen search engine; Google unless Settings say otherwise.
 pub(crate) fn search_engine(app: &tauri::AppHandle) -> &'static str {
@@ -213,7 +213,8 @@ pub fn resolve_address(raw: &str, engine_id: &str) -> Result<Option<tauri::Url>,
     if text.is_empty() {
         return Ok(None);
     }
-    if text == HOME_ADDRESS {
+    // Tabs saved before the rename still say scientify:home.
+    if text == HOME_ADDRESS || text == "scientify:home" {
         return Ok(Some(tauri::Url::parse(engine(engine_id).3).unwrap()));
     }
     if text.len() > 8192 {

@@ -36,7 +36,7 @@ collaboration.conflictPreview=async()=>({token:'demo',canKeepLocal:true,canKeepB
 createRoot(document.getElementById('root')).render(React.createElement(ProjectSyncControl,{project,store}));
 </script></body></html>`,
   );
-  const url = process.env.SCIENTIFY_UI_URL ?? 'http://127.0.0.1:5173';
+  const url = process.env.CAPSIO_UI_URL ?? 'http://127.0.0.1:5173';
   await page.goto(`${url}/.test-artifacts/collaboration-ui/${file.split(/[\\/]/).at(-1)}`, {
     waitUntil: 'commit',
     timeout: 60_000,

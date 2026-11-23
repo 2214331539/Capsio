@@ -11,6 +11,7 @@ const uuid = () => crypto.randomUUID();
 function cipherKey(config) {
   const secret = config.modelKeySecret || config.jwtSecret;
   if (!secret) throw new Error('No secret for channel keys');
+  // The salt keeps its pre-rename value: keys already stored were sealed with it.
   return Buffer.from(crypto.hkdfSync('sha256', secret, 'scientify', 'channel-keys', 32));
 }
 

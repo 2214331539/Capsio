@@ -133,7 +133,7 @@ function setup() {
     askAI: async () => '',
   };
   localStorage.setItem(
-    'scientify.ui.v1',
+    'capsio.ui.v1',
     JSON.stringify({
       version: 1,
       projectId: 'p1',
@@ -359,7 +359,7 @@ it('opens the exact experiment source, remembers selection, and opens a recent n
   });
   await act(async () => {
     window.dispatchEvent(
-      new CustomEvent('scientify-open-source', {
+      new CustomEvent('capsio-open-source', {
         detail: {
           projectId: 'p1',
           workspace: 'experiments',
@@ -371,9 +371,9 @@ it('opens the exact experiment source, remembers selection, and opens a recent n
   });
   expect(await screen.findByRole('heading', { name: 'Ablation result' })).toBeTruthy();
   expect(screen.getByRole('tab', { name: '运行记录' }).getAttribute('aria-selected')).toBe('true');
-  expect(JSON.parse(localStorage.getItem('scientify.ui.v2')!).locations.p1.runId).toBe('r-old');
+  expect(JSON.parse(localStorage.getItem('capsio.ui.v2')!).locations.p1.runId).toBe('r-old');
   await user.click(screen.getByRole('button', { name: /Latest result/ }));
-  expect(JSON.parse(localStorage.getItem('scientify.ui.v2')!).locations.p1.runId).toBe('r-new');
+  expect(JSON.parse(localStorage.getItem('capsio.ui.v2')!).locations.p1.runId).toBe('r-new');
   // Notes became documents; the documents module opens in their place.
   await user.click(moduleButton(t('文档')));
   expect(await screen.findByRole('heading', { name: '文档' })).toBeTruthy();

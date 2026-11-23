@@ -1,7 +1,7 @@
 // Deterministic Responses provider for native integration tests. No API key.
 import { createServer } from 'node:http';
-const command = JSON.parse(process.env.SCIENTIFY_FIXTURE_COMMAND);
-const toolName = process.env.SCIENTIFY_FIXTURE_TOOL || 'scientify_start_run';
+const command = JSON.parse(process.env.CAPSIO_FIXTURE_COMMAND);
+const toolName = process.env.CAPSIO_FIXTURE_TOOL || 'capsio_start_run';
 let sequence = 0;
 const values = (value) => {
   if (typeof value === 'string') {
@@ -20,13 +20,13 @@ const server = createServer(async (request, response) => {
   const input = JSON.parse(body);
   const data = values(input.input);
   if (
-    process.env.SCIENTIFY_FIXTURE_REQUIRE_SKILL &&
+    process.env.CAPSIO_FIXTURE_REQUIRE_SKILL &&
     sequence === 0 &&
     !data.some(
       (part) =>
         part.type === 'input_text' &&
         typeof part.text === 'string' &&
-        part.text.includes(process.env.SCIENTIFY_FIXTURE_REQUIRE_SKILL),
+        part.text.includes(process.env.CAPSIO_FIXTURE_REQUIRE_SKILL),
     )
   ) {
     response.writeHead(400, { 'Content-Type': 'application/json' });
@@ -36,7 +36,7 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (
-    process.env.SCIENTIFY_FIXTURE_REQUIRE_IMAGE &&
+    process.env.CAPSIO_FIXTURE_REQUIRE_IMAGE &&
     sequence === 0 &&
     !data.some(
       (part) =>
@@ -58,7 +58,7 @@ const server = createServer(async (request, response) => {
     throw new Error(`Fixture run failed: ${snapshot.run.error}; ${snapshot.log}`);
   const id = `fixture-${++sequence}`;
   let item;
-  if (toolName !== 'scientify_start_run') {
+  if (toolName !== 'capsio_start_run') {
     const reply = data.find(
       (value) => typeof value.output === 'string' || typeof value.error === 'string',
     );
@@ -89,13 +89,13 @@ const server = createServer(async (request, response) => {
       };
     }
   } else if (!snapshot) {
-    if (!values(input.tools).some((v) => v.name === 'scientify_start_run'))
+    if (!values(input.tools).some((v) => v.name === 'capsio_start_run'))
       throw new Error('Missing managed tool');
     item = {
       type: 'function_call',
       id: `fc-${sequence}`,
       call_id: `call-${sequence}`,
-      name: 'scientify_start_run',
+      name: 'capsio_start_run',
       arguments: JSON.stringify(command),
       status: 'completed',
     };
@@ -104,7 +104,7 @@ const server = createServer(async (request, response) => {
       type: 'function_call',
       id: `fc-${sequence}`,
       call_id: `call-${sequence}`,
-      name: 'scientify_run_status',
+      name: 'capsio_run_status',
       arguments: JSON.stringify({ runId: snapshot.run.id, waitSeconds: 1 }),
       status: 'completed',
     };

@@ -4,7 +4,7 @@ import type { OfficialModelProblem } from '../../platform/collaboration';
 import { openUpgrade } from '../account/Upgrade';
 
 export const openAccountSettings = () =>
-  window.dispatchEvent(new CustomEvent('scientify-open-settings', { detail: 'account' }));
+  window.dispatchEvent(new CustomEvent('capsio-open-settings', { detail: 'account' }));
 
 const TEXT: Record<OfficialModelProblem, { title: string; detail: string }> = {
   quota_exhausted: {

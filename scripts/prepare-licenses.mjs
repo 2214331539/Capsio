@@ -144,7 +144,7 @@ const unique = [
   ).values(),
 ];
 const text = [
-  'Scientify third-party license texts',
+  'Capsio third-party license texts',
   `Generated from installed pnpm dependencies and Cargo metadata for ${targetInfo().target}.`,
   'Build and development dependencies may be included. Each upstream notice retains its own terms.',
   '',
@@ -170,8 +170,8 @@ writeFileSync(
   ) + '\n',
 );
 for (const [source, name] of [
-  ['LICENSE', 'Scientify-LICENSE'],
-  ['NOTICE', 'Scientify-NOTICE'],
+  ['LICENSE', 'Capsio-LICENSE'],
+  ['NOTICE', 'Capsio-NOTICE'],
   ['THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md'],
   ['docs/licenses/codex-LICENSE', 'codex-LICENSE'],
   ['docs/licenses/codex-NOTICE', 'codex-NOTICE'],

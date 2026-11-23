@@ -8,7 +8,7 @@ export type Theme = 'light' | 'dark' | 'system';
 /** The light palette; dark mode always uses “night”. */
 export type Palette = 'graphite' | 'paper';
 export type Preferences = { language: Language; theme: Theme; palette: Palette };
-export const preferenceKey = 'scientify.preferences.v1';
+export const preferenceKey = 'capsio.preferences.v1';
 const defaults: Preferences = { language: 'zh-CN', theme: 'system', palette: 'graphite' };
 const palette = (value: unknown): Palette => (value === 'paper' ? 'paper' : 'graphite');
 let snapshot = defaults;

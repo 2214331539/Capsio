@@ -1,6 +1,6 @@
 use crate::{library::LibraryState, AppState};
 use base64::{engine::general_purpose::STANDARD, Engine};
-use scientify_core::research::reject_links;
+use capsio_core::research::reject_links;
 use serde::Deserialize;
 use std::{
     io::{Read, Write},

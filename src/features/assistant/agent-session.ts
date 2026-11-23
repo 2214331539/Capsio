@@ -122,7 +122,7 @@ const object = (value: unknown): Record<string, any> =>
 const terminal = (value: unknown): value is 'completed' | 'failed' | 'interrupted' =>
   ['completed', 'failed', 'interrupted'].includes(String(value));
 
-/** Scientify's own tools in words, with what they were asked: "搜索网页：…". */
+/** Capsio's own tools in words, with what they were asked: "搜索网页：…". */
 export function describeTool(item: Record<string, any>): string | null {
   if (item.type !== 'dynamicToolCall' || typeof item.tool !== 'string') return null;
   let args: Record<string, any> = {};
@@ -133,16 +133,17 @@ export function describeTool(item: Record<string, any>): string | null {
   }
   const query = String(args.query ?? '');
   const url = String(args.url ?? '');
-  switch (item.tool) {
-    case 'scientify_web_search':
+  // Conversations from before the rename name their tools scientify_*.
+  switch (item.tool.replace(/^scientify_/, 'capsio_')) {
+    case 'capsio_web_search':
       return t('搜索网页：{query}', { query });
-    case 'scientify_browser_search':
+    case 'capsio_browser_search':
       return t('在浏览器中搜索：{query}', { query });
-    case 'scientify_web_fetch':
+    case 'capsio_web_fetch':
       return t('阅读网页：{url}', { url });
-    case 'scientify_browser_open':
+    case 'capsio_browser_open':
       return t('打开网页：{url}', { url });
-    case 'scientify_search_papers':
+    case 'capsio_search_papers':
       return t('检索论文：{query}', { query });
     default:
       return null;

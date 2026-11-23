@@ -77,7 +77,7 @@ export function Markdown({
               ? (url, key) =>
                   notePreview && key === 'src' && !/^(?:[a-z][\w+.-]*:|[\\/])/i.test(url)
                     ? url
-                    : /^scientify-page:\d+$/.test(url)
+                    : /^capsio-page:\d+$/.test(url)
                       ? url
                       : /^(https?:|mailto:|\/|#)/i.test(url)
                         ? url
@@ -142,7 +142,7 @@ export function Markdown({
             );
           },
           a: ({ children: label, href }) => {
-            if (onPage && !notePreview && /^scientify-page:\d+$/.test(href ?? ''))
+            if (onPage && !notePreview && /^capsio-page:\d+$/.test(href ?? ''))
               return (
                 <Button variant="ghost" onClick={() => onPage(Number(href!.split(':')[1]))}>
                   {label}

@@ -59,13 +59,13 @@ internal sealed partial class QuestionAnswerWindow : Window
         };
         Opened += (_, _) => { WindowSizePresetBar.Constrain(this); ReferenceMotion.Reveal(Surface); };
         Closed += (_, _) => { _closed = true; _requests.Dispose(); };
-        if (ScientifyBridge.IsEmbedded) Opened += (_, _) => StartHostConversation();
+        if (CapsioBridge.IsEmbedded) Opened += (_, _) => StartHostConversation();
     }
 
     private async void AssistantClick(object? sender, RoutedEventArgs e)
     {
-        if (ScientifyBridge.Current is not { } bridge) return;
-        ScientifyAssistantButton.IsEnabled = false;
+        if (CapsioBridge.Current is not { } bridge) return;
+        CapsioAssistantButton.IsEnabled = false;
         try
         {
             var draft = QuestionInputTextBox.Text?.Trim() ?? "";
@@ -74,7 +74,7 @@ internal sealed partial class QuestionAnswerWindow : Window
             if (QuestionInputTextBox.Text?.Trim() == draft) QuestionInputTextBox.Text = "";
         }
         catch (Exception error) { EmptyStateText.Text = error.Message; EmptyStateText.IsVisible = true; }
-        finally { ScientifyAssistantButton.IsEnabled = true; }
+        finally { CapsioAssistantButton.IsEnabled = true; }
     }
 
     internal void ApplyHostModel(string model) => _settings = _settings with { DeepSeekModel = model };
@@ -85,15 +85,15 @@ internal sealed partial class QuestionAnswerWindow : Window
         _settings = _settings with { UiLanguage = UiLanguageCatalog.Normalize(language) };
         var chinese = _settings.UiLanguage == "zh-CN";
         TitleText.Text = _kind == QuestionContextKind.GeneralChat ? "DeepSeek" : chinese ? "AI 问答" : "Ask AI";
-        ScientifyAssistantButton.IsVisible = ScientifyBridge.IsEmbedded;
-        ToolTip.SetTip(ScientifyAssistantButton, chinese ? "在 Scientify 中继续此会话" : "Continue this conversation in Scientify");
-        Avalonia.Automation.AutomationProperties.SetName(ScientifyAssistantButton, chinese ? "在 Scientify 中继续此会话" : "Continue this conversation in Scientify");
+        CapsioAssistantButton.IsVisible = CapsioBridge.IsEmbedded;
+        ToolTip.SetTip(CapsioAssistantButton, chinese ? "在 Capsio 中继续此会话" : "Continue this conversation in Capsio");
+        Avalonia.Automation.AutomationProperties.SetName(CapsioAssistantButton, chinese ? "在 Capsio 中继续此会话" : "Continue this conversation in Capsio");
         CopyButton.Content = chinese ? "复制" : "Copy";
         RecordButton.Content = chinese ? "记录" : "Record";
         StopButton.Content = chinese ? "停止" : "Stop";
         RetryButton.Content = chinese ? "重试" : "Retry";
         SendButton.Content = chinese ? "提问" : "Ask";
-        if (ScientifyBridge.IsEmbedded) TitleText.Text = chinese ? "Scientify · AI 问答" : "Scientify · Ask AI";
+        if (CapsioBridge.IsEmbedded) TitleText.Text = chinese ? "Capsio · AI 问答" : "Capsio · Ask AI";
         var chat = _kind == QuestionContextKind.GeneralChat;
         EmptyStateText.Text = chat
             ? chinese ? "输入一个简单问题，DeepSeek 会直接回答。" : "Ask a quick question and get a direct DeepSeek answer."
@@ -101,9 +101,9 @@ internal sealed partial class QuestionAnswerWindow : Window
         QuestionInputTextBox.Watermark = chat
             ? chinese ? "问 DeepSeek…" : "Ask DeepSeek…"
             : chinese ? "继续提问…" : "Ask a follow-up…";
-        if (ScientifyBridge.IsEmbedded && chat)
+        if (CapsioBridge.IsEmbedded && chat)
         {
-            EmptyStateText.Text = chinese ? "输入问题，使用 Scientify 当前模型回答。" : "Ask a question using your Scientify model.";
+            EmptyStateText.Text = chinese ? "输入问题，使用 Capsio 当前模型回答。" : "Ask a question using your Capsio model.";
             QuestionInputTextBox.Watermark = chinese ? "向 AI 提问…" : "Ask AI…";
         }
         ToolTip.SetTip(PinButton, chinese ? "固定窗口" : "Keep window");
@@ -117,7 +117,7 @@ internal sealed partial class QuestionAnswerWindow : Window
 
     internal async Task AskAsync(string question)
     {
-        if (ScientifyBridge.IsEmbedded) { await AskHostAsync(question.Trim()); return; }
+        if (CapsioBridge.IsEmbedded) { await AskHostAsync(question.Trim()); return; }
         question = question.Trim();
         if (_closed || _streaming || question.Length == 0) return;
         if (question.Length > 2000) question = question[..2000];
@@ -212,14 +212,14 @@ internal sealed partial class QuestionAnswerWindow : Window
     private async void SendClick(object? sender, RoutedEventArgs e) => await AskAsync(QuestionInputTextBox.Text ?? "");
     private void StopClick(object? sender, RoutedEventArgs e)
     {
-        if (ScientifyBridge.IsEmbedded) { _ = StopHostAsync(); return; }
+        if (CapsioBridge.IsEmbedded) { _ = StopHostAsync(); return; }
         _requests.Cancel(); SetIdle();
         RetryButton.IsVisible = true;
     }
 
     internal void SuspendSession()
     {
-        if (ScientifyBridge.IsEmbedded) return; // The shared task belongs to Scientify, not this view.
+        if (CapsioBridge.IsEmbedded) return; // The shared task belongs to Capsio, not this view.
         if (!_streaming) return;
         _requests.Cancel();
         if (_waitingForAnswer) _pendingAnswer = _settings.UiLanguage == "zh-CN" ? "已停止。" : "Stopped.";
@@ -229,7 +229,7 @@ internal sealed partial class QuestionAnswerWindow : Window
     }
     private async void RetryClick(object? sender, RoutedEventArgs e)
     {
-        if (ScientifyBridge.IsEmbedded) await AskHostAsync("", retry: true);
+        if (CapsioBridge.IsEmbedded) await AskHostAsync("", retry: true);
         else await AskAsync(_question);
     }
     private async void CopyClick(object? sender, RoutedEventArgs e)

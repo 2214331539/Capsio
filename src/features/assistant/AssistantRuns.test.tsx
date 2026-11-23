@@ -61,7 +61,7 @@ it('links only this conversation runs, opens the exact run and stops it independ
   });
   const stop = vi.spyOn(experimentApi, 'stop').mockResolvedValue();
   const open = vi.fn();
-  window.addEventListener('scientify-open-run', open);
+  window.addEventListener('capsio-open-run', open);
   try {
     render(<AssistantRuns projectId="p1" conversationId="chat1" />);
     expect(screen.getByText('Evaluation')).toBeTruthy();
@@ -80,7 +80,7 @@ it('links only this conversation runs, opens the exact run and stops it independ
     expect(screen.getByText('已完成')).toBeTruthy();
     expect(screen.queryByRole('button', { name: '停止实验' })).toBeNull();
   } finally {
-    window.removeEventListener('scientify-open-run', open);
+    window.removeEventListener('capsio-open-run', open);
   }
 });
 

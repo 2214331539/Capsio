@@ -90,7 +90,7 @@ impl QuietChild {
         let (stdout, child_out) = pipe(false)?;
         let (stderr, child_err) = pipe(false)?;
         let name = wide(OsStr::new(&format!(
-            "ScientifyAgent-{}",
+            "CapsioAgent-{}",
             uuid::Uuid::new_v4().simple()
         )));
         let desktop = unsafe {
@@ -303,7 +303,7 @@ mod tests {
             );
             context.0
         }
-        let marker = format!("ScientifyHiddenProbe-{}", uuid::Uuid::new_v4().simple());
+        let marker = format!("CapsioHiddenProbe-{}", uuid::Uuid::new_v4().simple());
         let script = format!("$si = New-Object System.Diagnostics.ProcessStartInfo; $si.FileName = 'cmd.exe'; $si.Arguments = '/c title {marker} & ping -n 4 127.0.0.1 >nul & echo {marker}'; $si.UseShellExecute = $false; $si.CreateNoWindow = $false; $p = [System.Diagnostics.Process]::Start($si); $p.WaitForExit(); if ($p.ExitCode -ne 0) {{ throw 'helper failed' }}; Write-Output 'child-done'");
         let mut command = Command::new("powershell.exe");
         command.args(["-NoProfile", "-NonInteractive", "-Command", &script]);

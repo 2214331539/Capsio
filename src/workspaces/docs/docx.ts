@@ -432,7 +432,7 @@ export async function pageToDocx(page: Pick<Page, 'title' | 'blocks'>, options: 
     `${HEAD}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" ` +
       `xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" ` +
       `xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">` +
-      `<dc:title>${xmlText(page.title)}</dc:title><dc:creator>Scientify</dc:creator>` +
+      `<dc:title>${xmlText(page.title)}</dc:title><dc:creator>Capsio</dc:creator>` +
       `<dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</dcterms:created>` +
       `</cp:coreProperties>`,
   );

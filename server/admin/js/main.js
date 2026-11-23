@@ -65,7 +65,7 @@ const ctx = {
 function shell(title, body) {
   return `<div class="shell">
     <aside class="side">
-      <div class="brand"><span class="logo">${icon('box')}</span><span>Scientify<small>管理后台</small></span></div>
+      <div class="brand"><span class="logo">${icon('box')}</span><span>Capsio<small>管理后台</small></span></div>
       ${NAV.map((n) => (n.group ? `<div class="nav-group">${n.group}</div>` : `<button class="nav-item ${current.route?.view === n.id ? 'on' : ''}" data-go="#/${n.id}">${icon(n.icon)}${n.name}</button>`)).join('')}
       <div class="side-foot"><div class="avatar sm">${icon('users')}</div><div class="me"><b class="num">${esc(state.admin?.phone ?? '')}</b><span>${esc(state.admin?.roleName ?? '')}</span></div><button class="icon-btn" data-act="theme" title="切换深色">${icon('moon')}</button><button class="icon-btn" data-act="sign-out" title="退出">${icon('logout')}</button></div>
     </aside>
@@ -115,7 +115,7 @@ function signInPage(message = '', mode = 'password', phone = '') {
   ctx.close();
   const reset = mode === 'reset';
   document.getElementById('root').innerHTML = `<div class="login"><form class="box" data-login="${mode}">
-    <div class="brand" style="padding:0"><span class="logo">${icon('box')}</span><span>Scientify<small>管理后台</small></span></div>
+    <div class="brand" style="padding:0"><span class="logo">${icon('box')}</span><span>Capsio<small>管理后台</small></span></div>
     <h2>${reset ? '重设密码' : '登录'}</h2><div class="muted">${reset ? '验证码只发给管理员的手机号。这是账号的密码，重设后桌面应用需要重新登录。' : '只有管理员可以登录。'}</div>
     <div class="form-row"><label>手机号</label><input class="text num" name="phone" autocomplete="username" value="${esc(phone)}" required></div>
     ${

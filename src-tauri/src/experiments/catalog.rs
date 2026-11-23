@@ -1,5 +1,5 @@
 use crate::{git, AppState};
-use scientify_core::{
+use capsio_core::{
     research::{reject_links, ResearchFiles},
     storage::Storage,
 };
@@ -277,14 +277,14 @@ mod tests {
     #[test]
     fn independent_roots_are_registered_and_nested_private_or_other_project_roots_are_rejected() {
         let temp = tempfile::tempdir().unwrap();
-        let storage = Storage::open(temp.path().join("ScientifyData/workspace")).unwrap();
+        let storage = Storage::open(temp.path().join("CapsioData/workspace")).unwrap();
         let files = ResearchFiles::new(storage.directory().to_path_buf());
         let first = temp.path().join("first");
         let second = temp.path().join("second");
         std::fs::create_dir(&first).unwrap();
         std::fs::create_dir(&second).unwrap();
         std::fs::create_dir(first.join("nested")).unwrap();
-        let mut before = scientify_core::workspace::empty();
+        let mut before = capsio_core::workspace::empty();
         before["projects"] =
             json!([{"id":"p1","name":"test","question":"","createdAt":"now","path":first}]);
         before["revision"] = json!(1);

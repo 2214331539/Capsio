@@ -183,10 +183,10 @@ it('lists a LaTeX folder that appears in the project as a manuscript', async () 
 });
 
 it('shows a paper that appears while the project files view is open', async () => {
-  localStorage.setItem('scientify.writing.manuscript.p1', '*');
+  localStorage.setItem('capsio.writing.manuscript.p1', '*');
   await setup([]);
   expect(await screen.findByRole('button', { name: '稿件：paper' })).toBeTruthy();
-  expect(localStorage.getItem('scientify.writing.manuscript.p1')).not.toBe('*');
+  expect(localStorage.getItem('capsio.writing.manuscript.p1')).not.toBe('*');
 });
 
 it('compiles a manuscript the first time it is opened and shows the PDF beside the source', async () => {

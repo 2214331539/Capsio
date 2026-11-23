@@ -77,7 +77,7 @@ public sealed partial class TranslationPopupWindow : Window
         TranslationText.FontSize = ExplanationText.FontSize = settings.DefaultTranslationFontSize;
         TranslationText.LineHeight = ExplanationText.LineHeight = ReadingLineHeight(settings.DefaultTranslationFontSize);
         TranslationText.FontFamily = ExplanationText.FontFamily = ReferenceTypography.CreateFont(settings.EnglishTranslationFontFamily);
-        BubbleTail.IsVisible = !ScientifyBridge.IsEmbedded && PopupVisualStyleCatalog.IsBubble(settings.PopupVisualStyle);
+        BubbleTail.IsVisible = !CapsioBridge.IsEmbedded && PopupVisualStyleCatalog.IsBubble(settings.PopupVisualStyle);
         var sculpted = PopupVisualStyleCatalog.IsBubbleV2(settings.PopupVisualStyle) || PopupVisualStyleCatalog.IsBubbleV3(settings.PopupVisualStyle);
         PopupSurface.Margin = BubbleTail.IsVisible ? new Thickness(sculpted ? 14 : 12, sculpted ? 4 : 3) : new Thickness(0);
         BubbleTail.Data = Geometry.Parse(sculpted ? "M0,8 C4,5 8,2 16,0 C13,5 13,11 16,16 C8,14 4,11 0,8 Z" : "M0,0 L18,8 L0,16 Z");
@@ -115,14 +115,14 @@ public sealed partial class TranslationPopupWindow : Window
         Avalonia.Automation.AutomationProperties.SetName(AskButton, chinese ? "发送问题" : "Send question");
         ToolTip.SetTip(DeepSeekChatButton, chinese ? "打开 AI 对话" : "Open AI conversation");
         Avalonia.Automation.AutomationProperties.SetName(DeepSeekChatButton, chinese ? "打开 AI 对话" : "Open AI conversation");
-        ScientifyAssistantButton.IsVisible = ScientifyBridge.IsEmbedded;
-        if (ScientifyBridge.IsEmbedded)
+        CapsioAssistantButton.IsVisible = CapsioBridge.IsEmbedded;
+        if (CapsioBridge.IsEmbedded)
         {
             InlineQuestionTextBox.MinWidth = 60;
             DeepSeekChatButton.MinWidth = 0;
         }
-        ToolTip.SetTip(ScientifyAssistantButton, chinese ? "在 Scientify 中继续此会话" : "Continue in Scientify");
-        Avalonia.Automation.AutomationProperties.SetName(ScientifyAssistantButton, chinese ? "在 Scientify 中继续此会话" : "Continue in Scientify");
+        ToolTip.SetTip(CapsioAssistantButton, chinese ? "在 Capsio 中继续此会话" : "Continue in Capsio");
+        Avalonia.Automation.AutomationProperties.SetName(CapsioAssistantButton, chinese ? "在 Capsio 中继续此会话" : "Continue in Capsio");
         ExplanationTitle.Text = chinese ? "AI 解释" : "AI explanation";
         ExplanationCopyButton.Content = chinese ? "复制" : "Copy";
         ExplanationRecordButton.Content = chinese ? "记录" : "Record";
@@ -291,7 +291,7 @@ public sealed partial class TranslationPopupWindow : Window
         EditMenu.IsEnabled = !_showOriginal && !_hasError && QuestionRow.IsVisible;
         if (_userSized) return;
         var content = ExplanationOverlay.IsVisible ? ExplanationText : TranslationText;
-        var glass = !ScientifyBridge.IsEmbedded && PopupVisualStyleCatalog.IsBubbleV3(_settings.PopupVisualStyle);
+        var glass = !CapsioBridge.IsEmbedded && PopupVisualStyleCatalog.IsBubbleV3(_settings.PopupVisualStyle);
         var inset = PopupSurface.Margin;
         ActionBarSurface.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         var outer = PopupRoot.Margin;
@@ -490,7 +490,7 @@ public sealed partial class TranslationPopupWindow : Window
     internal event EventHandler? AssistantRequested;
     private void AssistantClick(object? sender, RoutedEventArgs e) => AssistantRequested?.Invoke(this, EventArgs.Empty);
     internal string PendingQuestion => InlineQuestionTextBox.Text?.Trim() ?? "";
-    internal void SetAssistantBusy(bool busy) => ScientifyAssistantButton.IsEnabled = !busy;
+    internal void SetAssistantBusy(bool busy) => CapsioAssistantButton.IsEnabled = !busy;
     internal void ClearTransferredQuestion(string draft)
     {
         if (PendingQuestion == draft) InlineQuestionTextBox.Text = "";

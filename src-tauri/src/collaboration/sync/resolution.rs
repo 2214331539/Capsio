@@ -1,6 +1,6 @@
 //! Preview and resolve the conflict copies made by sync, under the same project lock.
 use super::*;
-use scientify_core::research::reject_links;
+use capsio_core::research::reject_links;
 
 const PREVIEW_BYTES: usize = 256 * 1024;
 
@@ -254,7 +254,7 @@ pub(crate) fn resolve(
                 )?;
             }
             data["revision"] = json!(revision + 1);
-            data["updatedAt"] = json!(scientify_core::workspace::now());
+            data["updatedAt"] = json!(capsio_core::workspace::now());
             device.storage.save(data, revision)?;
         }
     }

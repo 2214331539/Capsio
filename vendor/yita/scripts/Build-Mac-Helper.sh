@@ -22,7 +22,7 @@ xcrun swiftc -swift-version 5 -O -warnings-as-errors -sdk "$sdk_path" \
   "$repo_root/src/Yita.Native.Mac.Helper/main.swift" -o "$helper_binary" \
   -framework AppKit -framework ApplicationServices -framework Carbon
 plutil -lint "$helper_app/Contents/Info.plist"
-# Scientify signs with a fixed identity (APPLE_SIGNING_IDENTITY) when one is set, so
+# Capsio signs with a fixed identity (APPLE_SIGNING_IDENTITY) when one is set, so
 # macOS keeps Accessibility and Input Monitoring grants across updates; ad hoc otherwise.
 identity="${APPLE_SIGNING_IDENTITY:--}"
 codesign --force --sign "$identity" --identifier com.yita.desktop.native-helper "$helper_app"

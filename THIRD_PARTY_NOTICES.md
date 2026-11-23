@@ -1,6 +1,6 @@
 # Third-party notices
 
-Scientify's Apache-2.0 license applies to original project content. It does not relicense dependencies, upstream executables, fonts, icons, fixtures, or other third-party material. Retain the applicable copyright, license, and notice files when redistributing them.
+Capsio's Apache-2.0 license applies to original project content. It does not relicense dependencies, upstream executables, fonts, icons, fixtures, or other third-party material. Retain the applicable copyright, license, and notice files when redistributing them.
 
 ## Bundled Agent engine
 
@@ -10,7 +10,7 @@ Scientify's Apache-2.0 license applies to original project content. It does not 
 - License: [upstream Apache-2.0 text](docs/licenses/codex-LICENSE).
 - Notice: [upstream NOTICE](docs/licenses/codex-NOTICE), including its Ratatui attribution.
 
-The package is not committed to this repository. A binary distribution containing it must include the upstream license and notice. Changing `SCIENTIFY_CODEX_VERSION` requires reviewing the new release's notices; the files here cover only the pinned version above.
+The package is not committed to this repository. A binary distribution containing it must include the upstream license and notice. Changing `CAPSIO_CODEX_VERSION` requires reviewing the new release's notices; the files here cover only the pinned version above.
 
 ## Bundled LaTeX engine
 
@@ -48,16 +48,16 @@ Exact versions and transitive dependencies are recorded in [pnpm-lock.yaml](pnpm
 
 ## References, contributions, and research material
 
-Scientify bundles Yita's actual Avalonia frontend, portable translation runtime,
+Capsio bundles Yita's actual Avalonia frontend, portable translation runtime,
 and Windows/macOS selection components from revision `487a6ead65703ab47abb850eb9f21583b4598344`
 of https://github.com/2214331539/Yita. The pinned source and integration changes
-are documented in [vendor/yita/README.scientify.md](vendor/yita/README.scientify.md).
+are documented in [vendor/yita/README.capsio.md](vendor/yita/README.capsio.md).
 Yita retains its MIT license and InstantTranslate attribution. Native runtime,
 NuGet dependency and font notices are packaged under `yita/Licenses/` by
 [scripts/prepare-translation.mjs](scripts/prepare-translation.mjs).
-Scientify adds private host pipes, shared model access, scoped storage and AI
+Capsio adds private host pipes, shared model access, scoped storage and AI
 assistant handoff; it does not relicense third-party source as Apache-2.0.
 
-Oleafly, VS Code, and other projects appear in design research or documentation as references. Mentioning or studying a project does not grant permission to copy its code under Scientify's license. Any contributed third-party code must identify its source, version, license, and modifications and satisfy its original obligations.
+Oleafly, VS Code, and other projects appear in design research or documentation as references. Mentioning or studying a project does not grant permission to copy its code under Capsio's license. Any contributed third-party code must identify its source, version, license, and modifications and satisfy its original obligations.
 
 Do not add copyrighted papers, private datasets, credentials, or user research directories to the repository. Examples must be original, public-domain, or explicitly licensed for redistribution, with attribution where required. Provider APIs and any separately downloaded model weights have their own terms.

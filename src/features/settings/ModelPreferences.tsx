@@ -34,7 +34,7 @@ type Editing = {
 };
 
 /** The first split is who serves the model; other models are grouped by how they connect. */
-const OFFICIAL = ['scientify'] as const;
+const OFFICIAL = ['capsio'] as const;
 const otherGroups = [
   {
     title: 'ChatGPT 账号',
@@ -65,7 +65,7 @@ const otherGroups = [
   },
 ] as const;
 
-const isOfficial = (profile: ModelProfile) => serviceFor(profile).id === 'scientify';
+const isOfficial = (profile: ModelProfile) => serviceFor(profile).id === 'capsio';
 const groupOf = (profile: ModelProfile) =>
   otherGroups.find((group) =>
     (group.services as readonly string[]).includes(serviceFor(profile).id),
@@ -131,7 +131,7 @@ export function ModelPreferences({
           provider: first.provider,
           serviceId: first.id,
           endpoint:
-            first.id === 'scientify'
+            first.id === 'capsio'
               ? officialEndpoint || first.endpoints[0]?.url || ''
               : (first.endpoints[0]?.url ?? ''),
           model: '',
@@ -313,20 +313,20 @@ export function ModelPreferences({
           aria-pressed={kind === 'official'}
           onClick={() => setKind('official')}
         >
-          {t('Scientify 官方模型')}
+          {t('Capsio 官方模型')}
         </Button>
         <Button variant="ghost" aria-pressed={kind === 'other'} onClick={() => setKind('other')}>
           {t('其他模型')}
         </Button>
       </div>
       {kind === 'official' ? (
-        <section className="settings-models-group" aria-label={t('Scientify 官方模型')}>
+        <section className="settings-models-group" aria-label={t('Capsio 官方模型')}>
           <div className="settings-models-heading">
             <div>
-              <h3 className="settings-section-heading">{t('Scientify 官方模型')}</h3>
+              <h3 className="settings-section-heading">{t('Capsio 官方模型')}</h3>
               <p className="settings-note">
                 {t(
-                  '用 Scientify 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。',
+                  '用 Capsio 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。',
                 )}
               </p>
             </div>

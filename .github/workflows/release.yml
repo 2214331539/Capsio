@@ -21,7 +21,7 @@ jobs:
   validate:
     name: Validate release tag format
     # Source is pushed to two repositories; releases are published only here.
-    if: github.repository == '2214331539/Scientify'
+    if: github.repository == '2214331539/Capsio'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
@@ -151,7 +151,7 @@ jobs:
             flags=()
             if [ "$PRERELEASE" = true ]; then flags+=(--prerelease); fi
             gh release create "$RELEASE_TAG" --verify-tag --draft "${flags[@]}" \
-              --title "Scientify $RELEASE_TAG" --notes-file RELEASE_NOTES.md
+              --title "Capsio $RELEASE_TAG" --notes-file RELEASE_NOTES.md
           fi
           gh release upload "$RELEASE_TAG" ./*.exe SHA256SUMS.txt THIRD_PARTY_LICENSES_*.txt --clobber
           gh release edit "$RELEASE_TAG" --draft=false --prerelease="$PRERELEASE" --latest=false \

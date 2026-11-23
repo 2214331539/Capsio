@@ -35,7 +35,7 @@ const checkout = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const PER_INSTANCE = ['collaboration.json', 'collaboration-auth.json', 'collaboration'];
 
 // The fields and tables `rewrite_owned_metadata` in
-// crates/scientify-core/src/storage_location.rs moves; keep the two in step.
+// crates/capsio-core/src/storage_location.rs moves; keep the two in step.
 const PATH_FIELDS = new Set([
   'path',
   'root',
@@ -191,22 +191,22 @@ export function relocateWorkspace(workspace, from, to) {
 
 /** The same rule as `development_directory` in `src-tauri/src/data_location.rs`. */
 export function developmentWorkspace(env = process.env, root = checkout) {
-  if (env.SCIENTIFY_DATA_DIR) return resolve(env.SCIENTIFY_DATA_DIR);
-  return join(dirname(root), 'ScientifyDevData', 'workspace');
+  if (env.CAPSIO_DATA_DIR) return resolve(env.CAPSIO_DATA_DIR);
+  return join(dirname(root), 'CapsioDevData', 'workspace');
 }
 
 /**
  * The release build's workspace: where its storage pointer says, else the
  * default container. A Windows build started from this checkout (via
- * Scientify-MVP.cmd) treats the checkout as its installation folder.
+ * Capsio-MVP.cmd) treats the checkout as its installation folder.
  */
 export function releaseWorkspace(platform = process.platform, root = checkout, home = homedir()) {
   const installation =
-    platform === 'darwin' ? join(home, 'Library', 'Application Support', 'Scientify') : root;
-  const pointer = join(installation, 'scientify-storage.json');
+    platform === 'darwin' ? join(home, 'Library', 'Application Support', 'Capsio') : root;
+  const pointer = join(installation, 'capsio-storage.json');
   const container = existsSync(pointer)
     ? JSON.parse(readFileSync(pointer, 'utf8')).directory.replace(/^\\\\\?\\/, '')
-    : join(installation, 'ScientifyData');
+    : join(installation, 'CapsioData');
   return join(container, 'workspace');
 }
 

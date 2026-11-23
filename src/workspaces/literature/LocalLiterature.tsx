@@ -640,14 +640,14 @@ export function LocalLiterature({
     // The reader opens on this page by request, not as a return to where it was left.
     skipResumeHint(id);
     try {
-      localStorage.setItem(`scientify.reader.${id}`, String(page));
+      localStorage.setItem(`capsio.reader.${id}`, String(page));
     } catch {
       /* Optional location. */
     }
     setSession((s) => openLocalPdf(s, id, filename(bound.path)));
     requestAnimationFrame(() =>
       window.dispatchEvent(
-        new CustomEvent('scientify-pdf-page', {
+        new CustomEvent('capsio-pdf-page', {
           detail: { paperId: id, page },
         }),
       ),
@@ -948,7 +948,7 @@ export function LocalLiterature({
       if (!selectedPaths.has(path)) setSelectedPaths(new Set([path]));
       e.dataTransfer.effectAllowed = 'copyMove';
       e.dataTransfer.setData('text/plain', drag.current.join('\n'));
-      e.dataTransfer.setData('application/x-scientify-library', JSON.stringify(drag.current));
+      e.dataTransfer.setData('application/x-capsio-library', JSON.stringify(drag.current));
     },
     onDragEnd: () => {
       drag.current = [];

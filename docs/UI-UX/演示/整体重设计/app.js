@@ -1,5 +1,5 @@
 'use strict';
-/* Scientify redesign prototype, v2. Fictional data; no network, files or models.
+/* Capsio redesign prototype, v2. Fictional data; no network, files or models.
    The project center is the entry. Inside a project the sidebar holds its four modules
    and the active module's own resources; AI and notes open on the right. */
 
@@ -472,7 +472,7 @@ function titlebar() {
   if (p) right.push(`<button class="ib" data-act="aux" data-tab="ai" aria-pressed="${state.aux === 'ai'}" title="AI 助手  Ctrl J">${icon('ai')}<span class="lbl">AI</span></button>`);
   return `<header class="titlebar">
     <div class="tb-left">
-      <button class="brandmark" data-go="mine" title="回到项目中心"><img class="logo-light" src="${LOGO}scientify-light.png" alt=""><img class="logo-dark" src="${LOGO}scientify-dark.png" alt=""></button>
+      <button class="brandmark" data-go="mine" title="回到项目中心"><img class="logo-light" src="${LOGO}capsio-light.png" alt=""><img class="logo-dark" src="${LOGO}capsio-dark.png" alt=""></button>
       <button class="ib" data-act="sidebar" title="侧边栏  Ctrl \\">${icon('sidebar')}</button>
       <button class="ib" data-act="back" title="后退  Alt ←" ${state.cursor ? '' : 'style="opacity:.4"'}>${icon('back')}</button>
       <button class="ib" data-act="fwd" title="前进  Alt →" ${state.cursor < state.history.length - 1 ? '' : 'style="opacity:.4"'}>${icon('fwd')}</button>
@@ -1031,7 +1031,7 @@ function envTab(e) {
     return `<div class="env"><div class="page-inner narrow"><div class="interp">${icon('terminal')}<div class="t"><b>还没有 Python 环境</b><small>选择已有解释器，或在这个实验里新建虚拟环境。</small></div><button class="btn secondary sm">选择解释器</button><button class="btn primary sm">新建 venv</button></div></div></div>`;
   return `<div class="env"><div class="page-inner narrow">
     <div class="section first"><h2>解释器</h2>
-      <div class="interp">${icon('terminal')}<div class="t"><b>${e.py}</b><small>F:\\ScientifyData\\workspace\\proactive\\${e.name}\\.venv</small></div>${dot('ok', '可用')}<button class="btn secondary sm">切换</button></div></div>
+      <div class="interp">${icon('terminal')}<div class="t"><b>${e.py}</b><small>F:\\CapsioData\\workspace\\proactive\\${e.name}\\.venv</small></div>${dot('ok', '可用')}<button class="btn secondary sm">切换</button></div></div>
     <div class="section"><h2>已安装的包 <small>42</small></h2>
       <div class="toolbar"><label class="field">${icon('search', 'i-sm')}<input placeholder="搜索包"></label><span style="flex:1"></span><button class="btn ghost sm">按 requirements.txt 安装</button><button class="btn secondary sm" data-act="install">${icon('plus', 'i-sm')}安装包</button></div>
       <div class="pk th"><span>名称</span><span>版本</span><span>最新</span><span></span></div>
@@ -1421,7 +1421,7 @@ function renderReview() {
     ['实验', [['p/proactive/exp', '全部实验'], ['p/proactive/exp/timing/runs', '运行'], ['p/proactive/exp/timing/code', '代码'], ['p/proactive/exp/timing/git', '版本'], ['p/proactive/exp/timing/env', '环境']]],
     ['写作（规划中）', [['p/proactive/write', '稿件'], ['p/proactive/write/refs', '参考文献']]],
   ];
-  document.getElementById('review').innerHTML = `<strong>Scientify 整体重设计 v2</strong><span>交互原型 · 虚构数据</span>
+  document.getElementById('review').innerHTML = `<strong>Capsio 整体重设计 v2</strong><span>交互原型 · 虚构数据</span>
     <span class="seg">${[
       ['graphite', '石墨'],
       ['paper', '纸'],

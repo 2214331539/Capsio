@@ -39,7 +39,7 @@ function TranslationPreferences() {
   return isTauri() ? (
     <NativeTranslationPanel />
   ) : (
-    <p>{t('划词翻译请在 Scientify 桌面应用中使用。')}</p>
+    <p>{t('划词翻译请在 Capsio 桌面应用中使用。')}</p>
   );
 }
 
@@ -88,7 +88,7 @@ function DataPreferences({ store }: { store: WorkspaceStore }) {
             confirmReplace(
               'migrateLegacy',
               t(
-                '请先关闭 Electron 版 Scientify。将复制整个旧工作区到新目录，原数据保持不变。继续迁移？',
+                '请先关闭 Electron 版 Capsio。将复制整个旧工作区到新目录，原数据保持不变。继续迁移？',
               ),
             )
           }
@@ -199,7 +199,7 @@ export function SettingsDialog({
     { id: 'account', label: t('账号与订阅'), icon: UserRound },
     { id: 'collaboration', label: t('协作'), icon: Cloud },
     { id: 'data', label: t('数据与备份'), icon: Database },
-    { id: 'about', label: t('关于 Scientify'), icon: CircleHelp },
+    { id: 'about', label: t('关于 Capsio'), icon: CircleHelp },
   ] as const;
   return (
     <Modal
@@ -306,10 +306,10 @@ export function SettingsDialog({
         <section hidden={section !== 'data'} aria-label={t('数据与备份')}>
           <DataPreferences store={store} />
         </section>
-        <section hidden={section !== 'about'} aria-label={t('关于 Scientify')}>
+        <section hidden={section !== 'about'} aria-label={t('关于 Capsio')}>
           <div className="settings-about">
             <BrandMark />
-            <h3>Scientify</h3>
+            <h3>Capsio</h3>
             <p>{t('文献、笔记、实验和写作，在一个本地工作区里。')}</p>
             {version ? <span className="settings-version">{version}</span> : null}
             <UpdatePanel />

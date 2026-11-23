@@ -4,8 +4,8 @@
 //! and a `references.bib` beside them.
 use crate::library::{project, trusted, LibraryState};
 use crate::AppState;
-use scientify_core::library::LocalLibrary;
-use scientify_core::references::{self, bibtex, ris, zotero, Catalog, Reference};
+use capsio_core::library::LocalLibrary;
+use capsio_core::references::{self, bibtex, ris, zotero, Catalog, Reference};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -121,8 +121,7 @@ fn read_catalog(kind: &str, path: &str) -> Result<(Catalog, bool, String, String
         if !dir.join("zotero.sqlite").is_file() {
             return Err("这个文件夹里没有 zotero.sqlite。请选择 Zotero 的数据文件夹（设置 → 高级 → 文件和文件夹里能看到）。".into());
         }
-        let scratch =
-            std::env::temp_dir().join(format!("scientify-zotero-{}", uuid::Uuid::new_v4()));
+        let scratch = std::env::temp_dir().join(format!("capsio-zotero-{}", uuid::Uuid::new_v4()));
         let result = zotero::read(&dir, &scratch);
         let _ = std::fs::remove_dir_all(&scratch);
         let snapshot = result?;
@@ -543,7 +542,7 @@ mod tests {
 
     #[test]
     fn imports_collections_as_folders_once_with_notes_highlights_and_references() {
-        use scientify_core::references::{Annotation, Attachment, Collection, Item};
+        use capsio_core::references::{Annotation, Attachment, Collection, Item};
         let (temp, service, root) = library();
         let source = temp.path().join("zotero");
         std::fs::create_dir_all(&source).unwrap();
@@ -682,12 +681,11 @@ mod tests {
         assert!(other_root.join("references.bib").is_file());
     }
 
-    /// `SCIENTIFY_ZOTERO_DIR=… cargo test -p scientify -- --ignored live_zotero_import`
+    /// `CAPSIO_ZOTERO_DIR=… cargo test -p capsio -- --ignored live_zotero_import`
     #[test]
     #[ignore]
     fn live_zotero_import() {
-        let dir =
-            PathBuf::from(std::env::var_os("SCIENTIFY_ZOTERO_DIR").expect("SCIENTIFY_ZOTERO_DIR"));
+        let dir = PathBuf::from(std::env::var_os("CAPSIO_ZOTERO_DIR").expect("CAPSIO_ZOTERO_DIR"));
         let (temp, service, root) = library();
         let snapshot = zotero::read(&dir, &temp.path().join("scratch")).unwrap();
         let report = import(

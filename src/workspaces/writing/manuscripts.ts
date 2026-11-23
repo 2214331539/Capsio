@@ -80,8 +80,7 @@ export async function removeManuscript(store: WorkspaceStore, projectId: string,
   if (!ok) throw new Error(store.getState().error || t('保存失败'));
 }
 
-export const manuscriptChoiceKey = (projectId: string) =>
-  `scientify.writing.manuscript.${projectId}`;
+export const manuscriptChoiceKey = (projectId: string) => `capsio.writing.manuscript.${projectId}`;
 
 /** The manuscript the writing page shows: the one picked last, else the first ('*' is the file view). */
 export function currentManuscript(project: Project | undefined): Manuscript | null {

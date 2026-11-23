@@ -137,7 +137,7 @@ export function TeamProjects({
         <CenterHeader title={t('团队项目')} />
         <div className="center-scroll">
           <CenterEmpty icon={<UsersRound />} title={t('团队项目')}>
-            {t('登录和协作同步需要在 Scientify 桌面应用中使用。')}
+            {t('登录和协作同步需要在 Capsio 桌面应用中使用。')}
           </CenterEmpty>
         </div>
       </section>

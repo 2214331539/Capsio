@@ -1,7 +1,7 @@
 //! Native-only conversation -> thread registry. Never accept arbitrary thread ids
 //! from imported workspace JSON. Binding changes fail closed.
 use super::ThreadHandle;
-use scientify_core::workspace::valid_id;
+use capsio_core::workspace::valid_id;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 #[derive(Serialize, Deserialize)]
@@ -127,7 +127,7 @@ mod tests {
             domain: "code".into(),
             cwd: dir.path().display().to_string(),
             model: "model".into(),
-            model_provider: "scientify".into(),
+            model_provider: "capsio".into(),
             instruction_sources: vec![],
             sandbox: "workspaceWrite".into(),
             turns: vec![],

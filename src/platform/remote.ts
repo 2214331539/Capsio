@@ -21,7 +21,7 @@ export type RemoteEntry = {
 export type RemoteFile = { path: string; content: string; version: string };
 
 function command<T>(name: string, args?: Record<string, unknown>): Promise<T> {
-  if (!isTauri()) return Promise.reject(new Error('云主机只能在 Scientify 桌面应用中连接。'));
+  if (!isTauri()) return Promise.reject(new Error('云主机只能在 Capsio 桌面应用中连接。'));
   return invoke<T>(name, args);
 }
 

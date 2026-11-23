@@ -5,8 +5,8 @@ internal static class SettingsText
     internal static readonly IReadOnlyDictionary<string, (string English, string Chinese)> LocalizedText =
         new Dictionary<string, (string English, string Chinese)>(StringComparer.Ordinal)
         {
-            ["WindowTitle"] = ("Scientify · Translation settings", "Scientify · 翻译设置"),
-            ["HeaderTitle"] = ("Scientify", "Scientify"),
+            ["WindowTitle"] = ("Capsio · Translation settings", "Capsio · 翻译设置"),
+            ["HeaderTitle"] = ("Capsio", "Capsio"),
             ["HeaderSubtitle"] = ("Translation behavior, appearance, and connection", "调整翻译行为、外观与服务连接"),
             ["InterfaceLanguage"] = ("Interface language", "界面语言"),
             ["GeneralTitle"] = ("General", "常规"),

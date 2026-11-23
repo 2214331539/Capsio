@@ -27,7 +27,7 @@ function size(bytes: number) {
 function lastPage(paperId: string | null) {
   if (!paperId) return 0;
   try {
-    return Math.trunc(Number(localStorage.getItem(`scientify.reader.${paperId}`))) || 0;
+    return Math.trunc(Number(localStorage.getItem(`capsio.reader.${paperId}`))) || 0;
   } catch {
     return 0;
   }

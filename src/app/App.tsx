@@ -9,6 +9,7 @@ import { applyAppearance, migrateTheme, usePreferences } from '../i18n/preferenc
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Bot, Cpu, Keyboard, MessageSquarePlus, PanelLeft, Settings, X } from 'lucide-react';
 import { BrandMark } from '../components/layout/BrandMark';
+import { toast } from '../components/feedback';
 import { secondaryViews as secondary } from '../components/navigation/workspaces';
 import { WritingWorkspace } from '../workspaces/writing/WritingWorkspace';
 import { ProjectForm } from '../features/projects/ProjectForm';
@@ -165,12 +166,12 @@ const locationDefault: Location = { workspace: 'literature', view: '', paperId: 
 const SIDEBAR_WIDTH = 232;
 const MIN_DOCK_WIDTH = 280;
 const MIN_CENTRAL_WIDTH = 320;
-function readSession(storageKey = 'scientify.ui.v2'): UISession {
+function readSession(storageKey = 'capsio.ui.v2'): UISession {
   try {
     const value = JSON.parse(
       localStorage.getItem(storageKey) ??
-        localStorage.getItem('scientify.ui.v2') ??
-        localStorage.getItem('scientify.ui.v1') ??
+        localStorage.getItem('capsio.ui.v2') ??
+        localStorage.getItem('capsio.ui.v1') ??
         'null',
     );
     if ([1, 2].includes(value?.version) && value.locations && typeof value.locations === 'object')
@@ -347,7 +348,7 @@ function useCloseProtection(store: WorkspaceStore, backend: ResearchBackend) {
       );
       // Only exits addressed to this window: a plain listen also hears ones sent to the other window.
       register(
-        listen('scientify-exit-requested', () => void requestClose(), {
+        listen('capsio-exit-requested', () => void requestClose(), {
           target: getCurrentWindow().label,
         }),
       );
@@ -384,7 +385,7 @@ export function App({
   const data = useStore(store, (s) => s.data),
     phase = useStore(store, (s) => s.phase),
     error = useStore(store, (s) => s.error);
-  const sessionKey = windowMode === 'browser' ? 'scientify.ui.v2' : `scientify.ui.v2.${windowMode}`;
+  const sessionKey = windowMode === 'browser' ? 'capsio.ui.v2' : `capsio.ui.v2.${windowMode}`;
   const [ui, setUI] = useState(() => {
       const saved = readSession(sessionKey);
       // The desktop starts in the project center.
@@ -521,7 +522,18 @@ export function App({
   useEffect(() => {
     if (!isTauri() || windowMode === 'browser') return;
     void getCurrentWindow()
-      .setTitle('Scientify')
+      .setTitle('Capsio')
+      .catch(() => {});
+  }, [windowMode]);
+  useEffect(() => {
+    if (!isTauri() || windowMode !== 'main') return;
+    void invoke<boolean>('renamed_app_removable')
+      .then((removable) => {
+        if (removable)
+          toast(t('Scientify 已更名为 Capsio，项目和设置都已接上。旧版 Scientify 可以卸载了。'), {
+            duration: 15000,
+          });
+      })
       .catch(() => {});
   }, [windowMode]);
   useEffect(() => {
@@ -592,8 +604,8 @@ export function App({
         })
         .catch((error) => store.setState({ error: translateError(String(error)) }));
     };
-    window.addEventListener('scientify-preview-file', open);
-    return () => window.removeEventListener('scientify-preview-file', open);
+    window.addEventListener('capsio-preview-file', open);
+    return () => window.removeEventListener('capsio-preview-file', open);
   }, [store]);
   useEffect(() => {
     const open = (event: Event) => {
@@ -618,8 +630,8 @@ export function App({
         })
         .catch((error) => store.setState({ error: translateError(String(error)) }));
     };
-    window.addEventListener('scientify-preview-url', open);
-    return () => window.removeEventListener('scientify-preview-url', open);
+    window.addEventListener('capsio-preview-url', open);
+    return () => window.removeEventListener('capsio-preview-url', open);
   }, [project?.id, workspace, store]);
   const view = secondary[workspace].some((v) => v.id === location.view)
     ? location.view
@@ -718,8 +730,8 @@ export function App({
   // A passage sent to the AI opens its panel; the panel itself takes the draft.
   useEffect(() => {
     const open = () => setUI((s) => ({ ...s, dock: 'assistant', dockOpen: true }));
-    window.addEventListener('scientify-assistant-ask', open);
-    return () => window.removeEventListener('scientify-assistant-ask', open);
+    window.addEventListener('capsio-assistant-ask', open);
+    return () => window.removeEventListener('capsio-assistant-ask', open);
   }, []);
   useEffect(() => {
     const onShortcut = (event: KeyboardEvent) => {
@@ -772,7 +784,7 @@ export function App({
         patchLocation({ workspace: 'experiments', view: 'files' });
       } else if (command === 'app.newConversation') {
         openTool('assistant');
-        window.dispatchEvent(new CustomEvent('scientify-new-conversation'));
+        window.dispatchEvent(new CustomEvent('capsio-new-conversation'));
       }
     };
     window.addEventListener('keydown', onShortcut);
@@ -831,7 +843,7 @@ export function App({
   function openTarget(id: string, target: SearchTarget | { source: WorkContext }) {
     markOpened(id);
     if ('source' in target)
-      window.dispatchEvent(new CustomEvent('scientify-open-source', { detail: target.source }));
+      window.dispatchEvent(new CustomEvent('capsio-open-source', { detail: target.source }));
     else goToTarget(target);
   }
   // A chat moved out of the inbox offers to open its project at the assistant.
@@ -847,8 +859,8 @@ export function App({
           tool: 'assistant',
         });
     };
-    window.addEventListener('scientify-open-project', open);
-    return () => window.removeEventListener('scientify-open-project', open);
+    window.addEventListener('capsio-open-project', open);
+    return () => window.removeEventListener('capsio-open-project', open);
   }, []);
   // A notice about a finished conversation opens it: its project where the user last was, with
   // the assistant showing that conversation.
@@ -877,7 +889,7 @@ export function App({
       const select = () => {
         let accepted = false;
         window.dispatchEvent(
-          new CustomEvent('scientify-assistant-open-session', {
+          new CustomEvent('capsio-assistant-open-session', {
             detail: { scope: projectId, id: conversationId, accept: () => (accepted = true) },
           }),
         );
@@ -903,8 +915,8 @@ export function App({
       const detail = (event as CustomEvent<string>).detail;
       if (detail === 'account' || detail === 'about') setDialog({ kind: detail });
     };
-    window.addEventListener('scientify-open-settings', open);
-    return () => window.removeEventListener('scientify-open-settings', open);
+    window.addEventListener('capsio-open-settings', open);
+    return () => window.removeEventListener('capsio-open-settings', open);
   }, []);
   function returnToProjects(page?: CenterPage) {
     setUI((s) => ({ ...s, projectId: null, page: page ?? s.page }));
@@ -965,7 +977,7 @@ export function App({
   useEffect(() => {
     if (!pendingNote) return;
     const frame = requestAnimationFrame(() => {
-      window.dispatchEvent(new CustomEvent('scientify-open-note', { detail: pendingNote }));
+      window.dispatchEvent(new CustomEvent('capsio-open-note', { detail: pendingNote }));
       setPendingNote(null);
     });
     return () => cancelAnimationFrame(frame);
@@ -1027,12 +1039,12 @@ export function App({
         if (typeof paper?.assetId === 'string' || w === 'literature')
           try {
             localStorage.setItem(
-              `scientify.reader.${paper?.assetId ?? source.resourceId}`,
+              `capsio.reader.${paper?.assetId ?? source.resourceId}`,
               String(source.page),
             );
             requestAnimationFrame(() =>
               window.dispatchEvent(
-                new CustomEvent('scientify-pdf-page', {
+                new CustomEvent('capsio-pdf-page', {
                   detail: { paperId: source.resourceId, page: source.page },
                 }),
               ),
@@ -1061,7 +1073,7 @@ export function App({
         },
       }));
     };
-    window.addEventListener('scientify-open-source', open);
+    window.addEventListener('capsio-open-source', open);
     const openBrowser = (event: Event) => {
       const detail = (event as CustomEvent<{ projectId: string; tabId: string }>).detail;
       const target = data?.projects.find((p) => p.id === detail?.projectId);
@@ -1081,12 +1093,12 @@ export function App({
         },
       }));
     };
-    window.addEventListener('scientify-open-browser', openBrowser);
-    window.addEventListener('scientify-open-run', openRun);
+    window.addEventListener('capsio-open-browser', openBrowser);
+    window.addEventListener('capsio-open-run', openRun);
     return () => {
-      window.removeEventListener('scientify-open-source', open);
-      window.removeEventListener('scientify-open-browser', openBrowser);
-      window.removeEventListener('scientify-open-run', openRun);
+      window.removeEventListener('capsio-open-source', open);
+      window.removeEventListener('capsio-open-browser', openBrowser);
+      window.removeEventListener('capsio-open-run', openRun);
     };
   }, [data, windowMode]);
   function openDialog(next: Dialog) {
@@ -1331,7 +1343,7 @@ export function App({
         <UsersRound />
       </Button>
     ) : undefined;
-  // Signed out, Scientify is only the account page: at first launch and after signing out.
+  // Signed out, Capsio is only the account page: at first launch and after signing out.
   // The browser preview has no accounts and stays open.
   if (
     cloudWatched &&
@@ -1362,7 +1374,7 @@ export function App({
                 store={store}
                 onOpenRemote={openRemoteProject}
                 onOpenSource={(source) =>
-                  window.dispatchEvent(new CustomEvent('scientify-open-source', { detail: source }))
+                  window.dispatchEvent(new CustomEvent('capsio-open-source', { detail: source }))
                 }
                 onSyncSettings={() => openDialog({ kind: 'collaboration' })}
               />
@@ -1469,7 +1481,7 @@ export function App({
                         keys: enabledKeys(data?.settings.shortcuts, 'app.newConversation'),
                         run: () => {
                           openTool('assistant');
-                          window.dispatchEvent(new CustomEvent('scientify-new-conversation'));
+                          window.dispatchEvent(new CustomEvent('capsio-new-conversation'));
                         },
                       },
                     ]

@@ -1,5 +1,5 @@
 //! Local edit policy mirrors the server; personal projects have no collaboration role.
-use scientify_core::storage::Storage;
+use capsio_core::storage::Storage;
 use serde_json::Value;
 
 /// Refresh the local role before syncing; a revoked membership becomes read-only locally.
@@ -16,7 +16,7 @@ pub(crate) fn remember_role(storage: &Storage, project: &str, role: &str) -> Res
         }
         info["collaborationRole"] = serde_json::json!(role);
         data["revision"] = serde_json::json!(revision + 1);
-        data["updatedAt"] = serde_json::json!(scientify_core::workspace::now());
+        data["updatedAt"] = serde_json::json!(capsio_core::workspace::now());
         match storage.save(data, revision) {
             Ok(_) => return Ok(true),
             Err(e) if e.contains("已发生变化") => continue,

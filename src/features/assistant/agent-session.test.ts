@@ -105,7 +105,7 @@ describe('AgentSession', () => {
             item: {
               id: 'tool1',
               type: 'dynamicToolCall',
-              tool: 'scientify_run_status',
+              tool: 'capsio_run_status',
               status: 'completed',
               contentItems: [
                 { type: 'inputText', text: '{"run":{"id":"r1","status":"completed"}}' },

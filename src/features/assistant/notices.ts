@@ -19,7 +19,7 @@ export const assistantNotices = createStore<{
   watching: string | null;
 }>(() => ({ items: [], watching: null }));
 
-export const openConversationEvent = 'scientify-open-conversation';
+export const openConversationEvent = 'capsio-open-conversation';
 
 export function watchAssistant(projectId: string | null) {
   if (assistantNotices.getState().watching !== projectId)

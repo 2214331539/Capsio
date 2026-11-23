@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 
 const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
 const decode = (value) => JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
+// Sessions signed before the rename name the old service; they stay valid until they expire.
+const RENAMED = { 'capsio-collaboration': 'scientify-collaboration' };
 
 export function hashSecret(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -26,7 +28,7 @@ export function verifyToken(token, secret, issuer, now = Math.floor(Date.now() /
     throw new Error('Invalid token');
   }
   const payload = decode(parts[1]);
-  if (payload.iss !== issuer || !payload.sub || Number(payload.exp) <= now) {
+  if ((payload.iss !== issuer && payload.iss !== RENAMED[issuer]) || !payload.sub || Number(payload.exp) <= now) {
     throw new Error('Expired token');
   }
   return payload;

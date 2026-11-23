@@ -139,7 +139,7 @@ fn relative(value: &str) -> Result<PathBuf, String> {
 }
 fn confined(root: &Path, value: &str) -> Result<PathBuf, String> {
     let p = root.join(relative(value)?);
-    scientify_core::research::reject_links(&p)?;
+    capsio_core::research::reject_links(&p)?;
     Ok(p)
 }
 fn process_path(path: &Path) -> PathBuf {
@@ -172,10 +172,10 @@ fn resolve_program(root: &Path, value: &str) -> Result<PathBuf, String> {
         // locates a venv from bin/python; executing its symlink target instead
         // silently switches the run back to the base interpreter.
         let target = p.canonicalize().map_err(|e| e.to_string())?;
-        scientify_core::research::reject_links(&target)?;
+        capsio_core::research::reject_links(&target)?;
     }
     #[cfg(not(unix))]
-    scientify_core::research::reject_links(&p)?;
+    capsio_core::research::reject_links(&p)?;
     if !p.is_file() {
         return Err("可执行程序不存在。".into());
     }
@@ -193,11 +193,11 @@ impl ExperimentState {
         let mut entries = BTreeMap::new();
         if let Ok(items) = fs::read_dir(&directory) {
             for item in items.flatten() {
-                if scientify_core::research::reject_links(&item.path()).is_err() {
+                if capsio_core::research::reject_links(&item.path()).is_err() {
                     continue;
                 }
                 let record = item.path().join("record.json");
-                if scientify_core::research::reject_links(&record).is_err()
+                if capsio_core::research::reject_links(&record).is_err()
                     || !fs::metadata(&record).is_ok_and(|m| m.is_file() && m.len() <= 256 * 1024)
                 {
                     continue;
@@ -384,7 +384,7 @@ impl ExperimentState {
         let id = uuid::Uuid::new_v4().to_string();
         let lease = crate::code::Lease::run(&root)?;
         let directory = self.directory.join(&id);
-        scientify_core::research::reject_links(&directory)?;
+        capsio_core::research::reject_links(&directory)?;
         let run = Run {
             id: id.clone(),
             project,
@@ -438,7 +438,8 @@ impl ExperimentState {
         #[cfg(not(windows))]
         let mut params = serde_json::json!({"command":command,"processId":id,"cwd":process_path(&cwd),
             "streamStdoutStderr":true,"disableTimeout":true,"disableOutputCap":true,
-            "env":{"PYTHONUNBUFFERED":"1","SCIENTIFY_RUN_DIR":artifacts},
+            // SCIENTIFY_RUN_DIR keeps scripts written before the rename working.
+            "env":{"PYTHONUNBUFFERED":"1","CAPSIO_RUN_DIR":artifacts,"SCIENTIFY_RUN_DIR":artifacts},
             "sandboxPolicy":execution::policy(&process_path(&root),Some(&artifacts))});
         #[cfg(windows)]
         let mut params = {
@@ -456,7 +457,7 @@ impl ExperimentState {
             #[cfg(not(test))]
             let argv = vec![
                 binary.display().to_string(),
-                "--scientify-runner".into(),
+                "--capsio-runner".into(),
                 request.display().to_string(),
             ];
             #[cfg(test)]
@@ -470,13 +471,14 @@ impl ExperimentState {
             fs::write(private.join("heartbeat"), "alive").map_err(|e| e.to_string())?;
             #[cfg_attr(not(test), allow(unused_mut))]
             let mut params = serde_json::json!({"command":argv,"processId":id,"cwd":process_path(&cwd),"disableTimeout":true,
-                "env":{"PYTHONUNBUFFERED":"1","SCIENTIFY_RUN_DIR":artifacts},
+                // SCIENTIFY_RUN_DIR keeps scripts written before the rename working.
+                "env":{"PYTHONUNBUFFERED":"1","CAPSIO_RUN_DIR":artifacts,"SCIENTIFY_RUN_DIR":artifacts},
                 "sandboxPolicy":execution::policy(&process_path(&root),Some(&artifacts))});
             // Release builds pass the request path as an argument; the test binary's runner
             // fixture reads it from the environment instead.
             #[cfg(test)]
             {
-                params["env"]["SCIENTIFY_FIXTURE_RUNNER"] = serde_json::json!(request);
+                params["env"]["CAPSIO_FIXTURE_RUNNER"] = serde_json::json!(request);
             }
             params
         };
@@ -503,7 +505,7 @@ impl ExperimentState {
                 }
                 if let Some(environment) = environment.filter(|info| info.trusted) {
                     let mut env = environment.variables;
-                    env.insert("SCIENTIFY_RUN_DIR".into(), artifacts.display().to_string());
+                    env.insert("CAPSIO_RUN_DIR".into(), artifacts.display().to_string());
                     let result = crate::local_process::run_logged(
                         &executable,
                         &config.args,
@@ -531,7 +533,7 @@ impl ExperimentState {
                 session.run_command(params, &entry.cancel, |event| {
                     #[cfg(windows)]
                     {
-                        scientify_core::research::reject_links(&private)?;
+                        capsio_core::research::reject_links(&private)?;
                         if fs::metadata(&log_path).is_ok_and(|meta| meta.len() > 64 * 1024 * 1024) {
                             limit_hit = true;
                             entry.cancel.store(true, Ordering::SeqCst);
@@ -760,7 +762,7 @@ pub(crate) fn read_log(state: &ExperimentState, run_id: &str) -> Result<String, 
     } else {
         folder.join("output.log")
     };
-    scientify_core::research::reject_links(&path)?;
+    capsio_core::research::reject_links(&path)?;
     let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
     let len = file.metadata().map_err(|e| e.to_string())?.len();
     file.seek(SeekFrom::Start(len.saturating_sub(256 * 1024)))
@@ -783,7 +785,7 @@ fn list_artifacts(
     root: &Path,
     directory: &Path,
     depth: usize,
-    entries: &mut Vec<scientify_core::research::ResearchFile>,
+    entries: &mut Vec<capsio_core::research::ResearchFile>,
 ) -> Result<(), String> {
     if depth > 16 {
         return Err("产物目录超过 16 层。".into());
@@ -794,7 +796,7 @@ fn list_artifacts(
             continue;
         }
         let path = item.path();
-        if scientify_core::research::reject_links(&path).is_err() {
+        if capsio_core::research::reject_links(&path).is_err() {
             continue;
         }
         let meta = fs::symlink_metadata(&path).map_err(|e| e.to_string())?;
@@ -804,7 +806,7 @@ fn list_artifacts(
         if entries.len() >= 10000 {
             return Err("产物超过 10000 项。".into());
         }
-        entries.push(scientify_core::research::ResearchFile {
+        entries.push(capsio_core::research::ResearchFile {
             path: path
                 .strip_prefix(root)
                 .map_err(|e| e.to_string())?
@@ -824,16 +826,16 @@ fn list_artifacts(
 pub fn experiment_artifacts(
     state: State<'_, ExperimentState>,
     run_id: String,
-) -> Result<Vec<scientify_core::research::ResearchFile>, String> {
+) -> Result<Vec<capsio_core::research::ResearchFile>, String> {
     artifacts(&state, &run_id)
 }
 pub(crate) fn artifacts(
     state: &ExperimentState,
     run_id: &str,
-) -> Result<Vec<scientify_core::research::ResearchFile>, String> {
+) -> Result<Vec<capsio_core::research::ResearchFile>, String> {
     state.entry(run_id)?;
     let root = state.directory.join(run_id).join("artifacts");
-    scientify_core::research::reject_links(&root)?;
+    capsio_core::research::reject_links(&root)?;
     let mut entries = Vec::new();
     list_artifacts(&root, &root, 0, &mut entries)?;
     entries.sort_by(|a, b| a.path.cmp(&b.path));
@@ -844,14 +846,14 @@ pub fn experiment_read_artifact(
     state: State<'_, ExperimentState>,
     run_id: String,
     path: String,
-) -> Result<scientify_core::research::FileContent, String> {
+) -> Result<capsio_core::research::FileContent, String> {
     read_artifact(&state, &run_id, path)
 }
 pub(crate) fn read_artifact(
     state: &ExperimentState,
     run_id: &str,
     path: String,
-) -> Result<scientify_core::research::FileContent, String> {
+) -> Result<capsio_core::research::FileContent, String> {
     if path
         .replace('\\', "/")
         .split('/')
@@ -875,7 +877,7 @@ pub(crate) fn read_artifact(
         return Err("产物需为不超过 2 MiB 的文本文件。".into());
     }
     let content = String::from_utf8(bytes).map_err(|_| "产物需使用 UTF-8 编码。")?;
-    Ok(scientify_core::research::FileContent {
+    Ok(capsio_core::research::FileContent {
         path,
         content,
         version: "read-only".into(),
@@ -995,7 +997,7 @@ mod tests {
                 None,
             )
             .unwrap();
-        let good = state.start("p1".into(), root, config("allowed", "printf '{\"loss\":0.2}' > \"$SCIENTIFY_RUN_DIR/metrics.json\"; echo results-written", vec![]), None, None).unwrap();
+        let good = state.start("p1".into(), root, config("allowed", "printf '{\"loss\":0.2}' > \"$CAPSIO_RUN_DIR/metrics.json\"; echo results-written", vec![]), None, None).unwrap();
         let deadline = std::time::Instant::now() + Duration::from_secs(60);
         while state.run(&good.id).unwrap().status == "running"
             || state.run(&bad.id).unwrap().status == "running"
@@ -1025,7 +1027,7 @@ mod tests {
         use std::os::windows::ffi::{OsStrExt, OsStringExt};
         use windows::{core::PCWSTR, Win32::Storage::FileSystem::GetShortPathNameW};
         let temp = tempfile::Builder::new()
-            .prefix("Scientify sandbox long directory ")
+            .prefix("Capsio sandbox long directory ")
             .tempdir()
             .unwrap();
         // GitHub's Windows runner uses an 8.3 alias in its temp path. Exercise
@@ -1070,7 +1072,7 @@ mod tests {
             cwd: ".".into(),
         };
         let bad=state.start("p1".into(),root.clone(),config("blocked",format!("$ErrorActionPreference='Stop'; Set-Content -LiteralPath '{}' -Value 'overwritten' -Encoding Ascii",outside.display().to_string().replace('\'',"''"))),None,None).unwrap();
-        let good=state.start("p1".into(),root,config("allowed","$ErrorActionPreference='Stop'; Set-Content -LiteralPath (Join-Path $env:SCIENTIFY_RUN_DIR 'metrics.json') -Value '{\"loss\":0.2}' -Encoding Ascii; Write-Output 'results-written'".into()),None,None).unwrap();
+        let good=state.start("p1".into(),root,config("allowed","$ErrorActionPreference='Stop'; Set-Content -LiteralPath (Join-Path $env:CAPSIO_RUN_DIR 'metrics.json') -Value '{\"loss\":0.2}' -Encoding Ascii; Write-Output 'results-written'".into()),None,None).unwrap();
         let deadline = std::time::Instant::now() + Duration::from_secs(60);
         while state.run(&good.id).unwrap().status == "running"
             || state.run(&bad.id).unwrap().status == "running"

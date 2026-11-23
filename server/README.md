@@ -1,4 +1,4 @@
-# Scientify Collaboration Server
+# Capsio Collaboration Server
 
 This service is the collaboration control plane. It owns authentication,
 project membership, sync metadata, OSS signed URLs and the optional official
@@ -10,7 +10,7 @@ file or place OSS, SMS, model or JWT secrets in the desktop application.
 
 The first deployment uses a dedicated PostgreSQL database and an isolated
 service/port. Existing services on the host must not share this database or
-the Scientify environment file.
+the Capsio environment file.
 
 `HOST=127.0.0.1` is suitable behind Nginx; use `0.0.0.0` only when the port
 is protected by a firewall. `OSS_ENDPOINT` is the region endpoint without the
@@ -18,7 +18,7 @@ bucket name (for example `oss-cn-beijing.aliyuncs.com`); the service builds
 Alibaba OSS virtual-hosted signed URLs from `OSS_BUCKET`.
 
 The desktop client stores short-lived access and refresh tokens in its local
-Scientify data directory. Refresh tokens rotate on use. PDF and other binary
+Capsio data directory. Refresh tokens rotate on use. PDF and other binary
 files are uploaded directly to OSS through short-lived signed URLs; the API
 only stores blob metadata and never proxies their bytes.
 

@@ -1,4 +1,4 @@
-//! Yita owns capture and presentation; Scientify owns model access and application lifetime.
+//! Yita owns capture and presentation; Capsio owns model access and application lifetime.
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{
@@ -55,7 +55,7 @@ fn executable<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<PathBuf, S
 
 fn model_identity(model: &Value) -> String {
     format!(
-        "scientify-{:x}",
+        "capsio-{:x}",
         Sha256::digest(
             json!([model["provider"], model["endpoint"], model["model"]])
                 .to_string()
@@ -102,7 +102,7 @@ async fn ensure_started<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<
     let mut command = tokio::process::Command::new(executable(app)?);
     command
         .env(
-            "SCIENTIFY_TRANSLATION_DATA",
+            "CAPSIO_TRANSLATION_DATA",
             crate::local_process::process_path(&directory),
         )
         .stdin(Stdio::piped())
@@ -256,7 +256,7 @@ fn official_problem(error: crate::ai::stream::StreamError) -> crate::ai::stream:
 }
 
 /// The request for the saved model, and the official-model token it carries
-/// when the model is Scientify's own. `stale` is a token the server refused.
+/// when the model is Capsio's own. `stale` is a token the server refused.
 async fn model_request<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     body: &Value,
@@ -272,7 +272,7 @@ async fn model_request<R: tauri::Runtime>(
     let endpoint = model["endpoint"].as_str().ok_or("请先配置 AI 服务地址。")?;
     // The official models take this device's model token, which is kept in
     // memory only and never in the credential store.
-    let official = if model["serviceId"] == "scientify" {
+    let official = if model["serviceId"] == "capsio" {
         Some(crate::collaboration::model_token(&state, stale.is_some(), stale).await?)
     } else {
         None
@@ -384,15 +384,15 @@ mod tests {
         let endpoint = format!("http://{}", listener.local_addr().unwrap());
         let temp = tempfile::tempdir().unwrap();
         let storage =
-            Arc::new(scientify_core::storage::Storage::open(temp.path().join("data")).unwrap());
-        let mut data = scientify_core::workspace::empty();
+            Arc::new(capsio_core::storage::Storage::open(temp.path().join("data")).unwrap());
+        let mut data = capsio_core::workspace::empty();
         data["revision"] = json!(1);
         data["settings"]["model"] =
             json!({"provider":"openai","endpoint":endpoint,"model":"saved-model"});
         storage.save(data.clone(), 0).unwrap();
         let app = tauri::test::mock_builder()
             .manage(crate::AppState {
-                files: Arc::new(scientify_core::research::ResearchFiles::new(
+                files: Arc::new(capsio_core::research::ResearchFiles::new(
                     storage.directory().into(),
                 )),
                 storage,
@@ -459,16 +459,16 @@ mod tests {
     fn the_official_model_takes_this_devices_model_token_not_a_stored_key() {
         let temp = tempfile::tempdir().unwrap();
         let storage =
-            Arc::new(scientify_core::storage::Storage::open(temp.path().join("data")).unwrap());
-        let mut data = scientify_core::workspace::empty();
+            Arc::new(capsio_core::storage::Storage::open(temp.path().join("data")).unwrap());
+        let mut data = capsio_core::workspace::empty();
         data["revision"] = json!(1);
         data["settings"]["model"] = json!({
-            "provider":"openai","serviceId":"scientify","endpoint":"https://127.0.0.1:9","model":"official"
+            "provider":"openai","serviceId":"capsio","endpoint":"https://127.0.0.1:9","model":"official"
         });
         storage.save(data, 0).unwrap();
         let app = tauri::test::mock_builder()
             .manage(crate::AppState {
-                files: Arc::new(scientify_core::research::ResearchFiles::new(
+                files: Arc::new(capsio_core::research::ResearchFiles::new(
                     storage.directory().into(),
                 )),
                 storage,

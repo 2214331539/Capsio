@@ -71,7 +71,7 @@ it('asks for a password when the key is refused, then shows the host folder', as
   expect(within(files).getByText('train.py')).toBeTruthy();
   expect(screen.getByText('SSH: deploy@lab')).toBeTruthy();
   // The host and folder are remembered for next time.
-  expect(JSON.parse(localStorage.getItem('scientify.remote.recent')!)[0]).toEqual({
+  expect(JSON.parse(localStorage.getItem('capsio.remote.recent')!)[0]).toEqual({
     target: 'deploy@lab',
     folder: '/home/pp',
   });

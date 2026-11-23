@@ -163,8 +163,8 @@ export function canEditProject(
   );
 }
 
-export const collaborationStateEvent = 'scientify-collaboration-state-changed';
-export const projectSyncRequestEvent = 'scientify-project-sync-request';
+export const collaborationStateEvent = 'capsio-collaboration-state-changed';
+export const projectSyncRequestEvent = 'capsio-project-sync-request';
 
 /**
  * Ask the open window to sync a project soon. Sync finds changes by scanning
@@ -197,7 +197,7 @@ function desktop<T>(message: string, command: string, args?: Record<string, unkn
   });
 }
 
-const settingsOnly = '协作设置只能在 Scientify 桌面应用中使用。';
+const settingsOnly = '协作设置只能在 Capsio 桌面应用中使用。';
 
 export const collaboration = {
   status(): Promise<CollaborationState> {
@@ -244,11 +244,11 @@ export const collaboration = {
     return desktop(settingsOnly, 'collaboration_logout');
   },
   accessToken(): Promise<string> {
-    return desktop('官方模型只能在 Scientify 桌面应用中使用。', 'collaboration_access_token');
+    return desktop('官方模型只能在 Capsio 桌面应用中使用。', 'collaboration_access_token');
   },
   /** This device's token for the official models; `renew` replaces a revoked one. */
   modelToken(renew = false): Promise<string> {
-    return desktop('官方模型只能在 Scientify 桌面应用中使用。', 'collaboration_model_token', {
+    return desktop('官方模型只能在 Capsio 桌面应用中使用。', 'collaboration_model_token', {
       renew,
     });
   },
@@ -273,13 +273,13 @@ export const collaboration = {
   /** Create a cloud project; pass a local project's id to publish that project. */
   createProject(name: string, projectId?: string): Promise<CollaborationProject> {
     return desktop(
-      '协作项目只能在 Scientify 桌面应用中创建。',
+      '协作项目只能在 Capsio 桌面应用中创建。',
       'collaboration_create_project',
       projectId ? { name, projectId } : { name },
     );
   },
   members(projectId: string): Promise<{ members: CollaborationMember[] }> {
-    return desktop('项目成员只能在 Scientify 桌面应用中查看。', 'collaboration_project_members', {
+    return desktop('项目成员只能在 Capsio 桌面应用中查看。', 'collaboration_project_members', {
       projectId,
     });
   },
@@ -288,7 +288,7 @@ export const collaboration = {
     phone: string,
     role: 'editor' | 'reviewer' | 'viewer',
   ): Promise<{ ok: true }> {
-    return desktop('项目成员只能在 Scientify 桌面应用中邀请。', 'collaboration_invite_member', {
+    return desktop('项目成员只能在 Capsio 桌面应用中邀请。', 'collaboration_invite_member', {
       projectId,
       phone,
       role,
@@ -296,19 +296,19 @@ export const collaboration = {
   },
   /** Remove a member or pending invitation (`invite:<phone>`); members may remove themselves. */
   removeMember(projectId: string, memberId: string): Promise<{ ok: true }> {
-    return desktop('项目成员只能在 Scientify 桌面应用中管理。', 'collaboration_remove_member', {
+    return desktop('项目成员只能在 Capsio 桌面应用中管理。', 'collaboration_remove_member', {
       projectId,
       memberId,
     });
   },
   /** Bring one synced project up to date with the server in both directions. */
   syncProject(projectId: string): Promise<SyncOutcome> {
-    return desktop('项目同步只能在 Scientify 桌面应用中使用。', 'collaboration_sync_project', {
+    return desktop('项目同步只能在 Capsio 桌面应用中使用。', 'collaboration_sync_project', {
       projectId,
     });
   },
   syncState(projectId: string): Promise<ProjectSyncState> {
-    return desktop('项目同步只能在 Scientify 桌面应用中使用。', 'collaboration_sync_state', {
+    return desktop('项目同步只能在 Capsio 桌面应用中使用。', 'collaboration_sync_state', {
       projectId,
     });
   },

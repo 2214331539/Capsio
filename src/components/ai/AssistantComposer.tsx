@@ -294,7 +294,7 @@ export function AssistantComposer({
           {skillMode && skillsAvailable && !skillsLoading && !options.length ? (
             <p role="status">
               {t(
-                '没有匹配的可用技能。技能需先安装到工作区 .agents/skills 或 Scientify 的 Codex 数据目录。',
+                '没有匹配的可用技能。技能需先安装到工作区 .agents/skills 或 Capsio 的 Codex 数据目录。',
               )}
             </p>
           ) : null}

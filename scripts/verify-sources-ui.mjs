@@ -74,7 +74,7 @@ try {
     createRoot(document.getElementById('root')).render(React.createElement(App));
   </script></body></html>`,
   );
-  await page.goto(`${process.env.SCIENTIFY_UI_URL}/.test-artifacts/sources-ui/${name}`, {
+  await page.goto(`${process.env.CAPSIO_UI_URL}/.test-artifacts/sources-ui/${name}`, {
     waitUntil: 'commit',
   });
   await page.getByRole('button', { name: '新建分组', exact: true }).click();

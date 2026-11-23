@@ -1,6 +1,6 @@
 use super::trust;
 use crate::{agent::process::EventSink, local_process, AppState};
-use scientify_core::storage::Storage;
+use capsio_core::storage::Storage;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -237,7 +237,7 @@ pub(crate) fn environment(
         ("TMPDIR", "tmp"),
     ] {
         let path = container.join(relative);
-        scientify_core::research::reject_links(&path)?;
+        capsio_core::research::reject_links(&path)?;
         std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
         env.insert(
             key.into(),
@@ -379,7 +379,7 @@ impl PythonState {
         if let Ok(files) = std::fs::read_dir(&directory) {
             for file in files.flatten() {
                 let path = file.path().join("record.json");
-                if scientify_core::research::reject_links(&path).is_err()
+                if capsio_core::research::reject_links(&path).is_err()
                     || !std::fs::metadata(&path).is_ok_and(|m| m.len() < 256 * 1024)
                 {
                     continue;
@@ -465,7 +465,7 @@ impl PythonState {
         let root = PathBuf::from(&task.root);
         let lease = crate::code::Lease::run(&root)?;
         let directory = self.directory.join(&task.id);
-        scientify_core::research::reject_links(&directory)?;
+        capsio_core::research::reject_links(&directory)?;
         std::fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
         std::fs::write(
             directory.join("record.json"),
@@ -620,7 +620,7 @@ pub async fn python_command<R: tauri::Runtime>(
         if let Action::Log { id } = request {
             let _ = tasks.entry(&project_id, &id)?;
             let file = tasks.directory.join(id).join("output.log");
-            scientify_core::research::reject_links(&file)?;
+            capsio_core::research::reject_links(&file)?;
             use std::io::{Read, Seek, SeekFrom};
             let mut file = std::fs::File::open(file).map_err(|e| e.to_string())?;
             let size = file.metadata().map_err(|e| e.to_string())?.len();

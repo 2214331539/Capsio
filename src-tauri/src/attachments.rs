@@ -27,7 +27,7 @@ fn valid_project(project: &str) -> Result<(), String> {
 
 /// The project's attachments folder, created on first use.
 pub(crate) fn root(
-    storage: &scientify_core::storage::Storage,
+    storage: &capsio_core::storage::Storage,
     project: &str,
 ) -> Result<PathBuf, String> {
     valid_project(project)?;

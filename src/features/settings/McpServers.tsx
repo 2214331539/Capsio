@@ -41,7 +41,7 @@ type Draft = {
 const empty: Draft = { name: '', kind: 'command', command: '', args: '', env: '', url: '' };
 
 /**
- * Settings → AI: MCP servers, the tools the Agent gets beyond Scientify's own
+ * Settings → AI: MCP servers, the tools the Agent gets beyond Capsio's own
  * (Zotero, a database, a company wiki…), like ChatGPT's connectors.
  */
 export function McpServers({ store }: { store: WorkspaceStore }) {

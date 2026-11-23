@@ -48,7 +48,7 @@ export type DocsState = {
 type Prefs = Pick<DocsState, 'recent' | 'starred' | 'expanded'>;
 
 const SAVE_DELAY = 700;
-const prefsKey = (projectId: string) => `scientify.docs.${projectId}`;
+const prefsKey = (projectId: string) => `capsio.docs.${projectId}`;
 function loadPrefs(projectId: string): Prefs {
   try {
     const value = JSON.parse(localStorage.getItem(prefsKey(projectId)) ?? '{}') as Partial<Prefs>;

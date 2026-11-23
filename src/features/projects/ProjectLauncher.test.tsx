@@ -32,7 +32,7 @@ afterEach(() => {
 function fixture(data = emptyWorkspace()) {
   const save = vi.fn(async (value: Workspace) => structuredClone(value));
   const backend: WorkspaceBackend = {
-    load: async () => ({ workspace: data, directory: 'D:/ScientifyData', legacyAvailable: false }),
+    load: async () => ({ workspace: data, directory: 'D:/CapsioData', legacyAvailable: false }),
     save,
     restore: async () => data,
     migrateLegacy: async () => data,
@@ -96,10 +96,10 @@ it('opens on my projects, then filters, sorts and remembers the view', async () 
   expect(
     within(screen.getByRole('table', { name: '项目列表' })).getByRole('button', { name: 'Beta' }),
   ).toBeTruthy();
-  expect(localStorage.getItem('scientify.projects.view')).toBe('list');
+  expect(localStorage.getItem('capsio.projects.view')).toBe('list');
   await user.click(mine.getByRole('button', { name: /排序/ }));
   await user.click(await screen.findByRole('menuitemradio', { name: /名称/ }));
-  expect(localStorage.getItem('scientify.projects.sort')).toBe('name');
+  expect(localStorage.getItem('capsio.projects.sort')).toBe('name');
 });
 
 it('creates a project in two steps from an empty project list', async () => {
@@ -133,7 +133,7 @@ it('explains that team projects need the desktop app and keeps local data untouc
   const { user, store, save } = fixture(data);
   await user.click(await nav(/团队项目/));
   const team = within(screen.getByRole('region', { name: '团队项目' }));
-  expect(team.getByText('登录和协作同步需要在 Scientify 桌面应用中使用。')).toBeTruthy();
+  expect(team.getByText('登录和协作同步需要在 Capsio 桌面应用中使用。')).toBeTruthy();
   expect(store.getState().data?.projects).toEqual(data.projects);
   expect(save).not.toHaveBeenCalled();
   // Projects that never synced stay personal, whatever space older versions gave them.

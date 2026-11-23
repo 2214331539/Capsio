@@ -85,13 +85,13 @@ const TerminalPanel = lazy(() =>
 );
 
 /** Editor tabs that are not files. */
-const RUNS_TAB = 'scientify:runs';
-const PANEL_HEIGHT_KEY = 'scientify.experiments.panelHeight';
-const GIT_TAB = 'scientify:git';
-const FOLDERS_TAB = 'scientify:folders';
+const RUNS_TAB = 'capsio:runs';
+const PANEL_HEIGHT_KEY = 'capsio.experiments.panelHeight';
+const GIT_TAB = 'capsio:git';
+const FOLDERS_TAB = 'capsio:folders';
 const diffTab = (path: string, staged: boolean) =>
-  `scientify:diff:${staged ? 'index' : 'work'}:${path}`;
-const isCustomTab = (id?: string | null) => !!id?.startsWith('scientify:');
+  `capsio:diff:${staged ? 'index' : 'work'}:${path}`;
+const isCustomTab = (id?: string | null) => !!id?.startsWith('capsio:');
 const baseName = (path: string) =>
   path.replaceAll('\\', '/').replace(/\/+$/, '').split('/').at(-1) || path;
 
@@ -687,7 +687,7 @@ export function ExperimentWorkspace({
           />
         ),
       };
-    const diff = /^scientify:diff:(index|work):(.+)$/.exec(id);
+    const diff = /^capsio:diff:(index|work):(.+)$/.exec(id);
     if (diff)
       return {
         title: `${baseName(diff[2])} (${t(diff[1] === 'index' ? '已暂存' : '工作树')})`,
@@ -704,7 +704,7 @@ export function ExperimentWorkspace({
         ),
       };
     return {
-      title: id.slice('scientify:'.length),
+      title: id.slice('capsio:'.length),
       icon: <FileText size={14} />,
       render: () => <p className="sf-ide-empty">{t('此标签已不可用')}</p>,
     };

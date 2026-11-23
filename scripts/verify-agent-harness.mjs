@@ -85,19 +85,19 @@ function start(model) {
     'features.memories=false',
     'features.external_agent_memory_import=false',
     `model=${JSON.stringify(model)}`,
-    'model_provider="scientify"',
-    'model_providers.scientify.name="Scientify"',
-    `model_providers.scientify.base_url=${JSON.stringify(endpoint)}`,
-    'model_providers.scientify.wire_api="responses"',
-    'model_providers.scientify.requires_openai_auth=false',
-    'model_providers.scientify.env_key="SCIENTIFY_AGENT_KEY"',
+    'model_provider="capsio"',
+    'model_providers.capsio.name="Capsio"',
+    `model_providers.capsio.base_url=${JSON.stringify(endpoint)}`,
+    'model_providers.capsio.wire_api="responses"',
+    'model_providers.capsio.requires_openai_auth=false',
+    'model_providers.capsio.env_key="CAPSIO_AGENT_KEY"',
   ];
   const child = spawn(
     binary,
     ['app-server', '--listen', 'stdio://', ...overrides.flatMap((value) => ['-c', value])],
     {
       cwd: work,
-      env: { ...process.env, CODEX_HOME: home, SCIENTIFY_AGENT_KEY: 'local-test-only' },
+      env: { ...process.env, CODEX_HOME: home, CAPSIO_AGENT_KEY: 'local-test-only' },
       windowsHide: true,
       stdio: ['pipe', 'pipe', 'pipe'],
     },
@@ -161,7 +161,7 @@ function start(model) {
 async function initialized(model) {
   const engine = start(model);
   await engine.rpc('initialize', {
-    clientInfo: { name: 'scientify-test', title: 'Scientify test', version: '0.0.0' },
+    clientInfo: { name: 'capsio-test', title: 'Capsio test', version: '0.0.0' },
     capabilities: { experimentalApi: false },
   });
   engine.child.stdin.write('{"method":"initialized","params":{}}\n');
@@ -169,7 +169,7 @@ async function initialized(model) {
 }
 const params = {
   cwd: work,
-  modelProvider: 'scientify',
+  modelProvider: 'capsio',
   approvalPolicy: 'never',
   sandbox: 'read-only',
 };

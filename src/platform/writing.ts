@@ -3,7 +3,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 export type LocalTex = { distribution: string; bin: string; latexmk: boolean; engines: string[] };
 export type TexStatus = {
   local: LocalTex | null;
-  /** The version of the Tectonic bundled with Scientify. */
+  /** The version of the Tectonic bundled with Capsio. */
   builtin: string | null;
 };
 export type Engine = 'auto' | 'builtin' | 'local';

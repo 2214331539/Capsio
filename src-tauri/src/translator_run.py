@@ -1,4 +1,4 @@
-"""Scientify's full-text translation: BabelDOC through pdf2zh-next.
+"""Capsio's full-text translation: BabelDOC through pdf2zh-next.
 
 Takes pdf2zh-next's own command-line options and reports on stdout, one JSON
 object per line: {"type": "progress", "value": 0-100, "stage": ...}, then
@@ -17,9 +17,9 @@ def emit(kind, **fields):
 
 
 def use_bundled_assets():
-    """Fonts, the layout model and tokenizer data ship with Scientify; BabelDOC would
+    """Fonts, the layout model and tokenizer data ship with Capsio; BabelDOC would
     otherwise look for them, and download them, in its cache under the home folder."""
-    folder = os.environ.get("SCIENTIFY_BABELDOC_ASSETS")
+    folder = os.environ.get("CAPSIO_BABELDOC_ASSETS")
     if not folder:
         return
     bundled = Path(folder)

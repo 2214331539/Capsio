@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scientify · 实验管理原型</title>
+<title>Capsio · 实验管理原型</title>
 <style>
-/* Scientify experiment workspace prototype: an IDE layout inside the app shell. */
+/* Capsio experiment workspace prototype: an IDE layout inside the app shell. */
 :root,
 [data-theme='graphite'] {
   --chrome: #f4f4f5;
@@ -1932,7 +1932,7 @@ textarea.msg-input {
 <body>
 <div id="root"></div>
 <script>
-/* Scientify experiment workspace prototype (IDE layout). Sample data only. */
+/* Capsio experiment workspace prototype (IDE layout). Sample data only. */
 (() => {
   'use strict';
 
@@ -2018,7 +2018,7 @@ textarea.msg-input {
     ['numpy', '2.1.1', ''],
     ['pandas', '2.2.2', ''],
     ['pyyaml', '6.0.2', ''],
-    ['scientify', '0.1.0', ''],
+    ['capsio', '0.1.0', ''],
     ['scikit-learn', '1.5.2', '1.5.3'],
     ['torch', '2.4.1', '2.5.1'],
     ['matplotlib', '3.9.2', ''],
@@ -2150,7 +2150,7 @@ textarea.msg-input {
       lang: 'py',
       marks: { 16: 'mod', 22: 'add', 23: 'add', 24: 'add' },
       text: `import argparse
-import scientify
+import capsio
 from src.dataset import load_events
 from src.model import TimingModel
 
@@ -2171,7 +2171,7 @@ def main():
         loss = model.train_epoch(data.train, lr=args.lr)
         f1, false_trigger, latency = model.evaluate(data.valid)
         # 指标写进这个实验的 metrics.jsonl，实验页的曲线会实时更新
-        scientify.log(step=epoch, loss=loss, f1=f1,
+        capsio.log(step=epoch, loss=loss, f1=f1,
                       false_trigger=false_trigger, latency=latency)
 
 
@@ -2230,8 +2230,8 @@ def load_events(path, window=8):
     'configs/ablation.yaml': { lang: 'yaml', marks: { 1: 'add', 2: 'add', 3: 'add', 4: 'add', 5: 'add', 6: 'add' }, text: `# 消融组合\nvariants:\n  - {audio: off}\n  - {state: off}\n  - {window: 4}\nseeds: [0, 1, 2]` },
     'scripts/sweep.py': { lang: 'py', marks: {}, text: `import itertools\nimport subprocess\n\n# 也可以直接用“新建实验”给参数填多个值，结果会合成一个实验组\nfor lr in ["1e-4", "3e-4", "1e-3"]:\n    subprocess.run(["python", "train.py", "--lr", lr], check=True)` },
     'eval.py': { lang: 'py', marks: {}, text: `import argparse\nfrom src.model import TimingModel\n\nparser = argparse.ArgumentParser()\nparser.add_argument("--checkpoint", default="outputs/best.pt")\nargs = parser.parse_args()\nprint("evaluating", args.checkpoint)` },
-    'requirements.txt': { lang: 'txt', marks: {}, text: `torch==2.4.1\nnumpy>=2.0\npandas==2.2.2\npyyaml\nscikit-learn\nmatplotlib\nscientify` },
-    'README.md': { lang: 'md', marks: {}, text: `# 时机模型\n\n训练：python train.py --window 8 --audio on --state on\n扫参：python scripts/sweep.py\n\n指标通过 scientify.log() 写入实验目录的 metrics.jsonl。` },
+    'requirements.txt': { lang: 'txt', marks: {}, text: `torch==2.4.1\nnumpy>=2.0\npandas==2.2.2\npyyaml\nscikit-learn\nmatplotlib\ncapsio` },
+    'README.md': { lang: 'md', marks: {}, text: `# 时机模型\n\n训练：python train.py --window 8 --audio on --state on\n扫参：python scripts/sweep.py\n\n指标通过 capsio.log() 写入实验目录的 metrics.jsonl。` },
     'repro:README.md': { lang: 'md', marks: {}, text: `# ProAgent\n\nOfficial implementation of "ProAgent: Proactive Assistance from Activity Trajectories".\n\n## Setup\nconda env create -f environment.yml\n\n## Train\nbash scripts/train.sh --seed 0` },
     'repro:environment.yml': { lang: 'yaml', marks: {}, text: `name: proagent\nchannels:\n  - pytorch\n  - conda-forge\ndependencies:\n  - python=3.10\n  - pytorch=2.2\n  - numpy\n  - pip:\n      - transformers==4.40.0` },
     'repro:train.py': { lang: 'py', marks: {}, text: `import argparse\nfrom proagent.model import ProAgent\n\nparser = argparse.ArgumentParser()\nparser.add_argument("--seed", type=int, default=0)\nargs = parser.parse_args()\nProAgent().fit(seed=args.seed)` },
@@ -2273,7 +2273,7 @@ def load_events(path, window=8):
       ['m', '    data = load_events("data/events.csv")', '    data = load_events("data/events.csv", window=args.window)'],
       ['', '    model = TimingModel(audio=args.audio == "on", state=args.state == "on")', '    model = TimingModel(audio=args.audio == "on", state=args.state == "on")'],
       ['a', '', '        # 指标写进这个实验的 metrics.jsonl'],
-      ['a', '', '        scientify.log(step=epoch, loss=loss, f1=f1,'],
+      ['a', '', '        capsio.log(step=epoch, loss=loss, f1=f1,'],
       ['a', '', '                      false_trigger=false_trigger, latency=latency)'],
     ],
     'configs/ablation.yaml': [
@@ -2500,12 +2500,12 @@ def load_events(path, window=8):
 
   function searchView() {
     const hits = [
-      ['train.py', [[22, 'scientify.log(step=epoch, loss=loss, f1=f1,']]],
+      ['train.py', [[22, 'capsio.log(step=epoch, loss=loss, f1=f1,']]],
       ['scripts/sweep.py', [[4, '# 也可以直接用“新建实验”给参数填多个值']]],
-      ['README.md', [[6, '指标通过 scientify.log() 写入']]],
+      ['README.md', [[6, '指标通过 capsio.log() 写入']]],
     ];
     return `${viewTitle('搜索')}
-      <div class="inputbox">${icon('search', 13)}<input value="scientify.log" aria-label="搜索"><span class="opt">Aa</span><span class="opt">ab</span><span class="opt">.*</span></div>
+      <div class="inputbox">${icon('search', 13)}<input value="capsio.log" aria-label="搜索"><span class="opt">Aa</span><span class="opt">ab</span><span class="opt">.*</span></div>
       <div class="inputbox" style="opacity:.75"><input placeholder="替换"></div>
       <div class="muted" style="font-size:12px;padding:4px 4px 2px">3 个文件中有 3 个结果</div>
       ${hits.map(([p, ls]) => `<div class="sec"><button class="row" data-act="open-file" data-path="${p}">${icon('down', 12)}${icon('file', 14)}<span class="name">${p.split('/').at(-1)}</span><span class="dir">${p.includes('/') ? p.split('/').slice(0, -1).join('/') : ''}</span><span class="end">${ls.length}</span></button>
@@ -2631,7 +2631,7 @@ def load_events(path, window=8):
         html += [
           ['dadd', '        for step, batch_loss in model.steps(data.train, lr=args.lr):'],
           ['dadd', '            if step % 100 == 0:'],
-          ['dadd', '                scientify.log(step=step, loss=batch_loss)'],
+          ['dadd', '                capsio.log(step=step, loss=batch_loss)'],
           ['dadd', '        val_loss, f1, false_trigger, latency = model.evaluate(data.valid)'],
         ]
           .map(([c, t]) => `<div class="ln ${c}"><span class="no">+</span><span class="tx">${highlight(t, 'py')}</span></div>`)
@@ -2699,7 +2699,7 @@ def load_events(path, window=8):
       </div>
       <div><h2 style="margin-top:0">了解</h2>
         <button class="lk" data-act="dialog" data-kind="new">${icon('flask', 15)}新建实验：写目的、改参数，或一次建一组</button>
-        <button class="lk" data-act="toast" data-text="import scientify; scientify.log(step=..., loss=...) 把指标写进 metrics.jsonl">${icon('chart', 15)}记录指标：scientify.log()</button>
+        <button class="lk" data-act="toast" data-text="import capsio; capsio.log(step=..., loss=...) 把指标写进 metrics.jsonl">${icon('chart', 15)}记录指标：capsio.log()</button>
         <button class="lk" data-act="quick" data-kind="interp">${icon('box', 15)}选择 Python 解释器（状态栏右下角）</button>
         <button class="lk" data-act="toast" data-text="Ctrl+I 在编辑器里就地修改；Ctrl+J 打开 AI 对话">${icon('sparkles', 15)}和 AI 一起写代码</button>
       </div></div></div>`;
@@ -2890,11 +2890,11 @@ def load_events(path, window=8):
   // ---------- Panel ----------
   function runLog(r) {
     if (!r) return '';
-    const lines = [`<span class="muted">$ python train.py ${Object.entries(r.params).map(([k, v]) => `--${k} ${v}`).join(' ')}</span>`, `<span class="muted">[Scientify] 实验 ${esc(r.name)} · 提交 ${r.ver}${r.dirty ? ' + 未提交的更改（已保存快照）' : ''} · Python ${envText()}</span>`];
+    const lines = [`<span class="muted">$ python train.py ${Object.entries(r.params).map(([k, v]) => `--${k} ${v}`).join(' ')}</span>`, `<span class="muted">[Capsio] 实验 ${esc(r.name)} · 提交 ${r.ver}${r.dirty ? ' + 未提交的更改（已保存快照）' : ''} · Python ${envText()}</span>`];
     for (const [e, f] of r.curves.f1) lines.push(`epoch ${String(e).padStart(2)} | loss ${(r.curves.loss.find((p) => p[0] === e)?.[1] ?? 0).toFixed(3)} | f1 ${f.toFixed(3)}`);
     if (r.status === 'running') lines.push(`<span class="muted">…</span>`);
     if (r.status === 'failed') lines.push(`<span class="err">Traceback (most recent call last):\n  File "<a data-act="open-file" data-path="train.py">train.py</a>", line 20, in main\n    loss = model.train_epoch(data.train, lr=args.lr)\n${esc(r.error)}. Tried to allocate 2.00 GiB</span>`);
-    if (r.status === 'done') lines.push(`<span class="muted">[Scientify] 进程以退出码 0 结束 · 用时 ${r.dur} · 记录了 3 个指标</span>`);
+    if (r.status === 'done') lines.push(`<span class="muted">[Capsio] 进程以退出码 0 结束 · 用时 ${r.dur} · 记录了 3 个指标</span>`);
     return lines.join('\n');
   }
   function panel() {

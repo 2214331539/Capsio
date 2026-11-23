@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scientify · 文档页原型</title>
+<title>Capsio · 文档页原型</title>
 <style>
-/* Scientify experiment workspace prototype: an IDE layout inside the app shell. */
+/* Capsio experiment workspace prototype: an IDE layout inside the app shell. */
 :root,
 [data-theme='graphite'] {
   --chrome: #f4f4f5;
@@ -2191,7 +2191,7 @@ textarea.msg-input {
 <body>
 <div id="root"></div>
 <script>
-/* Scientify docs prototype: a project knowledge base with a block editor. Sample data only. */
+/* Capsio docs prototype: a project knowledge base with a block editor. Sample data only. */
 (() => {
   'use strict';
 
@@ -2303,7 +2303,7 @@ textarea.msg-input {
     { id: 'bench', title: '流式视频 benchmark 对比', icon: '📊', parent: 'lit', at: '11-10 11:22', by: '尾号 0718' },
     { id: 'weekly', title: '周报', icon: '🗂️', parent: 'home', at: '11-09 20:00', by: '尾号 0718' },
     { id: 'w45', title: '第 45 周周报', icon: '📄', parent: 'weekly', at: '11-09 20:00', by: '尾号 0718' },
-    { id: 'old', title: '笔记（迁移）', icon: '📒', parent: 'home', at: '11-16 11:52', by: 'Scientify' },
+    { id: 'old', title: '笔记（迁移）', icon: '📒', parent: 'home', at: '11-16 11:52', by: 'Capsio' },
     { id: 'n1', title: 'CapMem 阅读', icon: '📄', parent: 'old', at: '10-23 23:06', by: '尾号 0718' },
     { id: 'n2', title: 'OASIS OnDemand', icon: '📄', parent: 'old', at: '10-24 14:30', by: '尾号 0718' },
   ];
@@ -2596,10 +2596,10 @@ frames_per_second: 2</pre>`),
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><button class="link" data-act="ai-weekly">把这周三次组会纪要汇总成周报，放到“周报”下面</button><button class="link" data-act="toast" data-text="AI 正在把这页的待办整理成表格…">把这页的待办整理成表格</button><button class="link" data-act="toast" data-text="AI 正在根据文献库补充相关工作…">根据文献库补全“主动式助手相关工作”</button></div>`;
     else if (S.ai === 'ask')
       c = `<div class="msg me">把这周三次组会纪要汇总成周报，放到“周报”下面</div>
-        <div class="tool-line">${icon('check', 12)}scientify_list_docs · 16 页</div><div class="tool-line">${icon('check', 12)}scientify_read_doc · 11 月 16 日组会</div><div class="tool-line">${icon('check', 12)}scientify_read_doc · 11 月 9 日组会</div><div class="tool-line">${icon('check', 12)}scientify_read_doc · 11 月 2 日组会</div>
+        <div class="tool-line">${icon('check', 12)}capsio_list_docs · 16 页</div><div class="tool-line">${icon('check', 12)}capsio_read_doc · 11 月 16 日组会</div><div class="tool-line">${icon('check', 12)}capsio_read_doc · 11 月 9 日组会</div><div class="tool-line">${icon('check', 12)}capsio_read_doc · 11 月 2 日组会</div>
         <div class="approve"><b>新建文档：周报 / 第 46 周周报</b><div class="muted">本周进展 3 条、下周计划 2 条，引用了“11 月 16 日组会”。</div><div class="approve-acts"><button class="btn sm primary" data-act="ai-allow">允许</button><button class="btn sm">本会话允许</button><button class="btn sm">拒绝</button></div></div>`;
     else
-      c = `<div class="msg me">把这周三次组会纪要汇总成周报，放到“周报”下面</div><div class="tool-line">${icon('check', 12)}读了 3 页组会纪要</div><div class="tool-line">${icon('check', 12)}scientify_create_doc · 第 46 周周报</div><div>已新建 ${pageLink('w46')}，包括本周进展和下周计划，待办保留了负责人。</div>`;
+      c = `<div class="msg me">把这周三次组会纪要汇总成周报，放到“周报”下面</div><div class="tool-line">${icon('check', 12)}读了 3 页组会纪要</div><div class="tool-line">${icon('check', 12)}capsio_create_doc · 第 46 周周报</div><div>已新建 ${pageLink('w46')}，包括本周进展和下周计划，待办保留了负责人。</div>`;
     return `<aside class="dock" data-note="8"><div class="dock-head"><b style="font-weight:600">AI 助手</b><span class="muted" style="font-size:12px;margin-left:6px">${esc(page(S.page)?.title || '文档')}</span><span class="spacer"></span><button class="ib" data-act="dock" data-id="ai">${icon('x', 15)}</button></div><div class="dock-body">${c}</div><div class="composer">提问，或描述要整理的内容…</div></aside>`;
   }
 
@@ -2634,7 +2634,7 @@ frames_per_second: 2</pre>`),
     if (d.kind === 'share') {
       title = '分享“' + esc(page(S.page).title) + '”';
       body = `<p class="muted">团队项目的成员按项目角色访问全部文档。单页权限放在第三期。</p>${MEMBERS.map((m) => `<div class="member"><span class="face ${m.id === 'me' ? 'a' : m.id === 'u6018' ? 'b' : 'c'}">${m.tail.slice(-4)}</span><span style="flex:1">${m.tail}${m.you ? '（你）' : ''}</span><span class="muted">${m.role}</span></div>`).join('')}<div class="member"><input class="field" placeholder="输入手机号邀请成员" style="flex:1"><button class="btn primary">邀请</button></div>`;
-      foot = `<button class="btn" data-act="toast" data-text="已复制页面链接，成员点开后在 Scientify 里定位到这页">${icon('link', 13)}复制链接</button><span class="spacer"></span>` + foot;
+      foot = `<button class="btn" data-act="toast" data-text="已复制页面链接，成员点开后在 Capsio 里定位到这页">${icon('link', 13)}复制链接</button><span class="spacer"></span>` + foot;
     } else if (d.kind === 'trash') {
       title = '回收站';
       body = `<p class="muted">删除的页面连同子页面保留 30 天。</p>${S.trash.map((t) => `<div class="member"><span class="pi">${t.icon}</span><span style="flex:1">${esc(t.title)}<span class="muted sm"> · ${esc(t.at)}</span></span><button class="btn sm" data-act="restore" data-id="${t.id}">恢复</button><button class="btn sm" data-act="purge" data-id="${t.id}">彻底删除</button></div>`).join('') || '<p class="muted">回收站是空的</p>'}`;
@@ -2663,7 +2663,7 @@ frames_per_second: 2</pre>`),
       ['块编辑器', '每段都是一个块：左侧“+”插入、“⋮⋮”拖动和打开块菜单；输入 / 打开斜杠菜单；选中文字出现浮动工具栏（点“阈值从 0.5 往上调…”这句试试）。研究块：论文、论文页码引用、实验运行、稿件、项目文件。', 'Notion 块模型、飞书文档'],
       ['同步冲突', '两人改了同一块时保留双方，在这里选择；改不同块会自动合并。打开“StreamingJev 时机模型消融”查看。', 'Git 合并冲突的块级版本'],
       ['目录', '标题生成，点击跳转。', '飞书文档右侧目录'],
-      ['右侧栏', '“文档”可以在任何页面并排写一页；“AI”能读写文档，写入前审批。', 'Scientify 现有右侧栏'],
+      ['右侧栏', '“文档”可以在任何页面并排写一页；“AI”能读写文档，写入前审批。', 'Capsio 现有右侧栏'],
       ['AI 助手', '点“把这周三次组会纪要汇总成周报”试试：读三页、审批后新建一页。', 'Codex 工具调用和审批'],
     ];
   }

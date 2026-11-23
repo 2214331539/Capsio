@@ -157,7 +157,7 @@ export function MarkdownLiveEditor({
   useEffect(() => {
     if (useFallback || !host.current) return;
     const preview = livePreview(images, (url) => {
-      if (/^scientify-page:\d+$/.test(url)) callbacks.current.onPage?.(Number(url.split(':')[1]));
+      if (/^capsio-page:\d+$/.test(url)) callbacks.current.onPage?.(Number(url.split(':')[1]));
       else if (/^https?:\/\//i.test(url))
         void Promise.resolve(callbacks.current.onLink?.(url)).catch((reason) =>
           setError(String(reason)),

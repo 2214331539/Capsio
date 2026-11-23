@@ -7,7 +7,7 @@ threads on `thread/start` and are restored by Codex on `thread/resume`.
 `execution.rs` defines the shared workspace-write policy. Formal runs use a
 dedicated app-server connection and `command/exec`. On Windows, Codex 0.158
 does not support streamed output or terminate for sandboxed commands. The
-application's `--scientify-runner` entrypoint runs inside the sandbox, writes
+application's `--capsio-runner` entrypoint runs inside the sandbox, writes
 raw byte logs, and uses a Job Object, stop file and host heartbeat for cleanup.
 It opens no Tauri window. Runs do not depend on the chat lifecycle.
 Network and filesystem escalation are never granted by host tools. Normal AI
@@ -21,7 +21,7 @@ Protocol reference: https://developers.openai.com/codex/app-server
 Windows engine startup uses `quiet_process.rs`: stdio pipes with an explicit
 handle allowlist, `CREATE_NO_WINDOW`, and a private non-interactive desktop.
 Upstream startup helpers inherit that desktop, so they cannot display consoles
-over Scientify. This is a presentation boundary, not a replacement for Codex's
+over Capsio. This is a presentation boundary, not a replacement for Codex's
 workspace sandbox. Agent-owned temporary files use `CODEX_HOME/runtime-temp`.
 No upstream binary patches, sandbox disabling, or hiding of unrelated windows
 are used. Tests monitor the interactive desktop while a real direct helper executes and run the

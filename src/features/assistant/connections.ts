@@ -15,7 +15,7 @@ export async function loadConnectionKey(
   value: Pick<AISettings, 'provider' | 'endpoint' | 'serviceId'>,
   credentials: CredentialBackend = nativeCredentials,
 ) {
-  if (value.serviceId === 'scientify') return collaboration.modelToken();
+  if (value.serviceId === 'capsio') return collaboration.modelToken();
   // A ChatGPT plan is signed in to the Agent engine and has no key.
   if (value.provider === 'chatgpt') return '';
   if (credentials === nativeCredentials && !isTauri()) return '';
@@ -31,7 +31,7 @@ export async function storeConnectionKey(
   credentials: CredentialBackend = nativeCredentials,
 ) {
   try {
-    if (value.serviceId === 'scientify') {
+    if (value.serviceId === 'capsio') {
       // The model token stays in memory; never persist it in the provider
       // credential store.
       await collaboration.modelToken();

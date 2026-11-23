@@ -1,5 +1,5 @@
 use super::AppState;
-use scientify_core::{
+use capsio_core::{
     research::{FileContent, ImportedPdf, ResearchFile, ResearchFiles},
     storage::Storage,
 };
@@ -41,9 +41,9 @@ pub(crate) fn project_root(
 // A project's four places are kept apart: the literature folder the user picks,
 // the code folder (`project_root`), the writing folder for manuscripts and the
 // AI workspace where the assistant puts what it makes. The last two live in
-// Scientify's data next to the default code folder, as `projects/<kind>-<id>`.
+// Capsio's data next to the default code folder, as `projects/<kind>-<id>`.
 fn managed_root(storage: &Storage, kind: &str, id: &str) -> Result<PathBuf, String> {
-    if !scientify_core::workspace::valid_id(id) {
+    if !capsio_core::workspace::valid_id(id) {
         return Err("项目标识无效。".into());
     }
     Ok(storage
@@ -71,7 +71,7 @@ pub(crate) fn writing_root(
     if !root.exists() {
         std::fs::create_dir_all(&root).map_err(|e| e.to_string())?;
         if let Err(error) = adopt_manuscripts(storage, files, id, &root) {
-            eprintln!("Scientify 稿件迁到写作文件夹失败：{error}");
+            eprintln!("Capsio 稿件迁到写作文件夹失败：{error}");
         }
     }
     root.canonicalize().map_err(|e| e.to_string())
@@ -757,7 +757,7 @@ pub(crate) fn git_status(root: &std::path::Path) -> Result<Vec<GitChange>, Strin
     if !root.join(".git").exists() {
         return Err("所选目录不是 Git 仓库根目录，请在项目设置中选择仓库目录。".into());
     }
-    scientify_core::research::reject_links(&root.join(".git"))?;
+    capsio_core::research::reject_links(&root.join(".git"))?;
     let mut config = git_command(root)?;
     config.args([
         "config",
@@ -883,7 +883,7 @@ mod tests {
 
     fn project(temp: &std::path::Path, extra: serde_json::Value) -> (Storage, ResearchFiles) {
         let storage = Storage::open(temp.join("data")).unwrap();
-        let mut data = scientify_core::workspace::empty();
+        let mut data = capsio_core::workspace::empty();
         let mut project = serde_json::json!({"id":"p1","name":"P","space":"personal","question":"","createdAt":"",
             "manuscripts":[{"id":"m1","name":"ICLR","folder":"paper","main":"main.tex"}]});
         for (key, value) in extra.as_object().unwrap() {

@@ -1,0 +1,508 @@
+{
+  "brand": "Capsio",
+  "source": "source/build.mjs",
+  "master": "svg/capsio-mark-light.svg",
+  "themeMeaning": {
+    "light": "Ink mark for light surfaces",
+    "dark": "White mark with lime dot for dark surfaces"
+  },
+  "assets": [
+    {
+      "file": "app/light/capsio-16.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "desktop/light/capsio-16.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "app/light/capsio-20.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "desktop/light/capsio-20.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "app/light/capsio-24.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "desktop/light/capsio-24.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "app/light/capsio-32.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "desktop/light/capsio-32.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "app/light/capsio-40.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "desktop/light/capsio-40.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "app/light/capsio-48.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "desktop/light/capsio-48.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "app/light/capsio-64.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "desktop/light/capsio-64.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "app/light/capsio-96.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "desktop/light/capsio-96.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "app/light/capsio-128.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "desktop/light/capsio-128.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "app/light/capsio-192.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "desktop/light/capsio-192.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "app/light/capsio-256.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "desktop/light/capsio-256.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "app/light/capsio-512.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "desktop/light/capsio-512.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "app/light/capsio-1024.png",
+      "kind": "app",
+      "theme": "light",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "desktop/light/capsio-1024.png",
+      "kind": "desktop",
+      "theme": "light",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "taskbar/light/capsio-16.png",
+      "kind": "taskbar",
+      "theme": "light",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "taskbar/light/capsio-20.png",
+      "kind": "taskbar",
+      "theme": "light",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "taskbar/light/capsio-24.png",
+      "kind": "taskbar",
+      "theme": "light",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "taskbar/light/capsio-32.png",
+      "kind": "taskbar",
+      "theme": "light",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "taskbar/light/capsio-40.png",
+      "kind": "taskbar",
+      "theme": "light",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "taskbar/light/capsio-48.png",
+      "kind": "taskbar",
+      "theme": "light",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "taskbar/light/capsio-64.png",
+      "kind": "taskbar",
+      "theme": "light",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "master/capsio-light-1024.png",
+      "kind": "master",
+      "theme": "light",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "app/dark/capsio-16.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "desktop/dark/capsio-16.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "app/dark/capsio-20.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "desktop/dark/capsio-20.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "app/dark/capsio-24.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "desktop/dark/capsio-24.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "app/dark/capsio-32.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "desktop/dark/capsio-32.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "app/dark/capsio-40.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "desktop/dark/capsio-40.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "app/dark/capsio-48.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "desktop/dark/capsio-48.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "app/dark/capsio-64.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "desktop/dark/capsio-64.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "app/dark/capsio-96.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "desktop/dark/capsio-96.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "file": "app/dark/capsio-128.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "desktop/dark/capsio-128.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "file": "app/dark/capsio-192.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "desktop/dark/capsio-192.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "app/dark/capsio-256.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "desktop/dark/capsio-256.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "file": "app/dark/capsio-512.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "desktop/dark/capsio-512.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "file": "app/dark/capsio-1024.png",
+      "kind": "app",
+      "theme": "dark",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "desktop/dark/capsio-1024.png",
+      "kind": "desktop",
+      "theme": "dark",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "taskbar/dark/capsio-16.png",
+      "kind": "taskbar",
+      "theme": "dark",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "file": "taskbar/dark/capsio-20.png",
+      "kind": "taskbar",
+      "theme": "dark",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "file": "taskbar/dark/capsio-24.png",
+      "kind": "taskbar",
+      "theme": "dark",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "taskbar/dark/capsio-32.png",
+      "kind": "taskbar",
+      "theme": "dark",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "taskbar/dark/capsio-40.png",
+      "kind": "taskbar",
+      "theme": "dark",
+      "width": 40,
+      "height": 40
+    },
+    {
+      "file": "taskbar/dark/capsio-48.png",
+      "kind": "taskbar",
+      "theme": "dark",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "taskbar/dark/capsio-64.png",
+      "kind": "taskbar",
+      "theme": "dark",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "file": "master/capsio-dark-1024.png",
+      "kind": "master",
+      "theme": "dark",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "web/icon-180.png",
+      "kind": "web",
+      "theme": "dark",
+      "width": 180,
+      "height": 180
+    },
+    {
+      "file": "web/icon-192.png",
+      "kind": "web",
+      "theme": "dark",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "file": "web/icon-512.png",
+      "kind": "web",
+      "theme": "dark",
+      "width": 512,
+      "height": 512
+    }
+  ]
+}

@@ -111,7 +111,7 @@ export function ShortcutsSettings({
           <h3>{t('快捷键')}</h3>
           <p>
             {t(
-              '像 VS Code、Typora 一样，在这里查看和编辑 Scientify 的快捷操作。输入框、代码编辑器和中文输入法会优先使用自己的快捷键。',
+              '像 VS Code、Typora 一样，在这里查看和编辑 Capsio 的快捷操作。输入框、代码编辑器和中文输入法会优先使用自己的快捷键。',
             )}
           </p>
         </div>

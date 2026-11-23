@@ -1,9 +1,9 @@
 {
-  "name": "scientify-collaboration-server",
+  "name": "capsio-collaboration-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Scientify collaboration control plane",
+  "description": "Capsio collaboration control plane",
   "scripts": {
     "start": "node src/server.mjs",
     "test": "node --test"

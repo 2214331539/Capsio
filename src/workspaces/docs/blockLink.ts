@@ -1,13 +1,14 @@
 // Links to a page or one block in it, as Feishu's "复制链接":
-// scientify://docs/<project>/<page>#<block>. Opening one goes to the page and
+// capsio://docs/<project>/<page>#<block>. Opening one goes to the page and
 // brings the block into view.
 
 export type DocTarget = { projectId: string; pageId: string; blockId?: string };
 
-const PATTERN = /^scientify:\/\/docs\/([\w-]+)\/([\w-]+)(?:#([\w-]+))?$/;
+// Pages written before the rename link with scientify://.
+const PATTERN = /^(?:capsio|scientify):\/\/docs\/([\w-]+)\/([\w-]+)(?:#([\w-]+))?$/;
 
 export const blockLink = ({ projectId, pageId, blockId }: DocTarget) =>
-  `scientify://docs/${projectId}/${pageId}${blockId ? `#${blockId}` : ''}`;
+  `capsio://docs/${projectId}/${pageId}${blockId ? `#${blockId}` : ''}`;
 
 export function parseBlockLink(href: string): DocTarget | null {
   const match = PATTERN.exec(href.trim());
@@ -24,7 +25,7 @@ export function openDocTarget(target: DocTarget, open: { projectId: string; page
     return void revealBlock(target.blockId);
   pending = target.blockId ? { pageId: target.pageId, blockId: target.blockId } : null;
   window.dispatchEvent(
-    new CustomEvent('scientify-open-source', {
+    new CustomEvent('capsio-open-source', {
       detail: {
         projectId: target.projectId,
         workspace: 'notes',

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Scientify 项目中心 · 交互原型</title>
+<title>Capsio 项目中心 · 交互原型</title>
 <style>
 :root{--ink:#242727;--ink2:#555b5b;--muted:#6b7170;--faint:#9aa2a8;--line:#e5e7e6;--line2:#d1d6d4;--hover:#f2f3f2;--accent:#3d4643;--accent2:#282f2c;--ok:#246b45;--warn:#865a16;--bad:#b03636;--info:#2e65a4;
 --ui:"Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI","PingFang SC",sans-serif;--mac:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei UI",sans-serif}
@@ -611,7 +611,7 @@ const key = (k) => (S.plat === 'mac' ? '⌘' + k : 'Ctrl+' + k);
 const reveal = () => (S.plat === 'mac' ? '在 Finder 中显示' : '在资源管理器中显示');
 function pth(kind, p) {
   const mac = S.plat === 'mac';
-  if (p.team) return mac ? `~/Documents/Scientify/${p.name}` : `文档\\Scientify\\${p.name}`;
+  if (p.team) return mac ? `~/Documents/Capsio/${p.name}` : `文档\\Capsio\\${p.name}`;
   const base = mac ? `~/Research/${p.dir}` : `D:\\Research\\${p.dir}`;
   return base + (mac ? '/' : '\\') + (kind === 'lit' ? '文献' : 'code');
 }
@@ -645,7 +645,7 @@ function sidebar() {
   const alert = S.logged && D.team.some((t) => t.isNew || t.local === 'conflict');
   const favs = [...D.projects.filter((p) => p.fav && !p.archived), ...(S.logged ? D.team.filter((t) => t.fav) : [])];
   const nav = (id, icon, label, n, extra = '') => `<div class="nv ${S.page === id ? 'on' : ''}" data-a="nav:${id}" title="${label}（${key(['home', 'mine', 'team', 'inbox'].indexOf(id) + 1)}）">${ic(icon, 16)}<span>${label}</span>${extra}${n ? `<span class="c">${n}</span>` : ''}</div>`;
-  const top = S.plat === 'mac' ? '<div class="sb-top"><div class="lights"><i></i><i></i><i></i></div></div>' : `<div class="sb-top"><img src="${LOGO}" alt=""><b>Scientify</b></div>`;
+  const top = S.plat === 'mac' ? '<div class="sb-top"><div class="lights"><i></i><i></i><i></i></div></div>' : `<div class="sb-top"><img src="${LOGO}" alt=""><b>Capsio</b></div>`;
   const search = `<div class="sb-s" data-a="cmd">${ic('search', 15)}<span>搜索</span><span class="kb">${S.plat === 'mac' ? '⌘K' : 'Ctrl K'}</span></div>`;
   const navs = nav('home', 'house', '首页', 0) + nav('mine', 'folder', '我的项目', c.all) + nav('team', 'users', '团队项目', nTeam, alert ? '<span class="dt" title="有新加入的项目或同步冲突"></span>' : '') + nav('inbox', 'inbox', '收集箱', D.inbox.length);
   const fav = favs.length ? `<div class="sb-h ${S.favOpen ? '' : 'closed'}" data-a="favtoggle">${ic('chevron-down', 13, 2)}收藏</div>` + (S.favOpen ? `<div class="sb-n">${favs.map((p) => `<div class="fv" data-a="open:${p.id}" data-ctx="${p.id}" title="打开「${esc(p.name)}」"><i class="mb" style="--c:${p.color}"></i><span>${esc(p.name)}</span>${p.team ? ic('users', 13) : ''}</div>`).join('')}</div>` : '') : '';
@@ -705,7 +705,7 @@ function pendRow(x) {
   return `<div class="pd"><span class="pd-i ${x.tone}">${ic(x.icon, 15)}</span><div class="pd-m"><b>${esc(x.title)}</b><small>${esc(x.sub)}</small><div class="pd-a">${acts}</div></div></div>`;
 }
 function firstRun() {
-  const loc = S.plat === 'mac' ? '~/Library/Application Support/Scientify/ScientifyData' : 'D:\\Scientify\\ScientifyData';
+  const loc = S.plat === 'mac' ? '~/Library/Application Support/Capsio/CapsioData' : 'D:\\Capsio\\CapsioData';
   const tile = (a, tone, icon, title, desc) => `<div class="tile" data-a="${a}"><span class="ti ${tone}">${ic(icon, 17)}</span><b>${title}</b><p>${desc}</p></div>`;
   return `<section class="sec"><div class="sh"><h2>开始使用</h2></div><div class="qs">${tile('dlg:new', 'paper', 'plus', '新建项目', '从空白项目开始，之后再关联文献和代码文件夹。')}${tile('dlg:folder', 'run', 'folder-input', '打开文件夹作为项目', '选择已有的论文或代码文件夹，文件留在原位置。')}${tile('sample', 'draft', 'book-open', '打开示例项目', '两篇论文、一篇笔记和一个可以直接运行的实验。')}</div>
   <div class="dataloc">${ic('info', 14)}项目数据保存在 <code>${esc(loc)}</code>，可以在设置里更改。</div></section>
@@ -907,7 +907,7 @@ function placeMenu() {
 
 /* ---------- macOS 菜单栏 ---------- */
 const MB = {
-  app: ['Scientify', [['关于 Scientify', 'toast:Scientify 0.3.0-alpha.4'], '-', ['设置…', 'settings', '⌘,'], '-', ['隐藏 Scientify', 'noop', '⌘H'], ['退出 Scientify', 'toast:退出前检查未保存的内容和后台任务', '⌘Q']]],
+  app: ['Capsio', [['关于 Capsio', 'toast:Capsio 0.3.0-alpha.4'], '-', ['设置…', 'settings', '⌘,'], '-', ['隐藏 Capsio', 'noop', '⌘H'], ['退出 Capsio', 'toast:退出前检查未保存的内容和后台任务', '⌘Q']]],
   file: ['文件', [['新建项目…', 'dlg:new', '⌘N'], ['打开文件夹作为项目…', 'dlg:folder', '⌘O'], ['打开示例项目', 'sample'], '-', ['新建随手笔记', 'newnote'], '-', ['关闭窗口', 'noop', '⌘W']]],
   edit: ['编辑', [['撤销', 'noop', '⌘Z'], ['重做', 'noop', '⇧⌘Z'], '-', ['剪切', 'noop', '⌘X'], ['拷贝', 'noop', '⌘C'], ['粘贴', 'noop', '⌘V'], ['全选', 'noop', '⌘A'], '-', ['查找…', 'cmd', '⌘F']]],
   view: ['显示', [['首页', 'nav:home', '⌘1'], ['我的项目', 'nav:mine', '⌘2'], ['团队项目', 'nav:team', '⌘3'], ['收集箱', 'nav:inbox', '⌘4'], '-', ['书架', 'view:grid'], ['列表', 'view:list'], '-', ['已归档的项目', 'filter:arch']]],
@@ -980,12 +980,12 @@ const DLG = {
       + `<div class="scan"><div><span class="ok">${ic('circle-check', 15)}</span><span>找到 18 个 PDF（papers、refs）：作为文献文件夹</span></div><div><span class="ok">${ic('circle-check', 15)}</span><span>找到 Git 仓库（code）：作为代码目录</span></div><div><span class="fa">${ic('info', 15)}</span><span>notes 里的 6 个 Markdown 文件不会自动导入，可以在项目里打开。</span></div></div>`
       + fd('项目名称', `<input class="in" data-in="dlg.name" data-fk="d-name" value="${esc(d.name)}">`, '<div class="h">默认用文件夹名。</div>')
       + fd('研究问题', `<textarea class="in" data-in="dlg.q" data-fk="d-q" placeholder="这个项目希望回答什么问题？">${esc(d.q)}</textarea>`, '', '可选')
-      + `<div class="tip">${ic('info', 14)}<span>文件留在原位置，Scientify 只记录路径。</span></div>`;
+      + `<div class="tip">${ic('info', 14)}<span>文件留在原位置，Capsio 只记录路径。</span></div>`;
     return frame('打开文件夹作为项目', '', body, footer(['创建项目', 'createfolder', 'pri', !d.name.trim()]), 540);
   },
   del(d) {
     const p = proj(d.arg);
-    const body = `<p style="margin:0 0 10px">会从 Scientify 删除这个项目的记录：项目笔记 ${p.notes} 条、运行记录 ${p.runs} 条，以及 AI 对话。</p><p class="mu" style="margin:0">磁盘上的文件不会删除：</p><ul class="paths"><li><span>文献文件夹</span><code>${esc(pth('lit', p))}</code></li><li><span>代码目录</span><code>${esc(pth('code', p))}</code></li></ul>${p.archived ? '' : `<div class="tip">${ic('archive', 14)}<span>只是暂时不用的话，可以改为归档：项目从列表里隐藏，记录全部保留。</span></div>`}`;
+    const body = `<p style="margin:0 0 10px">会从 Capsio 删除这个项目的记录：项目笔记 ${p.notes} 条、运行记录 ${p.runs} 条，以及 AI 对话。</p><p class="mu" style="margin:0">磁盘上的文件不会删除：</p><ul class="paths"><li><span>文献文件夹</span><code>${esc(pth('lit', p))}</code></li><li><span>代码目录</span><code>${esc(pth('code', p))}</code></li></ul>${p.archived ? '' : `<div class="tip">${ic('archive', 14)}<span>只是暂时不用的话，可以改为归档：项目从列表里隐藏，记录全部保留。</span></div>`}`;
     return frame(`删除「${esc(p.name)}」？`, '', body, footer(['删除项目', `delete:${p.id}`, 'dng'], { left: p.archived ? '' : `<button class="bt gh" data-a="arch:${p.id}">${ic('archive', 14)}改为归档</button>` }), 500);
   },
   share(d) {
@@ -1105,7 +1105,7 @@ const NOTES = {
     ['完成', ['创建后直接打开项目窗口，进入概览。', '所选目录不能写入时，在对应选项下说明原因。']],
   ] },
   'dlg-edit': { title: '编辑项目信息', purpose: '修改名称、研究问题、研究方向、封面颜色和关联的文件夹。', sec: [['变化', ['~去掉“所属空间”。', '=更换文件夹前检查是否有正在运行的实验或 Agent 任务。']]] },
-  'dlg-folder': { title: '打开文件夹作为项目', purpose: '把已有的研究目录直接变成一个项目。', sec: [['规则', ['+识别文件夹里的 PDF 和 Git 仓库，分别作为文献文件夹和代码目录。', '+项目名称默认用文件夹名。', '文件留在原位置，Scientify 只记录路径。']]] },
+  'dlg-folder': { title: '打开文件夹作为项目', purpose: '把已有的研究目录直接变成一个项目。', sec: [['规则', ['+识别文件夹里的 PDF 和 Git 仓库，分别作为文献文件夹和代码目录。', '+项目名称默认用文件夹名。', '文件留在原位置，Capsio 只记录路径。']]] },
   'dlg-del': { title: '删除项目', purpose: '删除前让人知道会失去什么。', sec: [['内容', ['~列出会删除的记录和数量，以及会保留的文件夹路径。', '+提供“改为归档”。', '=有未保存的内容、实验正在运行或 Agent 任务没结束时不能删除，并说明原因。']]] },
   'dlg-share': { title: '共享到团队', purpose: '把个人项目变成团队项目，并邀请成员。', sec: [['规则', ['=项目 ID 不变，原文件夹继续使用。', '+共享后项目从“我的项目”移到“团队项目”。', '+可以在同一步邀请成员，也可以之后再邀请。', '写明哪些内容不上传：AI 对话、模型密钥、Python 环境。']]] },
   'dlg-invite': { title: '邀请成员', purpose: '所有者按手机号邀请成员并选择角色。', sec: [['规则', ['=手机号加角色；号码还没注册时保留邀请，对方第一次登录后自动加入。', '+每个角色写明能做什么。', '+之后可以在成员列表里改角色、移除或撤销邀请。']]] },

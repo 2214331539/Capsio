@@ -20,9 +20,7 @@ export function hostTarget(platform = process.platform, arch = process.arch) {
 }
 
 export function targetInfo(
-  target = process.env.SCIENTIFY_CODEX_TRIPLE ||
-    process.env.TAURI_ENV_TARGET_TRIPLE ||
-    hostTarget(),
+  target = process.env.CAPSIO_CODEX_TRIPLE || process.env.TAURI_ENV_TARGET_TRIPLE || hostTarget(),
 ) {
   if (!targets[target]) throw new Error(`Unsupported release target: ${target}`);
   return { target, ...targets[target] };

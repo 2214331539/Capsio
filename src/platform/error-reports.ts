@@ -4,7 +4,7 @@
 
 import { invoke, isTauri } from '@tauri-apps/api/core';
 
-const KEY = 'scientify.errorReports';
+const KEY = 'capsio.errorReports';
 const PER_SESSION = 20;
 // Noise that says nothing about a bug.
 const IGNORED = [/ResizeObserver loop/i, /^Script error\.?$/i, /AbortError/];

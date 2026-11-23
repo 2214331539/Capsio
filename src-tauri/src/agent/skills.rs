@@ -151,11 +151,11 @@ mod tests {
         let temporary = tempfile::tempdir().unwrap();
         let root = temporary.path().join("workspace");
         let home = temporary.path().join("engine");
-        let skill_dir = root.join(".agents/skills/scientify-fixture");
+        let skill_dir = root.join(".agents/skills/capsio-fixture");
         std::fs::create_dir_all(&skill_dir).unwrap();
         std::fs::create_dir_all(&home).unwrap();
         let path = skill_dir.join("SKILL.md");
-        std::fs::write(&path, "---\nname: scientify-fixture\ndescription: Local test skill\n---\nUse fixture instructions.\n").unwrap();
+        std::fs::write(&path, "---\nname: capsio-fixture\ndescription: Local test skill\n---\nUse fixture instructions.\n").unwrap();
         let mut session = EngineSession::start_with_events(
             &process::engine_path().unwrap(),
             &["app-server", "--listen", "stdio://"],
@@ -169,7 +169,7 @@ mod tests {
         let skill = listing
             .skills
             .into_iter()
-            .find(|skill| skill.name == "scientify-fixture")
+            .find(|skill| skill.name == "capsio-fixture")
             .expect("Codex did not discover workspace skill");
         let selected = SkillRef {
             name: skill.name,

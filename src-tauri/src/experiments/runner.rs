@@ -24,9 +24,9 @@ pub fn run(request: &Path) -> Result<i32, String> {
             .parent()
             .map(|directory| directory.join("output.log"))
         {
-            if scientify_core::research::reject_links(&path).is_ok() {
+            if capsio_core::research::reject_links(&path).is_ok() {
                 if let Ok(mut log) = fs::OpenOptions::new().create(true).append(true).open(path) {
-                    let _ = writeln!(log, "Scientify runner: {error}");
+                    let _ = writeln!(log, "Capsio runner: {error}");
                 }
             }
         }
@@ -35,7 +35,7 @@ pub fn run(request: &Path) -> Result<i32, String> {
 }
 
 fn execute(request: &Path) -> Result<i32, String> {
-    scientify_core::research::reject_links(request)?;
+    capsio_core::research::reject_links(request)?;
     if fs::metadata(request).map_err(|e| e.to_string())?.len() > 256 * 1024 {
         return Err("运行请求过大。".into());
     }
@@ -202,14 +202,14 @@ mod tests {
         .unwrap();
         let error = super::run(&request).unwrap_err();
         let log = std::fs::read_to_string(directory.path().join("output.log")).unwrap();
-        assert!(log.contains("Scientify runner:"));
+        assert!(log.contains("Capsio runner:"));
         assert!(log.contains(&error));
     }
 
     #[test]
     #[ignore = "child entrypoint for real sandbox integration tests"]
     fn managed_runner_child() {
-        let path = std::env::var_os("SCIENTIFY_FIXTURE_RUNNER").expect("test runner request");
+        let path = std::env::var_os("CAPSIO_FIXTURE_RUNNER").expect("test runner request");
         match super::run(std::path::Path::new(&path)) {
             Ok(code) => std::process::exit(code),
             Err(error) => {

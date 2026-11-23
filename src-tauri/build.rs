@@ -1,6 +1,6 @@
 fn main() {
     println!(
-        "cargo:rustc-env=SCIENTIFY_TARGET={}",
+        "cargo:rustc-env=CAPSIO_TARGET={}",
         std::env::var("TARGET").expect("Cargo target")
     );
     // Recompile Windows resources when branding changes, even if config is unchanged.
@@ -50,6 +50,7 @@ fn main() {
             "workspace_export",
             "choose_directory",
             "storage_location",
+            "renamed_app_removable",
             "storage_schedule",
             "storage_cancel",
             "storage_adopt",

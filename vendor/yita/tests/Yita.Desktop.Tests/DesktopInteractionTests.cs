@@ -547,7 +547,7 @@ public sealed class DesktopInteractionTests
         await fixture.Window.ShowSelectionTranslationAsync(Request(100), Result("paper fixture"));
         var popup = Assert.Single(fixture.Window.TranslationPopups);
         popup.FindControl<ToggleButton>("PinButton")!.IsChecked = true;
-        await fixture.Window.HandleScientifyCommandAsync(System.Text.Json.JsonSerializer.SerializeToElement(new
+        await fixture.Window.HandleCapsioCommandAsync(System.Text.Json.JsonSerializer.SerializeToElement(new
         { type = "configure", model = "new-host-model", legacy = new { }, language = "zh-CN" }));
         await fixture.Window.ChangePopupTargetLanguageAsync(popup, "英语");
         Assert.Same(popup, Assert.Single(fixture.Window.TranslationPopups));

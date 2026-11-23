@@ -292,10 +292,10 @@ function WritingWorkspaceView({
     if (owner) choose(owner.id);
   }, [activePath, choice, folders]); // `folders` stands for `manuscripts`
   const [side, setSide] = useState<Side>('files');
-  const [layout, setLayoutState] = useState(() => remembered('scientify.writing.layout', 'split'));
+  const [layout, setLayoutState] = useState(() => remembered('capsio.writing.layout', 'split'));
   const setLayout = (value: string) => {
     setLayoutState(value);
-    remember('scientify.writing.layout', value);
+    remember('capsio.writing.layout', value);
   };
   const [pane, setPane] = useState<'pdf' | 'log'>('pdf');
   // A log opened because a build failed closes again when a later build makes a PDF.
@@ -386,11 +386,11 @@ function WritingWorkspaceView({
     };
     const focused = () => void look();
     void look();
-    window.addEventListener('scientify-project-files-changed', changed);
+    window.addEventListener('capsio-project-files-changed', changed);
     window.addEventListener('focus', focused);
     return () => {
       alive = false;
-      window.removeEventListener('scientify-project-files-changed', changed);
+      window.removeEventListener('capsio-project-files-changed', changed);
       window.removeEventListener('focus', focused);
     };
   }, [backend, project.id, readOnly, store]);
@@ -555,9 +555,7 @@ function WritingWorkspaceView({
   }
   /** Registers a folder that was just unpacked or cloned and opens its main document. */
   async function adopt(imported: Imported, name: string) {
-    window.dispatchEvent(
-      new CustomEvent('scientify-project-files-changed', { detail: project.id }),
-    );
+    window.dispatchEvent(new CustomEvent('capsio-project-files-changed', { detail: project.id }));
     const next = await manuscriptFromImport(backend, project.id, imported, name);
     await saveManuscript(store, project.id, next);
     choose(next.id);
@@ -914,7 +912,7 @@ function WritingWorkspaceView({
   ) : noTex && !build.pdf ? (
     <div className="sf-writing-setup">
       <h2>{t('没有找到内置引擎')}</h2>
-      <p>{t('请重新安装 Scientify，或者安装 TeX Live、MiKTeX。')}</p>
+      <p>{t('请重新安装 Capsio，或者安装 TeX Live、MiKTeX。')}</p>
     </div>
   ) : build.pdf ? (
     <PdfPreview data={build.pdf} highlight={highlight} onLocate={syncBackward} />
@@ -1464,7 +1462,7 @@ function WritingWorkspaceView({
             const next = await createManuscript(backend, project, name, template, taken);
             await saveManuscript(store, project.id, next);
             window.dispatchEvent(
-              new CustomEvent('scientify-project-files-changed', { detail: project.id }),
+              new CustomEvent('capsio-project-files-changed', { detail: project.id }),
             );
             choose(next.id);
             setDialog(null);

@@ -448,6 +448,64 @@ dependencies = [
 ]
 
 [[package]]
+name = "capsio"
+version = "0.5.0-alpha.3"
+dependencies = [
+ "base64 0.22.1",
+ "block2",
+ "bytes",
+ "capsio-core",
+ "chrono",
+ "dirs",
+ "eventsource-stream",
+ "flate2",
+ "futures-util",
+ "libc",
+ "notify",
+ "objc2",
+ "objc2-foundation",
+ "objc2-web-kit",
+ "portable-pty",
+ "reqwest 0.12.28",
+ "rfd",
+ "scraper",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-process",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-updater",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "uuid",
+ "webview2-com",
+ "windows 0.61.3",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "capsio-core"
+version = "0.5.0-alpha.3"
+dependencies = [
+ "atomicwrites",
+ "chrono",
+ "fs2",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "trash",
+ "uuid",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "cargo-platform"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3861,64 +3919,6 @@ dependencies = [
  "quote",
  "serde_derive_internals",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "scientify"
-version = "0.5.0-alpha.3"
-dependencies = [
- "base64 0.22.1",
- "block2",
- "bytes",
- "chrono",
- "dirs",
- "eventsource-stream",
- "flate2",
- "futures-util",
- "libc",
- "notify",
- "objc2",
- "objc2-foundation",
- "objc2-web-kit",
- "portable-pty",
- "reqwest 0.12.28",
- "rfd",
- "scientify-core",
- "scraper",
- "serde",
- "serde_json",
- "sha2",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-process",
- "tauri-plugin-single-instance",
- "tauri-plugin-updater",
- "tempfile",
- "tokio",
- "tokio-util",
- "uuid",
- "webview2-com",
- "windows 0.61.3",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "scientify-core"
-version = "0.5.0-alpha.3"
-dependencies = [
- "atomicwrites",
- "chrono",
- "fs2",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "trash",
- "uuid",
- "windows-sys 0.61.2",
 ]
 
 [[package]]

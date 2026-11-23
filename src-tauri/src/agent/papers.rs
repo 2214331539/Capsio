@@ -1,6 +1,6 @@
 //! Read-only paper tools. Native identity authorizes bytes; the app's PDF.js worker extracts text.
 use super::*;
-use scientify_core::library::{Entry, PaperSource};
+use capsio_core::library::{Entry, PaperSource};
 use std::sync::mpsc;
 use std::time::Instant;
 
@@ -69,9 +69,9 @@ pub fn specifications() -> Vec<Value> {
     search["pageCount"]["maximum"] = json!(20);
     search["query"] = json!({"type":"string","minLength":1,"maxLength":200});
     [
-        ("scientify_list_papers", "List actual PDFs in this conversation's literature directory without opening papers, creating bindings, notes, or text files. Up to 100 per response. Continue with the returned cursor. Omit directory to list the root.", json!({"directory":{"type":"string"},"cursor":{"type":"string"}}), json!([])),
-        ("scientify_read_paper", "Read PDF text directly, without intermediate files. path is relative to the literature folder, or the full path of a PDF attached to this chat. Reads up to 8 pages/24000 characters. Pages are 1-based; offsets are JavaScript string indices. Continue with nextCursor page/offset and expectedVersion. Prefer this to shell conversions. Answer the question without adding page/source lists unless requested.", read, json!(["path"])),
-        ("scientify_search_paper", "Search PDF text, case-insensitive literal matching, without files. Up to 20 pages and 20 bounded matches per call. Continue using nextCursor and expectedVersion. searchedPages is the actual scope; no matches in a partial scope is not a whole-document absence. emptyPages may be scanned pages without extractable text.", search, json!(["path","query"])),
+        ("capsio_list_papers", "List actual PDFs in this conversation's literature directory without opening papers, creating bindings, notes, or text files. Up to 100 per response. Continue with the returned cursor. Omit directory to list the root.", json!({"directory":{"type":"string"},"cursor":{"type":"string"}}), json!([])),
+        ("capsio_read_paper", "Read PDF text directly, without intermediate files. path is relative to the literature folder, or the full path of a PDF attached to this chat. Reads up to 8 pages/24000 characters. Pages are 1-based; offsets are JavaScript string indices. Continue with nextCursor page/offset and expectedVersion. Prefer this to shell conversions. Answer the question without adding page/source lists unless requested.", read, json!(["path"])),
+        ("capsio_search_paper", "Search PDF text, case-insensitive literal matching, without files. Up to 20 pages and 20 bounded matches per call. Continue using nextCursor and expectedVersion. searchedPages is the actual scope; no matches in a partial scope is not a whole-document absence. emptyPages may be scanned pages without extractable text.", search, json!(["path","query"])),
     ].into_iter().map(|(name, description, properties, required)| json!({"type":"function","name":name,"description":description,"inputSchema":{"type":"object","properties":properties,"required":required,"additionalProperties":false}})).collect()
 }
 
@@ -159,18 +159,18 @@ pub(crate) fn operate<R: tauri::Runtime>(
     }
     let tool = params["tool"].as_str().ok_or("论文工具名称缺失。")?;
     let state = app.state::<PaperState>();
-    if tool == "scientify_list_papers" {
+    if tool == "capsio_list_papers" {
         let directory = root(app, handle)?;
         let args: ListArgs =
             serde_json::from_value(params["arguments"].clone()).map_err(|e| e.to_string())?;
         return list(app, &state, handle, &directory, args);
     }
-    if !matches!(tool, "scientify_read_paper" | "scientify_search_paper") {
+    if !matches!(tool, "capsio_read_paper" | "capsio_search_paper") {
         return Err("未知论文工具。".into());
     }
     let args: ReadArgs =
         serde_json::from_value(params["arguments"].clone()).map_err(|e| e.to_string())?;
-    let search = tool == "scientify_search_paper";
+    let search = tool == "capsio_search_paper";
     let page_count = args.page_count.unwrap_or(if search { 20 } else { 8 });
     let query = args.query.unwrap_or_default();
     if args.page == 0
@@ -598,7 +598,7 @@ mod tests {
             project_id: "p1".into(),
             cwd: root.display().to_string(),
             model: "fixture-model".into(),
-            model_provider: "scientify".into(),
+            model_provider: "capsio".into(),
             instruction_sources: vec![],
             sandbox: "workspaceWrite".into(),
             turns: vec![],
@@ -664,7 +664,7 @@ mod tests {
                 &native,
                 "main",
                 &active,
-                &json!({"tool":"scientify_read_paper","arguments":{"path":"a.pdf"}}),
+                &json!({"tool":"capsio_read_paper","arguments":{"path":"a.pdf"}}),
                 || false,
             )
         });
@@ -719,7 +719,7 @@ mod tests {
                 &native,
                 "main",
                 &active,
-                &json!({"tool":"scientify_read_paper","arguments":{"path":"a.pdf"}}),
+                &json!({"tool":"capsio_read_paper","arguments":{"path":"a.pdf"}}),
                 || false,
             )
         });
@@ -756,7 +756,7 @@ mod tests {
                 &native,
                 "main",
                 &active,
-                &json!({"tool":"scientify_read_paper","arguments":{"path":"a.pdf"}}),
+                &json!({"tool":"capsio_read_paper","arguments":{"path":"a.pdf"}}),
                 || stop.load(Ordering::SeqCst),
             )
         });
@@ -776,7 +776,7 @@ mod tests {
                 &native,
                 "main",
                 &handle,
-                &json!({"tool":"scientify_read_paper","arguments":{"path":"a.pdf"}}),
+                &json!({"tool":"capsio_read_paper","arguments":{"path":"a.pdf"}}),
                 || false,
             )
         });
@@ -802,11 +802,11 @@ mod tests {
             )
             .unwrap();
         }
-        let request = json!({"tool":"scientify_list_papers","arguments":{}});
+        let request = json!({"tool":"capsio_list_papers","arguments":{}});
         let first = operate(app.handle(), "main", &handle, &request, || false).unwrap();
         assert_eq!(first["papers"].as_array().unwrap().len(), 100);
         let request =
-            json!({"tool":"scientify_list_papers","arguments":{"cursor":first["nextCursor"]}});
+            json!({"tool":"capsio_list_papers","arguments":{"cursor":first["nextCursor"]}});
         let mut other = handle.clone();
         other.conversation_id = "other".into();
         assert!(operate(app.handle(), "main", &other, &request, || false).is_err());
@@ -870,10 +870,10 @@ mod tests {
             .map(|entry| entry.unwrap().file_name())
             .collect::<Vec<_>>();
         for (tool, arguments) in [
-            ("scientify_list_papers", json!({})),
-            ("scientify_read_paper", json!({"path":"a.pdf"})),
+            ("capsio_list_papers", json!({})),
+            ("capsio_read_paper", json!({"path":"a.pdf"})),
             (
-                "scientify_search_paper",
+                "capsio_search_paper",
                 json!({"path":"a.pdf","query":"fixture"}),
             ),
         ] {
@@ -884,8 +884,8 @@ mod tests {
                     "-e",
                     include_str!("../../../scripts/fixtures/experiment-provider.mjs"),
                 ])
-                .env("SCIENTIFY_FIXTURE_TOOL", tool)
-                .env("SCIENTIFY_FIXTURE_COMMAND", arguments.to_string())
+                .env("CAPSIO_FIXTURE_TOOL", tool)
+                .env("CAPSIO_FIXTURE_COMMAND", arguments.to_string())
                 .stdin(Stdio::null())
                 .stdout(Stdio::piped())
                 .stderr(Stdio::inherit())
@@ -913,7 +913,7 @@ mod tests {
                 None,
             )
             .unwrap();
-            let thread = session.call("thread/start", json!({"cwd":root,"model":"fixture-model","modelProvider":"scientify","sandbox":"workspace-write","approvalPolicy":"on-request","dynamicTools":specifications(),"developerInstructions":tools::instructions("literature",false,false,true)}), THREAD_BUDGET).unwrap();
+            let thread = session.call("thread/start", json!({"cwd":root,"model":"fixture-model","modelProvider":"capsio","sandbox":"workspace-write","approvalPolicy":"on-request","dynamicTools":specifications(),"developerInstructions":tools::instructions("literature",false,false,true)}), THREAD_BUDGET).unwrap();
             let turn = session.call("turn/start", json!({"threadId":thread["thread"]["id"],"input":[{"type":"text","text":"read the paper","text_elements":[]}]}), TURN_BUDGET).unwrap();
             let deadline = Instant::now() + Duration::from_secs(30);
             let mut called = false;
@@ -931,7 +931,7 @@ mod tests {
                         let reader = std::thread::spawn(move || {
                             operate(&native, "main", &active, &params, || false)
                         });
-                        if tool != "scientify_list_papers" {
+                        if tool != "capsio_list_papers" {
                             let (id, job) = wait_request(app.handle());
                             invoke(
                                 &view,
@@ -956,7 +956,7 @@ mod tests {
                         let result = reader.join().unwrap().unwrap();
                         assert!(result
                             .to_string()
-                            .contains(if tool == "scientify_list_papers" {
+                            .contains(if tool == "capsio_list_papers" {
                                 "a.pdf"
                             } else {
                                 "fixture text"

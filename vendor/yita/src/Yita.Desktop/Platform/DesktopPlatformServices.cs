@@ -18,9 +18,9 @@ internal sealed class DesktopPlatformServices
         return path;
     }
 
-    internal string DataDirectory { get; } = Environment.GetEnvironmentVariable("SCIENTIFY_TRANSLATION_DATA") ?? Path.Combine(
+    internal string DataDirectory { get; } = Environment.GetEnvironmentVariable("CAPSIO_TRANSLATION_DATA") ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Yita");
-    internal IStartupRegistration Startup { get; } = ScientifyBridge.IsEmbedded ? new UnsupportedStartupRegistration() : OperatingSystem.IsWindows()
+    internal IStartupRegistration Startup { get; } = CapsioBridge.IsEmbedded ? new UnsupportedStartupRegistration() : OperatingSystem.IsWindows()
         ? new WindowsStartupService() : OperatingSystem.IsMacOS()
             ? new MacStartupRegistration() : new UnsupportedStartupRegistration();
 
@@ -38,7 +38,7 @@ internal sealed class DesktopPlatformServices
     internal IPlatformPermissionService? CreatePermissionService() => OperatingSystem.IsMacOS()
         ? new MacSelectionAdapter() : null;
 
-    internal ISecretStore CreateSecretStore() => ScientifyBridge.IsEmbedded ? new ScientifySecretStore() : OperatingSystem.IsWindows()
+    internal ISecretStore CreateSecretStore() => CapsioBridge.IsEmbedded ? new CapsioSecretStore() : OperatingSystem.IsWindows()
         ? new WindowsCredentialSecretStore()
         : OperatingSystem.IsMacOS() ? new MacKeychainSecretStore() : new MemorySecretStore();
 

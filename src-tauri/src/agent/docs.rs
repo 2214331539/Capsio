@@ -4,10 +4,10 @@ use super::*;
 
 pub fn specifications() -> Vec<Value> {
     [
-        ("scientify_list_docs", "List this project's documents (the team knowledge base that replaced project notes): page id, title, path in the page tree and last update. Paper notes are not documents; they stay as .notes.md files beside the PDFs.", json!({}), vec![]),
-        ("scientify_read_doc", "Read one document as Markdown. Each top-level block is preceded by <!-- block:ID -->, so single blocks can be edited with scientify_update_doc. Returns a version token that the update must pass back.", json!({"id":{"type":"string"}}), vec!["id"]),
-        ("scientify_create_doc", "Create a document page from Markdown, optionally under a parent page id from scientify_list_docs. [[Page title]] links to another page. Use for summaries, reports or minutes the user asked to keep. Ask mode requires user approval; full mode writes directly. Returns the new page id.", json!({"title":{"type":"string"},"markdown":{"type":"string"},"parent":{"type":"string"}}), vec!["title","markdown"]),
-        ("scientify_update_doc", "Edit a document by blocks. operations is a list of {op, block, markdown}: op is replace, insertAfter, insertBefore or delete (block is an id from scientify_read_doc), or append (adds markdown at the end, no block). title optionally renames the page. Pass expectedVersion from scientify_read_doc; if the page changed meanwhile, read it again. Ask mode requires user approval.",
+        ("capsio_list_docs", "List this project's documents (the team knowledge base that replaced project notes): page id, title, path in the page tree and last update. Paper notes are not documents; they stay as .notes.md files beside the PDFs.", json!({}), vec![]),
+        ("capsio_read_doc", "Read one document as Markdown. Each top-level block is preceded by <!-- block:ID -->, so single blocks can be edited with capsio_update_doc. Returns a version token that the update must pass back.", json!({"id":{"type":"string"}}), vec!["id"]),
+        ("capsio_create_doc", "Create a document page from Markdown, optionally under a parent page id from capsio_list_docs. [[Page title]] links to another page. Use for summaries, reports or minutes the user asked to keep. Ask mode requires user approval; full mode writes directly. Returns the new page id.", json!({"title":{"type":"string"},"markdown":{"type":"string"},"parent":{"type":"string"}}), vec!["title","markdown"]),
+        ("capsio_update_doc", "Edit a document by blocks. operations is a list of {op, block, markdown}: op is replace, insertAfter, insertBefore or delete (block is an id from capsio_read_doc), or append (adds markdown at the end, no block). title optionally renames the page. Pass expectedVersion from capsio_read_doc; if the page changed meanwhile, read it again. Ask mode requires user approval.",
             json!({"id":{"type":"string"},"expectedVersion":{"type":"string"},"title":{"type":"string"},
                 "operations":{"type":"array","items":{"type":"object","properties":{"op":{"type":"string","enum":["replace","insertAfter","insertBefore","delete","append"]},"block":{"type":"string"},"markdown":{"type":"string"}},"required":["op"],"additionalProperties":false}}}),
             vec!["id","expectedVersion","operations"]),
@@ -20,17 +20,14 @@ pub fn specifications() -> Vec<Value> {
 pub fn handles(tool: &str) -> bool {
     matches!(
         tool,
-        "scientify_list_docs"
-            | "scientify_read_doc"
-            | "scientify_create_doc"
-            | "scientify_update_doc"
+        "capsio_list_docs" | "capsio_read_doc" | "capsio_create_doc" | "capsio_update_doc"
     )
 }
 /// Tools that change documents and so pass through approval in ask mode.
 pub fn writes(tool: &Value) -> bool {
     matches!(
         tool.as_str(),
-        Some("scientify_create_doc" | "scientify_update_doc")
+        Some("capsio_create_doc" | "capsio_update_doc")
     )
 }
 
@@ -103,13 +100,13 @@ pub fn queue<R: tauri::Runtime>(
         if entry.permission == PermissionMode::Full {
             return Ok(Some(event.clone()));
         }
-        let id = json!(format!("scientify-doc:{}", uuid::Uuid::new_v4()));
-        let create = params["tool"] == "scientify_create_doc";
+        let id = json!(format!("capsio-doc:{}", uuid::Uuid::new_v4()));
+        let create = params["tool"] == "capsio_create_doc";
         let title = params["arguments"]["title"]
             .as_str()
             .or(params["arguments"]["id"].as_str())
             .unwrap_or_default();
-        let approval = json!({"kind":"request","method":"scientify/docs/requestApproval","id":id,
+        let approval = json!({"kind":"request","method":"capsio/docs/requestApproval","id":id,
             "params":{"threadId":entry.handle.thread_id,"turnId":entry.active_turn,
                 "action": if create { "create" } else { "update" },
                 "command": title, "reason": preview(&params["arguments"])}});
@@ -141,7 +138,7 @@ pub fn complete<R: tauri::Runtime>(
             params["tool"].as_str().unwrap_or_default(),
             &params["arguments"],
         )
-    } else if params["tool"] == "scientify_create_doc" {
+    } else if params["tool"] == "capsio_create_doc" {
         Err("用户拒绝了新建这页文档。".into())
     } else {
         Err("用户拒绝了本次文档修改。".into())
@@ -177,10 +174,10 @@ mod tests {
 
     #[test]
     fn writes_need_approval_and_previews_show_what_changes() {
-        assert!(writes(&json!("scientify_create_doc")));
-        assert!(writes(&json!("scientify_update_doc")));
-        assert!(!writes(&json!("scientify_read_doc")));
-        assert!(handles("scientify_list_docs") && !handles("scientify_list_notes"));
+        assert!(writes(&json!("capsio_create_doc")));
+        assert!(writes(&json!("capsio_update_doc")));
+        assert!(!writes(&json!("capsio_read_doc")));
+        assert!(handles("capsio_list_docs") && !handles("capsio_list_notes"));
         let text = preview(&json!({"operations":[
             {"op":"replace","block":"b1","markdown":"新的一段"},
             {"op":"append","markdown":"- 待办"}]}));

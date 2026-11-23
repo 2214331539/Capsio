@@ -161,16 +161,16 @@ export function NotesPanel({
       const detail = (event as CustomEvent<{ scope?: string; id?: string }>).detail;
       if (detail?.scope === scope && typeof detail.id === 'string') openNote.current(detail.id);
     }
-    window.addEventListener('scientify-open-note', handle);
-    return () => window.removeEventListener('scientify-open-note', handle);
+    window.addEventListener('capsio-open-note', handle);
+    return () => window.removeEventListener('capsio-open-note', handle);
   }, [scope]);
   // Other surfaces ask the panel that owns the drafts to start a note.
   useEffect(() => {
     function handle(event: Event) {
       if ((event as CustomEvent<{ scope?: string }>).detail?.scope === scope) newNote.current();
     }
-    window.addEventListener('scientify-new-note', handle);
-    return () => window.removeEventListener('scientify-new-note', handle);
+    window.addEventListener('capsio-new-note', handle);
+    return () => window.removeEventListener('capsio-new-note', handle);
   }, [scope]);
 
   function edit(value: Note) {
@@ -545,7 +545,7 @@ export function NotesPanel({
                         }
                         onClick={() =>
                           window.dispatchEvent(
-                            new CustomEvent('scientify-open-source', { detail: { ...source } }),
+                            new CustomEvent('capsio-open-source', { detail: { ...source } }),
                           )
                         }
                       >

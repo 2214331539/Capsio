@@ -63,7 +63,7 @@ function ensureEngine() {
   const { triple, suffix, asset } = tectonicTarget(
     process.platform,
     process.arch,
-    process.env.SCIENTIFY_CODEX_TRIPLE,
+    process.env.CAPSIO_CODEX_TRIPLE,
   );
   const target = join(root, 'src-tauri', 'binaries');
   const binary = join(target, `tectonic-${triple}${suffix}`);
@@ -131,7 +131,7 @@ function size(directory) {
  * Compiles the sample documents once with an empty cache, so the packages, fonts and format
  * file most papers need ship in the installer (release-resources/tectonic-cache) and the first
  * compile on a new computer works offline. A failed warm-up never fails the build: the engine
- * then downloads what it needs on first use. CI checks skip it with SCIENTIFY_TEX_WARMUP=skip.
+ * then downloads what it needs on first use. CI checks skip it with CAPSIO_TEX_WARMUP=skip.
  */
 function warmCache(binary) {
   const seed = join(root, 'src-tauri', 'release-resources', 'tectonic-cache');
@@ -156,9 +156,9 @@ function warmCache(binary) {
     mkdirSync(seed, { recursive: true });
     writeFileSync(seedFile, JSON.stringify({ complete: false, reason }, null, 2) + '\n');
   };
-  if (process.env.SCIENTIFY_TEX_WARMUP === 'skip') {
+  if (process.env.CAPSIO_TEX_WARMUP === 'skip') {
     if (!current) placeholder('skipped');
-    return console.log('Bundled TeX packages skipped (SCIENTIFY_TEX_WARMUP=skip).');
+    return console.log('Bundled TeX packages skipped (CAPSIO_TEX_WARMUP=skip).');
   }
   const staging = `${seed}.staging`;
   const cache = join(staging, 'cache');

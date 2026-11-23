@@ -256,9 +256,9 @@
     "{version} 已下载，重启后完成更新",
     "{version} is downloaded; restart to finish updating"
   ],
-  "正在安装，Scientify 会自动重启…": [
-    "正在安装，Scientify 会自动重启…",
-    "Installing; Scientify will restart by itself…"
+  "正在安装，Capsio 会自动重启…": [
+    "正在安装，Capsio 会自动重启…",
+    "Installing; Capsio will restart by itself…"
   ],
   "更新内容": ["更新内容", "What's new"],
   "重启以完成更新": ["重启以完成更新", "Restart to update"],
@@ -381,9 +381,9 @@
     "每条消息最多选择 4 个技能。",
     "Select up to 4 skills per message."
   ],
-  "没有匹配的可用技能。技能需先安装到工作区 .agents/skills 或 Scientify 的 Codex 数据目录。": [
-    "没有匹配的可用技能。技能需先安装到工作区 .agents/skills 或 Scientify 的 Codex 数据目录。",
-    "No matching skills. Install skills in the workspace .agents/skills folder or Scientify's Codex data directory."
+  "没有匹配的可用技能。技能需先安装到工作区 .agents/skills 或 Capsio 的 Codex 数据目录。": [
+    "没有匹配的可用技能。技能需先安装到工作区 .agents/skills 或 Capsio 的 Codex 数据目录。",
+    "No matching skills. Install skills in the workspace .agents/skills folder or Capsio's Codex data directory."
   ],
   "↑ ↓ 选择 · Enter 确认 · Esc 关闭": [
     "↑ ↓ 选择 · Enter 确认 · Esc 关闭",
@@ -457,9 +457,9 @@
     "请先保存内容并结束任务，再更改数据位置。",
     "Save your work and finish active tasks before changing storage location."
   ],
-  "请在 Scientify 桌面版更改数据位置。": [
-    "请在 Scientify 桌面版更改数据位置。",
-    "Change storage location in the Scientify desktop app."
+  "请在 Capsio 桌面版更改数据位置。": [
+    "请在 Capsio 桌面版更改数据位置。",
+    "Change storage location in the Capsio desktop app."
   ],
   "开发版使用隔离数据目录，请在正式版更改存储位置。": [
     "开发版使用隔离数据目录，请在正式版更改存储位置。",
@@ -520,9 +520,9 @@
     "以上为配置值，不表示环境检测已通过。运行时会验证路径和程序。",
     "These are configured values, not verified environment results. Paths and the executable are checked at launch."
   ],
-  "产物目录由 SCIENTIFY_RUN_DIR 提供，脚本需显式将结果写入该目录。": [
-    "产物目录由 SCIENTIFY_RUN_DIR 提供，脚本需显式将结果写入该目录。",
-    "The script must write results to the directory provided by SCIENTIFY_RUN_DIR."
+  "产物目录由 CAPSIO_RUN_DIR 提供，脚本需显式将结果写入该目录。": [
+    "产物目录由 CAPSIO_RUN_DIR 提供，脚本需显式将结果写入该目录。",
+    "The script must write results to the directory provided by CAPSIO_RUN_DIR."
   ],
   "请切换到对应项目查看运行详情。": [
     "请切换到对应项目查看运行详情。",
@@ -658,7 +658,7 @@
   "本地工作区": ["本地工作区", "Local workspace"],
   "正在打开项目": ["正在打开项目", "Opening project"],
   "正在准备工作区…": ["正在准备工作区…", "Preparing workspace…"],
-  "Scientify · 第一轮 MVP": ["Scientify · 第一轮 MVP", "Scientify · MVP"],
+  "Capsio · 第一轮 MVP": ["Capsio · 第一轮 MVP", "Capsio · MVP"],
   "JSON 导出包含元数据，不包含 PDF 和源码；备份请保留完整数据目录及关联项目文件夹。": [
     "JSON 导出包含元数据，不包含 PDF 和源码；备份请保留完整数据目录及关联项目文件夹。",
     "JSON exports include metadata, but not PDFs or source files. Back up the complete data directory and linked project folders."
@@ -670,7 +670,7 @@
   "全局设置": ["全局设置", "Global settings"],
   "个人信息与偏好": ["个人信息与偏好", "Profile & preferences"],
   "关于 MVP": ["关于 MVP", "About MVP"],
-  "关于 Scientify": ["关于 Scientify", "About Scientify"],
+  "关于 Capsio": ["关于 Capsio", "About Capsio"],
   "关闭提示": ["关闭提示", "Dismiss message"],
   "调整辅助栏宽度": ["调整辅助栏宽度", "Resize assistant panel"],
   "向 AI 提问": ["向 AI 提问", "Ask AI"],
@@ -714,7 +714,7 @@
     "Enable Attach to include the current material"
   ],
   "填入问题后由你发送": ["填入问题后由你发送", "Prepare a prompt for you to send"],
-  "Scientify 项目管理": ["Scientify 项目管理", "Scientify Projects"],
+  "Capsio 项目管理": ["Capsio 项目管理", "Capsio Projects"],
   "切换项目": ["切换项目", "Switch project"],
   "项目切换": ["项目切换", "Project switcher"],
   "筛选项目": ["筛选项目", "Filter projects"],
@@ -929,9 +929,9 @@
     "先关闭旧应用。复制整个工作区及附件，保留旧目录。仅支持迁入空的新工作区。",
     "Close the old app first. Copy the complete workspace and attachments into an empty new workspace; the original directory is preserved."
   ],
-  "请先关闭 Electron 版 Scientify。将复制整个旧工作区到新目录，原数据保持不变。继续迁移？": [
-    "请先关闭 Electron 版 Scientify。将复制整个旧工作区到新目录，原数据保持不变。继续迁移？",
-    "Close the Electron version of Scientify first. Copy the old workspace to the new directory, preserving the original data?"
+  "请先关闭 Electron 版 Capsio。将复制整个旧工作区到新目录，原数据保持不变。继续迁移？": [
+    "请先关闭 Electron 版 Capsio。将复制整个旧工作区到新目录，原数据保持不变。继续迁移？",
+    "Close the Electron version of Capsio first. Copy the old workspace to the new directory, preserving the original data?"
   ],
   "复制旧数据": ["复制旧数据", "Copy legacy data"],
   "未检测到默认目录中的 Electron 工作区。": [
@@ -1026,9 +1026,9 @@
     "AI 请求通过桌面后端发送。请启动桌面应用并配置模型。",
     "AI requests use the desktop backend. Start the desktop app and configure a model."
   ],
-  "请通过 pnpm start 启动 Scientify 桌面应用。浏览器预览没有本地数据访问能力。": [
-    "请通过 pnpm start 启动 Scientify 桌面应用。浏览器预览没有本地数据访问能力。",
-    "Start Scientify with pnpm start. Browser preview cannot access desktop data."
+  "请通过 pnpm start 启动 Capsio 桌面应用。浏览器预览没有本地数据访问能力。": [
+    "请通过 pnpm start 启动 Capsio 桌面应用。浏览器预览没有本地数据访问能力。",
+    "Start Capsio with pnpm start. Browser preview cannot access desktop data."
   ],
   "PDF 阅读工具": ["PDF 阅读工具", "PDF tools"],
   "上一页": ["上一页", "Previous page"],
@@ -1490,13 +1490,13 @@
     "项目目录不存在或不可访问，请检查项目路径。",
     "Project directory does not exist or is inaccessible. Check its path."
   ],
-  "项目目录不能指向 Scientify 内部数据目录，请选择独立的源码目录。": [
-    "项目目录不能指向 Scientify 内部数据目录，请选择独立的源码目录。",
-    "Choose a source directory outside Scientify's internal data directory."
+  "项目目录不能指向 Capsio 内部数据目录，请选择独立的源码目录。": [
+    "项目目录不能指向 Capsio 内部数据目录，请选择独立的源码目录。",
+    "Choose a source directory outside Capsio's internal data directory."
   ],
-  "编辑器不能访问 Scientify 内部数据文件。": [
-    "编辑器不能访问 Scientify 内部数据文件。",
-    "The editor cannot access Scientify's internal data files."
+  "编辑器不能访问 Capsio 内部数据文件。": [
+    "编辑器不能访问 Capsio 内部数据文件。",
+    "The editor cannot access Capsio's internal data files."
   ],
   "文件路径超出项目目录。": [
     "文件路径超出项目目录。",
@@ -1543,9 +1543,9 @@
   ],
   "数据目录无父目录。": ["数据目录无父目录。", "Data directory has no parent."],
   "数据目录无效。": ["数据目录无效。", "Invalid data directory."],
-  "该数据目录正在被另一个 Scientify 进程使用。": [
-    "该数据目录正在被另一个 Scientify 进程使用。",
-    "Another Scientify process is using this data directory."
+  "该数据目录正在被另一个 Capsio 进程使用。": [
+    "该数据目录正在被另一个 Capsio 进程使用。",
+    "Another Capsio process is using this data directory."
   ],
   "工作区已发生变化，请重新载入后再保存。": [
     "工作区已发生变化，请重新载入后再保存。",
@@ -1580,9 +1580,9 @@
     "工作区包含无效的文本字段：{field}",
     "Invalid workspace text field: {field}"
   ],
-  "这不是受支持的 Scientify 工作区文件。": [
-    "这不是受支持的 Scientify 工作区文件。",
-    "This is not a supported Scientify workspace file."
+  "这不是受支持的 Capsio 工作区文件。": [
+    "这不是受支持的 Capsio 工作区文件。",
+    "This is not a supported Capsio workspace file."
   ],
   "工作区格式无效。": ["工作区格式无效。", "Invalid workspace format."],
   "记录标识无效。": ["记录标识无效。", "Invalid record identifier."],
@@ -1749,9 +1749,9 @@
     "The library root must be an absolute path."
   ],
   "文献根目录不是文件夹。": ["文献根目录不是文件夹。", "The library root is not a folder."],
-  "请选择 Scientify 数据目录之外的独立文献文件夹。": [
-    "请选择 Scientify 数据目录之外的独立文献文件夹。",
-    "Choose a separate literature folder outside the Scientify data directory."
+  "请选择 Capsio 数据目录之外的独立文献文件夹。": [
+    "请选择 Capsio 数据目录之外的独立文献文件夹。",
+    "Choose a separate literature folder outside the Capsio data directory."
   ],
   "文件不在文献目录内。": ["文件不在文献目录内。", "The file is outside the literature folder."],
   "上次文件操作未完成，请保留 .scientify/operation.json 并恢复文件后再操作。": [
@@ -2017,9 +2017,9 @@
     "网页加载失败（WebView2 {code}），可刷新或在系统浏览器打开。",
     "Page failed to load (WebView2 {code}). Refresh or open it in your system browser."
   ],
-  "SCIENTIFY_BROWSER_PROXY 必须是无凭据的 http://host:port 或 socks5://host:port。": [
-    "SCIENTIFY_BROWSER_PROXY 必须是无凭据的 http://host:port 或 socks5://host:port。",
-    "SCIENTIFY_BROWSER_PROXY must be http://host:port or socks5://host:port without credentials."
+  "CAPSIO_BROWSER_PROXY 必须是无凭据的 http://host:port 或 socks5://host:port。": [
+    "CAPSIO_BROWSER_PROXY 必须是无凭据的 http://host:port 或 socks5://host:port。",
+    "CAPSIO_BROWSER_PROXY must be http://host:port or socks5://host:port without credentials."
   ],
   "查看当前材料": ["查看当前材料", "View current context"],
   "当前材料": ["当前材料", "Current context"],
@@ -2328,9 +2328,9 @@
     "worktree 有未提交更改，请先 commit 或 stash。",
     "This worktree has uncommitted changes. Commit or stash them first."
   ],
-  "worktree 不能访问 Scientify 的内部数据、凭据或浏览缓存目录。": [
-    "worktree 不能访问 Scientify 的内部数据、凭据或浏览缓存目录。",
-    "A worktree cannot access Scientify's internal data, credentials or browser cache directories."
+  "worktree 不能访问 Capsio 的内部数据、凭据或浏览缓存目录。": [
+    "worktree 不能访问 Capsio 的内部数据、凭据或浏览缓存目录。",
+    "A worktree cannot access Capsio's internal data, credentials or browser cache directories."
   ],
   "Git 操作超时，请检查仓库状态后重试。": [
     "Git 操作超时，请检查仓库状态后重试。",
@@ -2551,9 +2551,9 @@
   "简洁": ["简洁", "Concise"],
   "系统划词权限": ["系统划词权限", "System selection permissions"],
   "macOS 辅助功能权限": ["macOS 辅助功能权限", "macOS Accessibility permission"],
-  "读取其他应用的选中文字需要辅助功能权限。请在系统设置中允许 Scientify；仍可直接粘贴翻译。": [
-    "读取其他应用的选中文字需要辅助功能权限。请在系统设置中允许 Scientify；仍可直接粘贴翻译。",
-    "Allow Scientify in system Accessibility settings to read selected text in other apps. You can still paste text manually."
+  "读取其他应用的选中文字需要辅助功能权限。请在系统设置中允许 Capsio；仍可直接粘贴翻译。": [
+    "读取其他应用的选中文字需要辅助功能权限。请在系统设置中允许 Capsio；仍可直接粘贴翻译。",
+    "Allow Capsio in system Accessibility settings to read selected text in other apps. You can still paste text manually."
   ],
   "授予权限": ["授予权限", "Grant permission"],
   "打开系统设置": ["打开系统设置", "Open System Settings"],
@@ -2563,9 +2563,9 @@
     "Windows 和 macOS 支持选中文字后按全局快捷键；Mac 需要辅助功能权限。",
     "On Windows and macOS, select text and press the global shortcut. macOS requires Accessibility permission."
   ],
-  "请在翻译设置中授予 Scientify macOS 辅助功能权限，再读取其他应用的选中文字。": [
-    "请在翻译设置中授予 Scientify macOS 辅助功能权限，再读取其他应用的选中文字。",
-    "Grant Scientify macOS Accessibility permission in Translation settings to read selections in other apps."
+  "请在翻译设置中授予 Capsio macOS 辅助功能权限，再读取其他应用的选中文字。": [
+    "请在翻译设置中授予 Capsio macOS 辅助功能权限，再读取其他应用的选中文字。",
+    "Grant Capsio macOS Accessibility permission in Translation settings to read selections in other apps."
   ],
   "翻译浮窗": ["翻译浮窗", "Translation popup"],
   "阅读内容": ["阅读内容", "Reading content"],
@@ -2617,9 +2617,9 @@
     "Paste text to translate in a floating window…"
   ],
   "使用当前选区": ["使用当前选区", "Use current selection"],
-  "划词翻译请在 Scientify 桌面应用中使用。": [
-    "划词翻译请在 Scientify 桌面应用中使用。",
-    "Selection translation is available in the Scientify desktop app."
+  "划词翻译请在 Capsio 桌面应用中使用。": [
+    "划词翻译请在 Capsio 桌面应用中使用。",
+    "Selection translation is available in the Capsio desktop app."
   ],
   "协作": ["协作", "Collaboration"],
   "协作服务器用于同步项目成员、文献元数据、PDF、笔记和代码仓库。AI、Python 环境与实验运行仍保留在本机。": [
@@ -2633,9 +2633,9 @@
   "已启用，等待服务器连接": ["已启用，等待服务器连接", "Enabled, waiting for server connection"],
   "待同步变更：{count}": ["待同步变更：{count}", "Pending changes: {count}"],
   "冲突：{count}": ["冲突：{count}", "Conflicts: {count}"],
-  "协作设置只能在 Scientify 桌面应用中使用。": [
-    "协作设置只能在 Scientify 桌面应用中使用。",
-    "Collaboration settings are available in the Scientify desktop app."
+  "协作设置只能在 Capsio 桌面应用中使用。": [
+    "协作设置只能在 Capsio 桌面应用中使用。",
+    "Collaboration settings are available in the Capsio desktop app."
   ],
   "协作服务器地址过长。": ["协作服务器地址过长。", "The collaboration server address is too long."],
   "协作服务器地址格式无效。": [
@@ -2692,7 +2692,7 @@
     "登录后还没有可加入的协作项目。",
     "No collaboration projects are available yet."
   ],
-  "Scientify 官方模型": ["Scientify 官方模型", "Scientify hosted models"],
+  "Capsio 官方模型": ["Capsio 官方模型", "Capsio hosted models"],
   "协作服务器": ["协作服务器", "Collaboration server"],
   "文件已导入本地，但协作上传失败：{error}": [
     "文件已导入本地，但协作上传失败：{error}",
@@ -2725,7 +2725,7 @@
   "工作区上下文": ["工作区上下文", "Workspace context"],
   "附带当前材料时，自动读取本会话目录的有限摘要和关联文件。关闭“附带材料”后不自动附带。": [
     "附带当前材料时，自动读取本会话目录的有限摘要和关联文件。关闭“附带材料”后不自动附带。",
-    "When current materials are attached, Scientify reads a limited summary and related files from this chat workspace. Turn off Attach materials to disable this."
+    "When current materials are attached, Capsio reads a limited summary and related files from this chat workspace. Turn off Attach materials to disable this."
   ],
   "上次发送的材料": ["上次发送的材料", "Materials sent last time"],
   "发送后可在这里检查实际附带的来源。": [
@@ -2775,9 +2775,9 @@
     "存在快捷键冲突，请先修改重复按键。",
     "Shortcut conflict detected. Change the duplicate key first."
   ],
-  "像 VS Code、Typora 一样，在这里查看和编辑 Scientify 的快捷操作。输入框、代码编辑器和中文输入法会优先使用自己的快捷键。": [
-    "像 VS Code、Typora 一样，在这里查看和编辑 Scientify 的快捷操作。输入框、代码编辑器和中文输入法会优先使用自己的快捷键。",
-    "View and edit Scientify shortcuts here, like in VS Code or Typora. Inputs, code editors and Chinese IMEs take precedence over global shortcuts."
+  "像 VS Code、Typora 一样，在这里查看和编辑 Capsio 的快捷操作。输入框、代码编辑器和中文输入法会优先使用自己的快捷键。": [
+    "像 VS Code、Typora 一样，在这里查看和编辑 Capsio 的快捷操作。输入框、代码编辑器和中文输入法会优先使用自己的快捷键。",
+    "View and edit Capsio shortcuts here, like in VS Code or Typora. Inputs, code editors and Chinese IMEs take precedence over global shortcuts."
   ],
   "恢复默认": ["恢复默认", "Restore defaults"],
   "全局": ["全局", "Global"],
@@ -2859,9 +2859,9 @@
   ],
   "协作项目已创建。": ["协作项目已创建。", "Collaboration project created."],
   "成员邀请已发送。": ["成员邀请已发送。", "The member invitation was sent."],
-  "登录和协作同步需要在 Scientify 桌面应用中使用。": [
-    "登录和协作同步需要在 Scientify 桌面应用中使用。",
-    "Sign-in and collaboration sync require the Scientify desktop app."
+  "登录和协作同步需要在 Capsio 桌面应用中使用。": [
+    "登录和协作同步需要在 Capsio 桌面应用中使用。",
+    "Sign-in and collaboration sync require the Capsio desktop app."
   ],
   "登录后管理共享文献与项目成员": [
     "登录后管理共享文献与项目成员",
@@ -2869,7 +2869,7 @@
   ],
   "本地优先协作": ["本地优先协作", "Local-first collaboration"],
   "你的协作项目": ["你的协作项目", "Your collaboration projects"],
-  "登录 Scientify 协作": ["登录 Scientify 协作", "Sign in to Scientify collaboration"],
+  "登录 Capsio 协作": ["登录 Capsio 协作", "Sign in to Capsio collaboration"],
   "选择一个远程项目，绑定到本机工作区后继续阅读、编辑和运行。": [
     "选择一个远程项目，绑定到本机工作区后继续阅读、编辑和运行。",
     "Choose a remote project, bind it to this workspace, and continue reading, editing and running."
@@ -2959,9 +2959,9 @@
     "Personal Pro includes every official model."
   ],
   "二维码暂时不可用": ["二维码暂时不可用", "QR code unavailable"],
-  "使用登录的 Scientify 账号，不需要密钥，按点数计费。": [
-    "使用登录的 Scientify 账号，不需要密钥，按点数计费。",
-    "Uses your signed-in Scientify account. No key needed; billed in points."
+  "使用登录的 Capsio 账号，不需要密钥，按点数计费。": [
+    "使用登录的 Capsio 账号，不需要密钥，按点数计费。",
+    "Uses your signed-in Capsio account. No key needed; billed in points."
   ],
   "其他模型": ["其他模型", "Other models"],
   "加入微信群开通": ["加入微信群开通", "Upgrade via WeChat group"],
@@ -2993,9 +2993,9 @@
     "Models marked “Pro” need the Personal Pro plan; choosing one shows how to upgrade."
   ],
   "模型来源": ["模型来源", "Model source"],
-  "用 Scientify 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。": [
-    "用 Scientify 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。",
-    "Use them with your Scientify account, no key needed, billed in points. Free includes some models; Personal Pro includes all."
+  "用 Capsio 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。": [
+    "用 Capsio 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。",
+    "Use them with your Capsio account, no key needed, billed in points. Free includes some models; Personal Pro includes all."
   ],
   "用微信扫码加入，发送手机号和想开通的套餐。": [
     "用微信扫码加入，发送手机号和想开通的套餐。",
@@ -3007,10 +3007,7 @@
   ],
   "管理模型": ["管理模型", "Manage models"],
   "让 AI 跑起来": ["让 AI 跑起来", "Let the AI run it"],
-  "请先登录 Scientify 账号。": [
-    "请先登录 Scientify 账号。",
-    "Sign in to your Scientify account first."
-  ],
+  "请先登录 Capsio 账号。": ["请先登录 Capsio 账号。", "Sign in to your Capsio account first."],
   "请发邮件到 2214331539@qq.com，写明手机号和想开通的套餐。": [
     "请发邮件到 2214331539@qq.com，写明手机号和想开通的套餐。",
     "Email 2214331539@qq.com with your phone number and the plan you want."
@@ -3080,7 +3077,7 @@
     "A downloaded file failed its integrity check."
   ],
   "返回": ["返回", "Back"],
-  "登录 Scientify": ["登录 Scientify", "Sign in to Scientify"],
+  "登录 Capsio": ["登录 Capsio", "Sign in to Capsio"],
   "请输入正确的 11 位手机号。": [
     "请输入正确的 11 位手机号。",
     "Enter a valid 11-digit phone number."
@@ -3101,7 +3098,7 @@
     "The collaboration service is unavailable right now. Try again later."
   ],
   "账号": ["账号", "Account"],
-  "已登录 Scientify 协作": ["已登录 Scientify 协作", "Signed in to Scientify collaboration"],
+  "已登录 Capsio 协作": ["已登录 Capsio 协作", "Signed in to Capsio collaboration"],
   "同步与协作设置": ["同步与协作设置", "Sync and collaboration settings"],
   "退出登录后，云端项目会停止同步，本机的项目和文件会保留。": [
     "退出登录后，云端项目会停止同步，本机的项目和文件会保留。",
@@ -3626,7 +3623,7 @@
   "克隆 Git 仓库": ["克隆 Git 仓库", "Clone Git Repository"],
   "仓库地址": ["仓库地址", "Repository URL"],
   "保存位置": ["保存位置", "Location"],
-  "Scientify 数据目录": ["Scientify 数据目录", "Scientify data folder"],
+  "Capsio 数据目录": ["Capsio 数据目录", "Capsio data folder"],
   "克隆": ["克隆", "Clone"],
   "正在克隆…": ["正在克隆…", "Cloning…"],
   "运行 (Ctrl+F5)": ["运行 (Ctrl+F5)", "Run (Ctrl+F5)"],
@@ -3886,9 +3883,9 @@
   ],
   "导入需要桌面应用。": ["导入需要桌面应用。", "Importing needs the desktop app."],
   "没有找到内置引擎": ["没有找到内置引擎", "Built-in engine not found"],
-  "请重新安装 Scientify，或者安装 TeX Live、MiKTeX。": [
-    "请重新安装 Scientify，或者安装 TeX Live、MiKTeX。",
-    "Reinstall Scientify, or install TeX Live or MiKTeX."
+  "请重新安装 Capsio，或者安装 TeX Live、MiKTeX。": [
+    "请重新安装 Capsio，或者安装 TeX Live、MiKTeX。",
+    "Reinstall Capsio, or install TeX Live or MiKTeX."
   ],
   "导入 zip…": ["导入 zip…", "Import zip…"],
   "从 Overleaf 导入…": ["从 Overleaf 导入…", "Import from Overleaf…"],
@@ -3923,9 +3920,9 @@
     "TeX 环境必须是自动、本机或内置引擎。",
     "The TeX environment must be automatic, local or built-in."
   ],
-  "没有找到内置引擎，请重新安装 Scientify。": [
-    "没有找到内置引擎，请重新安装 Scientify。",
-    "The built-in engine was not found. Reinstall Scientify."
+  "没有找到内置引擎，请重新安装 Capsio。": [
+    "没有找到内置引擎，请重新安装 Capsio。",
+    "The built-in engine was not found. Reinstall Capsio."
   ],
   "没有找到本机 TeX，请在编译设置里改用内置引擎。": [
     "没有找到本机 TeX，请在编译设置里改用内置引擎。",
@@ -4012,7 +4009,7 @@
     "The password needs both letters and digits."
   ],
   "两次输入的密码不一致。": ["两次输入的密码不一致。", "The passwords do not match."],
-  "注册 Scientify": ["注册 Scientify", "Sign up for Scientify"],
+  "注册 Capsio": ["注册 Capsio", "Sign up for Capsio"],
   "找回密码": ["找回密码", "Reset password"],
   "注册": ["注册", "Sign up"],
   "重置密码并登录": ["重置密码并登录", "Reset password and sign in"],
@@ -4027,9 +4024,9 @@
     "验证手机号后设置新密码。",
     "Verify your phone number, then set a new password."
   ],
-  "登录需要在 Scientify 桌面应用中使用。": [
-    "登录需要在 Scientify 桌面应用中使用。",
-    "Signing in needs the Scientify desktop app."
+  "登录需要在 Capsio 桌面应用中使用。": [
+    "登录需要在 Capsio 桌面应用中使用。",
+    "Signing in needs the Capsio desktop app."
   ],
   "新密码": ["新密码", "New password"],
   "密码": ["密码", "Password"],
@@ -4371,7 +4368,7 @@
   "重启后使用": ["重启后使用", "Use after restart"],
   "换个位置": ["换个位置", "Choose another place"],
   "使用已有数据": ["使用已有数据", "Use existing data"],
-  "欢迎使用 Scientify": ["欢迎使用 Scientify", "Welcome to Scientify"],
+  "欢迎使用 Capsio": ["欢迎使用 Capsio", "Welcome to Capsio"],
   "读文献、写代码、写论文，都在一个窗口里。花一分钟认识一下。": [
     "读文献、写代码、写论文，都在一个窗口里。花一分钟认识一下。",
     "Read papers, write code and write your paper in one window. Here is a one-minute tour."
@@ -4406,9 +4403,9 @@
     "Import a Zotero library, BibTeX or RIS with its collections, PDFs, notes and highlights."
   ],
   "内置浏览器": ["内置浏览器", "Built-in browser"],
-  "查资料、下论文，不用离开 Scientify。": [
-    "查资料、下论文，不用离开 Scientify。",
-    "Search and download papers without leaving Scientify."
+  "查资料、下论文，不用离开 Capsio。": [
+    "查资料、下论文，不用离开 Capsio。",
+    "Search and download papers without leaving Capsio."
   ],
   "邀请同学或同事，一起读、一起写。": [
     "邀请同学或同事，一起读、一起写。",
@@ -4562,9 +4559,9 @@
     "ChatGPT 账号只用于 AI 助手。全文翻译需要另一个模型，请在模型设置里再添加一个。",
     "The ChatGPT account only runs the AI assistant. Full-text translation needs another model; add one in model settings."
   ],
-  "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Scientify 官方模型）。": [
-    "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Scientify 官方模型）。",
-    "The ChatGPT account only runs the AI assistant. Selection translation needs another model; add one in model settings (such as the Scientify official model)."
+  "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Capsio 官方模型）。": [
+    "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Capsio 官方模型）。",
+    "The ChatGPT account only runs the AI assistant. Selection translation needs another model; add one in model settings (such as the Capsio official model)."
   ],
   "请先在模型设置里登录 ChatGPT 账号。": [
     "请先在模型设置里登录 ChatGPT 账号。",
@@ -4658,5 +4655,9 @@
     "Background goal ran out of budget: {title}"
   ],
   "AI 完成了：{title}": ["AI 完成了：{title}", "AI finished: {title}"],
-  "AI 需要你处理：{title}": ["AI 需要你处理：{title}", "AI needs you: {title}"]
+  "AI 需要你处理：{title}": ["AI 需要你处理：{title}", "AI needs you: {title}"],
+  "Scientify 已更名为 Capsio，项目和设置都已接上。旧版 Scientify 可以卸载了。": [
+    "Scientify 已更名为 Capsio，项目和设置都已接上。旧版 Scientify 可以卸载了。",
+    "Scientify is now Capsio. Your projects and settings came along, and the old Scientify can be uninstalled."
+  ]
 }

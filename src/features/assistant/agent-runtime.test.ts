@@ -44,7 +44,7 @@ async function harness() {
       domain,
       cwd: `C:/${projectId}/${domain}`,
       model: 'test-model',
-      modelProvider: 'scientify',
+      modelProvider: 'capsio',
       instructionSources: [],
       sandbox: 'workspaceWrite',
     })),
@@ -201,7 +201,7 @@ describe('local task ownership', () => {
       domain,
       cwd: options.workspaceRoot!,
       model: 'test-model',
-      modelProvider: 'scientify',
+      modelProvider: 'capsio',
       instructionSources: [],
     }));
     const a = { ...newConversation('p1'), agentCwd: 'F:/repo/main' };
@@ -372,7 +372,7 @@ describe('local task ownership', () => {
       domain: 'code',
       cwd: 'C:/p1/code',
       model: 'test',
-      modelProvider: 'scientify',
+      modelProvider: 'capsio',
       instructionSources: [],
       turns: [
         {

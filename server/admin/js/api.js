@@ -7,7 +7,7 @@ export async function api(method, path, body) {
   const response = await fetch(`/admin/api${path}`, {
     method,
     credentials: 'same-origin',
-    headers: { 'x-scientify-admin': '1', ...(body ? { 'content-type': 'application/json' } : {}) },
+    headers: { 'x-capsio-admin': '1', ...(body ? { 'content-type': 'application/json' } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
   let value = {};

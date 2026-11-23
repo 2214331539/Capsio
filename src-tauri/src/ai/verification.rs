@@ -101,15 +101,15 @@ async fn agent_probe(request: &ModelTest) -> Result<(), String> {
         return Err("请配置有效的模型名称。".into());
     }
     let nonce = uuid::Uuid::new_v4().to_string();
-    let initial = json!({"role":"user","content":format!("Call scientify_connection_test with nonce {nonce}. After the tool result, reply with its acknowledgement exactly.")});
-    let tools = json!([{"type":"function","name":"scientify_connection_test","description":"Harmless connection test, no filesystem access.","parameters":{"type":"object","properties":{"nonce":{"type":"string"}},"required":["nonce"],"additionalProperties":false},"strict":true}]);
+    let initial = json!({"role":"user","content":format!("Call capsio_connection_test with nonce {nonce}. After the tool result, reply with its acknowledgement exactly.")});
+    let tools = json!([{"type":"function","name":"capsio_connection_test","description":"Harmless connection test, no filesystem access.","parameters":{"type":"object","properties":{"nonce":{"type":"string"}},"required":["nonce"],"additionalProperties":false},"strict":true}]);
     let output = response_output(&request.connection, json!({"model":request.model,"input":[initial.clone()],"tools":tools,"tool_choice":"auto","stream":true,"store":false})).await?;
     let items = output.as_array().ok_or("Responses 缺少工具输出。")?;
     let calls = items
         .iter()
         .filter(|v| v["type"] == "function_call")
         .collect::<Vec<_>>();
-    if calls.len() != 1 || calls[0]["name"] != "scientify_connection_test" {
+    if calls.len() != 1 || calls[0]["name"] != "capsio_connection_test" {
         return Err("模型未返回预期的测试函数调用。".into());
     }
     let call = calls[0];
@@ -123,7 +123,7 @@ async fn agent_probe(request: &ModelTest) -> Result<(), String> {
         .as_str()
         .filter(|v| !v.is_empty())
         .ok_or("工具调用标识缺失。")?;
-    let acknowledgement = format!("scientify-ok-{nonce}");
+    let acknowledgement = format!("capsio-ok-{nonce}");
     let mut input = vec![initial];
     input.extend(items.iter().cloned());
     input.push(json!({"type":"function_call_output","call_id":call_id,"output":acknowledgement}));
@@ -213,7 +213,7 @@ mod tests {
                         body["tool_choice"], "auto",
                         "Thinking providers reject forced tool choice"
                     );
-                    json!([{"type":"function_call","call_id":"fixture-call","name":"scientify_connection_test","arguments":json!({"nonce":nonce}).to_string()}])
+                    json!([{"type":"function_call","call_id":"fixture-call","name":"capsio_connection_test","arguments":json!({"nonce":nonce}).to_string()}])
                 };
                 let event = json!({"type":"response.completed","response":{"status":"completed","output":output}});
                 (

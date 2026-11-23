@@ -10,9 +10,9 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
-tar -czf "$work/scientify-collab-src.tgz" -C "$here" src admin package.json
-cp "$here/deploy/update-remote.sh" "$work/scientify-collab-update-remote.sh"
+tar -czf "$work/capsio-collab-src.tgz" -C "$here" src admin package.json
+cp "$here/deploy/update-remote.sh" "$work/capsio-collab-update-remote.sh"
 echo "Uploading to $host..."
-scp "$work/scientify-collab-src.tgz" "$work/scientify-collab-update-remote.sh" "$host:/tmp/"
+scp "$work/capsio-collab-src.tgz" "$work/capsio-collab-update-remote.sh" "$host:/tmp/"
 echo "Installing on $host (sudo will ask for the password)..."
-ssh -t "$host" "sudo bash /tmp/scientify-collab-update-remote.sh"
+ssh -t "$host" "sudo bash /tmp/capsio-collab-update-remote.sh"

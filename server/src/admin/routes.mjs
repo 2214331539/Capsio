@@ -219,7 +219,7 @@ function sendAdminError(response, error) {
 async function route(request, response, { config, db }, path, url) {
   const method = request.method;
   const ip = clientAddress(request, config);
-  if (request.headers['x-scientify-admin'] !== '1') throw fail(403, '请求来源无效。');
+  if (request.headers['x-capsio-admin'] !== '1') throw fail(403, '请求来源无效。');
 
   if (method === 'POST' && path === '/send-code') {
     const input = await body(request, 4096);

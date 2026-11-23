@@ -41,7 +41,7 @@ export async function runDocsTool(
     if (!found) throw new Error('页面不存在或已在回收站。');
     return found;
   };
-  if (tool === 'scientify_list_docs') {
+  if (tool === 'capsio_list_docs') {
     const out: { id: string; title: string; path: string; updatedAt: string }[] = [];
     const walk = (parent: string | null) => {
       for (const item of childrenOf(pages(), parent)) {
@@ -59,7 +59,7 @@ export async function runDocsTool(
     walk(null);
     return { pages: out };
   }
-  if (tool === 'scientify_read_doc') {
+  if (tool === 'capsio_read_doc') {
     const summary = live(args.id);
     // Unsaved edits on screen are saved first, so the AI reads what the person sees.
     await runtime.save(summary.id);
@@ -68,7 +68,7 @@ export async function runDocsTool(
     if (markdown.length > 256 * 1024) throw new Error('页面过长，请让用户指出要处理的部分。');
     return { id: page.id, title: page.title, version, markdown };
   }
-  if (tool === 'scientify_create_doc') {
+  if (tool === 'capsio_create_doc') {
     const title = text(args.title, '标题', 1000).trim();
     const parent = args.parent ? live(args.parent).id : null;
     const blocks = markdownToBlocks(text(args.markdown ?? '', '正文'), { page: linkTo });
@@ -83,7 +83,7 @@ export async function runDocsTool(
       saved: true,
     };
   }
-  if (tool === 'scientify_update_doc') {
+  if (tool === 'capsio_update_doc') {
     const summary = live(args.id);
     await runtime.save(summary.id);
     const { page, version } = await docs.read(projectId, summary.id);

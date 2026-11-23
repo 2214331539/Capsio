@@ -1,5 +1,5 @@
 {
-  "name": "scientify-desktop",
+  "name": "capsio-desktop",
   "version": "0.5.0-alpha.3",
   "private": true,
   "license": "Apache-2.0",
@@ -7,7 +7,7 @@
   "engines": {
     "node": ">=22.14 <25"
   },
-  "description": "Scientify local desktop research workspace",
+  "description": "Capsio local desktop research workspace",
   "scripts": {
     "predev": "node scripts/prepare-icons.mjs && node scripts/prepare-pdf.mjs && node scripts/prepare-agent.mjs && node scripts/prepare-tectonic.mjs && node scripts/prepare-babeldoc.mjs",
     "prebuild": "node scripts/prepare-icons.mjs && node scripts/prepare-pdf.mjs && node scripts/prepare-agent.mjs && node scripts/prepare-tectonic.mjs && node scripts/prepare-babeldoc.mjs && node scripts/prepare-licenses.mjs",

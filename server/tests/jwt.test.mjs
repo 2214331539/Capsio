@@ -8,3 +8,9 @@ test('JWT round trips and rejects expired or modified tokens', () => {
   assert.throws(() => verifyToken(token, 'a'.repeat(40), 'test', 1061));
   assert.throws(() => verifyToken(`${token}x`, 'a'.repeat(40), 'test', 1010));
 });
+
+test('sessions signed before the rename stay valid', () => {
+  const token = signToken({ sub: 'user-1' }, 'a'.repeat(40), 60, 'scientify-collaboration', 1000);
+  assert.equal(verifyToken(token, 'a'.repeat(40), 'capsio-collaboration', 1010).sub, 'user-1');
+  assert.throws(() => verifyToken(token, 'a'.repeat(40), 'test', 1010));
+});

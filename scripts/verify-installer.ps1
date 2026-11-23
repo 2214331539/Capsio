@@ -4,8 +4,8 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or -not $env:RUNNER_TEMP) {
     throw 'Installer smoke checks run only on a disposable GitHub Actions runner.'
 }
 $installerPath = (Resolve-Path -LiteralPath $Installer).Path
-$installDirectory = Join-Path $env:RUNNER_TEMP ('Scientify-install-' + [guid]::NewGuid().ToString('N'))
-$marker = Join-Path $installDirectory 'ScientifyData\workspace\release-smoke.txt'
+$installDirectory = Join-Path $env:RUNNER_TEMP ('Capsio-install-' + [guid]::NewGuid().ToString('N'))
+$marker = Join-Path $installDirectory 'CapsioData\workspace\release-smoke.txt'
 New-Item -ItemType Directory -Path (Split-Path $marker) -Force | Out-Null
 Set-Content -LiteralPath $marker -Value 'preserve-research-data'
 function Install-Package {
@@ -14,7 +14,7 @@ function Install-Package {
     if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode)" }
 }
 Install-Package
-foreach ($relative in @('scientify.exe', 'codex.exe', 'tectonic.exe', 'babeldoc\scientify-babeldoc.json', 'babeldoc\python\python.exe', 'licenses\Scientify-LICENSE', 'licenses\codex-LICENSE', 'licenses\codex-NOTICE', 'licenses\tectonic-LICENSE', 'licenses\THIRD_PARTY_LICENSES.txt')) {
+foreach ($relative in @('capsio.exe', 'codex.exe', 'tectonic.exe', 'babeldoc\capsio-babeldoc.json', 'babeldoc\python\python.exe', 'licenses\Capsio-LICENSE', 'licenses\codex-LICENSE', 'licenses\codex-NOTICE', 'licenses\tectonic-LICENSE', 'licenses\THIRD_PARTY_LICENSES.txt')) {
     if (-not (Test-Path -LiteralPath (Join-Path $installDirectory $relative))) { throw "Missing payload: $relative" }
 }
 & (Join-Path $installDirectory 'codex.exe') --version
@@ -31,5 +31,5 @@ $process = Start-Process -FilePath $uninstallers[0].FullName -ArgumentList "/S _
 if (-not $process.WaitForExit(180000)) { throw 'Uninstaller timed out.' }
 if ($process.ExitCode -ne 0) { throw "Uninstaller failed: $($process.ExitCode)" }
 if (-not (Test-Path -LiteralPath $marker)) { throw 'Uninstall removed research data.' }
-if (Test-Path -LiteralPath (Join-Path $installDirectory 'scientify.exe')) { throw 'Uninstall did not remove the application.' }
+if (Test-Path -LiteralPath (Join-Path $installDirectory 'capsio.exe')) { throw 'Uninstall did not remove the application.' }
 Write-Output 'Installer smoke checks passed: payload, reinstall and data-preserving uninstall.'

@@ -6,7 +6,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://soundingx-download-package.oss-cn-beijing.aliyuncs.com/scientify/updates/preview/latest.json"
+        "https://soundingx-download-package.oss-cn-beijing.aliyuncs.com/capsio/updates/preview/latest.json"
       ]
     }
   }

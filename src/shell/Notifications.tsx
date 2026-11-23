@@ -38,7 +38,7 @@ import {
 } from '../features/assistant/notices';
 import './notifications.css';
 
-const dismissedKey = 'scientify.home.dismissed';
+const dismissedKey = 'capsio.home.dismissed';
 function readDismissed(): string[] {
   try {
     const value = JSON.parse(localStorage.getItem(dismissedKey) ?? '[]');
@@ -105,7 +105,7 @@ export function Notifications({
     const share = downloadShare(update);
     const about = () => {
       close();
-      window.dispatchEvent(new CustomEvent('scientify-open-settings', { detail: 'about' }));
+      window.dispatchEvent(new CustomEvent('capsio-open-settings', { detail: 'about' }));
     };
     items.push({
       key: `update:${update.version}`,

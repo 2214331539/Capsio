@@ -29,7 +29,7 @@ jobs:
     timeout-minutes: 60
     env:
       MACOSX_DEPLOYMENT_TARGET: '14.0'
-      SCIENTIFY_CODEX_TRIPLE: aarch64-apple-darwin
+      CAPSIO_CODEX_TRIPLE: aarch64-apple-darwin
       APPLE_SIGNING_IDENTITY: '-'
     steps:
       - uses: actions/checkout@v4
@@ -41,8 +41,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(uname -m)" = arm64
-          mkdir -p "$RUNNER_TEMP/scientify-tests"
-          echo "TMPDIR=$(cd "$RUNNER_TEMP/scientify-tests" && pwd -P)/" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/capsio-tests"
+          echo "TMPDIR=$(cd "$RUNNER_TEMP/capsio-tests" && pwd -P)/" >> "$GITHUB_ENV"
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -110,12 +110,12 @@ jobs:
       - name: Build native verification app
         run: node node_modules/@tauri-apps/cli/tauri.js build --debug --no-bundle --ci -- --locked
       - name: Verify native browser, library and IPC
-        run: python3 scripts/verify-macos.py --native target/debug/scientify
+        run: python3 scripts/verify-macos.py --native target/debug/capsio
       - name: Configure optional Developer ID signing
         env:
           APPLE_CERTIFICATE: ${{ inputs.release && secrets.APPLE_CERTIFICATE || '' }}
           APPLE_CERTIFICATE_PASSWORD: ${{ inputs.release && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
-          SCIENTIFY_SIGNING_IDENTITY: ${{ inputs.release && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          CAPSIO_SIGNING_IDENTITY: ${{ inputs.release && secrets.APPLE_SIGNING_IDENTITY || '' }}
           APPLE_API_ISSUER: ${{ inputs.release && secrets.APPLE_API_ISSUER || '' }}
           APPLE_API_KEY: ${{ inputs.release && secrets.APPLE_API_KEY || '' }}
           APPLE_API_PRIVATE_KEY: ${{ inputs.release && secrets.APPLE_API_PRIVATE_KEY || '' }}
@@ -136,10 +136,10 @@ jobs:
       - name: Remove signing material
         if: always()
         run: |
-          if [ -f "$RUNNER_TEMP/scientify-signing.keychain-db" ]; then
-            security delete-keychain "$RUNNER_TEMP/scientify-signing.keychain-db"
+          if [ -f "$RUNNER_TEMP/capsio-signing.keychain-db" ]; then
+            security delete-keychain "$RUNNER_TEMP/capsio-signing.keychain-db"
           fi
-          rm -f "$RUNNER_TEMP/scientify-signing.p12" "$RUNNER_TEMP/scientify-notary.p8"
+          rm -f "$RUNNER_TEMP/capsio-signing.p12" "$RUNNER_TEMP/capsio-notary.p8"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

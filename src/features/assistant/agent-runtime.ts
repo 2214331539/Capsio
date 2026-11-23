@@ -46,7 +46,7 @@ export interface AgentTask {
 }
 const keyOf = (project: string, id: string) => `${project}:${id}`;
 /** Fired on the window with the project id when an AI turn ends. */
-export const agentFinishedEvent = 'scientify-agent-finished';
+export const agentFinishedEvent = 'capsio-agent-finished';
 const runtimes = new WeakMap<WorkspaceStore, Map<AgentBackend, AgentRuntime>>();
 export function getAgentRuntime(store: WorkspaceStore, agent: AgentBackend): AgentRuntime {
   let backends = runtimes.get(store);
@@ -383,7 +383,7 @@ export class AgentRuntime {
       const material = context
         ? `\n\n<current-material>\n${contextMaterial(context)}\n</current-material>`
         : '';
-      // Older Scientify chats have visible history but no native thread mapping.
+      // Older Capsio chats have visible history but no native thread mapping.
       // Seed only this conversation, and only when the engine created a fresh thread.
       const history = task.session.handle?.freshThread
         ? seed.messages

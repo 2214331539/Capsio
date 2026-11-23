@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scientify · 管理后台原型</title>
+<title>Capsio · 管理后台原型</title>
 <style>
-/* Scientify admin prototype. Same graphite palette as the desktop app. */
+/* Capsio admin prototype. Same graphite palette as the desktop app. */
 :root,
 [data-theme='light'] {
   --page: #f6f6f7;
@@ -1395,7 +1395,7 @@ td .muted,
 <div id="root"></div>
 <div id="layer"></div>
 <script>
-/* Scientify admin prototype: users, quota, models, teams and audit on the collaboration server. Sample data only. */
+/* Capsio admin prototype: users, quota, models, teams and audit on the collaboration server. Sample data only. */
 (() => {
   'use strict';
 
@@ -2397,7 +2397,7 @@ td .muted,
             ${exhausted ? `<div class="exhausted"><div class="t">本月的官方模型额度已用完</div><div class="s">12 月 2 日恢复 3,000 点。这条消息还没有发出。</div><div class="acts"><button class="btn sm">使用兑换码</button><button class="btn sm" disabled>买加油包 · 第二期</button><button class="btn sm">改用自己的密钥</button></div></div>` : `<div class="answer">第二篇式 (7) 到式 (8) 少了归一化项 1/√d，对结论没有影响；其余推导成立。<div class="meta">Qwen3 Max · 本轮 41 点</div></div>`}
           </div>
           <div class="composer"><div class="ph">继续提问…</div>
-            ${exhausted ? '' : `<div class="model-menu"><div class="g">Scientify 官方模型</div>${MODELS.map((m) => `<div class="m ${m.id === 'qwen' ? 'on' : ''}">${m.name}<span class="x">${times(m)}</span></div>`).join('')}<div class="g">我的密钥（不扣点数）</div><div class="m">DeepSeek · 自己的密钥</div><div class="foot"><span>剩余 ${fmt(left)} 点</span><button class="link">账号与订阅</button></div></div>`}
+            ${exhausted ? '' : `<div class="model-menu"><div class="g">Capsio 官方模型</div>${MODELS.map((m) => `<div class="m ${m.id === 'qwen' ? 'on' : ''}">${m.name}<span class="x">${times(m)}</span></div>`).join('')}<div class="g">我的密钥（不扣点数）</div><div class="m">DeepSeek · 自己的密钥</div><div class="foot"><span>剩余 ${fmt(left)} 点</span><button class="link">账号与订阅</button></div></div>`}
             <div class="bar"><button class="model-pick">${exhausted ? 'DeepSeek V3.2' : 'Qwen3 Max'} ${icon('down')}</button><span style="flex:1"></span><span class="muted" style="font-size:12px">${exhausted ? '额度已用完' : `剩余 ${fmt(left)} 点`}</span><button class="icon-btn">${icon('send')}</button></div>
           </div>
         </div></div>
@@ -2407,7 +2407,7 @@ td .muted,
 
   // ---------- Shell ----------
   function login() {
-    return `<div class="login"><div class="box"><div class="brand" style="padding:0"><span class="logo">${icon('box')}</span><span>Scientify<small>管理后台</small></span></div>
+    return `<div class="login"><div class="box"><div class="brand" style="padding:0"><span class="logo">${icon('box')}</span><span>Capsio<small>管理后台</small></span></div>
       <h2>登录</h2><div class="muted">只有管理员可以登录。每次登录都要短信验证码。</div>
       <div class="form-row"><label>手机号</label><input class="text num" value="138****0001"></div>
       <div class="form-row"><label>密码</label><input class="text" type="password" value="password"></div>
@@ -2439,7 +2439,7 @@ td .muted,
     const clientScroll = root.querySelector('.client')?.scrollTop ?? 0;
     root.innerHTML = `<div class="shell">
       <aside class="side">
-        <div class="brand"><span class="logo">${icon('box')}</span><span>Scientify<small>管理后台</small></span></div>
+        <div class="brand"><span class="logo">${icon('box')}</span><span>Capsio<small>管理后台</small></span></div>
         ${NAV.map((n) => (n.group ? `<div class="nav-group">${n.group}</div>` : `<button class="nav-item ${S.view === n.id ? 'on' : ''}" data-act="go" data-view="${n.id}">${icon(n.icon)}${n.name}${n.id === 'orders' ? '<span class="tag">第一期手动</span>' : ''}</button>`)).join('')}
         <div class="side-foot"><div class="avatar sm">林</div><div class="me"><b>林</b><span>所有者</span></div><button class="icon-btn" data-act="theme" title="切换深色">${icon('moon')}</button><button class="icon-btn" data-act="sign-out" title="退出">${icon('logout')}</button></div>
       </aside>

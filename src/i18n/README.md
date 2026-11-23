@@ -5,7 +5,7 @@
 - `index.ts`：`t(key, values)` 插值、日期/排序 locale、错误消息翻译。单数计数使用对应英文形式。
 - `PreferenceFields`：按 `field` 显示语言或主题选项；语言位于分类设置的“通用”，主题位于“外观”。`AppearanceControls` 只提供顶栏亮暗按钮，使用透明底和图标过渡，不用 aria-pressed 表示持续选中。偏好即时应用，不参与研究数据保存队列。
 
-默认中文、跟随系统。持久化键 `scientify.preferences.v1`；首次升级从旧 `workspace.settings.theme` 读取主题，此后独立保存。存储不可用时继续在当前进程生效。偏好不包含秘密，不写入科研工作区 JSON。
+默认中文、跟随系统。持久化键 `capsio.preferences.v1`；首次升级从旧 `workspace.settings.theme` 读取主题，此后独立保存。存储不可用时继续在当前进程生效。偏好不包含秘密，不写入科研工作区 JSON。
 
 开发约定：
 

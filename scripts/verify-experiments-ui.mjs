@@ -81,9 +81,9 @@ try {
       },
       navigation: { tabs: ['home'], active: 'home', expanded: [], panel: null },
     };
-    localStorage.setItem('scientify.mvp.preview.workspace.v1', JSON.stringify(data));
+    localStorage.setItem('capsio.mvp.preview.workspace.v1', JSON.stringify(data));
     localStorage.setItem(
-      'scientify.mvp.preview.files.v1',
+      'capsio.mvp.preview.files.v1',
       JSON.stringify({
         [project.id]: {
           'src/train.py': {
@@ -101,7 +101,7 @@ try {
       }),
     );
     localStorage.setItem(
-      'scientify.ui.v2',
+      'capsio.ui.v2',
       JSON.stringify({
         version: 2,
         projectId: project.id,
@@ -121,7 +121,7 @@ try {
       }),
     );
   });
-  await page.goto(process.env.SCIENTIFY_UI_URL || 'http://127.0.0.1:1420', {
+  await page.goto(process.env.CAPSIO_UI_URL || 'http://127.0.0.1:1420', {
     waitUntil: 'domcontentloaded',
     timeout: 120000,
   });
@@ -183,7 +183,7 @@ try {
   }
   await page.evaluate(() =>
     localStorage.setItem(
-      'scientify.preferences.v1',
+      'capsio.preferences.v1',
       JSON.stringify({ language: 'en', theme: 'dark' }),
     ),
   );

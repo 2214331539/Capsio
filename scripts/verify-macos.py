@@ -35,9 +35,9 @@ sys.excepthook = report_failure
 
 if args.native:
     report = root / 'native-report.json'
-    env = dict(os.environ, SCIENTIFY_NATIVE_SMOKE='1',
-               SCIENTIFY_DATA_DIR=str(root / 'native/workspace'),
-               SCIENTIFY_NATIVE_REPORT=str(report))
+    env = dict(os.environ, CAPSIO_NATIVE_SMOKE='1',
+               CAPSIO_DATA_DIR=str(root / 'native/workspace'),
+               CAPSIO_NATIVE_REPORT=str(report))
     try:
         with (root / 'native.log').open('w') as log:
             subprocess.run([str(pathlib.Path(args.native).resolve())], env=env,
@@ -64,14 +64,14 @@ if args.bundle:
     mount.mkdir(exist_ok=True)
     installed = root / 'Applications'
     installed.mkdir(exist_ok=True)
-    app = installed / 'Scientify.app'
+    app = installed / 'Capsio.app'
     run('hdiutil', 'verify', str(disks[0]))
     # Tauri embeds this repository's Apache-2.0 license in the DMG. hdiutil
     # requires acceptance on stdin even in a non-interactive CI session.
     run('hdiutil', 'attach', str(disks[0]), '-nobrowse', '-readonly', '-mountpoint', str(mount),
         input='Y\n')
     try:
-        run('ditto', str(mount / 'Scientify.app'), str(app))
+        run('ditto', str(mount / 'Capsio.app'), str(app))
     finally:
         run('hdiutil', 'detach', str(mount))
     metadata = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
@@ -94,16 +94,16 @@ if args.bundle:
         run('xcrun', 'stapler', 'validate', str(app))
         run('spctl', '--assess', '--type', 'execute', '--verbose=2', str(app))
     # These paths belong to the throwaway runner, never a developer's Mac.
-    run(str(binary), '--scientify-migrate-storage')
-    data = pathlib.Path.home() / 'Library/Application Support/Scientify'
-    manifest = json.loads((data / 'scientify-storage.json').read_text())
+    run(str(binary), '--capsio-migrate-storage')
+    data = pathlib.Path.home() / 'Library/Application Support/Capsio'
+    manifest = json.loads((data / 'capsio-storage.json').read_text())
     container = pathlib.Path(manifest['directory'])
     if not container.is_relative_to(data):
         raise SystemExit('Application data must be outside the signed app')
     sentinel = container / 'release-verification.txt'
     sentinel.write_text('preserve existing research data', encoding='utf8')
-    run('ditto', str(bundle / 'macos/Scientify.app'), str(app))
-    run(str(binary), '--scientify-migrate-storage')
+    run('ditto', str(bundle / 'macos/Capsio.app'), str(app))
+    run(str(binary), '--capsio-migrate-storage')
     if sentinel.read_text() != 'preserve existing research data':
         raise SystemExit('Reinstall changed existing application data')
     # LaunchServices exercises a Finder-style launch with the GUI environment.
@@ -112,7 +112,7 @@ if args.bundle:
     process = run('pgrep', '-f', str(binary), capture_output=True).stdout.strip()
     if not process:
         raise SystemExit('Packaged application did not remain running')
-    run('osascript', '-e', 'tell application id "com.scientify.desktop" to quit')
+    run('osascript', '-e', 'tell application id "com.capsio.desktop" to quit')
     run('codesign', '--verify', '--deep', '--strict', str(app))
     result = {'passed': True, 'arch': 'arm64', 'minimumSystemVersion': '14.0',
               'signing': os.environ.get('MACOS_SIGNING', 'adhoc'),

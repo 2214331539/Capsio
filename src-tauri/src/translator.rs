@@ -179,7 +179,7 @@ fn engine<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<Engine> {
         .chain(std::iter::once(development))
         .find_map(|dir| {
             let stamp: serde_json::Value =
-                serde_json::from_slice(&std::fs::read(dir.join("scientify-babeldoc.json")).ok()?)
+                serde_json::from_slice(&std::fs::read(dir.join("capsio-babeldoc.json")).ok()?)
                     .ok()?;
             let relative = Path::new(stamp["executable"].as_str()?);
             if !relative
@@ -205,7 +205,7 @@ fn quarantined(path: &Path) -> bool {
 }
 
 /// Where the engine runs from. macOS refuses code carrying the download quarantine of
-/// an app that is not notarized, which Scientify cannot be yet. A quarantined engine
+/// an app that is not notarized, which Capsio cannot be yet. A quarantined engine
 /// is cloned into the data folder (an APFS clone takes no extra space), the mark taken
 /// off the copy, and run from there; once per version, without asking anything.
 fn runnable(engine: &Engine, base: &Path) -> Result<PathBuf, String> {
@@ -301,7 +301,7 @@ fn model<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<Model, String> 
         .filter(|name| crate::ai::valid_model(name))
         .ok_or("没有选择模型。")?
         .to_string();
-    let official = settings["serviceId"] == "scientify";
+    let official = settings["serviceId"] == "capsio";
     let api_key = if official {
         endpoint = crate::collaboration::device(&state)?.endpoint;
         let stale = app
@@ -852,7 +852,7 @@ fn run_engine(
         ("TMP", tmp.as_str()),
         ("TMPDIR", tmp.as_str()),
         ("PYTHONPYCACHEPREFIX", pycache.as_str()),
-        ("SCIENTIFY_BABELDOC_ASSETS", assets.as_str()),
+        ("CAPSIO_BABELDOC_ASSETS", assets.as_str()),
         ("PDF2ZH_OPENAI_COMPATIBLE_API_KEY", key.as_str()),
         ("PYTHONNOUSERSITE", "1"),
         ("PYTHONUTF8", "1"),
@@ -1163,8 +1163,8 @@ mod tests {
     }
 
     /// Translates a PDF with the engine in `release-resources/babeldoc`:
-    /// `SCIENTIFY_TRANSLATE_HOME=… SCIENTIFY_TRANSLATE_PDF=… SCIENTIFY_TRANSLATE_KEY=…
-    /// SCIENTIFY_TRANSLATE_BASE=… SCIENTIFY_TRANSLATE_MODEL=… cargo test -p scientify -- --ignored live_translation`
+    /// `CAPSIO_TRANSLATE_HOME=… CAPSIO_TRANSLATE_PDF=… CAPSIO_TRANSLATE_KEY=…
+    /// CAPSIO_TRANSLATE_BASE=… CAPSIO_TRANSLATE_MODEL=… cargo test -p capsio -- --ignored live_translation`
     #[test]
     #[ignore]
     fn live_translation() {
@@ -1173,23 +1173,23 @@ mod tests {
             .join("release-resources")
             .join("babeldoc");
         let stamp: serde_json::Value =
-            serde_json::from_slice(&std::fs::read(engine.join("scientify-babeldoc.json")).unwrap())
+            serde_json::from_slice(&std::fs::read(engine.join("capsio-babeldoc.json")).unwrap())
                 .unwrap();
         let python = engine.join(stamp["executable"].as_str().unwrap());
-        let base = PathBuf::from(var("SCIENTIFY_TRANSLATE_HOME")).join("translator");
+        let base = PathBuf::from(var("CAPSIO_TRANSLATE_HOME")).join("translator");
         let target = base.join("out").join("translated.pdf");
         let _ = std::fs::remove_file(&target);
         let job = Job {
             project: "p".into(),
             fingerprint: "f".repeat(64),
-            source: PathBuf::from(var("SCIENTIFY_TRANSLATE_PDF")),
+            source: PathBuf::from(var("CAPSIO_TRANSLATE_PDF")),
             target: target.clone(),
         };
         let model = Model {
             provider: "openai".into(),
-            endpoint: var("SCIENTIFY_TRANSLATE_BASE"),
-            model: var("SCIENTIFY_TRANSLATE_MODEL"),
-            api_key: var("SCIENTIFY_TRANSLATE_KEY"),
+            endpoint: var("CAPSIO_TRANSLATE_BASE"),
+            model: var("CAPSIO_TRANSLATE_MODEL"),
+            api_key: var("CAPSIO_TRANSLATE_KEY"),
             official: false,
         };
         let started = Instant::now();

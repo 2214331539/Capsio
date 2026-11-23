@@ -25,7 +25,7 @@ const PDF_LIMIT: u64 = 200 * 1024 * 1024;
 const ZIP_LIMIT: u64 = 512 * 1024 * 1024;
 const UNPACKED_LIMIT: u64 = 1024 * 1024 * 1024;
 const ZIP_ENTRIES: usize = 20_000;
-const TARGET: &str = env!("SCIENTIFY_TARGET");
+const TARGET: &str = env!("CAPSIO_TARGET");
 /// The same manifest `scripts/prepare-tectonic.mjs` downloads and verifies the engine from.
 const TECTONIC_MANIFEST: &str = include_str!("../../scripts/tectonic-assets.json");
 
@@ -47,7 +47,7 @@ fn tectonic_version() -> &'static str {
     })
 }
 
-/// The Tectonic shipped with Scientify. Release bundles place it next to the executable with
+/// The Tectonic shipped with Capsio. Release bundles place it next to the executable with
 /// the target suffix removed; development keeps the suffixed file in `binaries/`.
 fn bundled() -> Option<PathBuf> {
     let suffix = std::env::consts::EXE_SUFFIX;
@@ -217,7 +217,7 @@ fn manuscript(
     if !dir.starts_with(&root) || !dir.is_dir() {
         return Err("稿件文件夹必须在写作文件夹里。".into());
     }
-    scientify_core::research::reject_links(&dir)?;
+    capsio_core::research::reject_links(&dir)?;
     let main_rel = relative(main)?;
     if main_rel.extension().and_then(|e| e.to_str()) != Some("tex") {
         return Err("主文档必须是 .tex 文件。".into());
@@ -455,7 +455,7 @@ fn seed_cache(seed: &Path, cache: &Path) -> std::io::Result<()> {
     let record = std::fs::read_to_string(seed.join("seed.json"))?;
     let complete = serde_json::from_str::<serde_json::Value>(&record)
         .is_ok_and(|value| value["complete"] == serde_json::Value::Bool(true));
-    let marker = cache.join("scientify-seed.json");
+    let marker = cache.join("capsio-seed.json");
     if !complete || std::fs::read_to_string(&marker).ok().as_deref() == Some(record.as_str()) {
         return Ok(());
     }
@@ -597,7 +597,7 @@ fn choose_engine<'a>(
     local: Option<&'a LocalTex>,
     bundled: Option<PathBuf>,
 ) -> Result<Engine<'a>, String> {
-    let missing = || "没有找到内置引擎，请重新安装 Scientify。".to_string();
+    let missing = || "没有找到内置引擎，请重新安装 Capsio。".to_string();
     match (choice, local) {
         ("local", None) => Err("没有找到本机 TeX，请在编译设置里改用内置引擎。".into()),
         ("local", Some(tex)) if !tex.engines.iter().any(|e| e == compiler) => Err(format!(
@@ -1444,7 +1444,7 @@ mod tests {
         );
         assert!(!cache.join("seed.json").exists());
         assert_eq!(
-            std::fs::read_to_string(cache.join("scientify-seed.json")).unwrap(),
+            std::fs::read_to_string(cache.join("capsio-seed.json")).unwrap(),
             record
         );
         std::fs::remove_file(cache.join("formats.fmt")).unwrap();

@@ -26,9 +26,9 @@ public sealed class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            if (ScientifyBridge.IsEmbedded)
+            if (CapsioBridge.IsEmbedded)
             {
-                StartScientify(desktop);
+                StartCapsio(desktop);
                 base.OnFrameworkInitializationCompleted();
                 return;
             }
@@ -119,11 +119,11 @@ public sealed class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private void StartScientify(IClassicDesktopStyleApplicationLifetime desktop)
+    private void StartCapsio(IClassicDesktopStyleApplicationLifetime desktop)
     {
         RefreshDisplayPreferences();
         var platform = new DesktopPlatformServices();
-        var client = ScientifyBridge.CreateClient();
+        var client = CapsioBridge.CreateClient();
         _selectionRuntime = platform.CreateSelectionRuntime();
         var mainWindow = new MainWindow(_selectionRuntime, httpClient: client, startupRegistration: platform.Startup);
         _settingsWindow = mainWindow;
@@ -143,7 +143,7 @@ public sealed class App : Application
             client.Dispose();
         };
         // Initialization configures capture before installing hooks, avoiding an enabled startup race.
-        ScientifyBridge.Start(mainWindow, desktop);
+        CapsioBridge.Start(mainWindow, desktop);
     }
 
     private void RefreshDisplayPreferences()

@@ -1,5 +1,5 @@
 use crate::AppState;
-use scientify_core::{research::ResearchFiles, storage::Storage};
+use capsio_core::{research::ResearchFiles, storage::Storage};
 use serde_json::Value;
 use std::{collections::BTreeSet, path::Path, sync::Mutex};
 use tauri::State;
@@ -28,7 +28,7 @@ pub(crate) fn context(
 }
 fn read(storage: &Storage) -> Result<BTreeSet<String>, String> {
     let file = storage.directory().join("execution-trust.json");
-    scientify_core::research::reject_links(&file)?;
+    capsio_core::research::reject_links(&file)?;
     if !file.exists() {
         return Ok(BTreeSet::new());
     }
@@ -74,7 +74,7 @@ pub async fn experiment_trust<R: tauri::Runtime>(
                 entries.remove(&root.display().to_string());
             }
             let temporary = storage.directory().join("execution-trust.tmp");
-            scientify_core::research::reject_links(&temporary)?;
+            capsio_core::research::reject_links(&temporary)?;
             std::fs::write(
                 &temporary,
                 serde_json::to_vec(&entries).map_err(|e| e.to_string())?,

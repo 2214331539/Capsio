@@ -20,7 +20,7 @@ it('sends the message and stack, and skips noise', () => {
 });
 
 it('is on until turned off', () => {
-  localStorage.removeItem('scientify.errorReports');
+  localStorage.removeItem('capsio.errorReports');
   expect(errorReportsOn()).toBe(true);
   setErrorReports(false);
   expect(errorReportsOn()).toBe(false);

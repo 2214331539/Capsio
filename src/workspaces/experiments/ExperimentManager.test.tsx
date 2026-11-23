@@ -19,7 +19,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   codeContext.setState({ roots: {}, experiments: {} });
   developmentStore.setState({ terminals: [], tasks: [] });
-  localStorage.removeItem('scientify.experiments.layout.v1');
+  localStorage.removeItem('capsio.experiments.layout.v1');
 });
 async function setup() {
   const data = normalizeExperiments(emptyWorkspace());

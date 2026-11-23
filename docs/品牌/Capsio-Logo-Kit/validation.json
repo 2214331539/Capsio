@@ -1,0 +1,70 @@
+{
+  "pngFilesChecked": 71,
+  "icoFilesChecked": 6,
+  "icoFrameSizes": {
+    "desktop/capsio.ico": [
+      256,
+      128,
+      64,
+      48,
+      40,
+      32,
+      24,
+      20,
+      16
+    ],
+    "desktop/capsio-dark.ico": [
+      256,
+      128,
+      64,
+      48,
+      40,
+      32,
+      24,
+      20,
+      16
+    ],
+    "desktop/capsio-light.ico": [
+      256,
+      128,
+      64,
+      48,
+      40,
+      32,
+      24,
+      20,
+      16
+    ],
+    "taskbar/capsio-light.ico": [
+      256,
+      128,
+      64,
+      48,
+      40,
+      32,
+      24,
+      20,
+      16
+    ],
+    "taskbar/capsio-dark.ico": [
+      256,
+      128,
+      64,
+      48,
+      40,
+      32,
+      24,
+      20,
+      16
+    ],
+    "web/favicon.ico": [
+      48,
+      32,
+      16
+    ]
+  },
+  "rgba": true,
+  "largestIcoFrameFirst": true,
+  "offCentre": [],
+  "status": "passed"
+}

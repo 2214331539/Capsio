@@ -9,8 +9,8 @@ import './math.css';
 
 declare module 'micromark-util-types' {
   interface TokenTypeMap {
-    scientifyMath: 'scientifyMath';
-    scientifyMathData: 'scientifyMathData';
+    capsioMath: 'capsioMath';
+    capsioMathData: 'capsioMathData';
   }
 }
 
@@ -20,7 +20,7 @@ const tokenizeLatex: Tokenizer = function (effects, ok, nok) {
   return start;
   function start(code: Code) {
     if (code !== 92) return nok(code);
-    effects.enter('scientifyMath');
+    effects.enter('capsioMath');
     effects.consume(code);
     return opening;
   }
@@ -38,13 +38,13 @@ const tokenizeLatex: Tokenizer = function (effects, ok, nok) {
       effects.exit('lineEnding');
       return between;
     }
-    effects.enter('scientifyMathData');
+    effects.enter('capsioMathData');
     return inside(code);
   }
   function inside(code: Code): ReturnType<State> {
     if (code === null) return nok(code);
     if (code === -5 || code === -4 || code === -3) {
-      effects.exit('scientifyMathData');
+      effects.exit('capsioMathData');
       return between(code);
     }
     effects.consume(code);
@@ -53,8 +53,8 @@ const tokenizeLatex: Tokenizer = function (effects, ok, nok) {
   function afterSlash(code: Code): ReturnType<State> {
     if (code === closing) {
       effects.consume(code);
-      effects.exit('scientifyMathData');
-      effects.exit('scientifyMath');
+      effects.exit('capsioMathData');
+      effects.exit('capsioMath');
       return ok;
     }
     if (code === 92) {
@@ -71,17 +71,17 @@ function remarkLatex(this: Processor) {
     fromMarkdownExtensions?: MarkdownExtension[];
   };
   const syntax: Extension = {
-    text: { 92: { name: 'scientifyMath', tokenize: tokenizeLatex } },
+    text: { 92: { name: 'capsioMath', tokenize: tokenizeLatex } },
   };
   const nodes: MarkdownExtension = {
     enter: {
-      scientifyMath(token) {
+      capsioMath(token) {
         this.enter({ type: 'inlineMath', value: '' }, token);
         this.buffer();
       },
     },
     exit: {
-      scientifyMath(token) {
+      capsioMath(token) {
         this.resume();
         const source = this.sliceSerialize(token);
         const node = this.stack[this.stack.length - 1] as Extract<

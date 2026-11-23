@@ -122,7 +122,7 @@ export class FileSession {
       // Disk persistence is the save contract. Collaboration is a best-effort
       // side effect and must never turn a successful local save into a failure.
       void Promise.resolve(this.onSaved?.(file, version)).catch((error) =>
-        console.warn('Scientify collaboration outbox unavailable:', error),
+        console.warn('Capsio collaboration outbox unavailable:', error),
       );
       return true;
     } catch (error) {
@@ -238,7 +238,7 @@ export async function reloadDirectorySessions(
       .filter((s) => !s.getSnapshot().dirty)
       .map((s) => s.reloadDiscardingEdits()),
   );
-  window.dispatchEvent(new CustomEvent('scientify-project-files-changed', { detail: projectId }));
+  window.dispatchEvent(new CustomEvent('capsio-project-files-changed', { detail: projectId }));
 }
 /** Reads a project's open files again where they changed on disk; edits in progress are kept. */
 export async function refreshProjectSessions(backend: FileBackend, projectId: string) {
@@ -257,7 +257,7 @@ export async function refreshProjectSessions(backend: FileBackend, projectId: st
           await session.reloadDiscardingEdits();
       }),
   );
-  window.dispatchEvent(new CustomEvent('scientify-project-files-changed', { detail: projectId }));
+  window.dispatchEvent(new CustomEvent('capsio-project-files-changed', { detail: projectId }));
 }
 export function hasUnsavedFileChanges(backend: FileBackend) {
   return [...getFileRuntime(backend).sessions.values()].some(

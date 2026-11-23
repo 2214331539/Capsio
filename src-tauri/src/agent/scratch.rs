@@ -1,5 +1,5 @@
 //! App-owned intermediate files never belong in a user's literature or code tree.
-use scientify_core::research::reject_links;
+use capsio_core::research::reject_links;
 use std::{
     path::{Path, PathBuf},
     time::{Duration, SystemTime},
@@ -11,8 +11,8 @@ pub struct Scratch {
 }
 impl Scratch {
     pub fn new(container: &Path, project: &str, conversation: &str) -> Result<Self, String> {
-        if !scientify_core::workspace::valid_id(project)
-            || !scientify_core::workspace::valid_id(conversation)
+        if !capsio_core::workspace::valid_id(project)
+            || !capsio_core::workspace::valid_id(conversation)
         {
             return Err("临时任务标识无效。".into());
         }
@@ -27,18 +27,15 @@ impl Scratch {
             .join(uuid::Uuid::new_v4().to_string());
         reject_links(&path)?;
         std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
-        std::fs::write(
-            path.join(".scientify-scratch"),
-            b"scientify-agent-scratch-v1",
-        )
-        .map_err(|e| e.to_string())?;
+        std::fs::write(path.join(".scientify-scratch"), b"capsio-agent-scratch-v1")
+            .map_err(|e| e.to_string())?;
         Ok(Self { path, base })
     }
     pub fn path(&self) -> &Path {
         &self.path
     }
     pub fn instruction(&self) -> String {
-        format!("\n<scientify-execution>本轮临时目录：{}。必须生成的中间文件仅写入这里，不写入文献目录；用户明确指定的成果另行保存到其要求的位置。临时目录任务结束会清理，不作为成果保存位置。常规 PDF 阅读使用论文宿主工具，不通过命令转换。</scientify-execution>", self.path.display())
+        format!("\n<capsio-execution>本轮临时目录：{}。必须生成的中间文件仅写入这里，不写入文献目录；用户明确指定的成果另行保存到其要求的位置。临时目录任务结束会清理，不作为成果保存位置。常规 PDF 阅读使用论文宿主工具，不通过命令转换。</capsio-execution>", self.path.display())
     }
     fn remove(base: &Path, path: &Path) -> Result<(), String> {
         if !path.exists() {
@@ -48,9 +45,11 @@ impl Scratch {
         let actual = path.canonicalize().map_err(|e| e.to_string())?;
         let marker = actual.join(".scientify-scratch");
         reject_links(&marker)?;
+        let owned = std::fs::read(marker).map_err(|e| e.to_string())?;
+        // Folders made before the rename carry the old marker.
         if !actual.starts_with(base)
             || actual == base
-            || std::fs::read(marker).map_err(|e| e.to_string())? != b"scientify-agent-scratch-v1"
+            || (owned != b"capsio-agent-scratch-v1" && owned != b"scientify-agent-scratch-v1")
         {
             return Err("拒绝清理不属于 Agent 的临时目录。".into());
         }
@@ -103,7 +102,7 @@ impl Scratch {
 impl Drop for Scratch {
     fn drop(&mut self) {
         if let Err(error) = Self::remove(&self.base, &self.path) {
-            eprintln!("Scientify 临时目录清理失败：{error}");
+            eprintln!("Capsio 临时目录清理失败：{error}");
         }
     }
 }

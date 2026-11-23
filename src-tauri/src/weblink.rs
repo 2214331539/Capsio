@@ -229,7 +229,7 @@ mod tests {
 
 #[cfg(test)]
 mod live {
-    /// Reads a real page: `cargo test -p scientify --lib weblink::live -- --ignored`.
+    /// Reads a real page: `cargo test -p capsio --lib weblink::live -- --ignored`.
     #[test]
     #[ignore]
     fn a_real_page_becomes_a_card_and_a_document() {

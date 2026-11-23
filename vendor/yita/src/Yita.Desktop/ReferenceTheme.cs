@@ -53,7 +53,7 @@ internal static class ReferenceTheme
         resources["ConversationMargin"] = new Thickness(9);
         resources["PopupSurfaceShadow"] = new BoxShadows();
         resources["PopupToolbarShadow"] = new BoxShadows();
-        resources["BrandLogo"] = ScientifyAppearance.Logo(false);
+        resources["BrandLogo"] = CapsioAppearance.Logo(false);
         if (glass && palette.PopupBackground != "#FFFCF7")
         {
             var colorful = PopupVisualStyleCatalog.IsBubbleV3Color(settings.PopupVisualStyle);
@@ -67,7 +67,7 @@ internal static class ReferenceTheme
             resources["PopupTextBrush"] = Brush("#17232F");
             resources["PopupMutedBrush"] = Brush("#4D6073");
         }
-        if (ScientifyBridge.IsEmbedded) ScientifyAppearance.Apply(resources, settings, ScientifyAppearance.Dark);
+        if (CapsioBridge.IsEmbedded) CapsioAppearance.Apply(resources, settings, CapsioAppearance.Dark);
         if (WindowsDisplayPreferences.HighContrast) ApplyHighContrast(resources);
     }
 
@@ -89,7 +89,7 @@ internal static class ReferenceTheme
         var motion = ReferenceMotion.CanAnimate;
         resources["PressMotionDuration"] = TimeSpan.FromMilliseconds(motion ? 140 : 0);
         resources["SwitchMotionDuration"] = TimeSpan.FromMilliseconds(motion ? 200 : 0);
-        resources["PressedScale"] = Avalonia.Media.Transformation.TransformOperations.Parse(motion ? (ScientifyBridge.IsEmbedded ? "scale(0.985)" : "scale(0.96)") : "scale(1)");
+        resources["PressedScale"] = Avalonia.Media.Transformation.TransformOperations.Parse(motion ? (CapsioBridge.IsEmbedded ? "scale(0.985)" : "scale(0.96)") : "scale(1)");
     }
 
     internal static IBrush PreviewBrush(string style, ThemePalette palette)

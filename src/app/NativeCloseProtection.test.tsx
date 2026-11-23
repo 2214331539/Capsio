@@ -103,9 +103,7 @@ it('tray exit keeps unsaved work on cancel and closes the window only after appr
   const user = userEvent.setup();
   render(<App store={store} backend={browserResearch} windowMode="main" />);
   await waitFor(() => expect(store.getState().phase).toBe('ready'));
-  const call = vi
-    .mocked(listen)
-    .mock.calls.find(([event]) => event === 'scientify-exit-requested')!;
+  const call = vi.mocked(listen).mock.calls.find(([event]) => event === 'capsio-exit-requested')!;
   // Only exits addressed to this window are handled.
   expect(call[2]).toEqual({ target: 'main' });
   const exit = call[1];

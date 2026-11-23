@@ -1,6 +1,6 @@
 //! Bounded, fresh discovery inside an authorized conversation root. No index/cache.
 use super::*;
-use scientify_core::research::{reject_links, ResearchFiles};
+use capsio_core::research::{reject_links, ResearchFiles};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 #[derive(Serialize)]

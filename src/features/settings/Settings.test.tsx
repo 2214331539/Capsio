@@ -57,32 +57,32 @@ it('keeps one dialog when changing category or language, and links to the name a
 it('schedules a storage move without replacing live data, and supports cancellation', async () => {
   const { user, store, adapter } = await fixture();
   adapter.storageLocation = vi.fn(async () => ({
-    directory: 'F:/Scientify/ScientifyData',
+    directory: 'F:/Capsio/CapsioData',
     pending: null,
     cleanup: [],
   }));
   adapter.scheduleStorage = vi.fn(async (directory) => ({
-    directory: 'F:/Scientify/ScientifyData',
+    directory: 'F:/Capsio/CapsioData',
     pending: directory,
     cleanup: [],
   }));
   adapter.cancelStorage = vi.fn(async () => ({
-    directory: 'F:/Scientify/ScientifyData',
+    directory: 'F:/Capsio/CapsioData',
     pending: null,
     cleanup: [],
   }));
-  adapter.chooseDirectory = vi.fn(async () => 'D:/ScientifyData');
+  adapter.chooseDirectory = vi.fn(async () => 'D:/CapsioData');
   cleanup();
   render(<SettingsDialog store={store} onClose={vi.fn()} initialSection="data" />);
-  await waitFor(() => expect(screen.getByText('F:/Scientify/ScientifyData')).toBeTruthy());
+  await waitFor(() => expect(screen.getByText('F:/Capsio/CapsioData')).toBeTruthy());
   const epoch = store.getState().epoch;
   await user.click(screen.getByRole('button', { name: '更改位置' }));
-  expect(await screen.findByText('D:/ScientifyData')).toBeTruthy();
-  expect(adapter.scheduleStorage).toHaveBeenCalledWith('D:/ScientifyData');
+  expect(await screen.findByText('D:/CapsioData')).toBeTruthy();
+  expect(adapter.scheduleStorage).toHaveBeenCalledWith('D:/CapsioData');
   expect(store.getState().directory).toBe('test/data');
   expect(store.getState().epoch).toBe(epoch);
   await user.click(screen.getByRole('button', { name: '取消迁移' }));
-  await waitFor(() => expect(screen.queryByText('D:/ScientifyData')).toBeNull());
+  await waitFor(() => expect(screen.queryByText('D:/CapsioData')).toBeNull());
   await act(async () => store.getState().setAgentTask('p1:chat', 'p1'));
   expect((screen.getByRole('button', { name: '更改位置' }) as HTMLButtonElement).disabled).toBe(
     true,
@@ -102,7 +102,7 @@ it('reads MCP environment lines as KEY=value pairs', async () => {
 
 it('uses another installation’s data after a restart and can undo it', async () => {
   const { user, store, adapter } = await fixture();
-  const original = String.raw`\\?\D:\Scientify\ScientifyData`;
+  const original = String.raw`\\?\D:\Capsio\CapsioData`;
   let directory = original;
   adapter.storageLocation = vi.fn(async () => ({ directory, pending: null, cleanup: [] }));
   adapter.scheduleStorage = vi.fn();
@@ -111,14 +111,14 @@ it('uses another installation’s data after a restart and can undo it', async (
     directory = next;
     return { directory, pending: null, cleanup: [] };
   });
-  adapter.chooseDirectory = vi.fn(async () => 'E:/OtherInstall/ScientifyData');
+  adapter.chooseDirectory = vi.fn(async () => 'E:/OtherInstall/CapsioData');
   cleanup();
   render(<SettingsDialog store={store} onClose={vi.fn()} initialSection="data" />);
   // The long-path prefix Windows uses internally is not shown.
-  expect(await screen.findByText(String.raw`D:\Scientify\ScientifyData`)).toBeTruthy();
+  expect(await screen.findByText(String.raw`D:\Capsio\CapsioData`)).toBeTruthy();
   await user.click(screen.getByRole('button', { name: '选择数据目录' }));
-  expect(adapter.adoptStorage).toHaveBeenCalledWith('E:/OtherInstall/ScientifyData');
-  expect(await screen.findByText('E:/OtherInstall/ScientifyData')).toBeTruthy();
+  expect(adapter.adoptStorage).toHaveBeenCalledWith('E:/OtherInstall/CapsioData');
+  expect(await screen.findByText('E:/OtherInstall/CapsioData')).toBeTruthy();
   expect(screen.getByText('重启后使用')).toBeTruthy();
   expect(screen.getByRole('button', { name: '立即重启' })).toBeTruthy();
   await user.click(screen.getByRole('button', { name: '取消' }));

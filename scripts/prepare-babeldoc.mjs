@@ -22,8 +22,8 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(join(root, 'scripts', 'babeldoc.json'), 'utf8'));
 const output = join(root, 'src-tauri', 'release-resources', 'babeldoc');
-const cache = join(root, 'node_modules', '.cache', 'scientify-babeldoc');
-const stampFile = join(output, 'scientify-babeldoc.json');
+const cache = join(root, 'node_modules', '.cache', 'capsio-babeldoc');
+const stampFile = join(output, 'capsio-babeldoc.json');
 const windows = process.platform === 'win32';
 const triple = {
   'win32-x64': 'x86_64-pc-windows-msvc',
@@ -55,7 +55,7 @@ function ready(note = '') {
 }
 
 // Test-only builds (CI checks) may skip the engine; the app then simply never translates.
-if (process.env.SCIENTIFY_SKIP_BABELDOC === '1' || !triple) {
+if (process.env.CAPSIO_SKIP_BABELDOC === '1' || !triple) {
   if (!existsSync(stampFile)) {
     mkdirSync(output, { recursive: true });
     writeFileSync(join(output, 'README.txt'), 'Full-text translation is not part of this build.\n');
@@ -201,7 +201,7 @@ clean(join(staging, 'python'));
 run(python, ['-I', '-B', '-c', manifest.imports.map((name) => `import ${name}`).join('; ')]);
 
 writeFileSync(
-  join(staging, 'scientify-babeldoc.json'),
+  join(staging, 'capsio-babeldoc.json'),
   `${JSON.stringify({ stamp, executable, python: manifest.python, packages: manifest.packages }, null, 2)}\n`,
 );
 rmSync(output, { recursive: true, force: true });

@@ -1,6 +1,6 @@
 //! Sign in with a ChatGPT plan. The engine runs the sign-in itself (a browser page
 //! and a local callback) and its requests then use the person's own plan.
-//! Scientify starts the sign-in, shows the account and its usage, and hands the
+//! Capsio starts the sign-in, shows the account and its usage, and hands the
 //! sign-in to the engines of each workspace kind.
 //!
 //! Each workspace kind has its own engine home, and the engine keeps the sign-in

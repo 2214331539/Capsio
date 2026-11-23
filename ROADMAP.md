@@ -1,4 +1,4 @@
-# Scientify 路线图
+# Capsio 路线图
 
 本路线图描述优先级，不是发布时间承诺。当前为 Windows x64 Alpha 与 macOS Apple Silicon 预览版；已实现能力以 [README](README.md)、[产品设计](docs/产品设计/README.md)（各页面的“现状”）和代码为准。历史设计与原型不作为功能完成证明。
 
@@ -18,7 +18,7 @@
 - 有清晰复现条件的文件、编辑会话和执行状态修复。
 - [Apple Silicon 预览版兼容性验证](docs/技术方案/跨平台适配路线.md)；Linux 和 Intel 的支持另行评估。
 
-具体任务先在 [Issues](https://github.com/2214331539/Scientify/issues) 讨论并记录验收条件。路线图中的项目不代表已有负责人或实现承诺。
+具体任务先在 [Issues](https://github.com/2214331539/Capsio/issues) 讨论并记录验收条件。路线图中的项目不代表已有负责人或实现承诺。
 
 ## 后续评估
 

@@ -3,7 +3,7 @@
 //! version check, keeps a local history, searches them, and passes the AI's document tools to
 //! the window, which reads and writes pages in their own format.
 use crate::AppState;
-use scientify_core::{storage::Storage, workspace::valid_id};
+use capsio_core::{storage::Storage, workspace::valid_id};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{
@@ -697,7 +697,7 @@ pub(crate) fn ask_window<R: tauri::Runtime>(
     if let Ok(mut waiting) = waiting().lock() {
         waiting.remove(&id);
     }
-    answer.unwrap_or_else(|_| Err("Scientify 窗口没有响应文档操作，请确认主窗口已打开。".into()))
+    answer.unwrap_or_else(|_| Err("Capsio 窗口没有响应文档操作，请确认主窗口已打开。".into()))
 }
 
 #[tauri::command]

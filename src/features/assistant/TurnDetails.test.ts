@@ -28,18 +28,18 @@ it('says what a web tool is doing', () => {
   expect(
     describeTool({
       type: 'dynamicToolCall',
-      tool: 'scientify_web_search',
+      tool: 'capsio_web_search',
       arguments: { query: 'LoRA' },
     }),
   ).toBe('搜索网页：LoRA');
   expect(
     describeTool({
       type: 'dynamicToolCall',
-      tool: 'scientify_web_fetch',
+      tool: 'capsio_web_fetch',
       arguments: '{"url":"https://example.com"}',
     }),
   ).toBe('阅读网页：https://example.com');
-  expect(describeTool({ type: 'dynamicToolCall', tool: 'scientify_run' })).toBeNull();
+  expect(describeTool({ type: 'dynamicToolCall', tool: 'capsio_run' })).toBeNull();
   expect(describeTool({ type: 'commandExecution', command: 'ls' })).toBeNull();
 });
 

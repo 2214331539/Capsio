@@ -237,7 +237,7 @@ public sealed partial class MainWindow
         popup.QuestionRequested += (_, args) => OpenConversation(popup, args.Question, args.ContextKind);
         popup.AssistantRequested += async (_, _) =>
         {
-            if (ScientifyBridge.Current is not { } bridge || !_sessions.TryGetValue(popup, out var session)) return;
+            if (CapsioBridge.Current is not { } bridge || !_sessions.TryGetValue(popup, out var session)) return;
             popup.SetAssistantBusy(true);
             try
             {
@@ -346,7 +346,7 @@ public sealed partial class MainWindow
 
     internal string CreatePlatformDiagnostics() => string.Join("\n", new[]
     {
-        "Scientify Translation · " + _platform.PlatformName,
+        "Capsio Translation · " + _platform.PlatformName,
         "Automatic selection: " + (_selectionRuntime is null ? "not implemented" : _selectionRuntime.IsRunning ? "running" : "unavailable"),
         "Global shortcut: " + (_selectionRuntime?.IsHotkeyRunning == true ? "running" : "unavailable"),
         "Login startup: " + (_startupRegistration.IsSupported ? "available" : "not implemented"),
@@ -380,7 +380,7 @@ public sealed partial class MainWindow
 
     internal async void ShowAbout()
     {
-        try { await ShowMessageAsync("Scientify · 翻译\n" + new DesktopPlatformServices().PlatformName
+        try { await ShowMessageAsync("Capsio · 翻译\n" + new DesktopPlatformServices().PlatformName
             + Localize("\nTranslation powered by Yita (MIT)", "\n翻译组件基于 Yita（MIT）")); }
         catch { }
     }

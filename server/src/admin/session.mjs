@@ -105,12 +105,12 @@ export async function signOut(db, config, request) {
 }
 
 /**
- * The signed-in administrator. Every API call must carry the X-Scientify-Admin
+ * The signed-in administrator. Every API call must carry the X-Capsio-Admin
  * header: other sites cannot add it without a preflight this server refuses,
  * which together with SameSite=Strict keeps forged requests out.
  */
 export async function requireAdmin(db, request, { write = false } = {}) {
-  if (request.headers['x-scientify-admin'] !== '1') throw fail(403, '请求来源无效。');
+  if (request.headers['x-capsio-admin'] !== '1') throw fail(403, '请求来源无效。');
   const token = cookies(request)[COOKIE];
   if (!token) throw fail(401, '请先登录。', 'admin_signed_out');
   const result = await db.query(
