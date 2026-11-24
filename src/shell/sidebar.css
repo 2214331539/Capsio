@@ -100,24 +100,38 @@
   color: var(--sf-text-muted);
 }
 
-/* A small book: the project's cover in miniature. */
+/* A small folder: the project's cover in miniature. */
 .sf-mark {
-  width: 18px;
-  height: 24px;
+  position: relative;
+  width: 20px;
+  height: 15px;
   flex: none;
-  border-radius: 2px 4px 4px 2px;
-  background: color-mix(in srgb, var(--tone, var(--sf-tone-1)) 18%, #fff);
+  margin-top: 3px;
+  border-radius: 2px 3px 3px 3px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tone, var(--sf-tone-1)) 82%, #fff),
+    var(--tone, var(--sf-tone-1))
+  );
   box-shadow:
-    inset 3px 0 0 var(--tone, var(--sf-tone-1)),
-    inset 0 0 0 1px rgb(0 0 0 / 6%),
-    0 1px 2px rgb(0 0 0 / 10%);
+    inset 0 1px 0 rgb(255 255 255 / 38%),
+    0 1px 1.5px rgb(0 0 0 / 16%);
 }
-.dark .sf-mark {
-  background: color-mix(in srgb, var(--tone, var(--sf-tone-1)) 30%, #1c1c1f);
+/* The folder's tab. */
+.sf-mark::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  width: 45%;
+  height: 3px;
+  border-radius: 2px 3px 0 0;
+  background: color-mix(in srgb, var(--tone, var(--sf-tone-1)) 80%, #000);
 }
 .sf-menu .sf-mark {
-  width: 13px;
-  height: 17px;
+  width: 15px;
+  height: 11px;
+  margin-top: 2px;
 }
 
 .sf-side-resources {

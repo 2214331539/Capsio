@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>项目封面方案（2026-11-24）</title>
+<style>
+  :root {
+    --ink: #17201c;
+    --muted: #6b716e;
+    --paper: #fbfaf7;
+    --serif: 'Source Han Serif SC', 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+    --sans: 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 36px 44px 56px; background: #fff; color: var(--ink); font: 14px/1.6 var(--sans); }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .lead { margin: 0 0 28px; color: var(--muted); }
+  section { margin-bottom: 34px; }
+  h2 { margin: 0 0 4px; font-size: 15px; }
+  h2 small { margin-left: 8px; color: var(--muted); font-weight: 400; font-size: 12.5px; }
+  .shelf { display: flex; gap: 22px; margin-top: 12px; }
+  .book { width: 150px; flex: none; }
+  .meta { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .cover { position: relative; aspect-ratio: 3 / 4; overflow: hidden; }
+
+  /* A 期刊 */
+  .journal { background: var(--paper); border: 1px solid rgb(0 0 0 / 9%); border-radius: 3px; box-shadow: 0 1px 2px rgb(0 0 0 / 6%); display: flex; flex-direction: column; }
+  .journal .band { height: 30px; background: var(--c); color: #fff; font-size: 10.5px; letter-spacing: .18em; padding: 8px 12px 0; }
+  .journal .rule { margin: 10px 12px 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 3px; }
+  .journal .title { margin: 14px 12px 0; font: 700 17px/1.3 var(--serif); }
+  .journal .q { margin: 8px 12px 0; font-size: 11px; line-height: 1.5; color: var(--muted); }
+  .journal .foot { margin: auto 12px 10px; padding-top: 6px; border-top: 1px solid rgb(0 0 0 / 12%); font-size: 10px; color: var(--muted); display: flex; justify-content: space-between; }
+
+  /* B 三段色带 */
+  .bands { border-radius: 2px; box-shadow: 0 1px 2px rgb(0 0 0 / 10%), 0 8px 18px -12px rgb(0 0 0 / 35%); display: grid; grid-template-rows: 34% 1fr 16%; background: #fff; }
+  .bands .top, .bands .bottom { background: var(--c); color: #fff; }
+  .bands .top { padding: 12px; font-size: 10.5px; letter-spacing: .12em; display: flex; align-items: flex-end; }
+  .bands .mid { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; text-align: center; border-top: 2px solid #fff; border-bottom: 2px solid #fff; }
+  .bands .title { font: 700 16px/1.35 var(--serif); }
+  .bands .q { margin-top: 6px; font-size: 10.5px; color: var(--muted); line-height: 1.5; }
+  .bands .bottom { display: flex; align-items: center; justify-content: center; font-size: 9.5px; letter-spacing: .3em; opacity: .95; }
+
+  /* C 实色海报 */
+  .poster { background: var(--c); color: var(--on, #fff); border-radius: 6px; padding: 14px 14px 12px; display: flex; flex-direction: column; }
+  .poster .field { font-size: 11px; opacity: .8; }
+  .poster .title { margin-top: 10px; font: 750 21px/1.18 var(--sans); letter-spacing: -.01em; }
+  .poster .q { margin-top: auto; font-size: 11px; line-height: 1.5; opacity: .82; }
+
+  /* D 大字首字 */
+  .mono { background: #fff; border: 1px solid rgb(0 0 0 / 10%); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; }
+  .mono .glyph { font: 800 78px/1 var(--serif); color: var(--c); margin: 2px 0 0 -3px; }
+  .mono .field { margin-top: auto; font-size: 11px; color: var(--muted); }
+  .mono .title { margin-top: 2px; font: 700 15px/1.3 var(--sans); }
+
+  /* E 文件夹 */
+  .folder { padding-top: 14px; }
+  .folder .tab { position: absolute; top: 0; left: 0; height: 18px; padding: 2px 12px 0; border-radius: 6px 6px 0 0; background: var(--c); color: #fff; font-size: 10.5px; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .folder .body { height: 100%; border-radius: 0 6px 6px 6px; background: #fff; border: 1px solid rgb(0 0 0 / 11%); border-top: 4px solid var(--c); padding: 14px 12px; display: flex; flex-direction: column; box-shadow: 0 6px 14px -10px rgb(0 0 0 / 30%); }
+  .folder .title { font: 700 16px/1.3 var(--sans); }
+  .folder .q { margin-top: 8px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .folder .lines { margin-top: auto; display: grid; gap: 5px; }
+  .folder .lines i { display: block; height: 4px; border-radius: 2px; background: rgb(0 0 0 / 7%); }
+  .folder .lines i:nth-child(2) { width: 70%; }
+
+  /* 现在 */
+  .now { border-radius: 3px 8px 8px 3px; background: linear-gradient(160deg, color-mix(in srgb, var(--c) 10%, #fff), color-mix(in srgb, var(--c) 22%, #fff)); padding: 14px 14px 16px 22px; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 5%), 0 14px 24px -14px rgb(0 0 0 / 28%); }
+  .now::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 9px; background: var(--c); }
+  .now .field { position: absolute; top: 14px; left: 22px; font-size: 11px; font-weight: 600; color: color-mix(in srgb, var(--c) 62%, #111a17); }
+  .now .title { font: 650 16px/1.25 var(--sans); }
+
+  .palette { display: flex; gap: 8px; margin-top: 10px; font-size: 11.5px; color: var(--muted); align-items: center; }
+  .palette span { width: 18px; height: 18px; border-radius: 4px; background: var(--c); display: inline-block; }
+</style>
+</head>
+<body>
+<h1>项目封面方案</h1>
+<p class="lead">同一组项目，五个方向。配色换成编辑风的七色（墨蓝、砖红、赭黄、紫藤、青灰、胭脂、品牌青柠），不再用粉彩底和彩色左边条。最下面一行是现在的样子，作对比。</p>
+
+<div id="shelves"></div>
+
+<section>
+  <h2>配色<small>七色按顺序分给新项目，旧颜色按位置对应；青柠是品牌色，配墨色字</small></h2>
+  <div class="palette" id="palette"></div>
+</section>
+
+<script>
+  const colors = [
+    ['墨蓝', '#2f4b7c'], ['砖红', '#b5543c'], ['赭黄', '#c08a2d'], ['紫藤', '#6a5aa0'],
+    ['青灰', '#3f7586'], ['胭脂', '#a3415b'], ['青柠', '#c6f24e', '#17201c'],
+  ];
+  const projects = [
+    ['大模型推理加速', '机器学习', '为什么投机解码在长上下文下收益下降？', 0, 12],
+    ['蛋白质结构预测', '计算生物', '', 1, 31],
+    ['城市热岛效应', '环境科学', '绿地分布能解释多少温差？', 2, 8],
+    ['钙钛矿电池稳定性', '材料', '', 3, 19],
+    ['课堂对话分析', '教育', '提问方式如何影响参与度？', 6, 5],
+  ];
+  const kinds = [
+    ['journal', 'A 期刊', '纸色封面，顶部色带写研究方向，宋体标题，底部一行年份和文献数。最像科研刊物'],
+    ['bands', 'B 三段色带', '上下两段实色，中间白底宋体标题。经典平装书的结构，一眼能认出是“书”'],
+    ['poster', 'C 实色海报', '整块实色、大号白字，没有渐变和描边。最醒目，书架上颜色最强'],
+    ['mono', 'D 大字首字', '白卡片，项目名第一个字放大成彩色，下面是方向和名称。最克制'],
+    ['folder', 'E 文件夹', '带彩色标签的文件夹，标签写研究方向。像资料夹，弱化“书”的比喻'],
+    ['now', '现在', '浅色渐变底加彩色左边条（作对比）'],
+  ];
+  const html = (kind, [name, field, q, ci, papers]) => {
+    const [, c, on] = colors[ci];
+    const style = `--c:${c};${on ? `--on:${on}` : ''}`;
+    const glyph = [...name][0];
+    // Lime is too light for a glyph on white; its deeper shade stands in.
+    const glyphColor = on ? '#7ea51b' : c;
+    const ink = on ? `style="color:${on}"` : '';
+    const body = {
+      journal: `<div class="band" ${ink}>${field}</div><div class="rule"></div><div class="title">${name}</div>${q ? `<div class="q">${q}</div>` : ''}<div class="foot"><span>2026</span><span>${papers} 篇文献</span></div>`,
+      bands: `<div class="top" ${ink}>${field}</div><div class="mid"><div class="title">${name}</div>${q ? `<div class="q">${q}</div>` : ''}</div><div class="bottom" ${ink}>CAPSIO</div>`,
+      poster: `<div class="field">${field}</div><div class="title">${name}</div>${q ? `<div class="q">${q}</div>` : ''}`,
+      mono: `<div class="glyph" style="color:${glyphColor}">${glyph}</div><div class="field">${field}</div><div class="title">${name}</div>`,
+      folder: `<div class="tab" ${ink}>${field}</div><div class="body"><div class="title">${name}</div>${q ? `<div class="q">${q}</div>` : ''}<div class="lines"><i></i><i></i></div></div>`,
+      now: `<span class="field">${field}</span><div class="title">${name}</div>`,
+    }[kind];
+    const nowStyle = kind === 'now' ? `--c:${['#4f7cff', '#8b6cf6', '#e5677d', '#f0a43a', '#2fb59a', '#8fc23a', '#3aa7d9'][ci]}` : style;
+    return `<div class="book"><div class="cover ${kind}" style="${nowStyle}">${body}</div><div class="meta">刚刚打开</div></div>`;
+  };
+  document.getElementById('shelves').innerHTML = kinds
+    .map(([kind, title, note]) => `<section><h2>${title}<small>${note}</small></h2><div class="shelf">${projects.map((p) => html(kind, p)).join('')}</div></section>`)
+    .join('');
+  document.getElementById('palette').innerHTML = colors
+    .map(([n, c]) => `<span style="--c:${c}"></span>${n}`)
+    .join('&nbsp;&nbsp;');
+</script>
+</body>
+</html>

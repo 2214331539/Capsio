@@ -4,7 +4,8 @@ import { t } from '../../i18n';
 import { toneOf } from './model';
 import './project-library.css';
 
-/** The book cover that stands for a project in the project center. */
+/** The folder that stands for a project in the project center: a back with its tab, papers
+ *  inside, and a front with a paper label that stays readable on any colour. */
 export function ProjectCoverArt({
   name,
   field,
@@ -23,9 +24,15 @@ export function ProjectCoverArt({
       className={`project-cover-art${archived ? ' archived' : ''}`}
       style={{ '--cover': toneOf(color) } as CSSProperties}
     >
-      <span className="project-cover-field">{archived ? t('已归档') : field}</span>
-      <strong className="project-cover-name">{name}</strong>
-      {question ? <span className="project-cover-question">{question}</span> : null}
+      <span className="project-folder-back" aria-hidden="true" />
+      <span className="project-folder-paper" aria-hidden="true" />
+      <span className="project-folder-front">
+        <span className="project-folder-label">
+          <span className="project-cover-field">{archived ? t('已归档') : field}</span>
+          <strong className="project-cover-name">{name}</strong>
+          {question ? <span className="project-cover-question">{question}</span> : null}
+        </span>
+      </span>
     </span>
   );
 }

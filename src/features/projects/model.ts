@@ -50,22 +50,29 @@ export function personalProjects(data: Workspace) {
   return data.projects.filter((project) => !isTeamProject(project));
 }
 
-/** Cover colours: the spine shows the colour, the cover a light wash of it under dark text. */
+/** Folder colours: quiet, natural tones (kraft, mist blue, sage, terracotta, graphite, oat,
+ *  lilac grey). Anyone can still pick their own. */
 export const projectCoverColors = [
-  '#4f7cff',
-  '#8b6cf6',
-  '#e5677d',
-  '#f0a43a',
-  '#2fb59a',
-  '#8fc23a',
-  '#3aa7d9',
+  '#c8a97e',
+  '#8ea3ba',
+  '#9fb39a',
+  '#c79478',
+  '#80878d',
+  '#d3c7ae',
+  '#a99cb5',
 ];
-// The dark neutrals covers used before; each keeps its place in the new set.
-const earlierTones = ['#4f5866', '#6a5f53', '#55625a', '#5e5a6b', '#6b6157', '#5a5f66', '#58615e'];
+// Covers saved with an earlier set keep their place in this one: the dark neutrals, then
+// the bright colours of 0.6.0-alpha.1.
+const earlierSets = [
+  ['#4f5866', '#6a5f53', '#55625a', '#5e5a6b', '#6b6157', '#5a5f66', '#58615e'],
+  ['#4f7cff', '#8b6cf6', '#e5677d', '#f0a43a', '#2fb59a', '#8fc23a', '#3aa7d9'],
+];
 export function toneOf(color: string) {
   const value = color.toLowerCase();
-  const earlier = earlierTones.indexOf(value);
-  if (earlier >= 0) return projectCoverColors[earlier];
+  for (const set of earlierSets) {
+    const earlier = set.indexOf(value);
+    if (earlier >= 0) return projectCoverColors[earlier];
+  }
   if (/^#[0-9a-f]{6}$/.test(value)) return value;
   let hash = 0;
   for (const char of value) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;

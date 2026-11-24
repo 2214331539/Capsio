@@ -251,7 +251,7 @@
   border: 0;
   background: none;
   cursor: pointer;
-  border-radius: 3px 8px 8px 3px;
+  border-radius: 7px;
 }
 .project-cover:disabled {
   cursor: default;
@@ -260,85 +260,147 @@
   outline: 2px solid var(--sf-focus);
   outline-offset: 3px;
 }
+/* A project is a folder: the back with its tab, papers inside, and the front with a paper
+   label. Light and shade give it depth and a fine grain gives it texture; the label keeps
+   the name readable on any colour, the user's own included. */
 .project-cover-art {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  display: block;
   aspect-ratio: 3 / 4;
-  padding: 14px 14px 16px 22px;
-  overflow: hidden;
-  border-radius: 3px 8px 8px 3px;
-  /* A light wash of the cover colour under dark text; the spine carries the colour itself. */
-  --cover-wash: color-mix(in srgb, var(--cover) 10%, #fff);
-  --cover-deep: color-mix(in srgb, var(--cover) 22%, #fff);
-  --cover-ink: #17201c;
-  --cover-label: color-mix(in srgb, var(--cover) 62%, #111a17);
-  background: linear-gradient(160deg, var(--cover-wash), var(--cover-deep));
-  color: var(--cover-ink);
+  color: #1f2622;
   text-align: left;
-  box-shadow:
-    inset 0 0 0 1px rgb(0 0 0 / 5%),
-    0 1px 2px rgb(0 0 0 / 8%),
-    0 14px 24px -14px rgb(0 0 0 / 28%);
+  --back: color-mix(in srgb, var(--cover) 80%, #000);
+  --front-light: color-mix(in srgb, var(--cover) 80%, #fff);
+  --front-shade: color-mix(in srgb, var(--cover) 88%, #000);
+  --paper: #fffdf8;
+  --paper-shade: #f1ede4;
+  --label: #fdfbf6;
+  --label-shade: #f4f0e7;
+  --lift: drop-shadow(0 10px 12px rgb(45 35 20 / 15%)) drop-shadow(0 1px 1px rgb(0 0 0 / 10%));
+  filter: var(--lift);
   transition:
     transform var(--sf-motion-content) var(--sf-ease-pop),
-    box-shadow var(--sf-motion-content) var(--sf-ease-pop);
+    filter var(--sf-motion-content) var(--sf-ease-pop);
 }
-.project-cover-art::before {
+.project-folder-back {
+  position: absolute;
+  inset: 13px 0 0;
+  border-radius: 3px 7px 7px 7px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--back) 90%, #fff), var(--back));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%);
+}
+/* The tab. */
+.project-folder-back::before {
   content: '';
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 9px;
+  left: 0;
+  bottom: 100%;
+  width: 42%;
+  height: 13px;
+  border-radius: 6px 10px 0 0;
+  background: color-mix(in srgb, var(--back) 90%, #fff);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%);
+}
+/* Two sheets inside, the second drawn as an offset shadow. */
+.project-folder-paper {
+  position: absolute;
+  left: 8%;
+  right: 11%;
+  top: 22px;
+  bottom: 22%;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--paper), var(--paper-shade));
+  rotate: -1.6deg;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 14%),
+    7px -4px 0 -1px var(--paper),
+    7px -4px 0 0 rgb(0 0 0 / 8%);
+  transition: translate var(--sf-motion-content) var(--sf-ease-pop);
+}
+.project-folder-front {
+  position: absolute;
+  inset: 32% 0 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 10px;
+  border-radius: 7px;
   background:
-    linear-gradient(90deg, rgb(0 0 0 / 14%), rgb(255 255 255 / 14%) 70%, rgb(0 0 0 / 8%)),
-    var(--cover);
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.13 0 0 0 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>"),
+    linear-gradient(180deg, var(--front-light), var(--cover) 42%, var(--front-shade));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 42%),
+    inset 0 -4px 10px rgb(0 0 0 / 9%),
+    0 -2px 5px rgb(0 0 0 / 10%);
+}
+.project-folder-label {
+  display: block;
+  width: 100%;
+  padding: 8px 9px 9px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--label), var(--label-shade));
+  box-shadow:
+    0 1px 1.5px rgb(0 0 0 / 16%),
+    inset 0 0 0 1px rgb(0 0 0 / 4%);
 }
 .dark .project-cover-art {
-  --cover-wash: color-mix(in srgb, var(--cover) 16%, #1c1c1f);
-  --cover-deep: color-mix(in srgb, var(--cover) 30%, #1c1c1f);
-  --cover-ink: #ededef;
-  --cover-label: color-mix(in srgb, var(--cover) 55%, #fff);
+  --back: color-mix(in srgb, var(--cover) 55%, #000);
+  --front-light: color-mix(in srgb, var(--cover) 82%, #000);
+  --front-shade: color-mix(in srgb, var(--cover) 58%, #000);
+  --paper: #dcd8cf;
+  --paper-shade: #cfcac0;
+  --label: #e8e4db;
+  --label-shade: #dcd7cc;
+  --lift: drop-shadow(0 10px 12px rgb(0 0 0 / 38%)) drop-shadow(0 1px 1px rgb(0 0 0 / 30%));
+}
+.dark .project-folder-front {
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.13 0 0 0 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>"),
+    linear-gradient(
+      180deg,
+      var(--front-light),
+      color-mix(in srgb, var(--cover) 72%, #000) 42%,
+      var(--front-shade)
+    );
 }
 .project-cover:hover:not(:disabled) .project-cover-art {
   transform: translateY(-3px);
-  box-shadow:
-    inset 0 0 0 1px rgb(0 0 0 / 5%),
-    0 1px 2px rgb(0 0 0 / 8%),
-    0 20px 30px -16px rgb(0 0 0 / 34%);
+  filter: drop-shadow(0 16px 16px rgb(45 35 20 / 20%)) drop-shadow(0 1px 1px rgb(0 0 0 / 10%));
+}
+.project-cover:hover:not(:disabled) .project-folder-paper {
+  translate: 0 -5px;
 }
 .project-cover-field {
-  position: absolute;
-  top: 14px;
-  left: 22px;
-  right: 14px;
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--cover-label);
+  font-size: 10.5px;
+  color: #79817c;
 }
 .project-cover-name {
-  display: block;
-  font-size: 16px;
+  display: -webkit-box;
+  margin-top: 1px;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 14.5px;
   font-weight: 650;
-  line-height: 1.25;
+  line-height: 1.3;
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 .project-cover-question {
   display: -webkit-box;
-  margin-top: 6px;
+  margin-top: 4px;
   overflow: hidden;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  font-size: 11.5px;
-  line-height: 1.5;
-  opacity: 0.74;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #5f6763;
 }
 .project-cover-art.archived {
-  filter: grayscale(0.6);
+  filter: grayscale(0.7) var(--lift);
   opacity: 0.75;
 }
 .project-menu-button.on-cover.sf-button {
@@ -391,18 +453,27 @@
   height: 18px;
 }
 .project-mini-cover {
-  width: 18px;
-  height: 24px;
+  position: relative;
+  width: 20px;
+  height: 15px;
   flex: none;
-  border-radius: 2px 4px 4px 2px;
-  background: color-mix(in srgb, var(--cover) 18%, #fff);
+  margin-top: 3px;
+  border-radius: 2px 3px 3px 3px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cover) 82%, #fff), var(--cover));
   box-shadow:
-    inset 3px 0 0 var(--cover),
-    inset 0 0 0 1px rgb(0 0 0 / 6%),
-    0 1px 2px rgb(0 0 0 / 10%);
+    inset 0 1px 0 rgb(255 255 255 / 38%),
+    0 1px 1.5px rgb(0 0 0 / 16%);
 }
-.dark .project-mini-cover {
-  background: color-mix(in srgb, var(--cover) 30%, #1c1c1f);
+/* The folder's tab. */
+.project-mini-cover::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  width: 45%;
+  height: 3px;
+  border-radius: 2px 3px 0 0;
+  background: color-mix(in srgb, var(--cover) 80%, #000);
 }
 /* Projects saved on another device: one row each, downloaded on request. */
 .project-elsewhere {
@@ -681,8 +752,8 @@
   gap: 12px;
 }
 .team-detail-head .project-mini-cover {
-  width: 34px;
-  height: 45px;
+  width: 40px;
+  height: 30px;
 }
 .team-detail-head > div {
   min-width: 0;
@@ -929,8 +1000,8 @@
   gap: 10px;
 }
 .center-dialog-subject .project-mini-cover {
-  width: 18px;
-  height: 24px;
+  width: 20px;
+  height: 15px;
 }
 .center-field {
   display: grid;
@@ -1071,8 +1142,8 @@
   overflow-wrap: anywhere;
 }
 .center-pick .project-mini-cover {
-  width: 16px;
-  height: 21px;
+  width: 18px;
+  height: 14px;
 }
 .wizard-dialog {
   width: min(620px, calc(100vw - 48px));

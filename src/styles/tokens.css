@@ -62,13 +62,13 @@
   --sf-syntax-function: #3d5f8a;
   --sf-syntax-comment: #8b8b93;
   /* Book covers: the colours of projectCoverColors (features/projects/model.ts). */
-  --sf-tone-1: #4f7cff;
-  --sf-tone-2: #8b6cf6;
-  --sf-tone-3: #e5677d;
-  --sf-tone-4: #f0a43a;
-  --sf-tone-5: #2fb59a;
-  --sf-tone-6: #8fc23a;
-  --sf-tone-7: #3aa7d9;
+  --sf-tone-1: #c8a97e;
+  --sf-tone-2: #8ea3ba;
+  --sf-tone-3: #9fb39a;
+  --sf-tone-4: #c79478;
+  --sf-tone-5: #80878d;
+  --sf-tone-6: #d3c7ae;
+  --sf-tone-7: #a99cb5;
 }
 
 :root[data-palette='paper']:not(.dark) {

@@ -213,6 +213,14 @@ export function NewProjectWizard({
                     />
                   </label>
                 ))}
+                <label className="wizard-swatch custom" title={t('自定义颜色')}>
+                  <input
+                    type="color"
+                    aria-label={t('自定义颜色')}
+                    value={draft.color}
+                    onChange={(event) => edit('color', event.target.value)}
+                  />
+                </label>
               </fieldset>
             </div>
           </div>
