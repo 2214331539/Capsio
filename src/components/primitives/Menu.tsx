@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { reportError } from '../../platform/error-reports';
 import './primitives.css';
 
 export type MenuAnchor = {
@@ -31,6 +32,8 @@ export function Menu({
   const content = useRef(children);
   if (anchor) content.current = children;
   const close = useRef(onClose);
+  // The item being pressed: a press that never becomes a click is reported, to find out why.
+  const pressed = useRef<{ label: string; at: number } | null>(null);
   close.current = onClose;
   if (anchor) lastAnchor.current = anchor;
 
@@ -84,18 +87,28 @@ export function Menu({
       if (ref.current?.contains(target) || target?.closest?.('[data-nested-menu]')) return;
       close.current();
     };
-    const dismiss = () => close.current();
+    const dismissed = (reason: string) => () => {
+      const item = pressed.current;
+      if (item && Date.now() - item.at < 1000)
+        reportError(
+          new Error('Menu closed by window ' + reason + ' while "' + item.label + '" was pressed'),
+          'menu',
+        );
+      close.current();
+    };
+    const blur = dismissed('blur');
+    const resize = dismissed('resize');
     const scroll = (event: Event) => {
-      if (!ref.current?.contains(event.target as Node)) dismiss();
+      if (!ref.current?.contains(event.target as Node)) close.current();
     };
     window.addEventListener('pointerdown', outside);
-    window.addEventListener('blur', dismiss);
-    window.addEventListener('resize', dismiss);
+    window.addEventListener('blur', blur);
+    window.addEventListener('resize', resize);
     window.addEventListener('scroll', scroll, true);
     return () => {
       window.removeEventListener('pointerdown', outside);
-      window.removeEventListener('blur', dismiss);
-      window.removeEventListener('resize', dismiss);
+      window.removeEventListener('blur', blur);
+      window.removeEventListener('resize', resize);
       window.removeEventListener('scroll', scroll, true);
     };
   }, [anchor]);
@@ -118,7 +131,21 @@ export function Menu({
       data-native-overlay={anchor ? 'true' : undefined}
       data-nested-menu={nested || undefined}
       onContextMenu={(event) => event.preventDefault()}
+      onPointerDown={(event) => {
+        const item = (event.target as HTMLElement).closest<HTMLButtonElement>(
+          'button[role^="menuitem"]',
+        );
+        if (!item) return;
+        const press = { label: (item.textContent ?? '').trim().slice(0, 40), at: Date.now() };
+        pressed.current = press;
+        window.setTimeout(() => {
+          if (pressed.current !== press) return;
+          pressed.current = null;
+          reportError(new Error(`Menu item "${press.label}" was pressed but did not run`), 'menu');
+        }, 1500);
+      }}
       onClickCapture={(event) => {
+        pressed.current = null;
         const item = (event.target as HTMLElement).closest<HTMLButtonElement>(
           'button[role^="menuitem"]',
         );

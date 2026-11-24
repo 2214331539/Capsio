@@ -9,6 +9,8 @@ const PER_SESSION = 20;
 // Noise that says nothing about a bug.
 const IGNORED = [/ResizeObserver loop/i, /^Script error\.?$/i, /AbortError/];
 const sent = new Set<string>();
+// Which system and web engine reported it, sent as the report's page; filled in once at start.
+let environment = '';
 
 export function errorReportsOn() {
   try {
@@ -49,11 +51,43 @@ export function reportError(error: unknown, source: string) {
   const key = `${report.message}\n${report.stack.slice(0, 300)}`;
   if (sent.has(key) || sent.size >= PER_SESSION) return;
   sent.add(key);
-  void invoke('collaboration_report_error', { report }).catch(() => {});
+  void invoke('collaboration_report_error', { report: { ...report, page: environment } }).catch(
+    () => {},
+  );
+}
+
+/** "Windows 10 (10.0.0) · WebView 131.0.2903.112": Windows 11 reports platform version 13 or later. */
+export async function describeEnvironment(nav: Navigator = navigator) {
+  const engine =
+    /Edg\/([\d.]+)/.exec(nav.userAgent)?.[1] ?? /Chrome\/([\d.]+)/.exec(nav.userAgent)?.[1];
+  let system = '';
+  const hints = (
+    nav as Navigator & {
+      userAgentData?: {
+        getHighEntropyValues(
+          keys: string[],
+        ): Promise<{ platform?: string; platformVersion?: string }>;
+      };
+    }
+  ).userAgentData;
+  try {
+    const { platform = '', platformVersion = '' } =
+      (await hints?.getHighEntropyValues(['platformVersion'])) ?? {};
+    const major = Number(platformVersion.split('.')[0]);
+    const windows = major >= 13 ? 'Windows 11' : major > 0 ? 'Windows 10' : 'Windows';
+    system =
+      platform === 'Windows'
+        ? `${windows} (${platformVersion})`
+        : [platform, platformVersion].filter(Boolean).join(' ');
+  } catch {
+    /* Without client hints the engine version still helps. */
+  }
+  return [system, engine && `WebView ${engine}`].filter(Boolean).join(' · ').slice(0, 80);
 }
 
 /** Reports what reaches the window: uncaught errors, rejected promises nobody handled. */
 export function installErrorReports() {
+  void describeEnvironment().then((text) => (environment = text));
   window.addEventListener('error', (event) => reportError(event.error ?? event.message, 'error'));
   window.addEventListener('unhandledrejection', (event) => reportError(event.reason, 'promise'));
 }

@@ -10,6 +10,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Bot, Cpu, Keyboard, MessageSquarePlus, PanelLeft, Settings, X } from 'lucide-react';
 import { BrandMark } from '../components/layout/BrandMark';
 import { noticeRenamedApp } from '../features/update/renamed-app';
+import { reportError } from '../platform/error-reports';
 import { secondaryViews as secondary } from '../components/navigation/workspaces';
 import { WritingWorkspace } from '../workspaces/writing/WritingWorkspace';
 import { ProjectForm } from '../features/projects/ProjectForm';
@@ -1099,6 +1100,12 @@ export function App({
     store.getState().clearMessage();
     if (isTauri() && windowMode !== 'browser') void hideBrowsers().then(() => setDialog(next));
     else setDialog(next);
+    // A window asked for that never shows is reported, so silent failures reach the error list.
+    if (next && next.kind in settingsSection)
+      window.setTimeout(() => {
+        if (!document.querySelector('dialog[open]'))
+          reportError(new Error(`Dialog "${next?.kind}" did not open`), 'dialog');
+      }, 1500);
   }
   const ready = phase === 'ready' && data;
   function showPage(page: CenterPage) {
