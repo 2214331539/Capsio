@@ -74,6 +74,33 @@ describe('application-owned ordinary chat tasks', () => {
     ).toContain('unsent-question');
     expect(asConversation(store.getState().data!.sessions[0]).chatRun?.status).toBe('failed');
   });
+  it('replaces the saved question and answer when a question is asked again', async () => {
+    const { store, runtime, calls, request, seed } = await setup();
+    const chat = seed();
+    chat.messages.push(
+      { id: 'a1', role: 'assistant', text: 'first answer', createdAt: '' },
+      { id: 'q2', role: 'user', text: 'second', createdAt: '' },
+      { id: 'a2', role: 'assistant', text: 'old second answer', createdAt: '' },
+    );
+    await store.getState().update((data) => {
+      data.sessions.push(structuredClone(chat));
+    });
+    const texts = () =>
+      asConversation(store.getState().data!.sessions[0]).messages.map((message) => message.text);
+    const again = {
+      ...chat,
+      messages: [
+        ...chat.messages.slice(0, 2),
+        { id: 'q2b', role: 'user' as const, text: 'second again', createdAt: '' },
+      ],
+    };
+    expect(await runtime.send(again, request, 'q2')).toBe(true);
+    expect(texts()).toEqual(['hello', 'first answer', 'second again']);
+    calls[0].resolve({ text: 'new second answer', interrupted: false });
+    await vi.waitFor(() =>
+      expect(texts()).toEqual(['hello', 'first answer', 'second again', 'new second answer']),
+    );
+  });
   it('streams two conversations independently and preserves concurrent metadata changes', async () => {
     const { store, runtime, calls, request, seed } = await setup();
     const a = seed(),

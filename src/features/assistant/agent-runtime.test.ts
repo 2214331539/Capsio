@@ -511,3 +511,110 @@ it('brings the selected text of a translation chat into its first agent turn', a
   expect(text).toContain('Original passage');
   expect(text).toContain('这句话什么意思');
 });
+
+describe('asking a question again in agent mode', () => {
+  const texts = (store: Awaited<ReturnType<typeof harness>>['store']) =>
+    asConversation(store.getState().data!.sessions[0]).messages.map((message) => message.text);
+  async function replaceHarness(handle: Record<string, unknown> = {}) {
+    const h = await harness();
+    const chat = { ...newConversation('p1'), agentDomain: 'code' as const };
+    const thread = `thread-${chat.id}`;
+    chat.messages.push(
+      { id: 'q1', role: 'user', text: 'Q1', createdAt: '', turnId: 't1' },
+      { id: `agent:${thread}:t1`, role: 'assistant', text: 'A1', createdAt: '' },
+      { id: 'q2', role: 'user', text: 'Q2', createdAt: '', turnId: 't2' },
+      { id: `agent:${thread}:t2`, role: 'assistant', text: 'A2', createdAt: '' },
+    );
+    await h.store.getState().update((data) => {
+      data.sessions.push(structuredClone(chat));
+    });
+    const past = (id: string, text: string) => ({
+      id,
+      status: 'completed',
+      items: [{ id: `item-${id}`, type: 'agentMessage', text }],
+    });
+    vi.mocked(h.agent.startThread).mockImplementation(async (projectId, domain, _, options) => ({
+      threadId: thread,
+      conversationId: options.conversationId,
+      projectId,
+      domain,
+      cwd: 'C:/p1/code',
+      model: 'test-model',
+      modelProvider: 'capsio',
+      instructionSources: [],
+      turns: [past('t1', 'A1'), past('t2', 'A2')],
+      ...handle,
+    }));
+    h.agent.revertTurn = vi.fn(async () => {});
+    vi.mocked(h.agent.startTurn).mockResolvedValue({
+      turnId: 't3',
+      status: 'inProgress',
+      events: [],
+    });
+    const again = (text = 'Q2 again') =>
+      h.runtime.send(
+        asConversation(h.store.getState().data!.sessions[0]),
+        'code',
+        connection,
+        text,
+        undefined,
+        [],
+        [],
+        undefined,
+        'q2',
+      );
+    return { ...h, chat, thread, again };
+  }
+
+  it('replaces the old answer instead of bringing it back from the engine history', async () => {
+    const { store, agent, runtime, queues, chat, thread, again } = await replaceHarness();
+    expect(await again()).toBe(true);
+    expect(agent.revertTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ threadId: thread, beforeTurnId: 't2' }),
+    );
+    expect(texts(store)).toEqual(['Q1', 'A1', 'Q2 again']);
+    queues.set(chat.id, [
+      {
+        kind: 'notification',
+        method: 'item/agentMessage/delta',
+        params: { threadId: thread, turnId: 't3', itemId: 'answer', delta: 'A2 new' },
+      },
+      {
+        kind: 'notification',
+        method: 'turn/completed',
+        params: { threadId: thread, turn: { id: 't3', status: 'completed' } },
+      },
+    ]);
+    await runtime.poll();
+    await vi.waitFor(() => expect(texts(store)).toEqual(['Q1', 'A1', 'Q2 again', 'A2 new']));
+  });
+
+  it('puts the old exchange back when the engine already has a turn running', async () => {
+    const { store, agent, again } = await replaceHarness({ activeTurnId: 't9' });
+    expect(await again()).toBe(false);
+    expect(agent.startTurn).not.toHaveBeenCalled();
+    expect(texts(store)).toEqual(['Q1', 'A1', 'Q2', 'A2']);
+  });
+
+  it('calls the replacement off, and keeps the old exchange, when the engine cannot forget it', async () => {
+    const { store, agent, again } = await replaceHarness();
+    agent.revertTurn = vi.fn(async () => {
+      throw new Error('engine refused');
+    });
+    expect(await again()).toBe(false);
+    expect(agent.startTurn).not.toHaveBeenCalled();
+    expect(texts(store)).toEqual(['Q1', 'A1', 'Q2', 'A2']);
+    expect(store.getState().data!.sessions[0].agentStatus).toBeUndefined();
+    expect(store.getState().error).toBe('没能让 AI 忘掉要替换的回答，请再试一次。');
+  });
+
+  it('seeds a fresh thread with the history that is kept, not the replaced answer', async () => {
+    const { agent, again } = await replaceHarness({ freshThread: true, turns: [] });
+    expect(await again()).toBe(true);
+    expect(agent.revertTurn).not.toHaveBeenCalled();
+    const text = vi.mocked(agent.startTurn).mock.calls[0][0].text;
+    expect(text).toContain('assistant: A1');
+    expect(text).not.toContain('A2');
+    expect(text).not.toContain('user: Q2');
+  });
+});

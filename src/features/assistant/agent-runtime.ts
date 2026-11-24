@@ -317,6 +317,9 @@ export class AgentRuntime {
       ...(attachments.length ? { attachments: structuredClone(attachments) } : {}),
       ...(skills.length ? { skills: structuredClone(skills) } : {}),
     };
+    // What the replacement cut off and the run it overwrote, to put back if it cannot go ahead.
+    let removed: ChatMessage[] = [];
+    let before: Pick<Conversation, 'agentStatus' | 'agentRun'> = {};
     const saved = await this.store.getState().update((data) => {
       if (
         seed.project !== PERSONAL_SCOPE &&
@@ -331,9 +334,14 @@ export class AgentRuntime {
         data.sessions.push(entry);
       }
       const chat = asConversation(entry);
+      removed = [];
+      before = { agentStatus: chat.agentStatus, agentRun: chat.agentRun };
       if (replaceFrom) {
         const index = chat.messages.findIndex((item) => item.id === replaceFrom);
-        if (index >= 0) chat.messages = chat.messages.slice(0, index);
+        if (index >= 0) {
+          removed = chat.messages.slice(index);
+          chat.messages = chat.messages.slice(0, index);
+        }
       }
       if (!chat.messages.length)
         chat.title = text.trim().slice(0, 36) || attachments[0]?.name || t('新对话');
@@ -358,19 +366,35 @@ export class AgentRuntime {
       this.emit();
       return false; // No model call occurred; restore the composer.
     }
+    // Takes the question back out and puts what it replaced back (and, if asked, the old run).
+    const undoQuestion = (restoreRun = false) =>
+      this.store.getState().update((data) => {
+        const entry = data.sessions.find(
+          (item) => item.id === seed.id && item.project === seed.project,
+        );
+        if (!entry) return;
+        const messages = asConversation(entry).messages.filter((item) => item.id !== message.id);
+        const have = new Set(messages.map((item) => item.id));
+        entry.messages = [...messages, ...removed.filter((item) => !have.has(item.id))];
+        if (restoreRun) Object.assign(entry, before);
+      });
     if (await task.session.open()) {
       this.recover(task);
+      if (replaceFrom) {
+        // The engine still holds the replaced turns; their answers must not come back.
+        const turns = task.session.handle?.turns ?? [];
+        const from = replaced?.turnId ? turns.findIndex((turn) => turn.id === replaced.turnId) : -1;
+        const dropped = new Set([
+          ...removed.map((item) => item.id),
+          ...(from >= 0
+            ? turns.slice(from).map((turn) => `agent:${task.state.threadId}:${turn.id}`)
+            : []),
+        ]);
+        task.recovered = task.recovered.filter((item) => !dropped.has(item.id));
+      }
       if (hasPendingWork(task.state)) {
         // A reloaded webview found an existing task. Attach to it without replaying text.
-        await this.store.getState().update((data) => {
-          const entry = data.sessions.find(
-            (item) => item.id === seed.id && item.project === seed.project,
-          );
-          if (entry)
-            entry.messages = asConversation(entry).messages.filter(
-              (item) => item.id !== message.id,
-            );
-        });
+        await undoQuestion();
         task.starting = false;
         this.emit();
         return false;
@@ -385,8 +409,11 @@ export class AgentRuntime {
         : '';
       // Older Capsio chats have visible history but no native thread mapping.
       // Seed only this conversation, and only when the engine created a fresh thread.
+      const kept = replaced
+        ? seed.messages.slice(0, seed.messages.indexOf(replaced))
+        : seed.messages;
       const history = task.session.handle?.freshThread
-        ? seed.messages
+        ? kept
             .slice(-24)
             .map((message) => `${message.role}: ${message.text.slice(0, 4000)}`)
             .join('\n\n')
@@ -406,7 +433,22 @@ export class AgentRuntime {
             )}\n</translation-material>\n\n`
           : '';
       // The engine forgets the replaced turns too; chats from before turns were recorded keep them.
-      if (replaced?.turnId) await task.session.revert(replaced.turnId);
+      // A fresh thread never held them. If it cannot forget, the old answer would still shape the
+      // new one, so the replacement is called off.
+      const handle = task.session.handle;
+      if (
+        replaced?.turnId &&
+        this.agent.revertTurn &&
+        !handle?.freshThread &&
+        (!handle?.turns || handle.turns.some((turn) => turn.id === replaced.turnId)) &&
+        !(await task.session.revert(replaced.turnId))
+      ) {
+        await undoQuestion(true);
+        this.store.setState({ error: t('没能让 AI 忘掉要替换的回答，请再试一次。') });
+        task.starting = false;
+        this.emit();
+        return false;
+      }
       const images = attachments
         .filter((item) => item.mimeType.startsWith('image/'))
         .map(({ mimeType, data }) => ({ mimeType, data }));
@@ -480,11 +522,17 @@ export class AgentRuntime {
           : 'failed',
       };
     task.starting = false;
-    if (hasPendingWork(task.state)) await this.persist(task, false);
+    // Nothing ran here: a finished turn is not saved again, which would wipe its saved run.
+    if (hasPendingWork(task.state) || (opened && seed.agentStatus !== 'running'))
+      await this.persist(task, false);
     else await this.finish(task);
     this.emit();
   }
   private async persist(task: AgentTask, terminal: boolean, beforeMessage?: string) {
+    // What is saved is the turn as it is now; the engine may move on while the save is queued.
+    const turn = task.state;
+    const turnId = turn.turnId;
+    const answerId = task.answerId;
     task.saving = true;
     this.emit();
     const saved = await this.store.getState().update((data) => {
@@ -502,11 +550,11 @@ export class AgentRuntime {
         0,
         ...task.recovered.filter((message) => !ids.has(message.id)),
       );
-      if (terminal && task.state.agentText) {
+      if (terminal && turn.agentText) {
         const answer: ChatMessage = {
-          id: task.answerId ?? `agent-failed:${task.conversationId}:${task.startedAt}`,
+          id: answerId ?? `agent-failed:${task.conversationId}:${task.startedAt}`,
           role: 'assistant',
-          text: task.state.agentText,
+          text: turn.agentText,
           createdAt: new Date().toISOString(),
         };
         const index = chat.messages.findIndex((message) => message.id === answer.id);
@@ -514,28 +562,30 @@ export class AgentRuntime {
         else chat.messages[index] = answer;
       }
       Object.assign(entry, chat, {
-        agentCwd: task.state.cwd ?? chat.agentCwd,
+        agentCwd: turn.cwd ?? chat.agentCwd,
         experimentId: task.session.handle?.experimentId ?? chat.experimentId,
-        agentGoal: task.state.goal ?? undefined,
       });
+      // Until the engine has spoken about the goal, the one saved with the chat stands.
+      if (task.state.goal || task.session.goalKnown)
+        Object.assign(entry, { agentGoal: task.state.goal ?? undefined });
       if (terminal)
         Object.assign(entry, {
-          agentStatus: task.state.outcome ?? 'interrupted',
+          agentStatus: turn.outcome ?? 'interrupted',
           updatedAt: new Date().toISOString(),
           agentRun: {
             model: task.connection.model,
             startedAt: task.startedAt,
             completedAt: new Date().toISOString(),
-            error: task.state.error,
-            operations: task.state.operations
+            error: turn.error,
+            operations: turn.operations
               .slice(-20)
               .map((op) => ({ ...op, output: op.output.slice(-4000) })),
-            ...(task.state.plan.length ? { plan: task.state.plan } : {}),
-            ...(task.state.diff ? { diff: task.state.diff.slice(0, 60_000) } : {}),
-            ...(task.state.diff.length > 60_000 ? { diffCut: true } : {}),
-            ...(task.state.reasoning ? { reasoning: task.state.reasoning.slice(-8_000) } : {}),
-            ...(task.state.thoughtMs ? { thoughtMs: task.state.thoughtMs } : {}),
-            ...(task.state.files.length ? { files: task.state.files } : {}),
+            ...(turn.plan.length ? { plan: turn.plan } : {}),
+            ...(turn.diff ? { diff: turn.diff.slice(0, 60_000) } : {}),
+            ...(turn.diff.length > 60_000 ? { diffCut: true } : {}),
+            ...(turn.reasoning ? { reasoning: turn.reasoning.slice(-8_000) } : {}),
+            ...(turn.thoughtMs ? { thoughtMs: turn.thoughtMs } : {}),
+            ...(turn.files.length ? { files: turn.files } : {}),
           },
         });
     });
@@ -545,7 +595,10 @@ export class AgentRuntime {
       : (this.store.getState().error ?? t('对话保存失败，内容仍保留在当前面板。'));
     if (saved) task.recovered = [];
     if (saved && terminal) {
-      task.finished = true;
+      // An active goal may have started the next turn while this one was saved; that one is
+      // finished on its own.
+      if (task.state.turnId === turnId) task.finished = true;
+      else task.startedAt = new Date().toISOString();
       task.connection = { ...task.connection, apiKey: undefined };
     }
     this.emit();
@@ -558,7 +611,11 @@ export class AgentRuntime {
       window.dispatchEvent(new CustomEvent(agentFinishedEvent, { detail: task.projectId }));
     const saved = await this.persist(task, true);
     // A conversation with a goal reports when the goal ends, not after every turn.
-    if (saved && task.state.outcome === 'completed' && !task.state.goal) this.notice(task, 'done');
+    if (saved && task.finished && task.state.outcome === 'completed' && !task.state.goal)
+      this.notice(task, 'done');
+    // The next turn began and ended while that save was running; nothing else will save it.
+    if (saved && !task.finished && task.state.phase === 'idle' && task.state.outcome)
+      void this.finish(task);
   }
   private notice(task: AgentTask, kind: AssistantNotice['kind']) {
     const chat = this.store

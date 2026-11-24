@@ -17,13 +17,25 @@ export const assistantNotices = createStore<{
   items: AssistantNotice[];
   /** The project whose assistant is on screen; its finished turns need no notice. */
   watching: string | null;
-}>(() => ({ items: [], watching: null }));
+  /** The conversation each project's assistant panel has open, by project. */
+  shown: Record<string, string>;
+}>(() => ({ items: [], watching: null, shown: {} }));
 
 export const openConversationEvent = 'capsio-open-conversation';
 
 export function watchAssistant(projectId: string | null) {
   if (assistantNotices.getState().watching !== projectId)
     assistantNotices.setState({ watching: projectId });
+}
+
+/** The assistant panel of `projectId` shows this conversation (null: it no longer does). */
+export function showConversation(projectId: string, conversationId: string | null) {
+  const { shown } = assistantNotices.getState();
+  if ((shown[projectId] ?? null) === conversationId) return;
+  const next = { ...shown };
+  if (conversationId) next[projectId] = conversationId;
+  else delete next[projectId];
+  assistantNotices.setState({ shown: next });
 }
 
 export function openConversation(projectId: string, conversationId: string) {
@@ -41,9 +53,10 @@ export function noticeText(item: Pick<AssistantNotice, 'kind' | 'title'>) {
 }
 
 export function noticeAssistant(notice: Omit<AssistantNotice, 'key' | 'at'>) {
-  const { items, watching } = assistantNotices.getState();
-  // The assistant on screen shows it already.
-  if (watching === notice.projectId) return;
+  const { items, watching, shown } = assistantNotices.getState();
+  // The assistant on screen shows it already, when it is on this conversation (or none is known).
+  const open = shown[notice.projectId];
+  if (watching === notice.projectId && (!open || open === notice.conversationId)) return;
   const key = `${notice.projectId}:${notice.conversationId}`;
   const item: AssistantNotice = { ...notice, key, at: new Date().toISOString() };
   assistantNotices.setState({

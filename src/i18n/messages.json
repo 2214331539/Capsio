@@ -4002,5 +4002,9 @@
   "正在安装更新，Capsio 会在半分钟左右自动重新打开…": [
     "正在安装更新，Capsio 会在半分钟左右自动重新打开…",
     "Installing the update. Capsio reopens in about half a minute…"
+  ],
+  "没能让 AI 忘掉要替换的回答，请再试一次。": [
+    "没能让 AI 忘掉要替换的回答，请再试一次。",
+    "Could not make the AI forget the answer being replaced. Try again."
   ]
 }

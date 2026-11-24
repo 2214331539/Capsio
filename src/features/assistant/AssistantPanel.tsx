@@ -54,10 +54,12 @@ import { getChatRuntime } from './chat-runtime';
 import { readAttachment } from './attachments';
 import {
   applyConnection,
+  connectionKeyEvent,
   connectionProfile,
   removeConnection,
   storeConnectionKey,
 } from './connections';
+import { showConversation } from './notices';
 import {
   asConversation,
   freezeContext,
@@ -178,6 +180,7 @@ export function AssistantPanel({
   // not wait on the disk again.
   const keyCache = useRef(new Map<string, string>());
   const keyTicket = useRef(0);
+  const savingKey = useRef(false);
   const [localConversation, setConversation] = useState<Conversation>(() => {
     const recent = data?.sessions
       .filter((item) => item.project === scope)
@@ -384,6 +387,12 @@ export function AssistantPanel({
   useEffect(() => {
     if (selection) setSettings(selection.settings);
   }, [selection]);
+  // Tells the notices which conversation of this project is on screen: a turn that ends in
+  // another one of this project still needs its notice.
+  useEffect(() => {
+    showConversation(scope, conversation.id);
+    return () => showConversation(scope, null);
+  }, [scope, conversation.id]);
   useEffect(() => {
     store.getState().setDirtySource(key, dirty);
     onDirtyChange?.(dirty);
@@ -473,6 +482,27 @@ export function AssistantPanel({
     selectedSlot,
     safeError,
   ]);
+  // Settings or another panel saved a different key for an endpoint: read it again instead of
+  // keeping the one this panel remembered.
+  useEffect(() => {
+    const changed = (event: Event) => {
+      if (savingKey.current) return;
+      const detail = (event as CustomEvent<{ provider: AIProtocol; endpoint: string }>).detail;
+      const slot = credentialSlot(detail.provider, detail.endpoint);
+      keyCache.current.delete(slot);
+      if (slot !== selectedSlot || settings.serviceId === 'capsio') return;
+      const ticket = ++keyTicket.current;
+      void recallKey(settings.provider, settings.endpoint, settings.serviceId)
+        .then((stored) => {
+          if (ticket === keyTicket.current) setCredential({ slot, key: stored, stored: !!stored });
+        })
+        .catch(() => {
+          /* The key is read again the next time the connection changes. */
+        });
+    };
+    window.addEventListener(connectionKeyEvent, changed);
+    return () => window.removeEventListener(connectionKeyEvent, changed);
+  }, [recallKey, selectedSlot, settings.provider, settings.endpoint, settings.serviceId]);
   useEffect(() => {
     void collaboration
       .status()
@@ -586,11 +616,15 @@ export function AssistantPanel({
     setSettingsBusy(true);
     const profile = connectionProfile(value, editingProfileId, profileName);
     try {
+      // This panel records the key itself below; only the other panels need the event.
+      savingKey.current = true;
       await storeConnectionKey(value, keyValue, credentials);
     } catch (reason) {
       setSettingsBusy(false);
       setSettingsError(safeError(reason));
       return;
+    } finally {
+      savingKey.current = false;
     }
     const result = await store.getState().update((workspace) => {
       applyConnection(workspace, value, profile);
@@ -683,9 +717,12 @@ export function AssistantPanel({
       modelSelection: { profileId, settings: structuredClone(value) },
     };
     if (savedConversation && !(await persistConversation(store, next))) {
-      setError(store.getState().error ?? t('模型配置保存失败'));
+      if (activeConversationId.current === next.id)
+        setError(store.getState().error ?? t('模型配置保存失败'));
       return;
     }
+    // The user may have opened another conversation while this one was saved.
+    if (activeConversationId.current !== next.id) return;
     setConversation(next);
     setSettings(value);
   }
@@ -704,21 +741,25 @@ export function AssistantPanel({
     return success;
   }
 
-  async function runRequest(value: Conversation) {
+  async function runRequest(value: Conversation, replaceFrom?: string) {
     setError('');
-    const sent = await chatRuntime.send(value, {
-      endpoint: settings.endpoint,
-      provider: settings.provider,
-      model: settings.model,
-      ...(apiKey ? { apiKey } : {}),
-      messages: requestMessages(
-        value,
-        instructionsText(
-          store.getState().data?.settings.assistantInstructions,
-          store.getState().data?.projects.find((item) => item.id === scope)?.aiInstructions,
+    const sent = await chatRuntime.send(
+      value,
+      {
+        endpoint: settings.endpoint,
+        provider: settings.provider,
+        model: settings.model,
+        ...(apiKey ? { apiKey } : {}),
+        messages: requestMessages(
+          value,
+          instructionsText(
+            store.getState().data?.settings.assistantInstructions,
+            store.getState().data?.projects.find((item) => item.id === scope)?.aiInstructions,
+          ),
         ),
-      ),
-    });
+      },
+      replaceFrom,
+    );
     if (activeConversationId.current === value.id) {
       setUnsaved(!sent && !!chatRuntime.get(scope, value.id)?.saveError);
       if (!sent)
@@ -820,7 +861,8 @@ export function AssistantPanel({
     drafts.current.delete(id);
     chatRuntime.forget(scope, id);
     draftChats.current.delete(id);
-    if (conversation.id !== id) return;
+    // `conversation` is from before the awaits above; the open one may have changed since.
+    if (activeConversationId.current !== id) return;
     const next = { ...newConversation(scope), modelSelection: structuredClone(defaultSelection) };
     activeConversationId.current = next.id;
     setConversation(next);
@@ -910,7 +952,7 @@ export function AssistantPanel({
       turnPlace(),
       replacing ?? undefined,
     );
-    if (sent !== false) setReplacing(null);
+    if (sent !== false && activeConversationId.current === sendingId) setReplacing(null);
     if (sent === false) {
       if (cleared) restorePrompt(sendingId, text);
       if (activeConversationId.current === sendingId) {
@@ -1085,14 +1127,14 @@ export function AssistantPanel({
     if (drafts.current.get(sendingId)?.trim() === message.text) setPrompt('');
     setAttachments((current) => current?.filter((item) => !submittedAttachments.includes(item)));
     setReplacing(null);
-    await runRequest(next);
+    await runRequest(next, replacing ?? undefined);
   }
   // Regenerate: the question is back in the composer; send it once React has it. A
-  // question with no text stays in the composer as an edit instead of sending later.
+  // question with neither text nor files stays in the composer as an edit instead of sending later.
   useEffect(() => {
     if (!submitReplacement.current || !replacing) return;
     submitReplacement.current = false;
-    if (prompt.trim()) void send();
+    if (prompt.trim() || attachments?.length) void send();
     else composerRef.current?.focus();
   }, [prompt, replacing]);
   // "继续" after an interrupted turn, the same way: the word goes in, then it is sent.
@@ -1101,6 +1143,11 @@ export function AssistantPanel({
     submitContinue.current = false;
     void send();
   }, [prompt]);
+  /** A question asked again comes back with the files and skills it was sent with. */
+  function restoreInputs(message: ChatMessage) {
+    setAttachments(message.attachments ? structuredClone(message.attachments) : []);
+    setSelectedSkills(message.skills ? structuredClone(message.skills) : []);
+  }
   function continueTurn() {
     if (prompt === t('继续')) {
       void send();
@@ -1111,11 +1158,25 @@ export function AssistantPanel({
   }
   // A turn left running when the app closed is read back once, without sending anything, so
   // the conversation is usable again at once instead of waiting for "恢复连接".
+  // `settings` follows the conversation's model a render later, so wait until it does: the
+  // connection and key above are those of the conversation that was open before.
+  const settingsCurrent =
+    !selection ||
+    (settings.provider === selection.settings.provider &&
+      settings.endpoint === selection.settings.endpoint &&
+      settings.model === selection.settings.model &&
+      settings.serviceId === selection.settings.serviceId);
   useEffect(() => {
-    if (!needsReconnect || !credentialsReady || reconnected.current.has(conversation.id)) return;
+    if (
+      !needsReconnect ||
+      !credentialsReady ||
+      !settingsCurrent ||
+      reconnected.current.has(conversation.id)
+    )
+      return;
     reconnected.current.add(conversation.id);
     void runtime.resume(conversation, agentConnection);
-  }, [needsReconnect, credentialsReady, conversation.id]);
+  }, [needsReconnect, credentialsReady, settingsCurrent, conversation.id]);
 
   function selectConversation(
     id: string,
@@ -1537,11 +1598,13 @@ export function AssistantPanel({
         onRegenerate={(message) => {
           setReplacing(message.id);
           setPrompt(message.text);
+          restoreInputs(message);
           submitReplacement.current = true;
         }}
         onEdit={(message) => {
           setReplacing(message.id);
           setPrompt(message.text);
+          restoreInputs(message);
           composerRef.current?.focus();
         }}
         onUndo={undoLastTurn}
@@ -1811,6 +1874,8 @@ export function AssistantPanel({
             onClick={() => {
               setReplacing(null);
               setPrompt('');
+              setAttachments([]);
+              setSelectedSkills([]);
             }}
           >
             {t('取消')}

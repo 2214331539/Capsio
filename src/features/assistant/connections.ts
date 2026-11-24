@@ -24,12 +24,16 @@ export async function loadConnectionKey(
   );
 }
 
+/** Fired on the window, with the provider and endpoint, once a connection's saved key changed. */
+export const connectionKeyEvent = 'capsio-connection-key-changed';
+
 /** Put the key in its machine-only slot before the connection is persisted. */
 export async function storeConnectionKey(
   value: AISettings,
   key: string,
   credentials: CredentialBackend = nativeCredentials,
 ) {
+  let changed = false;
   try {
     if (value.serviceId === 'capsio') {
       // The model token stays in memory; never persist it in the provider
@@ -37,14 +41,25 @@ export async function storeConnectionKey(
       await collaboration.modelToken();
     } else if (value.provider === 'chatgpt') {
       // Signed in through the browser; nothing to keep here.
-    } else if (key.trim())
+    } else if (key.trim()) {
       await credentials.save({ provider: value.provider, endpoint: value.endpoint }, key.trim());
-    else if (value.provider !== 'ollama') throw new Error(t('请填写 API 密钥。'));
-    else await credentials.clear({ provider: value.provider, endpoint: value.endpoint });
+      changed = true;
+    } else if (value.provider !== 'ollama') throw new Error(t('请填写 API 密钥。'));
+    else {
+      await credentials.clear({ provider: value.provider, endpoint: value.endpoint });
+      changed = true;
+    }
   } catch (reason) {
     // The browser preview has no credential store.
     if (credentials !== nativeCredentials || isTauri()) throw reason;
   }
+  // Assistant panels keep the key they read; tell them to read it again.
+  if (changed && typeof window !== 'undefined')
+    window.dispatchEvent(
+      new CustomEvent(connectionKeyEvent, {
+        detail: { provider: value.provider, endpoint: value.endpoint },
+      }),
+    );
 }
 
 /** Save a connection and make it the default for new chats. */

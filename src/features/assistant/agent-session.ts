@@ -159,6 +159,8 @@ export class AgentSession {
   private textItems = new Map<string, string>();
   private resolvedRequests = new Set<string>();
   handle: ThreadHandle | null = null;
+  /** Whether the engine has said anything about the goal; until then `goal: null` means unknown. */
+  goalKnown = false;
   constructor(
     private readonly agent: AgentBackend,
     readonly binding: {
@@ -219,10 +221,12 @@ export class AgentSession {
       if (p.threadId && p.threadId !== state.threadId) continue;
       if (event.method === 'thread/goal/updated') {
         state.goal = goalOf(p.goal);
+        this.goalKnown = true;
         continue;
       }
       if (event.method === 'thread/goal/cleared') {
         state.goal = null;
+        this.goalKnown = true;
         continue;
       }
       const turn = object(p.turn);
@@ -236,6 +240,8 @@ export class AgentSession {
         state.phase === 'idle' &&
         !this.starting
       ) {
+        // The previous turn may have ended in this same batch: report it before it is wiped.
+        if (state.outcome) this.set(state);
         this.textItems.clear();
         this.resolvedRequests.clear();
         state = { ...state, ...freshTurn, phase: 'running', turnId: incomingTurn };
@@ -469,6 +475,7 @@ export class AgentSession {
       const result = object(
         await this.agent.goal({ ...this.binding, threadId, action, ...change }),
       );
+      this.goalKnown = true;
       this.set({ goal: action === 'clear' ? null : goalOf(result.goal) });
       return true;
     } catch (reason) {

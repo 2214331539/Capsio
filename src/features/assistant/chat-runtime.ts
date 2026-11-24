@@ -20,6 +20,8 @@ export interface ChatTask {
   stream?: ChatStream;
   resultStatus: 'completed' | 'interrupted' | 'failed';
   questionSaved: boolean;
+  /** Ask again from this question on: it and everything after it are replaced. */
+  replaceFrom?: string;
 }
 const runtimes = new WeakMap<WorkspaceStore, Map<ResearchBackend, ChatRuntime>>();
 export function getChatRuntime(store: WorkspaceStore, backend: ResearchBackend) {
@@ -94,7 +96,7 @@ export class ChatRuntime {
       );
     this.emit();
   }
-  async send(seed: Conversation, request: AIRequest) {
+  async send(seed: Conversation, request: AIRequest, replaceFrom?: string) {
     const old = this.get(seed.project, seed.id);
     if (old && (old.pending || old.saving || old.saveError)) return false;
     const task: ChatTask = {
@@ -112,6 +114,7 @@ export class ChatRuntime {
       model: request.model,
       resultStatus: 'completed',
       questionSaved: false,
+      ...(replaceFrom ? { replaceFrom } : {}),
     };
     this.tasks.set(keyOf(seed.project, seed.id), task);
     this.mark(task);
@@ -139,12 +142,15 @@ export class ChatRuntime {
         data.sessions.push(entry);
       } else {
         const current = asConversation(entry);
+        // Asking again drops the replaced question and what followed it from the saved chat.
+        const cut = task.replaceFrom
+          ? current.messages.findIndex((message) => message.id === task.replaceFrom)
+          : -1;
+        const kept = cut >= 0 ? current.messages.slice(0, cut) : current.messages;
         entry.messages = [
-          ...current.messages,
+          ...kept,
           ...structuredClone(
-            seed.messages.filter(
-              (message) => !current.messages.some((old) => old.id === message.id),
-            ),
+            seed.messages.filter((message) => !kept.some((old) => old.id === message.id)),
           ),
         ];
         entry.context = [

@@ -12,7 +12,8 @@ import { AssistantPanel } from './AssistantPanel';
 import { getAgentRuntime } from './agent-runtime';
 import type { AgentBackend, AgentEvent } from '../../platform/agent';
 import type { CredentialSlot } from '../../platform/credentials';
-import { freezeContext, newConversation, requestMessages } from './model';
+import { asConversation, freezeContext, newConversation, requestMessages } from './model';
+import { connectionKeyEvent } from './connections';
 
 afterEach(cleanup);
 
@@ -1601,4 +1602,146 @@ it('offers 继续 after an interrupted turn and sends it', async () => {
   expect(await screen.findByText('任务已中止。')).toBeTruthy();
   await userEvent.setup().click(screen.getByRole('button', { name: '继续' }));
   await waitFor(() => expect(agent.startThread).toHaveBeenCalled());
+});
+
+it('asks a question again with its files and replaces the saved exchange', async () => {
+  const data = emptyWorkspace();
+  data.settings.model.model = 'test-model';
+  data.sessions.push({
+    id: 'c1',
+    project: 'p1',
+    title: '带文件的问题',
+    context: [],
+    updatedAt: '2026-01-02',
+    messages: [
+      {
+        id: 'q1',
+        role: 'user',
+        text: '读这个文件',
+        createdAt: '',
+        attachments: [
+          { name: 'notes.md', mimeType: 'text/markdown', data: '', text: 'FILE-BODY-TEXT' },
+        ],
+      },
+      { id: 'a1', role: 'assistant', text: '旧回答', createdAt: '' },
+    ],
+  } as never);
+  const store = createWorkspaceStore({
+    load: async () => ({ workspace: data, directory: 'test', legacyAvailable: false }),
+    save: async (value: Workspace) => value,
+  } as unknown as WorkspaceBackend);
+  await store.getState().load();
+  const askAI = vi.fn(async (..._args: unknown[]) => '新回答');
+  render(
+    <AssistantPanel
+      store={store}
+      backend={{ askAI } as unknown as ResearchBackend}
+      scope="p1"
+      context={context}
+    />,
+  );
+  await screen.findByText('旧回答');
+  await userEvent.setup().click(screen.getByRole('button', { name: '重新生成' }));
+  await waitFor(() => expect(askAI).toHaveBeenCalledOnce());
+  const request = JSON.stringify((askAI.mock.calls[0][0] as { messages: unknown }).messages);
+  expect(request).toContain('FILE-BODY-TEXT');
+  expect(request).not.toContain('旧回答');
+  await screen.findByText('新回答');
+  const messages = asConversation(store.getState().data!.sessions[0]).messages;
+  expect(messages.map((message) => message.text)).toEqual(['读这个文件', '新回答']);
+  expect(messages[0].attachments?.[0]).toMatchObject({ name: 'notes.md', text: 'FILE-BODY-TEXT' });
+});
+
+it('reconnects an interrupted turn with the model of the conversation that was opened', async () => {
+  const data = emptyWorkspace();
+  data.settings.model.model = 'model-a';
+  const selection = (profileId: string, endpoint: string, model: string) => ({
+    profileId,
+    settings: { provider: 'ollama' as const, endpoint, model },
+  });
+  data.sessions.push(
+    ...([
+      {
+        id: 'a',
+        project: 'p1',
+        title: '会话甲',
+        context: [],
+        updatedAt: '2026-01-02',
+        messages: [{ id: 'ma', role: 'user', text: '甲', createdAt: '' }],
+        modelSelection: selection('legacy', 'http://localhost:11434', 'model-a'),
+      },
+      {
+        id: 'b',
+        project: 'p1',
+        title: '会话乙',
+        context: [],
+        updatedAt: '2026-01-01',
+        messages: [{ id: 'mb', role: 'user', text: '乙', createdAt: '' }],
+        agentDomain: 'code',
+        agentStatus: 'running',
+        modelSelection: selection('other', 'http://localhost:11500', 'model-b'),
+      },
+    ] as never[]),
+  );
+  const store = createWorkspaceStore({
+    load: async () => ({ workspace: data, directory: 'test', legacyAvailable: false }),
+    save: async (value: Workspace) => value,
+  } as unknown as WorkspaceBackend);
+  await store.getState().load();
+  const agent = {
+    ...agentStub(),
+    startThread: vi.fn(async (projectId, domain, connection, options) => ({
+      threadId: options.conversationId,
+      conversationId: options.conversationId,
+      projectId,
+      domain,
+      cwd: 'C:/p1',
+      model: connection.model,
+      modelProvider: 'capsio',
+      instructionSources: [],
+    })),
+  } as AgentBackend;
+  const runtime = getAgentRuntime(store, agent);
+  try {
+    render(
+      <AssistantPanel
+        store={store}
+        backend={{ askAI: vi.fn() } as unknown as ResearchBackend}
+        agent={agent}
+        scope="p1"
+        context={context}
+      />,
+    );
+    const user = userEvent.setup();
+    await screen.findByText('甲');
+    await user.click(screen.getByRole('button', { name: '当前 AI 对话' }));
+    await user.click(screen.getByRole('menuitemradio', { name: '会话乙' }));
+    await waitFor(() => expect(agent.startThread).toHaveBeenCalled());
+    expect(vi.mocked(agent.startThread).mock.calls[0][2]).toMatchObject({
+      model: 'model-b',
+      endpoint: 'http://localhost:11500',
+    });
+  } finally {
+    await act(async () => runtime.dispose());
+  }
+});
+
+it('reads a key again when another panel or Settings saved a new one for the endpoint', async () => {
+  let stored = 'old-secret';
+  const { askAI, credentials, user } = await keyHarness(async () => stored);
+  await waitFor(() => expect(credentials.load).toHaveBeenCalled());
+  const loads = credentials.load.mock.calls.length;
+  stored = 'new-secret';
+  act(() => {
+    window.dispatchEvent(
+      new CustomEvent(connectionKeyEvent, {
+        detail: { provider: 'openai', endpoint: 'https://api.example.com/v1/' },
+      }),
+    );
+  });
+  await waitFor(() => expect(credentials.load.mock.calls.length).toBeGreaterThan(loads));
+  await user.type(screen.getByLabelText('向 AI 提问'), '解释这个结论');
+  await user.click(screen.getByRole('button', { name: '发送' }));
+  await waitFor(() => expect(askAI).toHaveBeenCalledOnce());
+  expect(askAI.mock.calls[0]).toEqual([expect.objectContaining({ apiKey: 'new-secret' })]);
 });
