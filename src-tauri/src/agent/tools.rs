@@ -34,13 +34,14 @@ pub fn instructions(
     }
     if domain == "code" && managed_runs {
         text.push_str("Python 任务先读取 capsio_list_runs 返回的 pythonEnvironment；正式运行的 executable=python 使用实验当前选择的解释器。解释器变化只影响新启动的运行，已有进程保持原环境。");
-        text.push_str("实验训练、评估、测试等正式运行必须使用 capsio_start_run，不能用 shell 后台进程代替。先保存代码到磁盘。capsio_list_runs 返回已保存配置和正式运行；capsio_run_status 返回实时状态、日志、结果文件，可等待至多 5 秒。用 capsio_read_result 读取结果，再基于真实结果解释，不能编造指标。CAPSIO_RUN_DIR 环境变量指向本次结果目录，把指标 JSON 和结果写入那里。运行有独立 run ID，聊天结束不会停止它。较长运行可告知用户 run ID，之后查询；用户要求停止实验时使用 capsio_stop_run。正式运行仅能写绑定代码目录和本次结果目录，网络关闭，不自动提权；需要联网安装依赖时使用原有带审批的命令工具。中止聊天和停止正式实验是两件事。");
+        text.push_str("在本机跑实验的训练、评估、测试，优先用 capsio_start_run（正式运行）：有独立 run ID、日志和结果记录，用户在实验页能看到。先保存代码到磁盘。capsio_list_runs 返回已保存配置和正式运行；capsio_run_status 返回实时状态、日志、结果文件，可等待至多 5 秒。用 capsio_read_result 读取结果，再基于真实结果解释，不能编造指标。CAPSIO_RUN_DIR 环境变量指向本次结果目录，把指标 JSON 和结果写入那里。运行有独立 run ID，聊天结束不会停止它。较长运行可告知用户 run ID，之后查询；用户要求停止实验时使用 capsio_stop_run。正式运行只写绑定代码目录和本次结果目录，网络关闭，不自动提权。");
+        text.push_str("正式运行只管本机。用户要在远程服务器（SSH、云主机、集群）上跑实验，或者需要联网下载数据和依赖时，直接用你的命令工具（ssh、scp、rsync、tmux、nohup 等），按当前权限执行：询问模式下由用户在聊天里批准，完全允许模式直接执行；不要以必须用正式运行为由拒绝。远程长任务放进 tmux 或 nohup，日志写到文件，告诉用户怎么查看；之后用 ssh 读日志和结果文件，基于真实输出汇报。中止聊天和停止实验是两件事。");
     }
     if domain == "code" && git_tools {
         text.push_str("Git 状态和差异使用 capsio_git_status；所有 Git 写操作使用 capsio_git_action，不通过 shell 绕过产品保护。Git 写操作遵循当前权限：询问模式由用户在聊天中批准，完全允许模式由宿主直接执行；只能提交用户要求的文件，不能顺带暂存其他修改。已有实验运行期间不得切换分支或恢复源码。创建 worktree 后当前会话仍绑定原目录；告知用户在新目录创建会话继续任务，不改变当前会话目录。");
     }
     if domain == "code" && (!managed_runs || !git_tools) {
-        text.push_str("当前旧会话保留创建时的工具集合；若用户需要本会话未提供的正式实验或 Git 宿主工具，请告知用户新建代码会话，不调用不存在的工具，也不使用 shell 替代缺失的宿主工具。");
+        text.push_str("当前旧会话保留创建时的工具集合；若用户需要本会话未提供的正式实验或 Git 宿主工具，请告知用户新建代码会话，不调用不存在的工具，Git 写操作也不用 shell 代替。远程服务器上的实验和联网操作照常用命令工具，按当前权限审批。");
     }
     text
 }
