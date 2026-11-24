@@ -60,6 +60,8 @@ function fakeUpstream() {
         }),
       );
     }
+    if (typeof input.input === 'string' && input.input.startsWith('wait before answering'))
+      await new Promise((resolve) => setTimeout(resolve, 600));
     if (input.model === 'up-broken') {
       response.writeHead(500, { 'content-type': 'application/json' });
       return response.end('{"error":"down"}');
@@ -310,6 +312,30 @@ test('a request that runs past zero leaves a debt that the next grant pays', opt
   assert.equal(await balanceOf(user), 10 - POINTS + 100);
   const settled = await db.query("SELECT credit_debt FROM users WHERE id = $1", [user.id]);
   assert.equal(Number(settled.rows[0].credit_debt), 0);
+});
+
+test('a request stopped before the model answers still pays for its prompt', options, async () => {
+  const user = await signUp('13700000040');
+  const token = await modelToken(user);
+  const stop = new AbortController();
+  const asking = fetch(`${base}/v1/responses`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'fast', stream: true, input: 'wait before answering '.repeat(400) }),
+    signal: stop.signal,
+  }).catch(() => null);
+  await new Promise((resolve) => setTimeout(resolve, 150));
+  stop.abort();
+  await asking;
+  let events = [];
+  for (let tries = 0; tries < 40 && !events.length; tries += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    events = (await db.query('SELECT status, input_tokens, points FROM usage_events WHERE user_id = $1', [user.id])).rows;
+  }
+  assert.equal(events.length, 1);
+  assert.equal(events[0].status, 'aborted');
+  assert.ok(Number(events[0].input_tokens) > 0);
+  assert.ok(Number(events[0].points) > 0);
 });
 
 test('a failing channel is not charged and hands over to the backup', options, async () => {

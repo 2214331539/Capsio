@@ -45,6 +45,17 @@ let db;
 let server;
 let base;
 
+// OSS answers the server's HEAD checks from here (object key → size); other requests go out.
+const ossObjects = new Map();
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, init) => {
+  const target = new URL(String(url));
+  if (!target.hostname.endsWith('.aliyuncs.com') || init?.method !== 'HEAD') return realFetch(url, init);
+  const size = ossObjects.get(decodeURIComponent(target.pathname.slice(1)));
+  if (size === undefined) return new Response(null, { status: 404 });
+  return new Response(null, { status: 200, headers: { 'content-length': String(size) } });
+};
+
 async function api(user, method, path, body) {
   const response = await fetch(`${base}${path}`, {
     method,
@@ -288,7 +299,65 @@ test('re-signing an unfinished upload keeps its blob id', options, async () => {
   assert.match(first.body.uploadUrl, /x-oss-signature-version=OSS4-HMAC-SHA256/);
   const viewerComplete = await api(users.viewer, 'POST', `/v1/blobs/${first.body.blob.id}/complete`);
   assert.equal(viewerComplete.status, 403);
+  ossObjects.set(first.body.blob.objectKey, 5);
   assert.equal((await api(users.editor, 'POST', `/v1/blobs/${first.body.blob.id}/complete`)).status, 200);
+});
+
+test('an upload counts as complete only when OSS holds it at the signed size', options, async () => {
+  const id = await project('project-upload-2');
+  const request = { sha256: sha('twelve bytes'), size: 12, contentType: 'application/pdf' };
+  const signed = await api(users.owner, 'POST', `/v1/projects/${id}/blobs/presign-upload`, request);
+  const complete = () => api(users.owner, 'POST', `/v1/blobs/${signed.body.blob.id}/complete`);
+  assert.equal((await complete()).status, 409, 'nothing uploaded');
+  ossObjects.set(signed.body.blob.objectKey, 3);
+  assert.equal((await complete()).status, 409, 'a different size');
+  const again = await api(users.owner, 'POST', `/v1/projects/${id}/blobs/presign-upload`, request);
+  assert.equal(again.body.existing, false, 'an unconfirmed upload is not offered to others');
+  ossObjects.set(signed.body.blob.objectKey, 12);
+  assert.equal((await complete()).status, 200);
+  const reused = await api(users.editor, 'POST', `/v1/projects/${id}/blobs/presign-upload`, request);
+  assert.equal(reused.body.existing, true);
+});
+
+test("uploads stop at the owner's storage limit", options, async () => {
+  const id = await project('project-upload-3');
+  const { rows } = await db.query("SELECT storage_bytes FROM plans WHERE id = 'free'");
+  const limit = Number(rows[0].storage_bytes);
+  const fits = await api(users.owner, 'POST', `/v1/projects/${id}/blobs/presign-upload`, {
+    sha256: sha('fits'),
+    size: 1024,
+    contentType: 'application/pdf',
+  });
+  assert.equal(fits.status, 200);
+  await db.query(
+    `INSERT INTO blobs(id, project_id, object_key, sha256, size_bytes, content_type, status, created_by)
+     VALUES ($1, $2, $3, $4, $5, 'application/pdf', 'complete', $6)`,
+    [crypto.randomUUID(), id, `projects/${id}/blobs/${sha('big')}`, sha('big'), limit - 100, users.owner.id],
+  );
+  const full = await api(users.editor, 'POST', `/v1/projects/${id}/blobs/presign-upload`, {
+    sha256: sha('over'),
+    size: 200,
+    contentType: 'application/pdf',
+  });
+  assert.equal(full.status, 413);
+  assert.equal(full.body.code, 'storage_full');
+  await db.query('UPDATE blobs SET status = $2, deleted_at = NOW() WHERE sha256 = $1', [sha('big'), 'deleted']);
+});
+
+test("invitations stop at the owner's member limit, but roles can still change", options, async () => {
+  const id = await project('project-members-limit');
+  const { rows } = await db.query("SELECT max_members FROM plans WHERE id = 'free'");
+  const limit = Number(rows[0].max_members);
+  const invite = (phone, role = 'viewer') =>
+    api(users.owner, 'POST', `/v1/projects/${id}/members`, { phone, role });
+  // Four people are already in the project.
+  for (let index = 4; index < limit; index += 1)
+    assert.equal((await invite(`1370000${String(index).padStart(4, '0')}`)).status, 200);
+  const over = await invite('13700009999');
+  assert.equal(over.status, 403);
+  assert.equal(over.body.code, 'member_limit');
+  assert.equal((await invite(users.viewer.phone, 'editor')).status, 200);
+  assert.equal((await invite(`1370000${String(limit - 1).padStart(4, '0')}`, 'editor')).status, 200);
 });
 
 test('owners remove members and members may leave', options, async () => {

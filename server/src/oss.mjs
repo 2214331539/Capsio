@@ -112,3 +112,14 @@ export async function deleteObject(config, key) {
     throw new Error(`OSS 删除失败：${response.status}`);
   }
 }
+
+/** The stored object's size in bytes, or null when nothing is stored under the key. */
+export async function objectSize(config, key, now = Math.floor(Date.now() / 1000)) {
+  const response = await fetch(sign(config, 'HEAD', key, now), {
+    method: 'HEAD',
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`OSS 查询失败：${response.status}`);
+  return Number(response.headers.get('content-length'));
+}

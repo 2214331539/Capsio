@@ -135,7 +135,8 @@ async function relay({ response, config, db, kind, input, model, channels, plan,
       }
       break;
     } catch (error) {
-      if (gone) return;
+      // Stopped before the model answered: the prompt has gone out, so it is paid for.
+      if (gone) return record(candidate, createMeter().finish(promptChars(input)), 'aborted', null);
       await record(candidate, zero, 'error', null);
       if (last) throw fail(502, '模型服务连接失败，请稍后再试。', 'upstream_unreachable');
     }

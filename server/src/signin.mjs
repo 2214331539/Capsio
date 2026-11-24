@@ -89,24 +89,34 @@ export async function authenticateCode(db, config, phone, code) {
 
 const SCRYPT = { N: 16384, r: 8, p: 1, keylen: 32 };
 
+// scrypt runs on the thread pool, so a burst of sign-ins does not stall every other request.
+const scrypt = (password, salt, keylen, options) =>
+  new Promise((resolve, reject) =>
+    crypto.scrypt(password, salt, keylen, options, (error, key) => (error ? reject(error) : resolve(key))),
+  );
+
 /** Passwords are stored as scrypt hashes with their own salt and parameters. */
-export function hashPassword(password) {
+export async function hashPassword(password) {
   const salt = crypto.randomBytes(16);
-  const hash = crypto.scryptSync(password, salt, SCRYPT.keylen, SCRYPT);
+  const hash = await scrypt(password, salt, SCRYPT.keylen, SCRYPT);
   return ['scrypt', SCRYPT.N, SCRYPT.r, SCRYPT.p, salt.toString('base64'), hash.toString('base64')].join('$');
 }
 
-export function passwordMatches(password, stored) {
+export async function passwordMatches(password, stored) {
   const [kind, N, r, p, salt, hash] = String(stored ?? '').split('$');
   if (kind !== 'scrypt' || !salt || !hash) return false;
   const expected = Buffer.from(hash, 'base64');
-  const actual = crypto.scryptSync(password, Buffer.from(salt, 'base64'), expected.length, {
+  const actual = await scrypt(password, Buffer.from(salt, 'base64'), expected.length, {
     N: Number(N),
     r: Number(r),
     p: Number(p),
   });
   return crypto.timingSafeEqual(actual, expected);
 }
+
+let decoy;
+/** A hash to check against when there is no account to check, so both answers take as long. */
+export const decoyHash = () => (decoy ??= hashPassword(crypto.randomBytes(16).toString('hex')));
 
 /** 8 to 64 characters with at least one letter and one digit. */
 export function checkPassword(value) {
@@ -121,16 +131,29 @@ const passwordFailures = new Map();
 const PASSWORD_WINDOW_MS = 15 * 60_000;
 const PASSWORD_FAILURES_PER_WINDOW = 10;
 
-function recentFailures(phone) {
+// And per address, across numbers, for callers that pass one.
+const ADDRESS_FAILURES_PER_WINDOW = 50;
+
+function recentFailures(key) {
   const nowMs = Date.now();
-  const recent = (passwordFailures.get(phone) ?? []).filter((at) => nowMs - at < PASSWORD_WINDOW_MS);
-  passwordFailures.set(phone, recent);
+  const recent = (passwordFailures.get(key) ?? []).filter((at) => nowMs - at < PASSWORD_WINDOW_MS);
+  passwordFailures.set(key, recent);
+  if (passwordFailures.size > 10_000) {
+    for (const [other, times] of passwordFailures) {
+      if (times.every((at) => nowMs - at >= PASSWORD_WINDOW_MS)) passwordFailures.delete(other);
+    }
+  }
   return recent;
 }
 
-export function guardPassword(phone) {
+export function guardPassword(phone, ip) {
   if (recentFailures(phone).length >= PASSWORD_FAILURES_PER_WINDOW)
     throw fail(429, '密码错误次数过多，请 15 分钟后再试，或用验证码登录。');
+  if (ip && recentFailures(`ip:${ip}`).length >= ADDRESS_FAILURES_PER_WINDOW)
+    throw fail(429, '密码错误次数过多，请 15 分钟后再试，或用验证码登录。');
 }
-export const notePasswordFailure = (phone) => recentFailures(phone).push(Date.now());
+export function notePasswordFailure(phone, ip) {
+  recentFailures(phone).push(Date.now());
+  if (ip) recentFailures(`ip:${ip}`).push(Date.now());
+}
 export const clearPasswordFailures = (phone) => passwordFailures.delete(phone);

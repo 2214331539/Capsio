@@ -10,6 +10,7 @@ import {
   authenticateCode,
   checkPassword,
   clearPasswordFailures,
+  decoyHash,
   guardPassword,
   hashPassword,
   notePasswordFailure,
@@ -67,9 +68,15 @@ export async function signIn(db, config, { phone, password }, ip) {
     [phone],
   );
   const user = result.rows[0];
-  // The same answer whether the number is unknown, not an admin, has no password
-  // yet or the wrong one, so the page does not tell who the administrators are.
-  if (!user || !ROLES[user.admin_role] || user.status !== 'active' || !passwordMatches(String(password ?? ''), user.password_hash)) {
+  // The same answer, after the same slow hash, whether the number is unknown, not an
+  // admin, has no password yet or the wrong one, so the page does not tell who the
+  // administrators are.
+  const eligible = user && ROLES[user.admin_role] && user.status === 'active' && user.password_hash;
+  const matches = await passwordMatches(
+    String(password ?? ''),
+    eligible ? user.password_hash : await decoyHash(),
+  );
+  if (!eligible || !matches) {
     notePasswordFailure(phone);
     recentAddressFailures(ip).push(Date.now());
     throw fail(400, '手机号或密码不正确。还没设置过密码的话，请点“忘记密码”。');
@@ -87,7 +94,7 @@ export async function resetPassword(db, config, { phone, code, password }, ip) {
   // The slow hash runs only for a right code, so wrong ones cannot tie up the server.
   const plain = checkPassword(password);
   await authenticateCode(db, config, phone, String(code ?? '').trim());
-  const secret = hashPassword(plain);
+  const secret = await hashPassword(plain);
   const result = await db.query('SELECT id, phone, admin_role, status FROM users WHERE phone = $1', [phone]);
   const user = result.rows[0];
   if (!user || !ROLES[user.admin_role] || user.status !== 'active') throw fail(400, '手机号或验证码不正确。');

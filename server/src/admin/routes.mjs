@@ -224,9 +224,12 @@ async function route(request, response, { config, db }, path, url) {
   if (method === 'POST' && path === '/send-code') {
     const input = await body(request, 4096);
     const phone = normalizePhone(input.phone);
-    // Only administrators get a text (to reset the password); everyone gets the same answer.
+    // Only administrators get a text (to reset the password); everyone gets the same answer
+    // at once, and a refused send (too soon, too many) is only logged, so neither the reply
+    // nor its timing tells who the administrators are.
     const admin = await db.query('SELECT 1 FROM users WHERE phone = $1 AND admin_role IS NOT NULL', [phone]);
-    if (admin.rows[0]) await sendCode(db, config, phone, ip);
+    if (admin.rows[0])
+      sendCode(db, config, phone, ip).catch((error) => console.warn('admin send-code', error.message));
     return send(response, 202, { accepted: true });
   }
   if (method === 'POST' && (path === '/login' || path === '/reset-password')) {

@@ -5,7 +5,7 @@ import { readConfig, assertProductionConfig } from './config.mjs';
 import { createDb, initDb, withTransaction } from './db.mjs';
 import { hashSecret, signToken, verifyToken } from './jwt.mjs';
 import { normalizePhone } from './sms.mjs';
-import { deleteObject, objectKey, signedDownloadUrl, signedUploadUrl } from './oss.mjs';
+import { deleteObject, objectKey, objectSize, signedDownloadUrl, signedUploadUrl } from './oss.mjs';
 import { pullEntities, pushEntities } from './sync.mjs';
 import { body, clientAddress, send } from './http.mjs';
 import { caller, requireActive } from './auth.mjs';
@@ -20,6 +20,8 @@ import {
   sendCode,
 } from './signin.mjs';
 import { handleBilling } from './billing/routes.mjs';
+import { storageUsed } from './billing/account.mjs';
+import { currentPlan } from './billing/plans.mjs';
 import { importFromEnvironment } from './billing/models.mjs';
 import { handleAdmin } from './admin/routes.mjs';
 import { startJobs } from './jobs.mjs';
@@ -54,6 +56,16 @@ async function requireMember(db, projectId, userId, write = false) {
   }
   return role;
 }
+
+/** The plan of the project's owner; its storage and member limits hold for the whole project. */
+async function ownerPlan(db, projectId) {
+  const result = await db.query('SELECT owner_id FROM projects WHERE id = $1', [projectId]);
+  const ownerId = result.rows[0]?.owner_id;
+  if (!ownerId) throw Object.assign(new Error('项目不存在。'), { status: 404 });
+  return { ownerId, plan: (await currentPlan(db, ownerId)).plan };
+}
+
+const gigabytes = (bytes) => `${Math.round((bytes / 1024 ** 3) * 10) / 10} GB`;
 
 function issueTokens(config, user) {
   const accessToken = signToken(
@@ -91,14 +103,14 @@ async function login(db, config, phone, code) {
   return startSession(db, config, await findOrCreateUser(db, phone));
 }
 
-async function passwordLogin(db, config, phone, password) {
-  guardPassword(phone);
+async function passwordLogin(db, config, phone, password, ip) {
+  guardPassword(phone, ip);
   const result = await db.query('SELECT id, phone, password_hash FROM users WHERE phone = $1', [phone]);
   const user = result.rows[0];
   if (user && !user.password_hash)
     throw Object.assign(new Error('这个账号还没有设置密码，请用验证码登录。'), { status: 400 });
-  if (!user || !passwordMatches(String(password ?? ''), user.password_hash)) {
-    notePasswordFailure(phone);
+  if (!user || !(await passwordMatches(String(password ?? ''), user.password_hash))) {
+    notePasswordFailure(phone, ip);
     throw Object.assign(new Error('手机号或密码不正确。'), { status: 400 });
   }
   clearPasswordFailures(phone);
@@ -110,7 +122,7 @@ async function register(db, config, phone, code, password) {
   // The slow hash runs only for a right code, so wrong ones cannot tie up the server.
   const plain = checkPassword(password);
   await authenticateCode(db, config, phone, code);
-  const secret = hashPassword(plain);
+  const secret = await hashPassword(plain);
   const existing = await db.query('SELECT password_hash FROM users WHERE phone = $1', [phone]);
   if (existing.rows[0]?.password_hash)
     throw Object.assign(new Error('这个手机号已经注册，请直接登录。'), { status: 409 });
@@ -126,7 +138,7 @@ async function register(db, config, phone, code, password) {
 async function resetPassword(db, config, phone, code, password) {
   const plain = checkPassword(password);
   await authenticateCode(db, config, phone, code);
-  const secret = hashPassword(plain);
+  const secret = await hashPassword(plain);
   const result = await db.query('SELECT id, phone FROM users WHERE phone = $1', [phone]);
   const user = result.rows[0];
   if (!user) throw Object.assign(new Error('这个手机号还没有注册。'), { status: 404 });
@@ -221,7 +233,13 @@ async function handle(request, response, context) {
       return send(
         response,
         200,
-        await passwordLogin(db, config, normalizePhone(input.phone), input.password),
+        await passwordLogin(
+          db,
+          config,
+          normalizePhone(input.phone),
+          input.password,
+          clientAddress(request, config),
+        ),
       );
     }
     if (request.method === 'POST' && path === '/v1/auth/register') {
@@ -399,6 +417,25 @@ async function handle(request, response, context) {
         if (target.rows[0]?.id === user.sub) {
           throw Object.assign(new Error('你已经是该项目成员。'), { status: 409 });
         }
+        // Members and open invitations count, the owner included; changing a role does not.
+        const { plan } = await ownerPlan(db, projectId);
+        if (plan.maxMembers !== null) {
+          const counted = await db.query(
+            `SELECT (SELECT COUNT(*) FROM project_members WHERE project_id = $1)
+                  + (SELECT COUNT(*) FROM project_invitations WHERE project_id = $1) AS people,
+                    EXISTS(SELECT 1 FROM project_members WHERE project_id = $1 AND user_id = $2)
+                 OR EXISTS(SELECT 1 FROM project_invitations WHERE project_id = $1 AND phone = $3) AS listed`,
+            [projectId, target.rows[0]?.id ?? null, phone],
+          );
+          const { people, listed } = counted.rows[0];
+          if (!listed && Number(people) >= plan.maxMembers)
+            throw Object.assign(
+              new Error(
+                `当前套餐每个项目最多 ${plan.maxMembers} 人（含所有者和未接受的邀请），升级套餐后可以邀请更多成员。`,
+              ),
+              { status: 403, code: 'member_limit' },
+            );
+        }
         if (target.rows[0]) {
           await db.query(
             `INSERT INTO project_members(project_id, user_id, role) VALUES ($1, $2, $3)
@@ -492,6 +529,15 @@ async function handle(request, response, context) {
             downloadUrl: signedDownloadUrl(config, existing.rows[0].objectKey),
           });
         }
+        const { ownerId, plan } = await ownerPlan(db, projectId);
+        const used = await storageUsed(db, ownerId);
+        if (used + size > plan.storageBytes)
+          throw Object.assign(
+            new Error(
+              `云端空间不够了：项目所有者已用 ${gigabytes(used)}，套餐共 ${gigabytes(plan.storageBytes)}。请删掉不用的文件，或升级套餐。`,
+            ),
+            { status: 413, code: 'storage_full' },
+          );
         const key = objectKey(projectId, sha256);
         // An interrupted or deleted upload of the same content keeps its row id.
         const row = await db.query(
@@ -519,6 +565,13 @@ async function handle(request, response, context) {
       if (request.method === 'POST' && suffix === 'complete') {
         await requireMember(db, found.rows[0].project_id, user.sub, true);
         if (blob.status !== 'pending') return send(response, 200, { ok: true });
+        // Only content that is really stored, at the size that was signed for, counts as
+        // uploaded; otherwise later uploads of the same file would skip it and find nothing.
+        const stored = await objectSize(config, blob.object_key);
+        if (stored === null)
+          throw Object.assign(new Error('文件还没有传到云端，请重新同步。'), { status: 409 });
+        if (stored !== Number(blob.size_bytes))
+          throw Object.assign(new Error('传到云端的文件大小不对，请重新同步。'), { status: 409 });
         await db.query("UPDATE blobs SET status = 'complete' WHERE id = $1", [blobId]);
         return send(response, 200, { ok: true, blob: { id: blob.id, objectKey: blob.object_key } });
       }
