@@ -96,18 +96,34 @@ export function Menu({
         );
       close.current();
     };
-    const blur = dismissed('blur');
+    // Another program can take focus for a moment when the mouse goes down (a selection
+    // translator, a screenshot tool); closing then made the menu inert and swallowed the
+    // click. The menu closes only once the window has really lost focus, never mid-press.
+    let blurTimer = 0;
+    const blur = () => {
+      const item = pressed.current;
+      if (item && Date.now() - item.at < 1000)
+        reportError(new Error('Window lost focus while "' + item.label + '" was pressed'), 'menu');
+      window.clearTimeout(blurTimer);
+      blurTimer = window.setTimeout(() => {
+        if (!document.hasFocus() && !pressed.current) close.current();
+      }, 300);
+    };
+    const focus = () => window.clearTimeout(blurTimer);
     const resize = dismissed('resize');
     const scroll = (event: Event) => {
       if (!ref.current?.contains(event.target as Node)) close.current();
     };
     window.addEventListener('pointerdown', outside);
     window.addEventListener('blur', blur);
+    window.addEventListener('focus', focus);
     window.addEventListener('resize', resize);
     window.addEventListener('scroll', scroll, true);
     return () => {
+      window.clearTimeout(blurTimer);
       window.removeEventListener('pointerdown', outside);
       window.removeEventListener('blur', blur);
+      window.removeEventListener('focus', focus);
       window.removeEventListener('resize', resize);
       window.removeEventListener('scroll', scroll, true);
     };

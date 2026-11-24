@@ -113,3 +113,40 @@ it.each([90, 900])('keeps an upward menu above its anchor with content height %i
   expect(menu.style.maxHeight).toBe('');
   expect(parseFloat(menu.style.left) + menu.offsetWidth).toBe(innerWidth - 8);
 });
+
+it('keeps working when another program takes focus for a moment as an item is pressed', async () => {
+  const action = vi.fn();
+  render(<Host action={action} />);
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Open' }));
+  const edit = screen.getByRole('menuitem', { name: 'Edit' });
+  vi.useFakeTimers();
+  try {
+    fireEvent.pointerDown(edit);
+    act(() => void window.dispatchEvent(new Event('blur')));
+    act(() => void window.dispatchEvent(new Event('focus')));
+    act(() => void vi.advanceTimersByTime(300));
+    // Closing would make the menu inert, and the click would go nowhere.
+    expect(screen.getByRole('menu', { name: 'Actions' }).dataset.state).toBe('open');
+    fireEvent.click(edit);
+    expect(action).toHaveBeenCalledOnce();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('closes once the window has really lost focus', async () => {
+  render(<Host action={() => {}} />);
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Open' }));
+  vi.useFakeTimers();
+  try {
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    act(() => void window.dispatchEvent(new Event('blur')));
+    expect(screen.getByRole('menu', { name: 'Actions' }).dataset.state).toBe('open');
+    act(() => void vi.advanceTimersByTime(300));
+    expect(screen.queryByRole('menu', { name: 'Actions' })?.dataset.state ?? 'closed').toBe(
+      'closed',
+    );
+  } finally {
+    vi.useRealTimers();
+  }
+});
