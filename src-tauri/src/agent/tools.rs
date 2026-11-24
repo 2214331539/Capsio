@@ -3,6 +3,10 @@ use super::*;
 use crate::experiments::{self, Configuration, ExperimentState, RunSource};
 use std::path::Path;
 
+/// Said once to code conversations started before registry::INSTRUCTIONS 2, whose history
+/// still holds the old rule and the refusals it led to.
+pub const INSTRUCTIONS_UPDATE: &str = "说明更新：之前“训练、评估、测试等正式运行必须使用 capsio_start_run，不能用 shell 后台进程代替”的要求已经撤销，以本条为准。capsio_start_run 只是本机实验的首选；用户要在远程服务器（SSH、云主机、集群）上跑实验，或者需要联网时，直接用命令工具（ssh、scp、rsync、tmux、nohup 等），按当前权限执行：询问模式由用户在聊天里批准，完全允许模式直接执行。不要再以必须用正式运行为由拒绝。";
+
 pub fn instructions(
     domain: &str,
     managed_runs: bool,
@@ -1095,5 +1099,40 @@ mod tests {
             );
             std::thread::sleep(Duration::from_millis(20));
         }
+    }
+
+    #[test]
+    fn real_codex_takes_the_instructions_update_into_a_thread() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("code");
+        let home = temp.path().join("engine");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::create_dir_all(&home).unwrap();
+        let connection = config::Connection {
+            endpoint: "http://127.0.0.1:9/v1",
+            model: "fixture-model",
+            provider: "openai",
+            api_key: Some("fixture-key"),
+        };
+        let args = config::arguments(&connection).unwrap();
+        let mut session = EngineSession::start_with_events(
+            &process::engine_path().unwrap(),
+            &args.iter().map(String::as_str).collect::<Vec<_>>(),
+            &home,
+            &root,
+            &config::environment(&connection),
+            None,
+        )
+        .unwrap();
+        let thread = session.call("thread/start", json!({"cwd":root,"model":"fixture-model","modelProvider":"capsio","sandbox":"workspace-write","approvalPolicy":"on-request","dynamicTools":specifications()}), THREAD_BUDGET).unwrap();
+        let note = json!({"type": "message", "role": "developer",
+            "content": [{"type": "input_text", "text": INSTRUCTIONS_UPDATE}]});
+        session
+            .call(
+                "thread/inject_items",
+                json!({"threadId": thread["thread"]["id"], "items": [note]}),
+                THREAD_BUDGET,
+            )
+            .unwrap();
     }
 }

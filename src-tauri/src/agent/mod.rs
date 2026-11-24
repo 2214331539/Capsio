@@ -498,6 +498,9 @@ fn conversation_root<R: tauri::Runtime>(
     let state = app.state::<AppState>();
     let bound = registry::bound_root(state.storage.directory(), project, conversation, domain)?;
     let selected = bound.as_ref().map(|p| p.to_string_lossy().into_owned());
+    // A folder the page remembered may since have gone (a data move, a removed worktree); a
+    // new conversation then starts in the project folder instead of failing on it.
+    let requested = requested.filter(|path| std::path::Path::new(path).exists());
     let root = if domain == "code" {
         crate::git::resolve(
             &state.storage,
@@ -781,6 +784,7 @@ pub async fn agent_start_thread(
             }
             session
         };
+        let earlier_instructions = record.as_ref().map(|r| r.instructions);
         let mut plan = thread_plan(&root, connection.model, domain, record);
         plan.params["modelProvider"] = json!(config::provider_id(&connection));
         let mut extra = custom_instructions(&app.state::<AppState>().storage, &project_id);
@@ -807,6 +811,20 @@ pub async fn agent_start_thread(
             .filter(|s| !s.is_empty())
             .ok_or("Agent 返回了空线程标识。")?
             .to_string();
+        // A resumed thread keeps the instructions it started with in its history, along with
+        // what it said because of them; tell it once what has changed since.
+        if !fresh_thread
+            && domain == "code"
+            && earlier_instructions.is_some_and(|n| n < registry::INSTRUCTIONS)
+        {
+            let note = json!({"type": "message", "role": "developer",
+                "content": [{"type": "input_text", "text": tools::INSTRUCTIONS_UPDATE}]});
+            let _ = session.call(
+                "thread/inject_items",
+                json!({"threadId": thread_id, "items": [note]}),
+                THREAD_BUDGET,
+            );
+        }
         let handle = ThreadHandle {
             paper_tools: plan.paper_tools,
             browser_tools,

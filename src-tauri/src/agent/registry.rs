@@ -4,6 +4,9 @@ use super::ThreadHandle;
 use capsio_core::workspace::valid_id;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+/// Revision of the standing instructions a thread was last given. 2 (2026-11-24): runs on
+/// remote servers go through the command tool, not only the managed runner.
+pub const INSTRUCTIONS: u32 = 2;
 #[derive(Serialize, Deserialize)]
 pub struct Binding {
     #[serde(default)]
@@ -23,6 +26,8 @@ pub struct Binding {
     pub browser_tools: bool,
     #[serde(default)]
     pub paper_tools: bool,
+    #[serde(default)]
+    pub instructions: u32,
 }
 fn path(data: &Path, project: &str, conversation: &str) -> Result<PathBuf, String> {
     if !valid_id(project) || !valid_id(conversation) {
@@ -101,6 +106,7 @@ pub fn write(
         git_tools,
         browser_tools,
         paper_tools: handle.paper_tools,
+        instructions: INSTRUCTIONS,
     };
     std::fs::create_dir_all(target.parent().unwrap()).map_err(|e| e.to_string())?;
     let temporary = target.with_extension("pending");
@@ -136,13 +142,22 @@ mod tests {
             events: vec![],
         };
         write(dir.path(), &handle, true, true, true, true).unwrap();
-        assert_eq!(
-            read(dir.path(), "project-a", "chat-a", "code", dir.path())
-                .unwrap()
-                .unwrap()
-                .thread_id,
-            "thread-a"
-        );
+        let binding = read(dir.path(), "project-a", "chat-a", "code", dir.path())
+            .unwrap()
+            .unwrap();
+        assert_eq!(binding.thread_id, "thread-a");
+        assert_eq!(binding.instructions, INSTRUCTIONS);
+        // Records from before the revision was kept read as revision 0.
+        let file = path(dir.path(), "project-a", "chat-a").unwrap();
+        let mut old: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&file).unwrap()).unwrap();
+        old.as_object_mut().unwrap().remove("instructions");
+        std::fs::write(&file, serde_json::to_vec(&old).unwrap()).unwrap();
+        let binding = read(dir.path(), "project-a", "chat-a", "code", dir.path())
+            .unwrap()
+            .unwrap();
+        assert_eq!(binding.instructions, 0);
+        write(dir.path(), &handle, true, true, true, true).unwrap();
         assert!(read(dir.path(), "project-a", "chat-a", "literature", dir.path()).is_err());
         assert!(read(
             dir.path(),

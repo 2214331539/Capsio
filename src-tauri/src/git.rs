@@ -978,6 +978,9 @@ pub async fn code_git_inspect(
     workspace_root: Option<String>,
 ) -> Result<Snapshot, String> {
     let (storage, files) = (state.storage.clone(), state.files.clone());
+    // A folder the page remembered may since have gone (a data move, a removed worktree).
+    // Reading falls back to the default folder; the page then remembers the root returned.
+    let workspace_root = workspace_root.filter(|root| Path::new(root).exists());
     tauri::async_runtime::spawn_blocking(move || {
         read_project(
             &storage,
