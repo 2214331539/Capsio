@@ -58,7 +58,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDEwMDdGQTY2RTEyQ0JFMTkKUldRWnZpemhadm9IRVB6dytPSlE5Q3NJT0VUYURzcXVsWTJIT3J2OG5PKzRYa3lqU2VUZXRpOFQK",
       "windows": {
-        "installMode": "passive"
+        "installMode": "quiet"
       }
     }
   }
