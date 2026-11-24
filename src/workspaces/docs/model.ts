@@ -78,7 +78,7 @@ export function blockId() {
   const bytes = crypto.getRandomValues(new Uint8Array(10));
   return Array.from(bytes, (byte) => ID[byte % ID.length]).join('');
 }
-export const pageId = () => crypto.randomUUID();
+const pageId = () => crypto.randomUUID();
 
 // ---------- Ordering ----------
 // Siblings are sorted by a string key; a key can always be made between two others, so moving
@@ -188,7 +188,6 @@ export function blockText(block: Block): string {
                 : inlineText(block.content);
   return [own, ...(block.children ?? []).map(blockText)].filter(Boolean).join('\n');
 }
-export const pageText = (page: Page) => [page.title, ...page.blocks.map(blockText)].join('\n');
 
 // ---------- New pages and templates ----------
 const text = (value: string): Inline[] => (value ? [{ text: value }] : []);

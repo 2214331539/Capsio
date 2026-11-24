@@ -48,7 +48,7 @@ export type MenuEntry = {
 type ListProps = { items: MenuEntry[]; command(item: MenuEntry): void; empty: string };
 type ListHandle = { onKeyDown(event: KeyboardEvent): boolean };
 
-export const SuggestionList = forwardRef<ListHandle, ListProps>(function SuggestionList(
+const SuggestionList = forwardRef<ListHandle, ListProps>(function SuggestionList(
   { items, command, empty },
   ref,
 ) {
@@ -205,7 +205,7 @@ function chooseImage(editor: Editor, range: Range, env: DocEnv) {
   input.click();
 }
 
-export const SLASH: Slash[] = [
+const SLASH: Slash[] = [
   {
     id: 'paper',
     group: '研究',

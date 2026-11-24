@@ -24,7 +24,7 @@ type NoteRecord = {
   sources?: { title?: string; path?: string; page?: number }[];
 };
 const notesPage = (projectId: string) => `notes-${projectId}`;
-export const migratedPageId = (noteId: string) => `note-${noteId}`;
+const migratedPageId = (noteId: string) => `note-${noteId}`;
 
 function pending(store: WorkspaceStore, projectId: string) {
   return (store.getState().data?.records ?? []).filter(

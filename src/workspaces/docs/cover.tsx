@@ -4,7 +4,7 @@ import { Menu, type MenuAnchor } from '../../components/primitives/Menu';
 import { t } from '../../i18n';
 
 /** Preset covers: light gradients that sit well on a white page. */
-export const COVERS = [
+const COVERS = [
   'linear-gradient(120deg, #a1c4fd, #c2e9fb)',
   'linear-gradient(120deg, #fbc2eb, #a6c1ee)',
   'linear-gradient(120deg, #d4fc79, #96e6a1)',

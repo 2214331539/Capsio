@@ -2,7 +2,7 @@
 // named after the paper. The translation itself is BabelDOC's (platform/translator.ts).
 
 /** Note-pane tabs show a paper's translation under this id prefix. */
-export const TRANSLATION_TAB = 'translation:';
+const TRANSLATION_TAB = 'translation:';
 export const translationTab = (paperId: string) => TRANSLATION_TAB + paperId;
 export const isTranslationTab = (id: string) => id.startsWith(TRANSLATION_TAB);
 /** The paper a note-pane tab belongs to. */

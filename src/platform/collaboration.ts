@@ -134,7 +134,7 @@ export type ModelDevice = {
 };
 
 /** Error codes the official model gateway answers with, found in an error message. */
-export const officialModelProblems = {
+const officialModelProblems = {
   quota_exhausted: '官方模型额度已用完',
   daily_limit: '今天的用量已到单日上限',
   model_not_in_plan: '当前套餐不包含这个模型',

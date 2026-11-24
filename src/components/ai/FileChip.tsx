@@ -22,8 +22,7 @@ export const fileIcon = (path: string): LucideIcon =>
   KINDS.find(([pattern]) => pattern.test(path))?.[1] ?? FileText;
 
 /** The last part of a path, whichever separators it uses. */
-export const baseName = (path: string) =>
-  displayPath(path).split(/[\\/]/).filter(Boolean).at(-1) ?? path;
+const baseName = (path: string) => displayPath(path).split(/[\\/]/).filter(Boolean).at(-1) ?? path;
 
 /**
  * A local file named in an answer: its name in link colour with an icon by type,

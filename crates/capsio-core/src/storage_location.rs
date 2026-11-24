@@ -883,7 +883,10 @@ mod tests {
         let old = dir.path().join("Scientify");
         fs::create_dir_all(old.join("ScientifyData/workspace")).unwrap();
         fs::write(old.join("ScientifyData/workspace/workspace.json"), b"{}").unwrap();
-        let taken = locator.adopt_renamed(&[old.clone()]).unwrap().unwrap();
+        let taken = locator
+            .adopt_renamed(std::slice::from_ref(&old))
+            .unwrap()
+            .unwrap();
         assert_eq!(taken, locator.installation.join("CapsioData"));
         assert!(taken.join("workspace/workspace.json").is_file());
         assert!(!old.join("ScientifyData").exists());
@@ -916,7 +919,10 @@ mod tests {
         let (_dir, locator) = fixture();
         let here = locator.installation.clone();
         fs::create_dir_all(here.join("ScientifyData/workspace")).unwrap();
-        let taken = locator.adopt_renamed(&[here.clone()]).unwrap().unwrap();
+        let taken = locator
+            .adopt_renamed(std::slice::from_ref(&here))
+            .unwrap()
+            .unwrap();
         assert_eq!(taken, here.join("CapsioData"));
         assert!(taken.join("workspace").is_dir());
     }

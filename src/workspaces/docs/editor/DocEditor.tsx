@@ -37,7 +37,7 @@ import { LinkBubble } from './LinkBubble';
 import { blockLink, parseBlockLink } from '../blockLink';
 import type { EditorView } from '@tiptap/pm/view';
 
-export const TEXT_COLORS: [string, string | null][] = [
+const TEXT_COLORS: [string, string | null][] = [
   ['默认', null],
   ['灰色', '#8b8b93'],
   ['红色', '#e03131'],
@@ -47,7 +47,7 @@ export const TEXT_COLORS: [string, string | null][] = [
   ['蓝色', '#1c7ed6'],
   ['紫色', '#7048e8'],
 ];
-export const BACKGROUNDS: [string, string | null][] = [
+const BACKGROUNDS: [string, string | null][] = [
   ['无背景', null],
   ['灰色背景', 'rgba(140, 140, 150, 0.18)'],
   ['红色背景', 'rgba(250, 82, 82, 0.18)'],

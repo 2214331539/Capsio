@@ -484,8 +484,6 @@ export async function flushDocs() {
   );
   return results.every(Boolean);
 }
-export const docsDirty = () =>
-  [...runtimes.values()].some((map) => [...map.values()].some((runtime) => runtime.dirty()));
 /** For tests: forget every runtime. */
 export function resetDocsRuntimes() {
   for (const map of runtimes.values()) for (const runtime of map.values()) runtime.dispose();

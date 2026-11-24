@@ -38,7 +38,7 @@ export type UpdateSnapshot = {
   dismissed?: boolean;
 };
 
-export const updateStore = createStore<UpdateSnapshot>(() => ({ phase: 'idle' }));
+const updateStore = createStore<UpdateSnapshot>(() => ({ phase: 'idle' }));
 
 export function useUpdate() {
   return useStore(updateStore);

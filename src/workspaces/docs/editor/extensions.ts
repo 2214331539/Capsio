@@ -28,7 +28,7 @@ import {
 } from './nodes';
 
 const lowlight = createLowlight(common);
-export const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 /** Nodes that are blocks in the stored page, and so carry a stable id. */
 const BLOCKS = [
   'paragraph',

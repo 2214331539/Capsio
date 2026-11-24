@@ -21,7 +21,7 @@ export type MascotMood =
 export type MascotPalette = { light: string; mid: string; edge: string; glow: string };
 
 /** The default peach and the alternatives on the design page (docs/品牌/AI助手形象). */
-export const MASCOT_PALETTES: Record<string, MascotPalette> = {
+const MASCOT_PALETTES: Record<string, MascotPalette> = {
   peach: { light: '#fffaf6', mid: '#f9e6d9', edge: '#f1c9ad', glow: '#ff9446' },
   cream: { light: '#ffffff', mid: '#f5f1ea', edge: '#ddd3c5', glow: '#ffbf73' },
   mint: { light: '#fcfff5', mid: '#e8f5cf', edge: '#c3dc9b', glow: '#b8e835' },

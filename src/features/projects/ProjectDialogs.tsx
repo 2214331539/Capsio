@@ -24,7 +24,7 @@ import {
 
 export type InviteRole = Exclude<CollaborationRole, 'owner'>;
 export const inviteRoles: InviteRole[] = ['editor', 'reviewer', 'viewer'];
-export const roleLabels: Record<string, string> = {
+const roleLabels: Record<string, string> = {
   owner: '所有者',
   editor: '编辑者',
   reviewer: '审阅者',

@@ -6,7 +6,7 @@ import type { StorageLocation } from '../../platform/desktop';
 import type { WorkspaceStore } from '../../stores/workspace';
 
 /** `D:\data` rather than the `\\?\D:\data` form Windows uses internally. */
-export const plainPath = (path: string) =>
+const plainPath = (path: string) =>
   path.replace(/^\\\\\?\\UNC\\/, '\\\\').replace(/^\\\\\?\\(?=[A-Za-z]:)/, '');
 
 /**

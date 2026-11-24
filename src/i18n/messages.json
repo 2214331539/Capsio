@@ -5,32 +5,9 @@
   "百度": ["百度", "Baidu"],
   "全文翻译": ["全文翻译", "Translate full text"],
   "译文 · {name}": ["译文 · {name}", "Translation · {name}"],
-  "重新翻译会替换现有译文，继续吗？": [
-    "重新翻译会替换现有译文，继续吗？",
-    "Translating again replaces the current translation. Continue?"
-  ],
-  "请先在设置里选好 AI 模型。": [
-    "请先在设置里选好 AI 模型。",
-    "Choose an AI model in Settings first."
-  ],
-  "{title}（全文翻译）": ["{title}（全文翻译）", "{title} (full translation)"],
-  "由 {model} 翻译，{date}。点页码回到原文。": [
-    "由 {model} 翻译，{date}。点页码回到原文。",
-    "Translated by {model}, {date}. Click a page number to go back to the paper."
-  ],
-  "（未翻译）": ["（未翻译）", "(not translated)"],
-  "正在读取论文…": ["正在读取论文…", "Reading the paper…"],
   "正在翻译 {done}/{total} 段": [
     "正在翻译 {done}/{total} 段",
     "Translating {done}/{total} passages"
-  ],
-  "把整篇论文逐段翻译出来，保存在这篇论文名下，以后直接打开。": [
-    "把整篇论文逐段翻译出来，保存在这篇论文名下，以后直接打开。",
-    "Translate the whole paper passage by passage; it is kept with the paper to open again later."
-  ],
-  "会按段调用当前的 AI 模型，长论文需要几分钟。": [
-    "会按段调用当前的 AI 模型，长论文需要几分钟。",
-    "Each passage is a request to the current AI model; a long paper takes a few minutes."
   ],
   "开始翻译": ["开始翻译", "Translate"],
   "复制链接": ["复制链接", "Copy link"],
@@ -196,11 +173,6 @@
   ],
   "文件预览": ["文件预览", "File preview"],
   "用系统程序打开": ["用系统程序打开", "Open with system app"],
-  "网页文件在浏览器里打开，图表和交互才能正常显示。": [
-    "网页文件在浏览器里打开，图表和交互才能正常显示。",
-    "Web pages open in your browser so their charts and interactions work."
-  ],
-  "在浏览器中打开": ["在浏览器中打开", "Open in browser"],
   "只能预览项目文件夹里的文件：{path}": [
     "只能预览项目文件夹里的文件：{path}",
     "Only files in the project's folders can be previewed: {path}"
@@ -305,58 +277,12 @@
   "恢复隐藏标题": ["恢复隐藏标题", "Restore hidden headings"],
   "重新识别标题": ["重新识别标题", "Rebuild outline"],
   "翻译": ["翻译", "Translate"],
-  "源语言": ["源语言", "Source language"],
-  "目标语言": ["目标语言", "Target language"],
-  "翻译风格": ["翻译风格", "Translation style"],
   "原文": ["原文", "Original"],
   "译文": ["译文", "Translation"],
-  "在这里输入或粘贴需要翻译的内容…": [
-    "在这里输入或粘贴需要翻译的内容…",
-    "Type or paste text to translate…"
-  ],
-  "正在流式翻译…": ["正在流式翻译…", "Translating…"],
-  "译文会显示在这里": ["译文会显示在这里", "Your translation will appear here"],
   "重新翻译": ["重新翻译", "Translate again"],
   "中止": ["中止", "Stop"],
-  "发送到 AI": ["发送到 AI", "Send to AI"],
   "解释": ["解释", "Explain"],
-  "交换语言": ["交换语言", "Swap languages"],
-  "固定翻译浮窗": ["固定翻译浮窗", "Pin translator"],
   "取消固定": ["取消固定", "Unpin translator"],
-  "选中文本或粘贴内容": ["选中文本或粘贴内容", "Select text or paste content"],
-  "启用翻译浮窗": ["启用翻译浮窗", "Enable translator popup"],
-  "翻译浮窗复用当前 AI 模型配置，但不会读取或修改工作区文件。": [
-    "翻译浮窗复用当前 AI 模型配置，但不会读取或修改工作区文件。",
-    "The translator reuses the current AI model without reading or modifying workspace files."
-  ],
-  "在 AI、笔记旁打开翻译工具，选中文本后可直接翻译。": [
-    "在 AI、笔记旁打开翻译工具，选中文本后可直接翻译。",
-    "Open the translator beside AI and Notes to translate selected text."
-  ],
-  "默认语言": ["默认语言", "Default languages"],
-  "翻译浮窗首次打开时使用的语言组合。": [
-    "翻译浮窗首次打开时使用的语言组合。",
-    "Languages used when the translator opens."
-  ],
-  "学术风格会优先保留术语、公式和 Markdown 结构。": [
-    "学术风格会优先保留术语、公式和 Markdown 结构。",
-    "Academic style preserves terminology, formulas and Markdown structure."
-  ],
-  "使用当前页面上下文": ["使用当前页面上下文", "Use current page context"],
-  "将论文标题、页码和当前路径作为翻译提示，不会上传整篇文献。": [
-    "将论文标题、页码和当前路径作为翻译提示，不会上传整篇文献。",
-    "Use the paper title, page and path as hints without uploading the whole paper."
-  ],
-  "全局快捷键": ["全局快捷键", "Global shortcut"],
-  "应用快捷键": ["应用快捷键", "Apply shortcut"],
-  "Windows 支持系统选区；其他平台暂支持应用内选区。": [
-    "Windows 支持系统选区；其他平台暂支持应用内选区。",
-    "Windows supports system selections; other platforms currently support in-app selections."
-  ],
-  "按下此快捷键可读取当前应用的选中文本并打开翻译浮窗。": [
-    "按下此快捷键可读取当前应用的选中文本并打开翻译浮窗。",
-    "Use this shortcut to read the current app's selection and open the translator."
-  ],
   "执行权限": ["执行权限", "Execution permissions"],
   "询问": ["询问", "Ask"],
   "完全允许": ["完全允许", "Full access"],
@@ -413,7 +339,6 @@
   "操作": ["操作", "Actions"],
   "未配置": ["未配置", "Not configured"],
   "最近运行": ["最近运行", "Latest run"],
-  "显示归档": ["显示归档", "Show archived"],
   "打开实验": ["打开实验", "Open experiment"],
   "已结束": ["已结束", "Finished"],
   "实验不存在。": ["实验不存在。", "Experiment not found."],
@@ -463,14 +388,6 @@
   ],
   "文献任务": ["文献任务", "Literature tasks"],
   "实验代码任务": ["实验代码任务", "Experiment code tasks"],
-  "本地科研工作区 · 文献 / 笔记 / 实验 / 论文": [
-    "本地科研工作区 · 文献 / 笔记 / 实验 / 论文",
-    "Local research workspace · Literature / Notes / Experiments / Paper"
-  ],
-  "已支持：本地文献与 PDF 阅读、笔记、代码编辑、Git 差异、并行实验与日志、运行结果、Markdown 预览，以及可操作工作区的全局 AI。": [
-    "已支持：本地文献与 PDF 阅读、笔记、代码编辑、Git 差异、并行实验与日志、运行结果、Markdown 预览，以及可操作工作区的全局 AI。",
-    "Available: local literature and PDF reading, notes, code editing, Git diffs, parallel experiments, logs and results, Markdown preview, and a global AI assistant that operates within workspaces."
-  ],
   "AI 实验": ["AI 实验", "AI experiment"],
   "关联实验运行": ["关联实验运行", "Linked experiment runs"],
   "打开实验运行": ["打开实验运行", "Open experiment run"],
@@ -483,10 +400,6 @@
   "旧版用户权限运行": ["旧版用户权限运行", "Legacy user-permission run"],
   "来源会话": ["来源会话", "Source conversation"],
   "来源任务": ["来源任务", "Source turn"],
-  "Git 仓库与代码目录不同，请在对应目录打开文件。": [
-    "Git 仓库与代码目录不同，请在对应目录打开文件。",
-    "The Git repository differs from the code directory. Open this file in its repository."
-  ],
   "运行前保存此项目的 {count} 个未保存文件？保存失败时不会启动。": [
     "运行前保存此项目的 {count} 个未保存文件？保存失败时不会启动。",
     "Save {count} unsaved project files before running? A failed save prevents launch."
@@ -495,31 +408,17 @@
     "文件保存失败，请处理冲突后再运行。",
     "File save failed. Resolve the conflict before running."
   ],
-  "运行本地程序 {program}？参数：{args}。程序具有当前用户权限，多次运行共享项目文件。": [
-    "运行本地程序 {program}？参数：{args}。程序具有当前用户权限，多次运行共享项目文件。",
-    "Run {program} locally with arguments {args}? The program uses your user permissions. Runs share project files."
-  ],
   "运行配置": ["运行配置", "Run configuration"],
   "新建运行配置": ["新建运行配置", "New run configuration"],
-  "保存当前文件": ["保存当前文件", "Save current file"],
   "编辑运行配置": ["编辑运行配置", "Edit run configuration"],
   "本地执行仅在桌面应用可用": [
     "本地执行仅在桌面应用可用",
     "Local execution requires the desktop app"
   ],
   "尚无本地运行": ["尚无本地运行", "No local runs yet"],
-  "应用托管目录": ["应用托管目录", "App-managed directory"],
   "可执行程序": ["可执行程序", "Executable"],
   "工作目录": ["工作目录", "Working directory"],
   "参数": ["参数", "Arguments"],
-  "以上为配置值，不表示环境检测已通过。运行时会验证路径和程序。": [
-    "以上为配置值，不表示环境检测已通过。运行时会验证路径和程序。",
-    "These are configured values, not verified environment results. Paths and the executable are checked at launch."
-  ],
-  "产物目录由 CAPSIO_RUN_DIR 提供，脚本需显式将结果写入该目录。": [
-    "产物目录由 CAPSIO_RUN_DIR 提供，脚本需显式将结果写入该目录。",
-    "The script must write results to the directory provided by CAPSIO_RUN_DIR."
-  ],
   "请切换到对应项目查看运行详情。": [
     "请切换到对应项目查看运行详情。",
     "Switch to the corresponding project for run details."
@@ -534,10 +433,6 @@
   "工作目录（相对项目根目录）": [
     "工作目录（相对项目根目录）",
     "Working directory (relative to project root)"
-  ],
-  "删除此运行配置？已有运行记录不会删除。": [
-    "删除此运行配置？已有运行记录不会删除。",
-    "Delete this configuration? Existing runs will be preserved."
   ],
   "删除配置": ["删除配置", "Delete configuration"],
   "保存配置": ["保存配置", "Save configuration"],
@@ -568,7 +463,6 @@
   "导入指标": ["导入指标", "Import metrics"],
   "暂无运行产物": ["暂无运行产物", "No run artifacts"],
   "修改的文件": ["修改的文件", "Changed files"],
-  "刷新 Git 差异": ["刷新 Git 差异", "Refresh Git diff"],
   "打开文件": ["打开文件", "Open file"],
   "工作区": ["工作区", "Working tree"],
   "文件版本差异": ["文件版本差异", "File version diff"],
@@ -621,26 +515,16 @@
     "日志超过 64 MiB，已停止运行以保护磁盘空间。",
     "The log exceeded 64 MiB. The run was stopped to protect disk space."
   ],
-  "外观与语言": ["外观与语言", "Appearance & language"],
   "界面语言": ["界面语言", "Language"],
   "界面主题": ["界面主题", "Theme"],
   "跟随系统": ["跟随系统", "System"],
   "浅色": ["浅色", "Light"],
   "深色": ["深色", "Dark"],
-  "仍有未保存的内容。确认放弃这些修改并返回项目管理？": [
-    "仍有未保存的内容。确认放弃这些修改并返回项目管理？",
-    "Discard unsaved changes and return to Projects?"
-  ],
   "仍有未保存的内容。确认放弃这些修改并退出？": [
     "仍有未保存的内容。确认放弃这些修改并退出？",
     "Discard unsaved changes and quit?"
   ],
   "项目管理": ["项目管理", "Project management"],
-  "请先保存当前修改，并等待操作完成后再打开项目。": [
-    "请先保存当前修改，并等待操作完成后再打开项目。",
-    "Save your changes and wait for pending operations before opening a project."
-  ],
-  "文献资源": ["文献资源", "Literature resources"],
   "工作区未能载入": ["工作区未能载入", "Could not load the workspace"],
   "重新载入": ["重新载入", "Reload"],
   "数据与备份": ["数据与备份", "Data & backups"],
@@ -648,24 +532,9 @@
   "调整资源宽度": ["调整资源宽度", "Resize resources"],
   "正在保存…": ["正在保存…", "Saving…"],
   "操作未完成": ["操作未完成", "Operation incomplete"],
-  "有未保存内容": ["有未保存内容", "Unsaved changes"],
   "已保存": ["已保存", "Saved"],
-  "浏览器预览 · 独立数据": ["浏览器预览 · 独立数据", "Browser preview · Separate data"],
   "本地工作区": ["本地工作区", "Local workspace"],
-  "正在打开项目": ["正在打开项目", "Opening project"],
-  "正在准备工作区…": ["正在准备工作区…", "Preparing workspace…"],
-  "Capsio · 第一轮 MVP": ["Capsio · 第一轮 MVP", "Capsio · MVP"],
-  "JSON 导出包含元数据，不包含 PDF 和源码；备份请保留完整数据目录及关联项目文件夹。": [
-    "JSON 导出包含元数据，不包含 PDF 和源码；备份请保留完整数据目录及关联项目文件夹。",
-    "JSON exports include metadata, but not PDFs or source files. Back up the complete data directory and linked project folders."
-  ],
-  "项目空间": ["项目空间", "Project spaces"],
-  "个人项目空间": ["个人项目空间", "Personal projects"],
-  "创建团队空间": ["创建团队空间", "Create team space"],
   "团队项目空间": ["团队项目空间", "Team projects"],
-  "全局设置": ["全局设置", "Global settings"],
-  "个人信息与偏好": ["个人信息与偏好", "Profile & preferences"],
-  "关于 MVP": ["关于 MVP", "About MVP"],
   "关于 Capsio": ["关于 Capsio", "About Capsio"],
   "关闭提示": ["关闭提示", "Dismiss message"],
   "调整辅助栏宽度": ["调整辅助栏宽度", "Resize assistant panel"],
@@ -674,16 +543,6 @@
   "发送": ["发送", "Send"],
   "对话": ["对话", "Chat"],
   "切换到 Agent 模式": ["切换到 Agent 模式", "Switch to Agent mode"],
-  "切换到对话模式": ["切换到对话模式", "Switch to chat mode"],
-  "Agent 模式：可读取和修改当前工作区文件": [
-    "Agent 模式：可读取和修改当前工作区文件",
-    "Agent mode: can read and modify files in the current workspace"
-  ],
-  "对话模式：只回答问题，不修改文件": [
-    "对话模式：只回答问题，不修改文件",
-    "Chat mode: answers questions without modifying files"
-  ],
-  "发送 · Ctrl + Enter": ["发送 · Ctrl + Enter", "Send · Ctrl + Enter"],
   "请解释当前材料中的关键概念与结论。": [
     "请解释当前材料中的关键概念与结论。",
     "Explain the key concepts and conclusions in this material."
@@ -710,7 +569,6 @@
     "Enable Attach to include the current material"
   ],
   "填入问题后由你发送": ["填入问题后由你发送", "Prepare a prompt for you to send"],
-  "Capsio 项目管理": ["Capsio 项目管理", "Capsio Projects"],
   "切换项目": ["切换项目", "Switch project"],
   "项目切换": ["项目切换", "Project switcher"],
   "筛选项目": ["筛选项目", "Filter projects"],
@@ -737,10 +595,6 @@
     "Edits were made while reading. Your buffer was preserved; reload again."
   ],
   "[已隐藏密钥]": ["[已隐藏密钥]", "[key hidden]"],
-  "模型配置已保存；密钥仅在本次打开的应用中使用。": [
-    "模型配置已保存；密钥仅在本次打开的应用中使用。",
-    "Model settings saved. The API key is only kept for this app session."
-  ],
   "模型配置保存失败": ["模型配置保存失败", "Could not save model settings"],
   "对话保存失败，内容仍保留在当前面板。": [
     "对话保存失败，内容仍保留在当前面板。",
@@ -754,12 +608,6 @@
     "请先填写模型名称与服务地址。",
     "Enter the model name and endpoint first."
   ],
-  "AI 研究笔记": ["AI 研究笔记", "AI research note"],
-  "回答已保存到当前范围的研究笔记。": [
-    "回答已保存到当前范围的研究笔记。",
-    "Answer saved to the research notes in this scope."
-  ],
-  "笔记保存失败，请重试。": ["笔记保存失败，请重试。", "Could not save the note. Try again."],
   "AI 助手内容": ["AI 助手内容", "AI assistant content"],
   "等待当前请求或保存完成": [
     "等待当前请求或保存完成",
@@ -781,33 +629,18 @@
     "Could not delete the conversation. Try again."
   ],
   "新建 AI 对话": ["新建 AI 对话", "New AI conversation"],
-  "先发送或清空草稿，并保存对话": [
-    "先发送或清空草稿，并保存对话",
-    "Send or clear the draft and save the conversation first"
-  ],
   "模型提供方": ["模型提供方", "Provider"],
-  "Ollama 本地模型": ["Ollama 本地模型", "Ollama local model"],
-  "OpenAI 兼容服务": ["OpenAI 兼容服务", "OpenAI-compatible service"],
   "服务地址": ["服务地址", "Endpoint"],
   "模型名称": ["模型名称", "Model name"],
-  "填写服务中的模型名称": ["填写服务中的模型名称", "Enter a model available at this endpoint"],
   "API 密钥": ["API 密钥", "API key"],
-  "仅在本次应用会话中使用": ["仅在本次应用会话中使用", "Used only in this app session"],
-  "只保存地址和模型名称。密钥不写入工作区。": [
-    "只保存地址和模型名称。密钥不写入工作区。",
-    "Only the endpoint and model name are saved. The key is never written to the workspace."
-  ],
   "保存模型配置": ["保存模型配置", "Save model settings"],
   "你": ["你", "You"],
-  "已存为笔记": ["已存为笔记", "Saved as note"],
   "保存为笔记": ["保存为笔记", "Save as note"],
-  "正在等待模型回答…": ["正在等待模型回答…", "Waiting for the model…"],
   "重试本次请求": ["重试本次请求", "Retry request"],
   "重试保存对话": ["重试保存对话", "Retry saving conversation"],
   "保留对话，继续提问": ["保留对话，继续提问", "Keep conversation and continue"],
   "新对话": ["新对话", "New conversation"],
   "当前没有可提取的正文。": ["当前没有可提取的正文。", "No text is available to extract."],
-  "未命名文献": ["未命名文献", "Untitled paper"],
   "未读": ["未读", "Unread"],
   "未命名图片": ["未命名图片", "Untitled image"],
   "未命名笔记": ["未命名笔记", "Untitled note"],
@@ -824,10 +657,7 @@
   "已保存到本机": ["已保存到本机", "Saved locally"],
   "保存失败，草稿保留": ["保存失败，草稿保留", "Save failed; draft preserved"],
   "未保存": ["未保存", "Unsaved"],
-  "编辑笔记": ["编辑笔记", "Edit note"],
-  "预览 Markdown": ["预览 Markdown", "Preview Markdown"],
   "重试保存": ["重试保存", "Retry save"],
-  "还没有正文。": ["还没有正文。", "No content yet."],
   "笔记正文": ["笔记正文", "Note content"],
   "来源暂不可定位，摘录仍保留": [
     "来源暂不可定位，摘录仍保留",
@@ -848,7 +678,6 @@
     "Save or discard all file edits and wait for pending writes before changing the project directory."
   ],
   "编辑项目": ["编辑项目", "Edit project"],
-  "新建科研项目": ["新建科研项目", "New research project"],
   "项目名称": ["项目名称", "Project name"],
   "例如：小样本学习中的表征泛化": [
     "例如：小样本学习中的表征泛化",
@@ -860,39 +689,23 @@
     "What question does this project aim to answer?"
   ],
   "所属空间": ["所属空间", "Space"],
-  "我的工作空间": ["我的工作空间", "My workspace"],
   "研究方向": ["研究方向", "Research area"],
-  "研究领域或关键词": ["研究领域或关键词", "Research area or keywords"],
   "项目目录": ["项目目录", "Project directory"],
   "尚未关联本地目录": ["尚未关联本地目录", "No local directory linked"],
   "选择目录": ["选择目录", "Choose directory"],
   "清除": ["清除", "Clear"],
-  "Git 仓库目录": ["Git 仓库目录", "Git repository directory"],
-  "可单独关联 Git 仓库": ["可单独关联 Git 仓库", "Optionally link a separate Git repository"],
   "选择仓库": ["选择仓库", "Choose repository"],
   "存在未保存文件或文件正在写入，暂时不能更改目录。": [
     "存在未保存文件或文件正在写入，暂时不能更改目录。",
     "Save pending edits and wait for file writes before changing directories."
   ],
-  "项目颜色": ["项目颜色", "Project color"],
   "保存在本机工作区": ["保存在本机工作区", "Saved in the local workspace"],
   "保存项目": ["保存项目", "Save project"],
   "团队信息": ["团队信息", "Team details"],
-  "团队名称": ["团队名称", "Team name"],
-  "团队介绍": ["团队介绍", "Team description"],
-  "团队空间用于本机项目分类，成员邀请与在线协作尚未开放。": [
-    "团队空间用于本机项目分类，成员邀请与在线协作尚未开放。",
-    "Team spaces organize local projects. Member invitations and online collaboration are not available yet."
-  ],
-  "保存团队": ["保存团队", "Save team"],
-  "个人空间": ["个人空间", "Personal space"],
   "团队项目": ["团队项目", "Team projects"],
-  "全部项目": ["全部项目", "All projects"],
   "已收藏": ["已收藏", "Favorites"],
   "已归档": ["已归档", "Archived"],
-  "搜索项目…": ["搜索项目…", "Search projects…"],
   "搜索项目": ["搜索项目", "Search projects"],
-  "项目排序": ["项目排序", "Sort projects"],
   "最近更新": ["最近更新", "Recently updated"],
   "名称": ["名称", "Name"],
   "取消收藏": ["取消收藏", "Remove from favorites"],
@@ -901,23 +714,12 @@
   "恢复": ["恢复", "Restore"],
   "归档": ["归档", "Archive"],
   "没有符合条件的项目": ["没有符合条件的项目", "No matching projects"],
-  "暂无项目": ["暂无项目", "No projects yet"],
   "清除筛选": ["清除筛选", "Clear filters"],
   "已归档项目": ["已归档项目", "Archived project"],
   "项目": ["项目", "Project"],
   "未关联项目": ["未关联项目", "No linked project"],
   "来源项目不存在": ["来源项目不存在", "Source project no longer exists"],
   "文献": ["文献", "Literature"],
-  "搜索项目、文献和笔记": ["搜索项目、文献和笔记", "Search projects, papers and notes"],
-  "输入关键词": ["输入关键词", "Enter a search term"],
-  "仅显示前 30 项，请缩小关键词范围。": [
-    "仅显示前 30 项，请缩小关键词范围。",
-    "Showing the first 30 results. Refine your search."
-  ],
-  "工作区记录与附件均保存在本机。开发版与正式版使用独立数据目录。": [
-    "工作区记录与附件均保存在本机。开发版与正式版使用独立数据目录。",
-    "Workspace records and attachments are stored locally. Development and release builds use separate data directories."
-  ],
   "当前目录": ["当前目录", "Current directory"],
   "尚未载入": ["尚未载入", "Not loaded"],
   "迁移 Electron 数据": ["迁移 Electron 数据", "Migrate Electron data"],
@@ -959,12 +761,6 @@
     "请先保存或清空未保存的内容，再进行数据导入、导出与恢复。",
     "Save or discard unsaved content before importing, exporting or restoring data."
   ],
-  "显示名称": ["显示名称", "Display name"],
-  "这是本地个人资料，无需登录。": [
-    "这是本地个人资料，无需登录。",
-    "This is a local profile. No sign-in required."
-  ],
-  "保存偏好": ["保存偏好", "Save profile"],
   "浏览器预览数据无法读取，请先导出浏览器存储进行恢复。": [
     "浏览器预览数据无法读取，请先导出浏览器存储进行恢复。",
     "Preview data could not be read. Export browser storage before attempting recovery."
@@ -1035,8 +831,6 @@
   "放大": ["放大", "Zoom in"],
   "放大 PDF": ["放大 PDF", "Zoom PDF in"],
   "适应宽度": ["适应宽度", "Fit width"],
-  "询问选中内容": ["询问选中内容", "Ask about selection"],
-  "询问当前页": ["询问当前页", "Ask about this page"],
   "提问": ["提问", "Ask"],
   "记笔记": ["记笔记", "Take note"],
   "正在读取 PDF…": ["正在读取 PDF…", "Loading PDF…"],
@@ -1057,21 +851,16 @@
   "已完成": ["已完成", "Completed"],
   "未成功": ["未成功", "Failed"],
   "未填写": ["未填写", "Not set"],
-  "实验记录工作区": ["实验记录工作区", "Experiment records workspace"],
   "新建记录": ["新建记录", "New record"],
   "实验记录列表": ["实验记录列表", "Experiment records"],
   "未命名实验": ["未命名实验", "Untitled experiment"],
   "编辑记录": ["编辑记录", "Edit record"],
   "实验方案": ["实验方案", "Experiment protocol"],
-  "尚未记录实验方案": ["尚未记录实验方案", "No protocol recorded"],
   "配置与参数": ["配置与参数", "Configuration & parameters"],
-  "尚未记录配置": ["尚未记录配置", "No configuration recorded"],
   "指标": ["指标", "Metrics"],
   "指标名称": ["指标名称", "Metric name"],
   "数值": ["数值", "Value"],
-  "尚未记录指标": ["尚未记录指标", "No metrics recorded"],
   "结果与结论": ["结果与结论", "Results & conclusions"],
-  "尚未记录结论": ["尚未记录结论", "No conclusions recorded"],
   "暂无实验记录": ["暂无实验记录", "No experiment records yet"],
   "请输入实验名称。": ["请输入实验名称。", "Enter an experiment name."],
   "每项指标需有名称，数值应为有限数字，也可以留空。": [
@@ -1147,17 +936,12 @@
     "可将所需内容复制回编辑器；“重新读取”会丢弃当前未保存编辑。",
     "Copy any needed content into the editor. Reloading discards unsaved edits."
   ],
-  "LaTeX 源码编辑 · 当前 MVP 尚未接入 TeX 编译器。": [
-    "LaTeX 源码编辑 · 当前 MVP 尚未接入 TeX 编译器。",
-    "LaTeX source editor · TeX compilation is not available yet."
-  ],
   "文件未能打开，请检查项目目录后重试。": [
     "文件未能打开，请检查项目目录后重试。",
     "Could not open the file. Check the project directory and try again."
   ],
   "正在读取文件…": ["正在读取文件…", "Reading file…"],
   "正在加载编辑器…": ["正在加载编辑器…", "Loading editor…"],
-  "正在加载预览…": ["正在加载预览…", "Loading preview…"],
   "纯文本 / 源码": ["纯文本 / 源码", "Plain text / source"],
   "选区可用于 AI 提问或研究笔记": [
     "选区可用于 AI 提问或研究笔记",
@@ -1172,7 +956,6 @@
   "正在读取…": ["正在读取…", "Loading…"],
   "没有匹配的文件": ["没有匹配的文件", "No matching files"],
   "暂无文件": ["暂无文件", "No files yet"],
-  "本机项目目录": ["本机项目目录", "Local project directory"],
   "刷新": ["刷新", "Refresh"],
   "工作区干净，没有未提交变更。": [
     "工作区干净，没有未提交变更。",
@@ -1181,64 +964,25 @@
   "Markdown 预览": ["Markdown 预览", "Markdown preview"],
   "未命名": ["未命名", "Untitled"],
   "*尚无内容*": ["*尚无内容*", "*No content yet*"],
-  "文献订阅": ["文献订阅", "Literature subscriptions"],
   "项目文献": ["项目文献", "Project literature"],
-  "关闭文献": ["关闭文献", "Close paper"],
-  "关闭错误": ["关闭错误", "Dismiss error"],
   "返回列表": ["返回列表", "Back to list"],
-  "返回文献列表": ["返回文献列表", "Back to papers"],
-  "阅读状态": ["阅读状态", "Reading status"],
   "阅读中": ["阅读中", "Reading"],
   "已读": ["已读", "Read"],
   "信息": ["信息", "Details"],
   "正在打开阅读器…": ["正在打开阅读器…", "Opening reader…"],
   "摘要": ["摘要", "Abstract"],
   "备注": ["备注", "Notes"],
-  "未附加 PDF": ["未附加 PDF", "No PDF attached"],
-  "附加 PDF": ["附加 PDF", "Attach PDF"],
-  "询问这篇文献": ["询问这篇文献", "Ask about this paper"],
-  "打开研究笔记": ["打开研究笔记", "Open research notes"],
   "搜索文献": ["搜索文献", "Search literature"],
-  "搜索文献…": ["搜索文献…", "Search literature…"],
-  "筛选阅读状态": ["筛选阅读状态", "Filter reading status"],
   "全部状态": ["全部状态", "All statuses"],
-  "文献信息": ["文献信息", "Paper details"],
-  "正在导入…": ["正在导入…", "Importing…"],
   "导入 PDF": ["导入 PDF", "Import PDF"],
-  "标题 / 作者": ["标题 / 作者", "Title / author"],
   "状态": ["状态", "Status"],
   "全文": ["全文", "Full text"],
-  "没有匹配的文献": ["没有匹配的文献", "No matching papers"],
-  "暂无文献": ["暂无文献", "No papers yet"],
-  "收录文献": ["收录文献", "Add paper"],
-  "文献不存在": ["文献不存在", "Paper not found"],
   "保存失败，请重试。": ["保存失败，请重试。", "Save failed. Try again."],
-  "文献标题": ["文献标题", "Paper title"],
   "作者": ["作者", "Authors"],
   "年份": ["年份", "Year"],
   "本地 PDF": ["本地 PDF", "Local PDF"],
-  "尚未附加全文": ["尚未附加全文", "No full text attached"],
-  "更换 PDF": ["更换 PDF", "Replace PDF"],
-  "文件复制到本地资料目录": [
-    "文件复制到本地资料目录",
-    "Files are copied to the local library directory"
-  ],
-  "保存文献": ["保存文献", "Save paper"],
-  "保存更新失败。": ["保存更新失败。", "Could not save the update."],
-  "选择订阅主题": ["选择订阅主题", "Select subscription topic"],
-  "暂无主题": ["暂无主题", "No topics"],
-  "正在更新…": ["正在更新…", "Updating…"],
-  "已收录 · 打开": ["已收录 · 打开", "Added · Open"],
-  "加入文献库": ["加入文献库", "Add to library"],
-  "暂无更新": ["暂无更新", "No updates"],
-  "暂无订阅": ["暂无订阅", "No subscriptions"],
   "最新": ["最新", "Latest"],
   "更新于": ["更新于", "Updated"],
-  "继续工作": ["继续工作", "Continue working"],
-  "暂无工作记录": ["暂无工作记录", "No work history yet"],
-  "暂无最近活动": ["暂无最近活动", "No recent activity"],
-  "新增待办": ["新增待办", "New task"],
-  "添加下一步…": ["添加下一步…", "Add next step…"],
   "添加": ["添加", "Add"],
   "Projects": ["项目", "Projects"],
   "Overview": ["概览", "Overview"],
@@ -1255,7 +999,6 @@
   "Manuscript": ["稿件", "Manuscript"],
   "References": ["参考文献", "References"],
   "All files": ["全部文件", "All files"],
-  "All papers": ["全部文献", "All papers"],
   "Workspace": ["工作区", "Workspace"],
   "Collection": ["文献集合", "Collection"],
   "Topics": ["主题", "Topics"],
@@ -1263,14 +1006,10 @@
   "My projects": ["我的项目", "My projects"],
   "Teams": ["团队", "Teams"],
   "Search": ["搜索", "Search"],
-  "All projects": ["全部项目", "All projects"],
-  "Find project…": ["查找项目…", "Find project…"],
   "AI Assistant": ["AI 助手", "AI Assistant"],
   "Research Notes": ["研究笔记", "Research Notes"],
   "Ask about this project...": ["就当前项目提问…", "Ask about this project..."],
   "Select model": ["选择模型", "Select model"],
-  "Context attached": ["已附带材料", "Context attached"],
-  "Context off": ["不附带材料", "Context off"],
   "Explain": ["解释", "Explain"],
   "Summarize": ["总结", "Summarize"],
   "Improve writing": ["改进写作", "Improve writing"],
@@ -1289,28 +1028,14 @@
   "chars": ["字符", "chars"],
   "Conversation": ["对话", "Conversation"],
   "New": ["新建", "New"],
-  "No conversation yet.": ["暂无对话", "No conversation yet."],
-  "Write a note…": ["记录研究笔记…", "Write a note…"],
   "Notes workspace": ["笔记工作区", "Notes workspace"],
-  "Added paper": ["添加文献", "Added paper"],
-  "Updated paper": ["更新文献", "Updated paper"],
-  "Created note": ["创建笔记", "Created note"],
   "Modified note": ["修改笔记", "Modified note"],
-  "Recorded experiment": ["记录实验", "Recorded experiment"],
-  "Updated experiment": ["更新实验", "Updated experiment"],
-  "Continue working": ["继续工作", "Continue working"],
-  "Recent activity": ["最近活动", "Recent activity"],
   "Next steps": ["下一步", "Next steps"],
   "Last updated": ["最近更新", "Last updated"],
-  "Project workspace · Literature / Notes / Experiments / Paper / Files": [
-    "科研工作区 · 文献 / 笔记 / 实验 / 论文 / 文件",
-    "Project workspace · Literature / Notes / Experiments / Paper / Files"
-  ],
   "{count} 个项目": ["{count} 个项目", "{count} projects"],
   "{count} 篇文献": ["{count} 篇文献", "{count} papers"],
   "{count} 篇笔记": ["{count} 篇笔记", "{count} notes"],
   "{count} 条 · 手动记录": ["{count} 条 · 手动记录", "{count} records · Manual"],
-  "手动记录 · {status}": ["手动记录 · {status}", "Manual record · {status}"],
   "{count} 行": ["{count} 行", "{count} lines"],
   "Ctrl+S 保存 ·": ["Ctrl+S 保存 ·", "Ctrl+S to save ·"],
   "已选 {count} 字符": ["已选 {count} 字符", "{count} characters selected"],
@@ -1333,11 +1058,6 @@
   "{label} 工作区": ["{label} 工作区", "{label} workspace"],
   "{title}搜索结果": ["{title}搜索结果", "{title} search results"],
   "没有找到“{query}”相关内容。": ["没有找到“{query}”相关内容。", "No results for “{query}”."],
-  "最新 {count} / 20 篇": ["最新 {count} / 20 篇", "Latest {count} / 20 papers"],
-  "状态与结果由你手动记录 · 更新于": [
-    "状态与结果由你手动记录 · 更新于",
-    "Status and results are recorded manually · Updated"
-  ],
   "[图片：{alt}]": ["[图片：{alt}]", "[Image: {alt}]"],
   "[图片：{alt} · 外部图片不自动加载]": [
     "[图片：{alt} · 外部图片不自动加载]",
@@ -1368,10 +1088,6 @@
   "Git 输出不可用。": ["Git 输出不可用。", "Git output is unavailable."],
   "Git 输出超过 2 MiB 限制。": ["Git 输出超过 2 MiB 限制。", "Git output exceeds 2 MiB."],
   "无法读取 Git 进程状态。": ["无法读取 Git 进程状态。", "Could not read Git process status."],
-  "Git 状态查询超时，请在终端检查此仓库。": [
-    "Git 状态查询超时，请在终端检查此仓库。",
-    "Git status timed out. Check this repository in a terminal."
-  ],
   "Git 输出读取失败。": ["Git 输出读取失败。", "Could not read Git output."],
   "所选目录不是 Git 仓库根目录，请在项目设置中选择仓库目录。": [
     "所选目录不是 Git 仓库根目录，请在项目设置中选择仓库目录。",
@@ -1397,7 +1113,6 @@
     "此项目不是可读取的 Git 仓库，或 Git 权限/配置不允许访问。",
     "The repository is unreadable or access is blocked by Git permissions or configuration."
   ],
-  "模型服务地址过长。": ["模型服务地址过长。", "Model endpoint is too long."],
   "模型服务地址格式无效。": ["模型服务地址格式无效。", "Invalid model endpoint URL."],
   "模型服务必须使用 HTTP(S)，地址不能包含密码、查询参数或片段。": [
     "模型服务必须使用 HTTP(S)，地址不能包含密码、查询参数或片段。",
@@ -1417,16 +1132,11 @@
     "读取服务响应失败或超时，请稍后重试。",
     "Failed or timed out reading the service response. Try again later."
   ],
-  "已有模型请求正在执行，请等待当前回答完成。": [
-    "已有模型请求正在执行，请等待当前回答完成。",
-    "A model request is already running. Wait for it to finish."
-  ],
   "请配置有效的模型名称。": ["请配置有效的模型名称。", "Configure a valid model name."],
   "对话超过 50 条或 256 KiB 上下文限制，请新建对话或减少上下文。": [
     "对话超过 50 条或 256 KiB 上下文限制，请新建对话或减少上下文。",
     "Conversation exceeds 50 messages or 256 KiB of context. Start a new conversation or reduce the context."
   ],
-  "API Key 长度无效。": ["API Key 长度无效。", "Invalid API key length."],
   "模型请求超时，请检查服务或缩小上下文。": [
     "模型请求超时，请检查服务或缩小上下文。",
     "Model request timed out. Check the service or reduce the context."
@@ -1444,11 +1154,6 @@
     "The model returned no text. Check that it supports chat."
   ],
   "工作区尚未载入": ["工作区尚未载入", "Workspace has not loaded"],
-  "项目不存在，请刷新项目列表。": [
-    "项目不存在，请刷新项目列表。",
-    "Project not found. Refresh the project list."
-  ],
-  "导航参数过长。": ["导航参数过长。", "Navigation parameters are too long."],
   "工作区窗口不存在": ["工作区窗口不存在", "The workspace window does not exist."],
   "文件操作失败：{error}": ["文件操作失败：{error}", "File operation failed: {error}"],
   "文件路径不能包含符号链接或目录联接。": [
@@ -1614,32 +1319,16 @@
     "工作区 JSON 无法读取：{error}",
     "Could not read workspace JSON: {error}"
   ],
-  "切换为浅色": ["切换为浅色", "Switch to light mode"],
-  "切换为深色": ["切换为深色", "Switch to dark mode"],
   "切换为英文": ["切换为英文", "Switch to English"],
-  "切换为中文": ["切换为中文", "Switch to Chinese"],
   "设置": ["设置", "Settings"],
   "设置分类": ["设置分类", "Settings categories"],
   "通用": ["通用", "General"],
   "外观": ["外观", "Appearance"],
   "个人资料": ["个人资料", "Profile"],
-  "仅切换界面语言，不修改研究内容。": [
-    "仅切换界面语言，不修改研究内容。",
-    "Changes the interface language only. Research content stays unchanged."
-  ],
-  "跟随系统，或固定使用浅色和深色外观。": [
-    "跟随系统，或固定使用浅色和深色外观。",
-    "Follow the system, or choose a fixed light or dark appearance."
-  ],
-  "顶栏按钮可直接切换亮暗。": [
-    "顶栏按钮可直接切换亮暗。",
-    "Use the top bar button to switch between light and dark."
-  ],
   "文献标签页": ["文献标签页", "Literature tabs"],
   "新建文献标签页": ["新建文献标签页", "New literature tab"],
   "空白页 {index}": ["空白页 {index}", "New tab {index}"],
   "文献呈现区": ["文献呈现区", "Literature viewer"],
-  "从左侧打开文献": ["从左侧打开文献", "Open a paper from the sidebar"],
   "请先保存论文笔记，再操作文件。": [
     "请先保存论文笔记，再操作文件。",
     "Save paper notes before changing files."
@@ -1649,7 +1338,6 @@
   "本地文献目录": ["本地文献目录", "Local literature directory"],
   "打开浏览器": ["打开浏览器", "Open browser"],
   "消息推荐": ["消息推荐", "Recommendations"],
-  "尚未启用": ["尚未启用", "Not enabled yet"],
   "个人信息源": ["个人信息源", "Personal sources"],
   "打开文献文件夹": ["打开文献文件夹", "Open literature folder"],
   "文献库": ["文献库", "Library"],
@@ -1676,17 +1364,8 @@
   "粘贴": ["粘贴", "Paste"],
   "打开论文笔记": ["打开论文笔记", "Open paper note"],
   "在文件管理器中显示": ["在文件管理器中显示", "Show in file manager"],
-  "将所选项目及关联笔记移入系统回收站？文件夹包括全部子内容。": [
-    "将所选项目及关联笔记移入系统回收站？文件夹包括全部子内容。",
-    "Move this item and its paired notes to the system recycle bin? Folders include all descendants."
-  ],
   "移入回收站": ["移入回收站", "Move to recycle bin"],
   "显示笔记文件": ["显示笔记文件", "Show note files"],
-  "复制当前项目旧附件和笔记，保留原记录；重复迁移会产生副本。继续？": [
-    "复制当前项目旧附件和笔记，保留原记录；重复迁移会产生副本。继续？",
-    "Copy this project’s legacy attachments and notes, preserving original records? Repeated migration creates copies."
-  ],
-  "迁移旧文献": ["迁移旧文献", "Migrate legacy papers"],
   "解除目录关联不会删除文件，是否继续？": [
     "解除目录关联不会删除文件，是否继续？",
     "Detach this folder? Files will remain on disk."
@@ -1707,7 +1386,6 @@
     "论文笔记尚未保存，请重试或处理冲突后退出。",
     "Paper notes are not saved. Retry or resolve the conflict before closing."
   ],
-  "返回本地目录": ["返回本地目录", "Back to local directory"],
   "请在桌面应用中使用本地文献目录和内嵌浏览器。": [
     "请在桌面应用中使用本地文献目录和内嵌浏览器。",
     "Use the desktop app for local literature folders and the embedded browser."
@@ -1753,10 +1431,6 @@
   "上次文件操作未完成，请保留 .scientify/operation.json 并恢复文件后再操作。": [
     "上次文件操作未完成，请保留 .scientify/operation.json 并恢复文件后再操作。",
     "The previous file operation did not finish. Keep .scientify/operation.json and recover the files before continuing."
-  ],
-  "文献索引损坏，已停止修改。": [
-    "文献索引损坏，已停止修改。",
-    "The literature index is damaged. Changes have been stopped."
   ],
   "文献索引版本或数量无效。": [
     "文献索引版本或数量无效。",
@@ -1845,10 +1519,6 @@
     "The destination note exists and will not be overwritten or relinked."
   ],
   "不支持的文献操作。": ["不支持的文献操作。", "Unsupported literature operation."],
-  "回收失败且回退未完成：{detail}；恢复包：{path}": [
-    "回收失败且回退未完成：{detail}；恢复包：{path}",
-    "Recycling failed and rollback is incomplete: {detail}; recovery package: {path}"
-  ],
   "文件夹包含内部元数据，不支持移动或复制。": [
     "文件夹包含内部元数据，不支持移动或复制。",
     "The folder contains internal metadata and cannot be moved or copied."
@@ -1875,26 +1545,14 @@
     "Blocked a non-web or internal application address."
   ],
   "下载未完成。": ["下载未完成。", "The download did not complete."],
-  "网页加载失败，可刷新或在系统浏览器打开。": [
-    "网页加载失败，可刷新或在系统浏览器打开。",
-    "The page failed to load. Refresh or open it in your system browser."
-  ],
   "请输入网址。": ["请输入网址。", "Enter a web address."],
   "网页尚未打开。": ["网页尚未打开。", "No page has been opened yet."],
   "无效的浏览器操作。": ["无效的浏览器操作。", "Invalid browser operation."],
-  "当前浏览器导航仅支持 Windows。": [
-    "当前浏览器导航仅支持 Windows。",
-    "Native browser navigation is currently available on Windows."
-  ],
   "网页不能调用应用接口。": ["网页不能调用应用接口。", "Webpages cannot call application APIs."],
   "项目不存在。": ["项目不存在。", "The project does not exist."],
   "该文件类型不允许直接执行，请在文件管理器中打开。": [
     "该文件类型不允许直接执行，请在文件管理器中打开。",
     "This file type cannot be launched directly. Open it in the file manager."
-  ],
-  "该操作不适用于论文笔记。": [
-    "该操作不适用于论文笔记。",
-    "This operation does not apply to paper notes."
   ],
   "文献目录工具": ["文献目录工具", "Literature directory tools"],
   "复制到 {folder}": ["复制到 {folder}", "Copy to {folder}"],
@@ -1924,9 +1582,7 @@
     "The PDF page could not be rendered. Try reopening the paper."
   ],
   "团队协作空间": ["团队协作空间", "Team spaces"],
-  "登录入口占位": ["登录入口占位", "Account placeholder"],
   "登录": ["登录", "Sign in"],
-  "空间导航": ["空间导航", "Space navigation"],
   "项目操作 {name}": ["项目操作 {name}", "Actions for {name}"],
   "项目操作": ["项目操作", "Project actions"],
   "删除项目": ["删除项目", "Delete project"],
@@ -1935,43 +1591,16 @@
   "{count} 天前": ["{count} 天前", "{count} days ago"],
   "更新于{date}": ["更新于{date}", "Updated {date}"],
   "项目显示方式": ["项目显示方式", "Project view"],
-  "网格视图": ["网格视图", "Grid view"],
   "列表视图": ["列表视图", "List view"],
-  "项目网格": ["项目网格", "Project grid"],
   "项目列表": ["项目列表", "Project list"],
   "研究项目": ["研究项目", "Research project"],
   "搜索团队": ["搜索团队", "Search teams"],
-  "搜索团队…": ["搜索团队…", "Search teams…"],
-  "编辑团队": ["编辑团队", "Edit team"],
-  "暂无团队空间": ["暂无团队空间", "No team spaces"],
-  "创建团队空间，集中管理团队项目。": [
-    "创建团队空间，集中管理团队项目。",
-    "Create a team space to organize its projects."
-  ],
-  "编辑团队 {name}": ["编辑团队 {name}", "Edit team {name}"],
-  "删除团队 {name}": ["删除团队 {name}", "Delete team {name}"],
   "没有符合条件的团队": ["没有符合条件的团队", "No matching teams"],
-  "删除团队空间": ["删除团队空间", "Delete team space"],
-  "删除“{name}”及其项目记录？本地文件和文献附件将保留。": [
-    "删除“{name}”及其项目记录？本地文件和文献附件将保留。",
-    "Delete “{name}” and its project records? Local files and paper attachments will be kept."
-  ],
-  "删除团队“{name}”？其项目将移至个人空间。": [
-    "删除团队“{name}”？其项目将移至个人空间。",
-    "Delete team “{name}”? Its projects will move to your personal space."
-  ],
   "请先保存当前修改，再删除项目或团队。": [
     "请先保存当前修改，再删除项目或团队。",
     "Save your changes before deleting a project or team."
   ],
-  "确认删除": ["确认删除", "Confirm deletion"],
-  "团队不存在，请重新载入。": [
-    "团队不存在，请重新载入。",
-    "The team no longer exists. Reload the workspace."
-  ],
   "确认操作": ["确认操作", "Confirm action"],
-  "重命名 / 编辑": ["重命名 / 编辑", "Rename / edit"],
-  "团队操作 {name}": ["团队操作 {name}", "Team actions: {name}"],
   "文献操作": ["文献操作", "Literature actions"],
   "将文件夹“{name}”及其全部内容、关联笔记移入系统回收站？": [
     "将文件夹“{name}”及其全部内容、关联笔记移入系统回收站？",
@@ -2023,7 +1652,6 @@
   "选择模型": ["选择模型", "Select model"],
   "配置其他模型": ["配置其他模型", "Configure another model"],
   "对话消息": ["对话消息", "Chat messages"],
-  "从一个问题开始": ["从一个问题开始", "Start with a question"],
   "发送 · Enter；Shift + Enter 换行": [
     "发送 · Enter；Shift + Enter 换行",
     "Send · Enter; Shift + Enter for a new line"
@@ -2052,14 +1680,9 @@
   "测试连接": ["测试连接", "Test connection"],
   "正在获取模型…": ["正在获取模型…", "Fetching models…"],
   "已获取 {count} 个模型": ["已获取 {count} 个模型", "{count} models fetched"],
-  "正在验证聊天模型…": ["正在验证聊天模型…", "Verifying chat access…"],
   "正在验证…": ["正在验证…", "Verifying…"],
   "筛选模型": ["筛选模型", "Filter models"],
   "测试连接后选择模型": ["测试连接后选择模型", "Test connection to select a model"],
-  "保存时发送一条简短测试消息，确认模型可用；不发送研究材料。": [
-    "保存时发送一条简短测试消息，确认模型可用；不发送研究材料。",
-    "Saving verifies chat access with a short test message. Research materials are excluded."
-  ],
   "请填写服务地址和 API 密钥。": [
     "请填写服务地址和 API 密钥。",
     "Enter the service URL and API key."
@@ -2134,10 +1757,6 @@
   ],
   "配置 Windows 沙箱": ["配置 Windows 沙箱", "Configure Windows sandbox"],
   "正在配置…": ["正在配置…", "Configuring…"],
-  "Windows 沙箱配置已启动，请完成系统提示后再次发送任务。": [
-    "Windows 沙箱配置已启动，请完成系统提示后再次发送任务。",
-    "Windows sandbox setup has started. Complete the system prompt, then send the task again."
-  ],
   "Windows 沙箱配置没有启动，请重试或查看系统权限设置。": [
     "Windows 沙箱配置没有启动，请重试或查看系统权限设置。",
     "Windows sandbox setup did not start. Try again or check system permissions."
@@ -2145,7 +1764,6 @@
   "执行工作区": ["执行工作区", "Execution workspace"],
   "文献目录": ["文献目录", "Literature folder"],
   "代码目录": ["代码目录", "Code folder"],
-  "发送时绑定目录": ["发送时绑定目录", "Folder binds on first send"],
   "后台任务": ["后台任务", "Background tasks"],
   "等待审批": ["等待审批", "Awaiting approval"],
   "运行中": ["运行中", "Running"],
@@ -2153,7 +1771,6 @@
   "任务进行中": ["任务进行中", "Task in progress"],
   "正在中止…": ["正在中止…", "Stopping…"],
   "正在连接 Agent…": ["正在连接 Agent…", "Connecting to Agent…"],
-  "执行记录": ["执行记录", "Execution log"],
   "正在保存结果…": ["正在保存结果…", "Saving results…"],
   "恢复连接": ["恢复连接", "Reconnect"],
   "当前输入尚未发送，请在任务结束后重试。": [
@@ -2176,10 +1793,6 @@
   "请先结束 Agent 任务并保存结果，再替换工作区数据。": [
     "请先结束 Agent 任务并保存结果，再替换工作区数据。",
     "Finish Agent tasks and save their results before replacing workspace data."
-  ],
-  "Agent 任务仍在运行或有结果未保存。请在 AI 助手中中止任务或保存结果后再关闭窗口。": [
-    "Agent 任务仍在运行或有结果未保存。请在 AI 助手中中止任务或保存结果后再关闭窗口。",
-    "Agent tasks are still running or have unsaved results. Stop tasks or save their results in the AI assistant before closing this window."
   ],
   "请先结束 Agent 任务并保存结果，再删除会话、项目或更换工作区。": [
     "请先结束 Agent 任务并保存结果，再删除会话、项目或更换工作区。",
@@ -2220,7 +1833,6 @@
   "failed": ["失败", "Failed"],
   "interrupted": ["已中止", "Stopped"],
   "declined": ["已拒绝", "Declined"],
-  "Agent 正在工作…": ["Agent 正在工作…", "Agent is working…"],
   "Git 视图": ["Git 视图", "Git views"],
   "Git 管理仅在桌面应用可用": [
     "Git 管理仅在桌面应用可用",
@@ -2271,7 +1883,6 @@
     "删除分支“{name}”？Git 将保护尚未合并的提交。",
     "Delete branch {name}? Git will protect unmerged commits."
   ],
-  "当前 worktree": ["当前 worktree", "Current worktree"],
   "{count} 项更改": ["{count} 项更改", "{count} changes"],
   "干净": ["干净", "Clean"],
   "移除 worktree“{path}”？将删除该工作目录，保留分支和提交；未提交更改会阻止移除。": [
@@ -2284,7 +1895,6 @@
   "已有分支": ["已有分支", "Existing branch"],
   "起始 Branch / Commit": ["起始 Branch / Commit", "Starting branch / commit"],
   "包含未跟踪文件": ["包含未跟踪文件", "Include untracked files"],
-  "收起运行日志": ["收起运行日志", "Collapse run output"],
   "展开运行日志": ["展开运行日志", "Expand run output"],
   "请求执行 Git 操作": ["请求执行 Git 操作", "Git operation approval"],
   "请求执行命令": ["请求执行命令", "Command approval"],
@@ -2303,10 +1913,6 @@
   "此目录有运行或文件写入，暂不能执行 Git 写操作。": [
     "此目录有运行或文件写入，暂不能执行 Git 写操作。",
     "A run or file write is active in this directory. Git mutations must wait."
-  ],
-  "此目录已有 AI 任务。请等待任务结束，或选择另一个 worktree 新建会话。": [
-    "此目录已有 AI 任务。请等待任务结束，或选择另一个 worktree 新建会话。",
-    "An AI task is already active in this directory. Wait for it to finish, or create a conversation in another worktree."
   ],
   "所选目录不是此项目仓库登记的 worktree，请刷新目录列表。": [
     "所选目录不是此项目仓库登记的 worktree，请刷新目录列表。",
@@ -2390,12 +1996,6 @@
     "可信本地执行 · 本机文件与网络",
     "Trusted local execution · local files and network"
   ],
-  "实验显示方式": ["实验显示方式", "Experiment layout"],
-  "卡片视图": ["卡片视图", "Card view"],
-  "实验详情": ["实验详情", "Experiment details"],
-  "未配置 Python": ["未配置 Python", "Python not configured"],
-  "{count} 个活动任务": ["{count} 个活动任务", "{count} active tasks"],
-  "暂无活动任务": ["暂无活动任务", "No active tasks"],
   "开发中": ["开发中", "In development"],
   "敬请期待": ["敬请期待", "Coming soon"],
   "LaTeX 论文撰写": ["LaTeX 论文撰写", "LaTeX writing"],
@@ -2428,7 +2028,6 @@
   "聊天验证通过": ["聊天验证通过", "Chat verified"],
   "聊天接口不可用": ["聊天接口不可用", "Chat endpoint unavailable"],
   "Agent 工具验证通过": ["Agent 工具验证通过", "Agent tools verified"],
-  "仅聊天，Agent 未通过验证": ["仅聊天，Agent 未通过验证", "Chat only; Agent verification failed"],
   "正在回答…": ["正在回答…", "Responding…"],
   "此连接未通过聊天验证，请进入项目使用 Agent 或更换模型。": [
     "此连接未通过聊天验证，请进入项目使用 Agent 或更换模型。",
@@ -2440,14 +2039,6 @@
     "上次回答连接已断开，可以继续提问。",
     "The previous response disconnected. You can continue asking."
   ],
-  "当前连接仅支持聊天，无法修改本地文件。": [
-    "当前连接仅支持聊天，无法修改本地文件。",
-    "This connection supports chat only and cannot modify local files."
-  ],
-  "此历史会话尚未启用论文读取工具。请在同目录新建会话，原对话仍会保留。": [
-    "此历史会话尚未启用论文读取工具。请在同目录新建会话，原对话仍会保留。",
-    "This chat does not have paper tools. Start a new chat in the same directory; this history will be kept."
-  ],
   "Agent 连接验证未通过": ["Agent 连接验证未通过", "Agent connection verification failed"],
   "重新验证": ["重新验证", "Verify again"],
   "请输入不含账号密码的 HTTP 或 HTTPS 链接。": [
@@ -2458,43 +2049,8 @@
     "个人信息源数据无效，请检查导入文件。",
     "Invalid personal sources. Check the imported file."
   ],
-  "此网址已在个人信息源中。": [
-    "此网址已在个人信息源中。",
-    "This URL is already in your personal sources."
-  ],
-  "分组已被删除，请重新选择。": [
-    "分组已被删除，请重新选择。",
-    "The group was deleted. Choose another group."
-  ],
-  "信息源已被删除，请重新添加。": [
-    "信息源已被删除，请重新添加。",
-    "The source was deleted. Add it again."
-  ],
-  "名称不能超过 200 个字符。": ["名称不能超过 200 个字符。", "Names cannot exceed 200 characters."],
-  "删除此分组？其中的网站会移至未分组。": [
-    "删除此分组？其中的网站会移至未分组。",
-    "Delete this group? Its websites will move to Ungrouped."
-  ],
-  "删除此信息源？不会删除下载的文件或笔记。": [
-    "删除此信息源？不会删除下载的文件或笔记。",
-    "Delete this source? Downloaded files and notes will be kept."
-  ],
-  "添加经常访问的网站，或在浏览器中收藏当前网页。": [
-    "添加经常访问的网站，或在浏览器中收藏当前网页。",
-    "Add websites you visit often, or bookmark the current page in the browser."
-  ],
-  "管理分组 {name}": ["管理分组 {name}", "Manage group {name}"],
-  "管理信息源 {name}": ["管理信息源 {name}", "Manage source {name}"],
-  "信息源操作": ["信息源操作", "Source actions"],
-  "编辑信息源": ["编辑信息源", "Edit source"],
   "添加信息源": ["添加信息源", "Add source"],
-  "重命名分组": ["重命名分组", "Rename group"],
   "新建分组": ["新建分组", "New group"],
-  "未分组": ["未分组", "Ungrouped"],
-  "收藏当前网页": ["收藏当前网页", "Bookmark current page"],
-  "编辑网页收藏": ["编辑网页收藏", "Edit bookmark"],
-  "上移": ["上移", "Move up"],
-  "下移": ["下移", "Move down"],
   "分组": ["分组", "Group"],
   "网址": ["网址", "URL"],
   "请输入完整的 HTTP 或 HTTPS 链接。": [
@@ -2534,48 +2090,10 @@
   "文字": ["文字", "Text"],
   "正在保存图片…": ["正在保存图片…", "Saving image…"],
   "请求修改笔记": ["请求修改笔记", "Request note edit"],
-  "在独立浮窗打开": ["在独立浮窗打开", "Open in floating window"],
-  "无法保存翻译设置。": ["无法保存翻译设置。", "Could not save translation settings."],
-  "正在载入翻译配置…": ["正在载入翻译配置…", "Loading translation settings…"],
-  "浮窗内的语言与风格仅用于本次翻译；默认值请在全局翻译设置中修改。": [
-    "浮窗内的语言与风格仅用于本次翻译；默认值请在全局翻译设置中修改。",
-    "Language and style apply to this window. Change defaults in Translation settings."
-  ],
   "学术": ["学术", "Academic"],
-  "自然": ["自然", "Natural"],
   "直译": ["直译", "Literal"],
-  "简洁": ["简洁", "Concise"],
-  "系统划词权限": ["系统划词权限", "System selection permissions"],
-  "macOS 辅助功能权限": ["macOS 辅助功能权限", "macOS Accessibility permission"],
-  "读取其他应用的选中文字需要辅助功能权限。请在系统设置中允许 Capsio；仍可直接粘贴翻译。": [
-    "读取其他应用的选中文字需要辅助功能权限。请在系统设置中允许 Capsio；仍可直接粘贴翻译。",
-    "Allow Capsio in system Accessibility settings to read selected text in other apps. You can still paste text manually."
-  ],
-  "授予权限": ["授予权限", "Grant permission"],
-  "打开系统设置": ["打开系统设置", "Open System Settings"],
   "重新检查": ["重新检查", "Check again"],
-  "已授权": ["已授权", "Granted"],
-  "Windows 和 macOS 支持选中文字后按全局快捷键；Mac 需要辅助功能权限。": [
-    "Windows 和 macOS 支持选中文字后按全局快捷键；Mac 需要辅助功能权限。",
-    "On Windows and macOS, select text and press the global shortcut. macOS requires Accessibility permission."
-  ],
-  "请在翻译设置中授予 Capsio macOS 辅助功能权限，再读取其他应用的选中文字。": [
-    "请在翻译设置中授予 Capsio macOS 辅助功能权限，再读取其他应用的选中文字。",
-    "Grant Capsio macOS Accessibility permission in Translation settings to read selections in other apps."
-  ],
-  "翻译浮窗": ["翻译浮窗", "Translation popup"],
-  "阅读内容": ["阅读内容", "Reading content"],
-  "关闭翻译": ["关闭翻译", "Close translation"],
-  "拖动窗口": ["拖动窗口", "Drag to move"],
-  "拖动调整大小": ["拖动调整大小", "Drag to resize"],
-  "切换语言后重新翻译": ["切换语言后重新翻译", "Retranslate when the target language changes"],
-  "AI 解释": ["AI 解释", "AI explanation"],
-  "返回译文": ["返回译文", "Back to translation"],
-  "修改译文": ["修改译文", "Edit translation"],
-  "仅修改当前译文": ["仅修改当前译文", "This translation only"],
   "应用修改": ["应用修改", "Apply changes"],
-  "解释选中内容": ["解释选中内容", "Explain selection"],
-  "对此提问…": ["对此提问…", "Ask about this…"],
   "划词翻译": ["划词翻译", "Selection translation"],
   "在论文、浏览器或其他应用中选中文字，松开鼠标后自动翻译。固定窗口后，再次划词会打开新的翻译窗口。": [
     "在论文、浏览器或其他应用中选中文字，松开鼠标后自动翻译。固定窗口后，再次划词会打开新的翻译窗口。",
@@ -2607,28 +2125,11 @@
     "语言、术语表、字体、浮窗外观、纠错记忆和问答记录在翻译设置中管理。模型与密钥沿用 AI 助手的配置。",
     "Manage languages, glossary, fonts, appearance, saved corrections and AI records in translation settings. Models and credentials are shared with the AI assistant."
   ],
-  "待翻译文本": ["待翻译文本", "Text to translate"],
-  "也可以粘贴文字，在浮窗中翻译…": [
-    "也可以粘贴文字，在浮窗中翻译…",
-    "Paste text to translate in a floating window…"
-  ],
-  "使用当前选区": ["使用当前选区", "Use current selection"],
   "划词翻译请在 Capsio 桌面应用中使用。": [
     "划词翻译请在 Capsio 桌面应用中使用。",
     "Selection translation is available in the Capsio desktop app."
   ],
   "协作": ["协作", "Collaboration"],
-  "协作服务器用于同步项目成员、文献元数据、PDF、笔记和代码仓库。AI、Python 环境与实验运行仍保留在本机。": [
-    "协作服务器用于同步项目成员、文献元数据、PDF、笔记和代码仓库。AI、Python 环境与实验运行仍保留在本机。",
-    "The collaboration server syncs project members, literature metadata, PDFs, notes and code repositories. AI, Python environments and experiment runs stay local."
-  ],
-  "当前阶段先保存服务器配置；远程登录和同步服务将在服务器接口接入后启用。": [
-    "当前阶段先保存服务器配置；远程登录和同步服务将在服务器接口接入后启用。",
-    "This stage saves the server configuration. Sign-in and remote sync will activate when the server API is connected."
-  ],
-  "已启用，等待服务器连接": ["已启用，等待服务器连接", "Enabled, waiting for server connection"],
-  "待同步变更：{count}": ["待同步变更：{count}", "Pending changes: {count}"],
-  "冲突：{count}": ["冲突：{count}", "Conflicts: {count}"],
   "协作设置只能在 Capsio 桌面应用中使用。": [
     "协作设置只能在 Capsio 桌面应用中使用。",
     "Collaboration settings are available in the Capsio desktop app."
@@ -2650,33 +2151,6 @@
     "协作配置文件格式无效。",
     "The collaboration configuration file is invalid."
   ],
-  "登录后可以加入协作项目；本地变更会先进入离线队列，再由服务器同步。": [
-    "登录后可以加入协作项目；本地变更会先进入离线队列，再由服务器同步。",
-    "After signing in, you can join collaboration projects. Local changes enter the offline queue before syncing."
-  ],
-  "文献库已完成首次同步": [
-    "文献库已完成首次同步",
-    "The literature library has completed its initial sync."
-  ],
-  "打开文献页后将初始化本地文献库": [
-    "打开文献页后将初始化本地文献库",
-    "The local literature library will be initialized when you open the literature page."
-  ],
-  "待处理的同步变更": ["待处理的同步变更", "Sync changes that need attention"],
-  "本地变更冲突": ["本地变更冲突", "Local change conflict"],
-  "保留本地": ["保留本地", "Keep local"],
-  "重试本地变更": ["重试本地变更", "Retry local change"],
-  "以本地版本覆盖远端变更并重试？": [
-    "以本地版本覆盖远端变更并重试？",
-    "Overwrite the remote change with the local version and retry?"
-  ],
-  "忽略远端变更并保留本地？": [
-    "忽略远端变更并保留本地？",
-    "Ignore the remote change and keep the local version?"
-  ],
-  "远端变更待处理": ["远端变更待处理", "Remote change needs attention"],
-  "文献变更": ["文献变更", "Literature change"],
-  "打开文献页后重试": ["打开文献页后重试", "Retry by opening the literature page"],
   "手机号": ["手机号", "Mobile number"],
   "验证码": ["验证码", "Verification code"],
   "获取验证码": ["获取验证码", "Get code"],
@@ -2684,40 +2158,15 @@
   "已登录": ["已登录", "Signed in"],
   "协作项目": ["协作项目", "Collaboration projects"],
   "立即同步": ["立即同步", "Sync now"],
-  "登录后还没有可加入的协作项目。": [
-    "登录后还没有可加入的协作项目。",
-    "No collaboration projects are available yet."
-  ],
   "Capsio 官方模型": ["Capsio 官方模型", "Capsio hosted models"],
   "协作服务器": ["协作服务器", "Collaboration server"],
-  "文件已导入本地，但协作上传失败：{error}": [
-    "文件已导入本地，但协作上传失败：{error}",
-    "The file was imported locally, but collaboration upload failed: {error}"
-  ],
-  "正在初始化协作文献库…": [
-    "正在初始化协作文献库…",
-    "Initializing the collaborative literature library…"
-  ],
-  "协作变更暂未排队：{error}": [
-    "协作变更暂未排队：{error}",
-    "The collaboration change was not queued: {error}"
-  ],
-  "有 {count} 项远端文献变更等待处理。": [
-    "有 {count} 项远端文献变更等待处理。",
-    "{count} remote literature changes are waiting to be handled."
-  ],
   "确认": ["确认", "Confirm"],
   "打开标题目录": ["打开标题目录", "Open table of contents"],
   "PDF 标题目录": ["PDF 标题目录", "PDF table of contents"],
-  "此 PDF 没有可用的标题目录": [
-    "此 PDF 没有可用的标题目录",
-    "This PDF has no available table of contents"
-  ],
   "工作区尚未载入。": ["工作区尚未载入。", "The workspace has not loaded yet."],
   "待发送附件": ["待发送附件", "Pending attachment"],
   "Permission": ["权限", "Permission"],
   "已截短": ["已截短", "Truncated"],
-  "本轮材料来源": ["本轮材料来源", "Sources for this turn"],
   "工作区上下文": ["工作区上下文", "Workspace context"],
   "附带当前材料时，自动读取本会话目录的有限摘要和关联文件。关闭“附带材料”后不自动附带。": [
     "附带当前材料时，自动读取本会话目录的有限摘要和关联文件。关闭“附带材料”后不自动附带。",
@@ -2802,10 +2251,6 @@
   "纯文本": ["纯文本", "Plain text"],
   "只读预览": ["只读预览", "Read-only preview"],
   "打开 AI 助手": ["打开 AI 助手", "Open AI assistant"],
-  "显示或聚焦侧边栏 AI 助手。": [
-    "显示或聚焦侧边栏 AI 助手。",
-    "Show or focus the AI assistant sidebar."
-  ],
   "打开笔记": ["打开笔记", "Open notes"],
   "切换到当前项目的笔记工作区。": [
     "切换到当前项目的笔记工作区。",
@@ -2853,93 +2298,32 @@
     "协作项目无法载入，请重试。",
     "The collaboration project could not be loaded. Try again."
   ],
-  "协作项目已创建。": ["协作项目已创建。", "Collaboration project created."],
-  "成员邀请已发送。": ["成员邀请已发送。", "The member invitation was sent."],
   "登录和协作同步需要在 Capsio 桌面应用中使用。": [
     "登录和协作同步需要在 Capsio 桌面应用中使用。",
     "Sign-in and collaboration sync require the Capsio desktop app."
   ],
-  "登录后管理共享文献与项目成员": [
-    "登录后管理共享文献与项目成员",
-    "Manage shared literature and project members after signing in"
-  ],
-  "本地优先协作": ["本地优先协作", "Local-first collaboration"],
-  "你的协作项目": ["你的协作项目", "Your collaboration projects"],
-  "登录 Capsio 协作": ["登录 Capsio 协作", "Sign in to Capsio collaboration"],
-  "选择一个远程项目，绑定到本机工作区后继续阅读、编辑和运行。": [
-    "选择一个远程项目，绑定到本机工作区后继续阅读、编辑和运行。",
-    "Choose a remote project, bind it to this workspace, and continue reading, editing and running."
-  ],
-  "服务器只负责身份、成员和同步索引；论文文件与实验代码仍由你控制。": [
-    "服务器只负责身份、成员和同步索引；论文文件与实验代码仍由你控制。",
-    "The server handles identity, membership and sync indexes; you keep control of papers and experiment code."
-  ],
   "已连接": ["已连接", "Connected"],
   "未登录": ["未登录", "Signed out"],
-  "连接协作服务器": ["连接协作服务器", "Connect to collaboration server"],
-  "服务器地址和登录状态只保存在本机。": [
-    "服务器地址和登录状态只保存在本机。",
-    "The server address and sign-in state stay on this device."
-  ],
-  "JWT 会在本机安全存储并自动刷新": [
-    "JWT 会在本机安全存储并自动刷新",
-    "JWT tokens are stored locally and refreshed automatically"
-  ],
   "输入手机号": ["输入手机号", "Enter phone number"],
   "短信验证码": ["短信验证码", "SMS verification code"],
-  "新建协作项目名称": ["新建协作项目名称", "New collaboration project name"],
   "成员": ["成员", "Members"],
   "正在打开…": ["正在打开…", "Opening…"],
   "进入项目": ["进入项目", "Open project"],
-  "还没有协作项目，先创建一个项目。": [
-    "还没有协作项目，先创建一个项目。",
-    "No collaboration projects yet. Create one to get started."
-  ],
   "项目成员": ["项目成员", "Project members"],
-  "选择项目查看成员": ["选择项目查看成员", "Select a project to view members"],
-  "暂无成员信息": ["暂无成员信息", "No member information"],
   "邀请成员": ["邀请成员", "Invite members"],
   "成员手机号": ["成员手机号", "Member phone number"],
   "编辑者": ["编辑者", "Editor"],
   "审阅者": ["审阅者", "Reviewer"],
   "查看者": ["查看者", "Viewer"],
   "邀请": ["邀请", "Invite"],
-  "成员列表会显示在这里。": ["成员列表会显示在这里。", "The member list will appear here."],
   "登录协作": ["登录协作", "Sign in to collaboration"],
-  "应用远端变更": ["应用远端变更", "Apply remote changes"],
-  "远端变更存在冲突": ["远端变更存在冲突", "Remote change has a conflict"],
-  "远端代码变更": ["远端代码变更", "Remote code change"],
-  "应用远端变更前会检查本地文件版本": [
-    "应用远端变更前会检查本地文件版本",
-    "Local file versions are checked before applying remote changes"
-  ],
-  "账号已连接 · 自动保存与同步已开启": [
-    "账号已连接 · 自动保存与同步已开启",
-    "Account connected · autosave and sync are on"
-  ],
-  "最近已同步": ["最近已同步", "Recently synced"],
-  "等待首次同步": ["等待首次同步", "Waiting for first sync"],
   "请输入手机号": ["请输入手机号", "Enter your phone number"],
   "6 位短信验证码": ["6 位短信验证码", "6-digit SMS code"],
   "待注册 · {role}": ["待注册 · {role}", "Pending sign-up · {role}"],
-  "云端项目自动同步": ["云端项目自动同步", "Cloud projects sync automatically"],
-  "选择要同步的本机项目": ["选择要同步的本机项目", "Choose a local project to sync"],
-  "选择本机项目，在多台设备间同步": [
-    "选择本机项目，在多台设备间同步",
-    "Choose a local project to sync across devices"
-  ],
   "开启多设备同步": ["开启多设备同步", "Sync across devices"],
-  "上次同步：{time}": ["上次同步：{time}", "Last synced: {time}"],
   "尚未同步": ["尚未同步", "Not synced yet"],
   "文献文件夹：{path}": ["文献文件夹：{path}", "Literature folder: {path}"],
   "正在同步…": ["正在同步…", "Syncing…"],
-  "最近的同步冲突": ["最近的同步冲突", "Recent sync conflicts"],
-  "两台设备改了同一内容时两份都会保留：远端版本沿用原名，本机版本另存为冲突副本。": [
-    "两台设备改了同一内容时两份都会保留：远端版本沿用原名，本机版本另存为冲突副本。",
-    "When two devices change the same item, both versions are kept: the remote one keeps the name and this device’s version is saved as a conflict copy."
-  ],
-  "本机版本另存为：{copy}": ["本机版本另存为：{copy}", "This device’s version saved as: {copy}"],
-  "已采用远端版本": ["已采用远端版本", "Kept the remote version"],
   "笔记图片": ["笔记图片", "Note images"],
   "运行记录": ["运行记录", "Run records"],
   "打开运行记录": ["打开运行记录", "Open run records"],
@@ -3094,21 +2478,9 @@
     "The collaboration service is unavailable right now. Try again later."
   ],
   "账号": ["账号", "Account"],
-  "已登录 Capsio 协作": ["已登录 Capsio 协作", "Signed in to Capsio collaboration"],
-  "同步与协作设置": ["同步与协作设置", "Sync and collaboration settings"],
   "退出登录后，云端项目会停止同步，本机的项目和文件会保留。": [
     "退出登录后，云端项目会停止同步，本机的项目和文件会保留。",
     "After you sign out, cloud projects stop syncing. Projects and files on this device stay."
-  ],
-  "登录后使用团队协作": ["登录后使用团队协作", "Sign in to collaborate"],
-  "创建协作项目、邀请成员，并在你的多台设备间同步项目。": [
-    "创建协作项目、邀请成员，并在你的多台设备间同步项目。",
-    "Create shared projects, invite members and sync projects across your devices."
-  ],
-  "登录或注册": ["登录或注册", "Sign in or sign up"],
-  "未注册的手机号验证后会自动创建账号。": [
-    "未注册的手机号验证后会自动创建账号。",
-    "A new number gets an account once it is verified."
   ],
   "手机号格式无效。": ["手机号格式无效。", "Invalid phone number."],
   "验证码不正确。": ["验证码不正确。", "The verification code is incorrect."],
@@ -3133,8 +2505,6 @@
   "短信发送失败：{message}": ["短信发送失败：{message}", "Could not send the SMS: {message}"],
   "收集箱": ["收集箱", "Inbox"],
   "快速问答": ["快速问答", "Quick questions"],
-  "随手笔记": ["随手笔记", "Quick notes"],
-  "收集箱是空的": ["收集箱是空的", "The inbox is empty"],
   "AI 对话": ["AI 对话", "AI conversation"],
   "刚刚": ["刚刚", "Just now"],
   "{count} 分钟前": ["{count} 分钟前", "{count} min ago"],
@@ -3191,7 +2561,6 @@
   "编辑项目信息": ["编辑项目信息", "Edit project details"],
   "自定义颜色": ["自定义颜色", "Custom color"],
   "运行失败": ["运行失败", "Run failed"],
-  "运行完成": ["运行完成", "Run finished"],
   "你已加入「{name}」": ["你已加入「{name}」", "You joined “{name}”"],
   "所有者 {phone}": ["所有者 {phone}", "Owner {phone}"],
   "知道了": ["知道了", "Dismiss"],
@@ -3204,34 +2573,25 @@
   "首页": ["首页", "Home"],
   "开始使用": ["开始使用", "Get started"],
   "查看团队项目": ["查看团队项目", "View team projects"],
-  "登录并下载团队项目": ["登录并下载团队项目", "Sign in to download team projects"],
-  "项目数据保存在": ["项目数据保存在", "Project data is stored in"],
-  "最近项目": ["最近项目", "Recent projects"],
   "待处理": ["待处理", "Needs attention"],
   "联网后处理": ["联网后处理", "Handle when online"],
   "没有需要处理的事项": ["没有需要处理的事项", "Nothing needs your attention"],
   "创建于 {date}": ["创建于 {date}", "Created {date}"],
   "{time}更新": ["{time}更新", "Updated {time}"],
   "{time}打开": ["{time}打开", "Opened {time}"],
-  "搜索项目名称或研究问题": ["搜索项目名称或研究问题", "Search names or research questions"],
   "还没有项目": ["还没有项目", "No projects yet"],
   "排序：{order}": ["排序：{order}", "Sort: {order}"],
   "书架视图": ["书架视图", "Shelf view"],
   "没有已归档的项目": ["没有已归档的项目", "No archived projects"],
   "项目书架": ["项目书架", "Project shelf"],
-  "未下载 · 在其他设备上": ["未下载 · 在其他设备上", "Not downloaded · On another device"],
   "同步": ["同步", "Sync"],
   "笔记 {notes} · 运行 {runs}": ["笔记 {notes} · 运行 {runs}", "{notes} notes · {runs} runs"],
-  "仅本机": ["仅本机", "This computer only"],
   "排序方式": ["排序方式", "Sort by"],
   "有需要处理的事项": ["有需要处理的事项", "Needs attention"],
   "无法连接协作服务": ["无法连接协作服务", "Cannot reach the collaboration service"],
   "项目中心导航": ["项目中心导航", "Project center navigation"],
   "项目中心页面": ["项目中心页面", "Project center pages"],
-  "收藏的项目": ["收藏的项目", "Favorite projects"],
-  "打开“{name}”": ["打开“{name}”", "Open “{name}”"],
   "账号 {phone}": ["账号 {phone}", "Account {phone}"],
-  "本机使用，不同步": ["本机使用，不同步", "Local only, not syncing"],
   "帮助": ["帮助", "Help"],
   "使用说明": ["使用说明", "User guide"],
   "反馈问题": ["反馈问题", "Report a problem"],
@@ -3287,7 +2647,6 @@
   "可以修改全部内容": ["可以修改全部内容", "Can edit everything"],
   "可以查看，不能修改": ["可以查看，不能修改", "Can view, cannot edit"],
   "只接收，不能修改": ["只接收，不能修改", "Receives changes, cannot edit"],
-  "还没有问答": ["还没有问答", "No questions yet"],
   "已有同名项目": ["已有同名项目", "A project with this name exists"],
   "文件留在原位置": ["文件留在原位置", "Files stay where they are"],
   "未注册的号码会在对方首次登录后加入。": [
@@ -3307,7 +2666,6 @@
     "本机版本已另存为冲突副本",
     "This computer's version was kept as a conflict copy"
   ],
-  "还没有最近的内容": ["还没有最近的内容", "Nothing recent yet"],
   "移除 {phone}？对方将不再同步这个项目。": [
     "移除 {phone}？对方将不再同步这个项目。",
     "Remove {phone}? They will stop syncing this project."
@@ -3337,26 +2695,15 @@
   ],
   "请求新建笔记": ["请求新建笔记", "Wants to create a note"],
   "前 {read}/{total} 页": ["前 {read}/{total} 页", "First {read}/{total} pages"],
-  "删除连接“{name}”？已有对话保留原来的设置。": [
-    "删除连接“{name}”？已有对话保留原来的设置。",
-    "Delete connection “{name}”? Existing chats keep their settings."
-  ],
-  "全部连接": ["全部连接", "All connections"],
   "连接": ["连接", "Connections"],
-  "新建连接": ["新建连接", "New connection"],
   "未选择模型": ["未选择模型", "No model selected"],
   "聊天": ["聊天", "Chat"],
   "设为默认": ["设为默认", "Make default"],
-  "还没有连接模型。": ["还没有连接模型。", "No model connected yet."],
   "只有你发出的消息和附件会发给模型服务；密钥只保存在这台电脑上。": [
     "只有你发出的消息和附件会发给模型服务；密钥只保存在这台电脑上。",
     "Only your messages and attachments go to the model service; keys stay on this computer."
   ],
   "AI 模型": ["AI 模型", "AI models"],
-  "后续接入：LaTeX 编译、PDF 批注与更多文献工具。": [
-    "后续接入：LaTeX 编译、PDF 批注与更多文献工具。",
-    "Coming later: LaTeX builds, PDF annotation and more literature tools."
-  ],
   "上次任务没有正常结束。恢复后读取已有结果，不会重发。": [
     "上次任务没有正常结束。恢复后读取已有结果，不会重发。",
     "The last task did not finish normally. Resuming reads its results without sending it again."
@@ -3376,14 +2723,6 @@
   "只影响这个对话，从下一个任务起生效。": [
     "只影响这个对话，从下一个任务起生效。",
     "Applies to this chat from the next task."
-  ],
-  "在沙箱里运行；越权和 Git 操作前询问。": [
-    "在沙箱里运行；越权和 Git 操作前询问。",
-    "Runs in the sandbox; asks before going beyond it or using Git."
-  ],
-  "不用沙箱，可以联网和访问工作区外的文件，不再询问。": [
-    "不用沙箱，可以联网和访问工作区外的文件，不再询问。",
-    "No sandbox: network and files outside the workspace, without asking."
   ],
   "已选 {count} 字": ["已选 {count} 字", "{count} characters selected"],
   "本页没有可提取的文字": ["本页没有可提取的文字", "No extractable text on this page"],
@@ -3419,12 +2758,6 @@
   "彻底删除": ["彻底删除", "Delete permanently"],
   "彻底删除“{title}”": ["彻底删除“{title}”", "Delete “{title}” permanently"],
   "已移到回收站": ["已移到回收站", "Moved to the recycle bin"],
-  "项目、论文或笔记": ["项目、论文或笔记", "Projects, papers or notes"],
-  "当前项目的论文文件名、全部项目和笔记": [
-    "当前项目的论文文件名、全部项目和笔记",
-    "Paper file names in this project, all projects and notes"
-  ],
-  "项目、论文文件名和笔记": ["项目、论文文件名和笔记", "Projects, paper file names and notes"],
   "正在搜索…": ["正在搜索…", "Searching…"],
   "{size} 字节": ["{size} 字节", "{size} bytes"],
   "二进制文件不支持文本对比，可按版本选择保留。": [
@@ -3444,7 +2777,6 @@
     "右侧是当前已接收的远端版本；如果内容再次变化，需要重新打开对比。",
     "The right side shows the received remote version. Reopen the comparison if either version changes."
   ],
-  "审阅者 · 仅可编辑项目笔记": ["审阅者 · 仅可编辑项目笔记", "Reviewer · Project notes only"],
   "当前角色只允许阅读文献。": [
     "当前角色只允许阅读文献。",
     "Your role allows reading literature only."
@@ -3469,15 +2801,12 @@
   "有冲突": ["有冲突", "Conflicts"],
   "本机冲突副本": ["本机冲突副本", "Local conflict copy"],
   "查看对比": ["查看对比", "Compare versions"],
-  "查看者 · 只读": ["查看者 · 只读", "Viewer · Read only"],
   "此版本不存在": ["此版本不存在", "This version does not exist"],
-  "没有待处理冲突": ["没有待处理冲突", "No unresolved conflicts"],
   "等待同步": ["等待同步", "Pending sync"],
   "请先保存草稿并结束此项目的 AI 任务，再处理冲突。": [
     "请先保存草稿并结束此项目的 AI 任务，再处理冲突。",
     "Save your drafts and finish this project’s AI tasks before resolving conflicts."
   ],
-  "返回同步面板": ["返回同步面板", "Back to sync"],
   "远端版本": ["远端版本", "Remote version"],
   "项目同步": ["项目同步", "Project sync"],
   "项目同步：{status}": ["项目同步：{status}", "Project sync: {status}"],
@@ -3487,14 +2816,6 @@
   "正在检查同步…": ["正在检查同步…", "Checking sync…"],
   "待注册": ["待注册", "Registration pending"],
   "部分内容未同步": ["部分内容未同步", "Some items were not synced"],
-  "上次同步跳过 {count} 项（例如超过 200 MB 的文件）。": [
-    "上次同步跳过 {count} 项（例如超过 200 MB 的文件）。",
-    "The last sync skipped {count} items (for example, files larger than 200 MB)."
-  ],
-  "{count} 项暂缓同步，请等待目录中的任务结束后重试。": [
-    "{count} 项暂缓同步，请等待目录中的任务结束后重试。",
-    "{count} items are deferred. Retry after tasks in this folder finish."
-  ],
   "配色": ["配色", "Palette"],
   "石墨": ["石墨", "Graphite"],
   "纸": ["纸", "Paper"],
@@ -3516,7 +2837,6 @@
     "Show or hide the AI assistant on the right inside a project."
   ],
   "全部论文": ["全部论文", "All papers"],
-  "还没有打开文献文件夹": ["还没有打开文献文件夹", "No library folder is open"],
   "没有符合条件的文献": ["没有符合条件的文献", "No matching documents"],
   "这里还没有文献": ["这里还没有文献", "No documents here yet"],
   "文献列表": ["文献列表", "Documents"],
@@ -3527,9 +2847,7 @@
   "第 {page} 页": ["第 {page} 页", "Page {page}"],
   "全部笔记": ["全部笔记", "All notes"],
   "写一篇笔记": ["写一篇笔记", "Write a note"],
-  "搜索论文、笔记，或跳转": ["搜索论文、笔记，或跳转", "Search papers and notes, or jump to"],
   "前往": ["前往", "Go to"],
-  "最近的笔记": ["最近的笔记", "Recent notes"],
   "最近的项目": ["最近的项目", "Recent projects"],
   "版本 {version}": ["版本 {version}", "Version {version}"],
   "文献、笔记、实验和写作，在一个本地工作区里。": [
@@ -3562,7 +2880,6 @@
   "打开文件夹…": ["打开文件夹…", "Open Folder…"],
   "克隆 Git 仓库…": ["克隆 Git 仓库…", "Clone Git Repository…"],
   "面板": ["面板", "Panel"],
-  "还没有代码文件夹": ["还没有代码文件夹", "No code folder yet"],
   "储藏更改": ["储藏更改", "Stash changes"],
   "将 {name} 应用到当前工作树？可能产生需要手动解决的冲突。": [
     "将 {name} 应用到当前工作树？可能产生需要手动解决的冲突。",
@@ -3637,10 +2954,6 @@
     "Stop this folder's AI and run tasks first."
   ],
   "重命名文件夹": ["重命名文件夹", "Rename folder"],
-  "从项目中移除此文件夹？磁盘上的文件、Git 提交、AI 对话和运行记录都会保留。": [
-    "从项目中移除此文件夹？磁盘上的文件、Git 提交、AI 对话和运行记录都会保留。",
-    "Remove this folder from the project? Files on disk, Git commits, AI conversations and run records are kept."
-  ],
   "文件夹状态": ["文件夹状态", "Folder status"],
   "搜索文件夹": ["搜索文件夹", "Search folders"],
   "添加文件夹": ["添加文件夹", "Add folder"],
@@ -3692,18 +3005,6 @@
   "新建文件夹…": ["新建文件夹…", "New Folder…"],
   "文件名称": ["文件名称", "File name"],
   "扩展": ["扩展", "Extensions"],
-  "AI 助手仍在执行任务。请在 AI 助手中停止，或等它完成后再关闭窗口。": [
-    "AI 助手仍在执行任务。请在 AI 助手中停止，或等它完成后再关闭窗口。",
-    "The AI assistant is still working. Stop it in the assistant, or wait for it to finish, before closing the window."
-  ],
-  "还有 {count} 个终端或环境任务在运行。全部结束并退出？": [
-    "还有 {count} 个终端或环境任务在运行。全部结束并退出？",
-    "{count} terminals or environment tasks are still running. End them all and quit?"
-  ],
-  "还有 {count} 个终端在运行。结束终端并退出？": [
-    "还有 {count} 个终端在运行。结束终端并退出？",
-    "{count} terminals are still running. End them and quit?"
-  ],
   "停止正在进行的环境任务": ["停止正在进行的环境任务", "Stop the running environment task"],
   "显示方式": ["显示方式", "View"],
   "预览此文件需要桌面应用。": [
@@ -3995,10 +3296,6 @@
   "以后都用内置引擎": ["以后都用内置引擎", "Always use the built-in engine"],
   "用内置引擎下载并编译": ["用内置引擎下载并编译", "Download with the built-in engine and compile"],
   "重新下载": ["重新下载", "Download again"],
-  "还没有云端项目。本机的项目会自动同步到这个账号。": [
-    "还没有云端项目。本机的项目会自动同步到这个账号。",
-    "No cloud projects yet. Projects on this computer sync to this account automatically."
-  ],
   "密码需要 8–64 位。": ["密码需要 8–64 位。", "The password needs 8–64 characters."],
   "密码需要同时包含字母和数字。": [
     "密码需要同时包含字母和数字。",
@@ -4160,10 +3457,6 @@
   "导出 PDF": ["导出 PDF", "Export PDF"],
   "移动到…": ["移动到…", "Move to…"],
   "创建副本": ["创建副本", "Duplicate"],
-  "把“{title}”和它的子页面移到回收站？": [
-    "把“{title}”和它的子页面移到回收站？",
-    "Move “{title}” and its subpages to the recycle bin?"
-  ],
   "来源：": ["来源：", "Sources: "],
   "以前的笔记都在这里。": ["以前的笔记都在这里。", "Your earlier notes are here."],
   "参会": ["参会", "Attendees"],
@@ -4324,10 +3617,6 @@
     "It resets at midnight. The daily limit keeps a runaway conversation from using up the month; you can also use your own model key."
   ],
   "当前套餐不包含这个模型": ["当前套餐不包含这个模型", "Your plan does not include this model"],
-  "换一个模型，或在“账号与订阅”里查看套餐。": [
-    "换一个模型，或在“账号与订阅”里查看套餐。",
-    "Choose another model, or see your plan in Account & subscription."
-  ],
   "请求太频繁": ["请求太频繁", "Too many requests"],
   "同时进行的对话太多或请求太快，请稍等再试。": [
     "同时进行的对话太多或请求太快，请稍等再试。",
@@ -4379,20 +3668,6 @@
     "Ctrl K 找项目、论文和笔记，也能直接执行命令。",
     "Ctrl K finds projects, papers and notes, and runs commands."
   ],
-  "选择 AI 模型、数据位置和界面语言。": [
-    "选择 AI 模型、数据位置和界面语言。",
-    "Choose the AI model, where data is kept and the language."
-  ],
-  "随时回看": ["随时回看", "See it again any time"],
-  "在帮助里能再看一遍导览。打开一个项目，继续认识里面的功能。": [
-    "在帮助里能再看一遍导览。打开一个项目，继续认识里面的功能。",
-    "Help shows this tour again. Open a project to see what is inside."
-  ],
-  "四个模块": ["四个模块", "Four modules"],
-  "文献、代码、写作、文档，在这里切换。": [
-    "文献、代码、写作、文档，在这里切换。",
-    "Switch between literature, code, writing and documents here."
-  ],
   "从 Zotero 搬过来": ["从 Zotero 搬过来", "Bring your Zotero library"],
   "导入 Zotero 文库或 BibTeX、RIS，分类、PDF、笔记和高亮都会带上。": [
     "导入 Zotero 文库或 BibTeX、RIS，分类、PDF、笔记和高亮都会带上。",
@@ -4406,14 +3681,6 @@
   "邀请同学或同事，一起读、一起写。": [
     "邀请同学或同事，一起读、一起写。",
     "Invite classmates or colleagues to read and write together."
-  ],
-  "随手记想法，块、表格和链接都支持。": [
-    "随手记想法，块、表格和链接都支持。",
-    "Jot down ideas with blocks, tables and links."
-  ],
-  "它能读你的论文和代码，帮你查、帮你改。读论文时选中文字，可以高亮、批注或直接问它。": [
-    "它能读你的论文和代码，帮你查、帮你改。读论文时选中文字，可以高亮、批注或直接问它。",
-    "It reads your papers and code and helps you look things up and make changes. Select text in a paper to highlight it, comment on it or ask about it."
   ],
   "第 {n} 步，共 {total} 步": ["第 {n} 步，共 {total} 步", "Step {n} of {total}"],
   "跳过": ["跳过", "Skip"],
@@ -4518,19 +3785,8 @@
   ],
   "重命名…": ["重命名…", "Rename…"],
   "{title}（译文）": ["{title}（译文）", "{title} (translation)"],
-  "排队中": ["排队中", "Queued"],
-  "新下载的论文自动翻译": ["新下载的论文自动翻译", "Translate new papers automatically"],
-  "正在准备翻译组件，只需一次": [
-    "正在准备翻译组件，只需一次",
-    "Setting up the translator, only once"
-  ],
   "正在翻译 {progress}%": ["正在翻译 {progress}%", "Translating {progress}%"],
-  "翻译整篇论文，保留原文的排版、公式和图表。": [
-    "翻译整篇论文，保留原文的排版、公式和图表。",
-    "Translate the whole paper, keeping its layout, formulas and figures."
-  ],
   "翻译进度": ["翻译进度", "Translation progress"],
-  "译文保留原文排版": ["译文保留原文排版", "Translation in the original layout"],
   "每周额度": ["每周额度", "Weekly limit"],
   "{days} 天额度": ["{days} 天额度", "{days}-day limit"],
   "{hours} 小时额度": ["{hours} 小时额度", "{hours}-hour limit"],
@@ -4550,10 +3806,6 @@
   "请求从这台电脑发出，用你的订阅额度。划词翻译和全文翻译仍用其他模型。": [
     "请求从这台电脑发出，用你的订阅额度。划词翻译和全文翻译仍用其他模型。",
     "Requests go from this computer and use your plan. Selection and full-text translation keep using another model."
-  ],
-  "ChatGPT 账号只用于 AI 助手。全文翻译需要另一个模型，请在模型设置里再添加一个。": [
-    "ChatGPT 账号只用于 AI 助手。全文翻译需要另一个模型，请在模型设置里再添加一个。",
-    "The ChatGPT account only runs the AI assistant. Full-text translation needs another model; add one in model settings."
   ],
   "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Capsio 官方模型）。": [
     "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Capsio 官方模型）。",
