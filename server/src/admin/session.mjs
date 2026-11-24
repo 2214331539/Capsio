@@ -84,8 +84,10 @@ export async function signIn(db, config, { phone, password }, ip) {
  * admin sessions sign out, as when it is reset there.
  */
 export async function resetPassword(db, config, { phone, code, password }, ip) {
-  const secret = hashPassword(checkPassword(password));
+  // The slow hash runs only for a right code, so wrong ones cannot tie up the server.
+  const plain = checkPassword(password);
   await authenticateCode(db, config, phone, String(code ?? '').trim());
+  const secret = hashPassword(plain);
   const result = await db.query('SELECT id, phone, admin_role, status FROM users WHERE phone = $1', [phone]);
   const user = result.rows[0];
   if (!user || !ROLES[user.admin_role] || user.status !== 'active') throw fail(400, '手机号或验证码不正确。');

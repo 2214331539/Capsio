@@ -98,7 +98,11 @@ CREATE INDEX IF NOT EXISTS blobs_project_hash ON blobs(project_id, sha256);
 `;
 
 export function createDb(config) {
-  return new Pool({ connectionString: config.databaseUrl, max: 5, idleTimeoutMillis: 30_000 });
+  const pool = new Pool({ connectionString: config.databaseUrl, max: 5, idleTimeoutMillis: 30_000 });
+  // An idle connection dropped by the database (a restart) is replaced on the next query;
+  // left unhandled, the error would end the process.
+  pool.on('error', (error) => console.error('Idle database connection lost:', error.message));
+  return pool;
 }
 
 export async function initDb(db) {

@@ -211,9 +211,11 @@ export const codeHash = (code) =>
 /** Uses a code once; a batch gives each account at most one of its codes. */
 export async function redeem(db, userId, code, now = new Date()) {
   return withTransaction(db, async (client) => {
+    // Locking the batch too makes two codes of one batch, redeemed at once by one account,
+    // take turns; the second then sees the first and is refused.
     const found = await client.query(
       `SELECT c.code_hash, c.used_by, b.* FROM redeem_codes c JOIN redeem_batches b ON b.id = c.batch_id
-        WHERE c.code_hash = $1 FOR UPDATE OF c`,
+        WHERE c.code_hash = $1 FOR UPDATE OF c, b`,
       [codeHash(code)],
     );
     const row = found.rows[0];

@@ -554,6 +554,15 @@ async function route(request, response, { config, db }, path, url) {
     }
     const key = text(input.key, 4096, '密钥');
     if (!existing && !key) throw fail(400, '请填写密钥。');
+    // A stored key is only ever sent to the hosts it was entered for: pointing a channel at
+    // another host takes the key again, or a test call would hand it to that host.
+    if (existing && !key) {
+      const known = new Set(
+        [existing.endpoint, existing.chat_endpoint].filter(Boolean).map((v) => new URL(v).host),
+      );
+      if ([endpoint, chatEndpoint].filter(Boolean).some((v) => !known.has(new URL(v).host)))
+        throw fail(400, '渠道地址换了服务商，请重新填写密钥。');
+    }
     const active = input.active === undefined ? (existing?.active ?? true) : !!input.active;
     const id = existing?.id ?? crypto.randomUUID();
     await db.query(

@@ -107,8 +107,10 @@ async function passwordLogin(db, config, phone, password) {
 
 /** Creates an account with a password; a number that only signed in by SMS gets its password. */
 async function register(db, config, phone, code, password) {
-  const secret = hashPassword(checkPassword(password));
+  // The slow hash runs only for a right code, so wrong ones cannot tie up the server.
+  const plain = checkPassword(password);
   await authenticateCode(db, config, phone, code);
+  const secret = hashPassword(plain);
   const existing = await db.query('SELECT password_hash FROM users WHERE phone = $1', [phone]);
   if (existing.rows[0]?.password_hash)
     throw Object.assign(new Error('这个手机号已经注册，请直接登录。'), { status: 409 });
@@ -122,8 +124,9 @@ async function register(db, config, phone, code, password) {
 
 /** A new password signs out every other device. */
 async function resetPassword(db, config, phone, code, password) {
-  const secret = hashPassword(checkPassword(password));
+  const plain = checkPassword(password);
   await authenticateCode(db, config, phone, code);
+  const secret = hashPassword(plain);
   const result = await db.query('SELECT id, phone FROM users WHERE phone = $1', [phone]);
   const user = result.rows[0];
   if (!user) throw Object.assign(new Error('这个手机号还没有注册。'), { status: 404 });
@@ -171,7 +174,12 @@ async function projectBlob(db, projectId, blobId, userId) {
 
 async function handle(request, response, context) {
   const { config, db } = context;
-  const url = new URL(request.url, `http://${request.headers.host ?? 'localhost'}`);
+  let url;
+  try {
+    url = new URL(request.url, 'http://localhost');
+  } catch {
+    return send(response, 400, { error: '请求地址无效。' });
+  }
   const path = url.pathname.replace(/\/+$/, '') || '/';
   // The admin pages are same-origin only: no CORS headers for them. They need the
   // raw path, where "/admin" and "/admin/" differ.
@@ -236,7 +244,13 @@ async function handle(request, response, context) {
     }
     if (request.method === 'POST' && path === '/v1/auth/refresh') {
       const input = await body(request, 16_384);
-      const payload = verifyToken(input.refreshToken, config.jwtSecret, config.jwtIssuer);
+      let payload;
+      try {
+        payload = verifyToken(input.refreshToken, config.jwtSecret, config.jwtIssuer);
+      } catch {
+        // Expired or not ours: the app signs in again, which a 500 would not tell it.
+        throw Object.assign(new Error('刷新令牌已失效。'), { status: 401 });
+      }
       if (payload.tokenType !== 'refresh')
         throw Object.assign(new Error('刷新令牌无效。'), { status: 401 });
       const result = await db.query(
@@ -247,10 +261,12 @@ async function handle(request, response, context) {
       await requireActive(db, result.rows[0].id);
       const tokens = issueTokens(config, result.rows[0]);
       await withTransaction(db, async (client) => {
-        // Rotate refresh tokens. A replayed token is rejected after its first use.
-        await client.query('DELETE FROM refresh_tokens WHERE token_hash = $1', [
+        // Rotate refresh tokens. A replayed token is rejected after its first use: of two
+        // requests with one token, only the one that removes it gets new tokens.
+        const removed = await client.query('DELETE FROM refresh_tokens WHERE token_hash = $1', [
           hashSecret(input.refreshToken),
         ]);
+        if (!removed.rowCount) throw Object.assign(new Error('刷新令牌已失效。'), { status: 401 });
         await client.query(
           "INSERT INTO refresh_tokens(id, user_id, token_hash, expires_at) VALUES ($1, $2, $3, NOW() + ($4 * INTERVAL '1 second'))",
           [uuid(), result.rows[0].id, hashSecret(tokens.refreshToken), config.refreshTokenTtl],
@@ -545,7 +561,8 @@ export function sendError(response, error) {
 
 export function createServer(config, db) {
   return http.createServer((request, response) => {
-    handle(request, response, { config, db });
+    // Nothing a request does may end the process: an unhandled rejection would.
+    handle(request, response, { config, db }).catch((error) => sendError(response, error));
   });
 }
 

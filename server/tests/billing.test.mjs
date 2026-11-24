@@ -128,7 +128,7 @@ const balanceOf = async (user) => (await call('GET', '/v1/billing/summary', { to
 async function adminSession(phone) {
   const user = await signUp(phone);
   await db.query("UPDATE users SET admin_role = 'owner' WHERE id = $1", [user.id]);
-  const headers = { 'x-scientify-admin': '1' };
+  const headers = { 'x-capsio-admin': '1' };
   const login = await call('POST', '/admin/api/login', { body: { phone, password: 'abc12345' }, headers });
   assert.equal(login.status, 200, JSON.stringify(login.body));
   const cookie = login.headers.get('set-cookie').split(';')[0];
@@ -344,6 +344,20 @@ test('redeem codes work once per code and once per batch per account', options, 
   assert.ok(orders.body.orders.some((order) => order.method === '兑换码' && order.userId === user.id));
 });
 
+test('two codes of one batch redeemed at once still give one', options, async () => {
+  const owner = await adminSession('13700000091');
+  const created = await call('POST', '/admin/api/codes', {
+    headers: owner.headers,
+    body: { name: '并发批次', kind: 'plan', planId: 'pro', months: 1, count: 2, redeemUntil: '2099-01-01' },
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const user = await signUp('13700000030');
+  const results = await Promise.all(
+    created.body.codes.map((code) => call('POST', '/v1/billing/redeem', { token: user.token, body: { code } })),
+  );
+  assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
+});
+
 test('disabling an account signs it out everywhere and refuses its tokens', options, async () => {
   const owner = await adminSession('13700000097');
   const user = await signUp('13700000008');
@@ -366,7 +380,7 @@ test('disabling an account signs it out everywhere and refuses its tokens', opti
 test('the admin API needs its header and a session, and read-only admins cannot change anything', options, async () => {
   const owner = await adminSession('13700000096');
   assert.equal((await call('GET', '/admin/api/overview', { headers: { cookie: owner.headers.cookie } })).status, 403);
-  assert.equal((await call('GET', '/admin/api/overview', { headers: { 'x-scientify-admin': '1' } })).status, 401);
+  assert.equal((await call('GET', '/admin/api/overview', { headers: { 'x-capsio-admin': '1' } })).status, 401);
   const overview = await call('GET', '/admin/api/overview', { headers: owner.headers });
   assert.equal(overview.status, 200);
   assert.equal(overview.body.days.length, 30);
@@ -412,7 +426,7 @@ test('expired grants are zeroed and their unused points recorded', options, asyn
 });
 
 test('admins sign in with a password and reset a forgotten one with an SMS code', options, async () => {
-  const headers = { 'x-scientify-admin': '1' };
+  const headers = { 'x-capsio-admin': '1' };
   // An admin who only ever signed in by SMS has no password: the reset sets one.
   const phone = '13700000094';
   await storeCode(phone);
@@ -436,6 +450,28 @@ test('admins sign in with a password and reset a forgotten one with an SMS code'
   await storeCode(member.phone);
   const other = await call('POST', '/admin/api/reset-password', { body: { phone: member.phone, code: '123456', password: 'newpass123' }, headers });
   assert.equal(other.status, 400);
+});
+
+test('pointing a channel at another host takes its key again', options, async () => {
+  const owner = await adminSession('13700000090');
+  const created = await call('POST', '/admin/api/channels', {
+    headers: owner.headers,
+    body: { name: '换址测试', endpoint: 'https://one.example.com/v1', key: 'sk-one' },
+  });
+  assert.equal(created.status, 200, JSON.stringify(created.body));
+  const path = `/admin/api/channels/${created.body.id}`;
+  const renamed = await call('PUT', path, { headers: owner.headers, body: { name: '改名' } });
+  assert.equal(renamed.status, 200, JSON.stringify(renamed.body));
+  const moved = await call('PUT', path, {
+    headers: owner.headers,
+    body: { endpoint: 'https://two.example.com/v1' },
+  });
+  assert.equal(moved.status, 400);
+  const withKey = await call('PUT', path, {
+    headers: owner.headers,
+    body: { endpoint: 'https://two.example.com/v1', key: 'sk-two' },
+  });
+  assert.equal(withKey.status, 200, JSON.stringify(withKey.body));
 });
 
 test('a channel lists its upstream models, and picked ones are added unlisted', options, async () => {

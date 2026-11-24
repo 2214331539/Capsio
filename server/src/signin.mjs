@@ -42,37 +42,49 @@ function phoneCode(config, phone) {
 /** Stores a fresh code for the number and texts it; one a minute per number. */
 export async function sendCode(db, config, phone, address) {
   limitCodeRequests(address);
-  const existing = await db.query('SELECT last_sent_at FROM auth_codes WHERE phone = $1', [phone]);
-  if (existing.rows[0] && Date.now() - new Date(existing.rows[0].last_sent_at).getTime() < 60_000) {
-    throw fail(429, '验证码发送过于频繁，请稍后再试。');
-  }
   const code = phoneCode(config, phone);
   const hash = hashSecret(`${config.jwtSecret}:${phone}:${code}`);
-  await db.query(
+  // The minute check and the new code are one statement, so requests sent together cannot
+  // all pass the check.
+  const stored = await db.query(
     `INSERT INTO auth_codes(phone, code_hash, expires_at, last_sent_at, attempts)
      VALUES ($1, $2, NOW() + INTERVAL '5 minutes', NOW(), 0)
      ON CONFLICT (phone) DO UPDATE SET code_hash = EXCLUDED.code_hash,
-       expires_at = EXCLUDED.expires_at, last_sent_at = EXCLUDED.last_sent_at, attempts = 0`,
+       expires_at = EXCLUDED.expires_at, last_sent_at = EXCLUDED.last_sent_at, attempts = 0
+     WHERE auth_codes.last_sent_at < NOW() - INTERVAL '60 seconds'
+     RETURNING phone`,
     [phone, hash],
   );
+  if (!stored.rowCount) throw fail(429, '验证码发送过于频繁，请稍后再试。');
   if (!usesDevelopmentCode(config, phone)) await sendVerificationCode(config, phone, code);
 }
 
 export async function authenticateCode(db, config, phone, code) {
-  const result = await db.query('SELECT * FROM auth_codes WHERE phone = $1', [phone]);
+  // Each guess takes one of the five attempts in a single statement: guesses sent together
+  // cannot all slip under the limit before any of them is counted.
+  const result = await db.query(
+    `UPDATE auth_codes SET attempts = attempts + 1
+     WHERE phone = $1 AND expires_at > NOW() AND attempts < 5
+     RETURNING code_hash`,
+    [phone],
+  );
   const stored = result.rows[0];
-  if (!stored || new Date(stored.expires_at).getTime() < Date.now()) {
+  if (!stored) {
+    const left = await db.query('SELECT 1 FROM auth_codes WHERE phone = $1 AND expires_at > NOW()', [
+      phone,
+    ]);
+    if (left.rows[0]) throw fail(429, '验证码尝试次数过多，请重新获取。');
     throw fail(400, '验证码已过期，请重新获取。');
   }
-  if (stored.attempts >= 5) {
-    throw fail(429, '验证码尝试次数过多，请重新获取。');
-  }
-  const valid = hashSecret(`${config.jwtSecret}:${phone}:${code}`) === stored.code_hash;
-  if (!valid) {
-    await db.query('UPDATE auth_codes SET attempts = attempts + 1 WHERE phone = $1', [phone]);
+  if (hashSecret(`${config.jwtSecret}:${phone}:${code}`) !== stored.code_hash) {
     throw fail(400, '验证码不正确。');
   }
-  await db.query('DELETE FROM auth_codes WHERE phone = $1', [phone]);
+  // A code works once: of two requests with it, only the one that removes it goes on.
+  const used = await db.query('DELETE FROM auth_codes WHERE phone = $1 AND code_hash = $2', [
+    phone,
+    stored.code_hash,
+  ]);
+  if (!used.rowCount) throw fail(400, '验证码已过期，请重新获取。');
 }
 
 const SCRYPT = { N: 16384, r: 8, p: 1, keylen: 32 };
