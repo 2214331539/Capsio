@@ -182,6 +182,8 @@ fn uncopyable_link(_root: &Path) -> Result<Option<PathBuf>, String> {
     Ok(None)
 }
 
+// `mappings` only redirects links, which are copied as links on Unix alone.
+#[cfg_attr(not(unix), allow(clippy::only_used_in_recursion))]
 fn copy_verified(
     source: &Path,
     target: &Path,

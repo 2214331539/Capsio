@@ -346,6 +346,13 @@ pub fn dispatch(
         event["params"]["tool"] = json!(format!("capsio_{rest}"));
     }
     tauri::async_runtime::spawn_blocking(move || {
+        let _ = with_entry(&app, &project, &domain, &conversation, |entry| {
+            entry.adopt_turn(
+                event["params"]["threadId"].as_str().unwrap_or_default(),
+                event["params"]["turnId"].as_str().unwrap_or_default(),
+            );
+            Ok(())
+        });
         if event["params"]["tool"] == "capsio_git_action"
             || notes::writes(&event["params"]["tool"])
             || docs::writes(&event["params"]["tool"])
@@ -851,6 +858,7 @@ mod tests {
                 host_requests: HashMap::new(),
                 host_events: vec![],
                 scratch: None,
+                ended_turns: vec![],
             });
             let deadline = std::time::Instant::now() + Duration::from_secs(30);
             let mut completed = false;

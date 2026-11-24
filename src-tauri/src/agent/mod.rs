@@ -66,6 +66,8 @@ struct SessionEntry {
     host_requests: HashMap<String, Value>,
     host_events: Vec<Value>,
     scratch: Option<scratch::Scratch>,
+    /// The last turns that ended, so a tool call arriving late never revives one.
+    ended_turns: Vec<String>,
 }
 impl SessionEntry {
     fn collect(&mut self) -> Result<Vec<Value>, String> {
@@ -86,10 +88,23 @@ impl SessionEntry {
                 self.requests.insert(event["id"].to_string(), event.clone());
             }
             if event["method"] == "turn/started" {
-                self.active_turn = event["params"]["turn"]["id"].as_str().map(str::to_string);
+                match event["params"]["turn"]["id"].as_str() {
+                    Some(id) => self.begin_turn(id),
+                    None => self.active_turn = None,
+                }
             }
             if event["method"] == "turn/completed" {
-                self.scratch = None;
+                // The scratch folder stays until the next turn here replaces it: a turn the
+                // engine starts by itself (a goal's next step) keeps the last one's sandbox.
+                if let Some(id) = event["params"]["turn"]["id"]
+                    .as_str()
+                    .or(self.active_turn.as_deref())
+                {
+                    if self.ended_turns.len() >= 8 {
+                        self.ended_turns.remove(0);
+                    }
+                    self.ended_turns.push(id.to_string());
+                }
                 self.active_turn = None;
                 self.lease = None;
                 self.requests.clear();
@@ -109,6 +124,25 @@ impl SessionEntry {
             }
         }
         Ok(delivered)
+    }
+    /// The turn now running. One the engine started by itself (a goal's next step) takes
+    /// the lease a turn started here holds, so its host write tools work too.
+    fn begin_turn(&mut self, id: &str) {
+        self.active_turn = Some(id.to_string());
+        if self.lease.is_none() {
+            self.lease = crate::code::Lease::agent(std::path::Path::new(&self.handle.cwd)).ok();
+        }
+    }
+    /// A tool call can arrive before the turn/started of a turn the engine started by
+    /// itself has been collected; it carries the turn, which is taken as begun.
+    fn adopt_turn(&mut self, thread_id: &str, turn_id: &str) {
+        if self.active_turn.is_none()
+            && self.handle.thread_id == thread_id
+            && !turn_id.is_empty()
+            && !self.ended_turns.iter().any(|ended| ended == turn_id)
+        {
+            self.begin_turn(turn_id);
+        }
     }
     fn validate(&self, thread_id: &str) -> Result<(), String> {
         if self.handle.thread_id != thread_id {
@@ -870,6 +904,7 @@ pub async fn agent_start_thread(
             host_requests: HashMap::new(),
             host_events: Vec::new(),
             scratch: None,
+            ended_turns: Vec::new(),
         });
         Ok(handle)
     })
@@ -1020,6 +1055,7 @@ pub async fn agent_start_turn(
         let lease = crate::code::Lease::agent(std::path::Path::new(&entry.handle.cwd))?;
         // Protect against an uncertain turn/start outcome: do not retry this text automatically.
         registry::write(app.state::<AppState>().storage.directory(),&entry.handle,true,entry.managed_runs,entry.git_tools,entry.browser_tools)?;
+        let had_turns = entry.has_turns;
         entry.lease = Some(lease);
         entry.has_turns = true;
         entry.active_turn = Some("starting".into());
@@ -1033,6 +1069,12 @@ pub async fn agent_start_turn(
         let response = match entry.session.call("turn/start",json!({"threadId":thread_id,"cwd":execution::canonical_path(root),"approvalPolicy":permission.approval_policy(),"sandboxPolicy":sandbox,"input":input}),TURN_BUDGET) {
             Ok(response) => response,
             Err(error) => {
+                // Refused outright, no turn began: a thread that never had one stays new, so
+                // reopening starts it afresh instead of resuming a thread with nothing in it.
+                if entry.session.answered() && !had_turns {
+                    entry.has_turns = false;
+                    let _ = registry::write(app.state::<AppState>().storage.directory(),&entry.handle,false,entry.managed_runs,entry.git_tools,entry.browser_tools);
+                }
                 // The request may have reached Codex. Stop this process rather than
                 // automatically sending a duplicate turn or leaving an invisible job.
                 entry.session.terminate();

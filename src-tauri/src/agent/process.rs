@@ -224,6 +224,9 @@ pub struct EngineSession {
     /// Messages that arrived while waiting for a response. Approvals land here;
     /// dropping them would hang the turn, so they wait for the UI.
     pending: Vec<serde_json::Value>,
+    /// The last `call` got an answer, even a refusal; otherwise it timed out or the pipe
+    /// broke, and whether the engine acted on it is unknown.
+    answered: bool,
 }
 
 impl EngineSession {
@@ -340,13 +343,26 @@ impl EngineSession {
         let stderr_text = Arc::new(Mutex::new(String::new()));
         let stderr_copy = Arc::clone(&stderr_text);
         std::thread::spawn(move || {
-            for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+            // Read to the end, past bytes that are not UTF-8 too, so the engine never writes
+            // into a closed pipe; keep the latest 8 KiB, where a real error lands.
+            let mut reader = BufReader::new(stderr);
+            let mut line = Vec::new();
+            while reader
+                .read_until(b'\n', &mut line)
+                .is_ok_and(|read| read > 0)
+            {
                 if let Ok(mut text) = stderr_copy.lock() {
-                    if text.len() < 8192 {
-                        text.push_str(&line);
-                        text.push('\n');
+                    text.push_str(String::from_utf8_lossy(&line).trim_end_matches(['\r', '\n']));
+                    text.push('\n');
+                    if text.len() > 8192 {
+                        let mut cut = text.len() - 8192;
+                        while !text.is_char_boundary(cut) {
+                            cut += 1;
+                        }
+                        text.drain(..cut);
                     }
                 }
+                line.clear();
             }
         });
         Ok(Self {
@@ -356,7 +372,12 @@ impl EngineSession {
             stderr: stderr_text,
             next_id: 0,
             pending: Vec::new(),
+            answered: false,
         })
+    }
+
+    pub fn answered(&self) -> bool {
+        self.answered
     }
 
     /// Send a request and wait for its response, discarding nothing.
@@ -367,6 +388,7 @@ impl EngineSession {
         budget: Duration,
     ) -> Result<serde_json::Value, String> {
         self.next_id += 1;
+        self.answered = false;
         let id = self.next_id;
         self.stdin
             .write_all(super::protocol::request(id, method, params).as_bytes())
@@ -382,6 +404,7 @@ impl EngineSession {
             };
             match incoming {
                 super::protocol::Incoming::Response { id: got, value } if got == id => {
+                    self.answered = true;
                     return super::protocol::result(value);
                 }
                 other => {
