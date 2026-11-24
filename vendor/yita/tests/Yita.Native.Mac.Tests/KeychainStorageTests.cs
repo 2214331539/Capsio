@@ -73,6 +73,27 @@ public sealed class KeychainStorageTests
     }
 
     [Fact]
+    public async Task AFileKeyReopensTheMemoryAndOnlyTheUserCanReadIt()
+    {
+        var directory = TemporaryDirectory();
+        try
+        {
+            var path = Path.Combine(directory, "memory.dat");
+            var keyPath = Path.Combine(directory, "translation-memory.key");
+            using (var first = (AesGcmTranslationMemoryProtector)await MacTranslationMemoryProtector.CreateFromFileAsync(keyPath, true))
+                new TranslationMemoryStore(path, first).AddOrUpdate("private source text", "private corrected text", "en", "zh");
+            Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(keyPath));
+            Assert.Empty(Directory.GetFiles(directory, "*.tmp"));
+            using var second = (AesGcmTranslationMemoryProtector)await MacTranslationMemoryProtector.CreateFromFileAsync(keyPath, false);
+            Assert.Equal("private corrected text", new TranslationMemoryStore(path, second).FindExact("private source text", "en", "zh")!.TargetText);
+            File.Delete(keyPath);
+            await Assert.ThrowsAsync<CryptographicException>(() => MacTranslationMemoryProtector.CreateFromFileAsync(keyPath, false));
+            Assert.False(File.Exists(keyPath));
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
+    [Fact]
     public async Task MissingOrInvalidEncryptionKeyIsNotRegeneratedForExistingRecords()
     {
         var keychain = new FakeKeychain();

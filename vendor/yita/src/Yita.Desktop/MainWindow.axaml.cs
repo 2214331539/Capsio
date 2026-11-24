@@ -122,7 +122,7 @@ public sealed partial class MainWindow : Window
         ITranslationMemoryProtector? protector = null;
         try
         {
-            var path = Path.Combine(_platform.DataDirectory, "desktop-translation-memory.dat");
+            var path = _platform.MemoryPath;
             protector = await _platform.CreateMemoryProtectorAsync(path);
             if (protector is null) return;
             var memory = await Task.Run(() => new TranslationMemoryStore(path, protector));

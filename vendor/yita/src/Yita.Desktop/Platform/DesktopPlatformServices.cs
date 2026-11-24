@@ -42,10 +42,20 @@ internal sealed class DesktopPlatformServices
         ? new WindowsCredentialSecretStore()
         : OperatingSystem.IsMacOS() ? new MacKeychainSecretStore() : new MemorySecretStore();
 
+    // Inside Capsio on macOS the memory is keyed by a file rather than the keychain, so it
+    // starts a new file; the old one stays locked to its keychain item.
+    private static bool FileKeyedMemory => CapsioBridge.IsEmbedded && OperatingSystem.IsMacOS();
+
+    internal string MemoryPath => Path.Combine(DataDirectory,
+        FileKeyedMemory ? "capsio-translation-memory.dat" : "desktop-translation-memory.dat");
+
     internal async Task<ITranslationMemoryProtector?> CreateMemoryProtectorAsync(string memoryPath,
         CancellationToken cancellationToken = default)
     {
         if (OperatingSystem.IsWindows()) return new WindowsTranslationMemoryProtector();
+        if (FileKeyedMemory) return await MacTranslationMemoryProtector.CreateFromFileAsync(
+            Path.Combine(DataDirectory, "translation-memory.key"), allowCreate: !File.Exists(memoryPath),
+            cancellationToken).ConfigureAwait(false);
         if (OperatingSystem.IsMacOS()) return await MacTranslationMemoryProtector.CreateAsync(
             allowCreate: !File.Exists(memoryPath), cancellationToken).ConfigureAwait(false);
         return null;
