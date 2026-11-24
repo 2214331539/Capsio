@@ -45,6 +45,7 @@ import {
   browserCommand,
   browserEvents,
   browserLayout,
+  hideBrowsers,
   type BrowserTab,
 } from '../../platform/browser-pane';
 import {
@@ -855,7 +856,7 @@ export function LocalLiterature({
       ? (element.closest('[data-tree-id]')?.getAttribute('data-tree-id') ?? '')
       : '';
   async function showMenu(path: string, x: number, y: number) {
-    await browserLayout({ op: 'hideAll' }).catch(() => {});
+    await hideBrowsers();
     setSelected(path);
     if (!selectedPaths.has(path)) setSelectedPaths(new Set(path ? [path] : []));
     setMenu({

@@ -1,6 +1,7 @@
 import { listen } from '@tauri-apps/api/event';
 import { isTauri } from '@tauri-apps/api/core';
 import { localCommand } from './library';
+import { reportError } from './error-reports';
 export type BrowserTab = {
   id: string;
   projectId: string;
@@ -38,10 +39,34 @@ export async function openBrowserSource(projectId: string, address: string) {
   );
 }
 
-// All native layout commands use a single queue so a late show never overrides hide.
+// All native layout commands use a single queue so a late show never overrides hide. A command
+// the native side never answers must not hold the queue: every dialog waits on a hide.
+const STUCK_MS = 1500;
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 let tail = Promise.resolve();
 export function browserLayout(request: Record<string, unknown>) {
-  const next = tail.catch(() => {}).then(() => browserCommand(request));
-  tail = next.catch(() => {});
+  const next = tail.then(() => browserCommand(request));
+  tail = Promise.race([next, delay(STUCK_MS)]).then(
+    () => {},
+    () => {},
+  );
   return next;
+}
+
+/** Hides the embedded browser before something draws over it, waiting at most `wait` ms so a
+ *  dialog still opens when the native side does not answer; that case is reported. */
+export function hideBrowsers(wait = 400): Promise<void> {
+  if (!isTauri()) return Promise.resolve();
+  let done = false;
+  const hidden = browserLayout({ op: 'hideAll' }).then(
+    () => void (done = true),
+    () => void (done = true),
+  );
+  return Promise.race([
+    hidden,
+    delay(wait).then(() => {
+      if (!done)
+        reportError(new Error(`The embedded browser did not hide within ${wait} ms`), 'browser');
+    }),
+  ]);
 }

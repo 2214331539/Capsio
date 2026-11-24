@@ -4656,10 +4656,6 @@
   ],
   "AI 完成了：{title}": ["AI 完成了：{title}", "AI finished: {title}"],
   "AI 需要你处理：{title}": ["AI 需要你处理：{title}", "AI needs you: {title}"],
-  "Scientify 已更名为 Capsio，项目和设置都已接上。旧版 Scientify 可以卸载了。": [
-    "Scientify 已更名为 Capsio，项目和设置都已接上。旧版 Scientify 可以卸载了。",
-    "Scientify is now Capsio. Your projects and settings came along, and the old Scientify can be uninstalled."
-  ],
   "帮我列一份这周的研究计划": ["帮我列一份这周的研究计划", "Draft a research plan for this week"],
   "解释一个看不懂的概念": ["解释一个看不懂的概念", "Explain a concept I find confusing"],
   "把一段中文改成学术英文": [
@@ -4724,5 +4720,35 @@
   "每个页面都能用：读论文、改代码、跑实验、写文档。不知道问什么，就点它给的起步问题。": [
     "每个页面都能用：读论文、改代码、跑实验、写文档。不知道问什么，就点它给的起步问题。",
     "Works on every page: reading papers, editing code, running experiments, writing docs. Not sure what to ask? Pick one of its starters."
+  ],
+  "旧版 Scientify 已移到废纸篓。": [
+    "旧版 Scientify 已移到废纸篓。",
+    "The old Scientify is in the Trash."
+  ],
+  "已打开 Scientify 的卸载程序，按提示完成即可。": [
+    "已打开 Scientify 的卸载程序，按提示完成即可。",
+    "The Scientify uninstaller is open; follow its steps."
+  ],
+  "Scientify 已更名为 Capsio。旧版目录里还有正在用的数据，要卸载旧版，先把数据搬到别处。": [
+    "Scientify 已更名为 Capsio。旧版目录里还有正在用的数据，要卸载旧版，先把数据搬到别处。",
+    "Scientify is now Capsio. Data in use is still in the old folder; move it elsewhere before uninstalling the old app."
+  ],
+  "Scientify 已更名为 Capsio，项目和设置都已接上。": [
+    "Scientify 已更名为 Capsio，项目和设置都已接上。",
+    "Scientify is now Capsio. Your projects and settings came along."
+  ],
+  "卸载旧版": ["卸载旧版", "Uninstall old version"],
+  "旧版 Scientify 还装着，它的目录里有 Capsio 正在用的数据。": [
+    "旧版 Scientify 还装着，它的目录里有 Capsio 正在用的数据。",
+    "The old Scientify is still installed, and its folder holds data Capsio uses."
+  ],
+  "旧版 Scientify 还装着，可以卸载了。": [
+    "旧版 Scientify 还装着，可以卸载了。",
+    "The old Scientify is still installed and can be uninstalled."
+  ],
+  "没有找到旧版 Scientify。": ["没有找到旧版 Scientify。", "The old Scientify was not found."],
+  "Capsio 还在用旧版目录里的数据，请先在“数据与备份”里把数据搬到别处。": [
+    "Capsio 还在用旧版目录里的数据，请先在“数据与备份”里把数据搬到别处。",
+    "Capsio still uses data in the old folder. Move it elsewhere in Data & backup first."
   ]
 }

@@ -41,6 +41,7 @@ vi.mock('../../platform/browser-pane', () => ({
   browserCommand: vi.fn(async () => []),
   browserEvents: async () => () => {},
   browserLayout: async () => {},
+  hideBrowsers: async () => {},
 }));
 afterEach(() => {
   cleanup();

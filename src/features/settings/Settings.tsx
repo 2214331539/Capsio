@@ -28,6 +28,7 @@ import { CollaborationPreferences } from './CollaborationPreferences';
 import { ModelPreferences } from './ModelPreferences';
 import type { ResearchBackend } from '../../platform/research';
 import { UpdatePanel } from '../update/UpdatePanel';
+import { RenamedAppRow } from '../update/RenamedAppRow';
 import { AssistantInstructions } from './AssistantInstructions';
 import { McpServers } from './McpServers';
 import { errorReportsOn, setErrorReports } from '../../platform/error-reports';
@@ -313,6 +314,7 @@ export function SettingsDialog({
             <p>{t('文献、笔记、实验和写作，在一个本地工作区里。')}</p>
             {version ? <span className="settings-version">{version}</span> : null}
             <UpdatePanel />
+            <RenamedAppRow onData={() => setSection('data')} />
           </div>
         </section>
       </div>

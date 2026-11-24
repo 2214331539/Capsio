@@ -2,7 +2,7 @@ import { t } from '../i18n';
 import { Button } from './primitives';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
-import { browserLayout } from '../platform/browser-pane';
+import { hideBrowsers } from '../platform/browser-pane';
 import { easing, motion, reducedMotion, scale } from '../platform/motion';
 
 /** A closing dialog leaves an inert copy in its place that fades out; the real dialog and its
@@ -87,11 +87,9 @@ export function Modal({
       dialog.querySelector<HTMLElement>('[data-autofocus="true"]')?.focus({ preventScroll: true });
     };
     if (isTauri())
-      void browserLayout({ op: 'hideAll' })
-        .catch(() => {})
-        .then(() => {
-          if (active) show();
-        });
+      void hideBrowsers().then(() => {
+        if (active) show();
+      });
     else show();
     return () => {
       active = false;

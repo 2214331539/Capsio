@@ -1,6 +1,5 @@
 use capsio_core::storage_location::{Location, Locator};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{Manager, State};
 
 pub struct DataLocation {
@@ -25,10 +24,6 @@ fn installation_root(exe: &Path) -> Result<PathBuf, String> {
 // The earliest builds kept data in these per-identifier folders; prepare() moves it.
 const EARLIEST: &str = "com.scientify.desktop";
 
-/// Set when this start took over Scientify's data and none of it stayed inside the old
-/// installation, so uninstalling Scientify takes nothing along.
-static OLD_APP_REMOVABLE: AtomicBool = AtomicBool::new(false);
-
 #[cfg(not(target_os = "macos"))]
 pub fn production_locator() -> Result<Locator, String> {
     let installation = installation_root(&std::env::current_exe().map_err(|e| e.to_string())?)?;
@@ -44,13 +39,7 @@ pub fn production_locator() -> Result<Locator, String> {
     let mut previous = vec![installation.clone()];
     previous.extend(installation.parent().map(|parent| parent.join("Scientify")));
     previous.extend(scientify_installation());
-    if let Some(directory) = locator.adopt_renamed(&previous)? {
-        // Uninstalling Scientify is offered only when no old installation keeps data.
-        let kept = previous[1..].iter().any(|old| {
-            directory.starts_with(old) || old.join("ScientifyData").join("workspace").exists()
-        });
-        OLD_APP_REMOVABLE.store(!kept, Ordering::Relaxed);
-    }
+    locator.adopt_renamed(&previous)?;
     Ok(locator)
 }
 
@@ -101,12 +90,7 @@ pub fn production_locator() -> Result<Locator, String> {
         library.join(format!("Caches/{EARLIEST}")),
     );
     // Capsio was called Scientify, whose settings lived in the folder of that name.
-    if locator
-        .adopt_renamed(&[library.join("Application Support/Scientify")])?
-        .is_some()
-    {
-        OLD_APP_REMOVABLE.store(true, Ordering::Relaxed);
-    }
+    locator.adopt_renamed(&[library.join("Application Support/Scientify")])?;
     Ok(locator)
 }
 
@@ -153,10 +137,111 @@ pub fn prepare() -> Result<(PathBuf, DataLocation), String> {
     }
 }
 
-/// True once, on the start that took over Scientify's data, when the old application can go.
+/// Scientify, the name Capsio had before, still installed beside it.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RenamedApp {
+    /// Its folder on Windows, its .app on macOS.
+    path: String,
+    /// Capsio still uses data inside it, so removing it now would take that data along.
+    data_inside: bool,
+}
+
+/// `path` as plain text that compares the way the file system does.
+fn comparable(path: &Path) -> String {
+    let text = path.to_string_lossy().replace('\\', "/");
+    let text = text
+        .strip_prefix("//?/")
+        .unwrap_or(&text)
+        .trim_end_matches('/');
+    if cfg!(windows) {
+        text.to_lowercase()
+    } else {
+        text.to_string()
+    }
+}
+
+fn inside(path: &Path, folder: &Path) -> bool {
+    let (path, folder) = (comparable(path), comparable(folder));
+    path == folder || path.starts_with(&format!("{folder}/"))
+}
+
+#[cfg(windows)]
+fn scientify_app() -> Option<PathBuf> {
+    let installation = installation_root(&std::env::current_exe().ok()?).ok()?;
+    installation
+        .parent()
+        .map(|parent| parent.join("Scientify"))
+        .into_iter()
+        .chain(scientify_installation())
+        .find(|old| old.join("uninstall.exe").is_file() && !inside(old, &installation))
+}
+
+#[cfg(target_os = "macos")]
+fn scientify_app() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    let home = PathBuf::from(std::env::var_os("HOME")?);
+    // An app updated in place keeps the old bundle name but is Capsio inside.
+    [
+        PathBuf::from("/Applications/Scientify.app"),
+        home.join("Applications/Scientify.app"),
+    ]
+    .into_iter()
+    .find(|app| {
+        !inside(&exe, app)
+            && std::fs::read(app.join("Contents/Info.plist"))
+                .is_ok_and(|plist| plist.windows(21).any(|w| w == b"com.scientify.desktop"))
+    })
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
+fn scientify_app() -> Option<PathBuf> {
+    None
+}
+
+fn renamed(container: &Path) -> Option<RenamedApp> {
+    let old = scientify_app()?;
+    Some(RenamedApp {
+        data_inside: inside(container, &old) || old.join("ScientifyData/workspace").exists(),
+        path: old.display().to_string(),
+    })
+}
+
 #[tauri::command]
-pub fn renamed_app_removable() -> bool {
-    OLD_APP_REMOVABLE.swap(false, Ordering::Relaxed)
+pub fn renamed_app(state: State<'_, DataLocation>) -> Option<RenamedApp> {
+    renamed(&state.container)
+}
+
+/// Opens Scientify's own uninstaller on Windows, where the user confirms; on macOS moves its
+/// .app to the Trash. Says which of the two happened.
+#[tauri::command]
+pub fn uninstall_renamed_app(state: State<'_, DataLocation>) -> Result<&'static str, String> {
+    let old = renamed(&state.container).ok_or("没有找到旧版 Scientify。")?;
+    if old.data_inside {
+        return Err("Capsio 还在用旧版目录里的数据，请先在“数据与备份”里把数据搬到别处。".into());
+    }
+    #[cfg(windows)]
+    {
+        std::process::Command::new(Path::new(&old.path).join("uninstall.exe"))
+            .spawn()
+            .map_err(|e| format!("无法打开卸载程序：{e}"))?;
+        Ok("opened")
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let home = PathBuf::from(std::env::var_os("HOME").ok_or("找不到废纸篓。")?);
+        let mut trash = home.join(".Trash/Scientify.app");
+        if trash.exists() {
+            trash = home.join(format!(
+                ".Trash/Scientify {}.app",
+                chrono::Local::now().format("%H.%M.%S")
+            ));
+        }
+        std::fs::rename(&old.path, &trash).map_err(|e| format!("无法移到废纸篓：{e}"))?;
+        Ok("trashed")
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    Err("这个系统上没有旧版可卸载。".into())
 }
 
 #[tauri::command]
@@ -233,4 +318,22 @@ pub fn storage_cancel(state: State<'_, DataLocation>) -> Result<Location, String
 
 pub fn migrate_offline() -> Result<(), String> {
     production_locator()?.prepare().map(|_| ())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::inside;
+    use std::path::Path;
+
+    #[test]
+    fn data_inside_the_old_installation_is_recognised_however_the_path_is_written() {
+        let old = Path::new(r"D:\AAAScientify\Scientify");
+        assert!(inside(
+            Path::new(r"\\?\D:\AAAScientify\Scientify\ScientifyData"),
+            old
+        ));
+        assert!(inside(Path::new(r"D:\AAAScientify\Scientify\"), old));
+        assert!(!inside(Path::new(r"D:\AAAScientify\ScientifyData"), old));
+        assert!(!inside(Path::new(r"D:\AAAScientify\Scientify2\data"), old));
+    }
 }

@@ -304,6 +304,19 @@ section > .settings-section-heading:first-child {
   padding: 56px 0 24px;
   text-align: center;
 }
+/* Scientify, Capsio's old name, still installed (RenamedAppRow). */
+.settings-renamed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: 10px;
+  color: var(--sf-text-secondary);
+  font-size: 12.5px;
+  text-align: left;
+}
 .settings-about .brand-mark,
 .settings-about svg {
   width: 44px;

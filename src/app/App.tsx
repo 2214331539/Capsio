@@ -9,7 +9,7 @@ import { applyAppearance, migrateTheme, usePreferences } from '../i18n/preferenc
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Bot, Cpu, Keyboard, MessageSquarePlus, PanelLeft, Settings, X } from 'lucide-react';
 import { BrandMark } from '../components/layout/BrandMark';
-import { toast } from '../components/feedback';
+import { noticeRenamedApp } from '../features/update/renamed-app';
 import { secondaryViews as secondary } from '../components/navigation/workspaces';
 import { WritingWorkspace } from '../workspaces/writing/WritingWorkspace';
 import { ProjectForm } from '../features/projects/ProjectForm';
@@ -41,7 +41,7 @@ import { nativeLibrary, noteFiles } from '../platform/library';
 import { flushPaperNotes, notesDirty, notesPending } from '../workspaces/literature/local-session';
 import {
   browserCommand,
-  browserLayout,
+  hideBrowsers,
   openBrowserSource,
   type BrowserTab,
 } from '../platform/browser-pane';
@@ -527,14 +527,7 @@ export function App({
   }, [windowMode]);
   useEffect(() => {
     if (!isTauri() || windowMode !== 'main') return;
-    void invoke<boolean>('renamed_app_removable')
-      .then((removable) => {
-        if (removable)
-          toast(t('Scientify 已更名为 Capsio，项目和设置都已接上。旧版 Scientify 可以卸载了。'), {
-            duration: 15000,
-          });
-      })
-      .catch(() => {});
+    void noticeRenamedApp();
   }, [windowMode]);
   useEffect(() => {
     if (data) migrateTheme(data.settings.theme);
@@ -913,7 +906,8 @@ export function App({
   useEffect(() => {
     const open = (event: Event) => {
       const detail = (event as CustomEvent<string>).detail;
-      if (detail === 'account' || detail === 'about') setDialog({ kind: detail });
+      if (detail === 'account' || detail === 'about' || detail === 'data')
+        setDialog({ kind: detail });
     };
     window.addEventListener('capsio-open-settings', open);
     return () => window.removeEventListener('capsio-open-settings', open);
@@ -1103,10 +1097,7 @@ export function App({
   }, [data, windowMode]);
   function openDialog(next: Dialog) {
     store.getState().clearMessage();
-    if (isTauri() && windowMode !== 'browser')
-      void browserLayout({ op: 'hideAll' })
-        .catch(() => {})
-        .then(() => setDialog(next));
+    if (isTauri() && windowMode !== 'browser') void hideBrowsers().then(() => setDialog(next));
     else setDialog(next);
   }
   const ready = phase === 'ready' && data;
