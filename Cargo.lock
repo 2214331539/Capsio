@@ -449,7 +449,7 @@ dependencies = [
 
 [[package]]
 name = "capsio"
-version = "0.6.0-alpha.1"
+version = "0.6.0-alpha.2"
 dependencies = [
  "base64 0.22.1",
  "block2",
@@ -490,7 +490,7 @@ dependencies = [
 
 [[package]]
 name = "capsio-core"
-version = "0.6.0-alpha.1"
+version = "0.6.0-alpha.2"
 dependencies = [
  "atomicwrites",
  "chrono",
