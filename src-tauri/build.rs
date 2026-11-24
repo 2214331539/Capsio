@@ -36,6 +36,7 @@ fn main() {
             "translation_status",
             "translation_open",
             "translation_pdf",
+            "translation_retranslate",
             "note_image",
             "library_external",
             "library_import_bytes",

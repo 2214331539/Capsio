@@ -711,8 +711,10 @@ fn work<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
 
 fn settle<R: tauri::Runtime>(app: &tauri::AppHandle<R>, job: &Job, outcome: Result<(), Failure>) {
     let translator = app.state::<TranslatorState>();
+    let set_aside = replaced(&base(app), &job.fingerprint);
     match outcome {
         Ok(()) => {
+            let _ = std::fs::remove_file(&set_aside);
             if let Ok(mut inner) = translator.inner.lock() {
                 inner.wanted.remove(&job.fingerprint);
             }
@@ -736,6 +738,14 @@ fn settle<R: tauri::Runtime>(app: &tauri::AppHandle<R>, job: &Job, outcome: Resu
             save_local(app, &local);
             if let Ok(mut inner) = translator.inner.lock() {
                 inner.wanted.remove(&job.fingerprint);
+            }
+            // Asked to translate again and it cannot be: the earlier translation comes back.
+            if set_aside.is_file()
+                && !job.target.is_file()
+                && move_file(&set_aside, &job.target).is_ok()
+            {
+                notify(app, job, Status::new("done", 100.0));
+                return;
             }
             notify(app, job, Status::new("waiting", 0.0));
         }
@@ -892,6 +902,16 @@ fn run_engine(
             std::fs::copy(&produced, &partial)
                 .and_then(|_| std::fs::rename(&partial, &job.target))
                 .map_err(|e| format!("无法保存译文：{e}"))?;
+            let left = untranslated(&log);
+            if left > 0 {
+                self::log(
+                    base,
+                    &format!(
+                        "{}: {left} paragraphs still in the original after every pass",
+                        job.fingerprint
+                    ),
+                );
+            }
             let _ = std::fs::remove_dir_all(&work);
             Ok(())
         }
@@ -906,6 +926,17 @@ fn run_engine(
                 .to_string())
         }
     }
+}
+
+/// Paragraphs the finished run had to leave in the original.
+fn untranslated(log: &Path) -> u64 {
+    String::from_utf8_lossy(&std::fs::read(log).unwrap_or_default())
+        .lines()
+        .filter_map(|line| serde_json::from_str::<serde_json::Value>(line.trim()).ok())
+        .filter(|event| event["type"] == "done")
+        .filter_map(|event| event["untranslated"].as_u64())
+        .next_back()
+        .unwrap_or(0)
 }
 
 /// The JSON lines the runner printed so far: the last progress, and the end.
@@ -1009,6 +1040,55 @@ pub async fn translation_open<R: tauri::Runtime>(
             wake(&app);
         }
     }
+    Ok(status(&translator, &target, &fingerprint))
+}
+
+/// Where a translation being redone waits, on this device only, until the new one is done.
+fn replaced(base: &Path, fingerprint: &str) -> PathBuf {
+    base.join("replaced").join(format!("{fingerprint}.pdf"))
+}
+
+fn move_file(from: &Path, to: &Path) -> std::io::Result<()> {
+    if let Some(folder) = to.parent() {
+        std::fs::create_dir_all(folder)?;
+    }
+    // The translations folder may be on another drive than Capsio's data.
+    std::fs::rename(from, to)
+        .or_else(|_| std::fs::copy(from, to).and_then(|_| std::fs::remove_file(from)))
+}
+
+/// Translate a finished paper again, next, for a translation that left paragraphs in the
+/// original. The old one is set aside and comes back if the paper cannot be translated.
+#[tauri::command]
+pub async fn translation_retranslate<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    view: tauri::Webview<R>,
+    project_id: String,
+    paper_id: String,
+) -> Result<Status, String> {
+    trusted(&view)?;
+    crate::collaboration::permissions::require_write(
+        &app.state::<AppState>().storage,
+        &project_id,
+        "library",
+    )?;
+    let (_, target, fingerprint) = paths(&app, &project_id, &paper_id)?;
+    if target.is_file() {
+        move_file(&target, &replaced(&base(&app), &fingerprint))
+            .map_err(|e| format!("无法重新翻译：{e}"))?;
+    }
+    let mut local = load_local(&app);
+    if local.failures.remove(&fingerprint).is_some() {
+        save_local(&app, &local);
+    }
+    let translator = app.state::<TranslatorState>();
+    translator
+        .inner
+        .lock()
+        .map_err(|e| e.to_string())?
+        .wanted
+        .insert(fingerprint.clone());
+    wake(&app);
     Ok(status(&translator, &target, &fingerprint))
 }
 
@@ -1225,5 +1305,13 @@ mod tests {
             read_events(&log).1,
             Some(Ok("C:/w/paper.zh-CN.mono.pdf".into()))
         );
+        assert_eq!(untranslated(&log), 0);
+        std::fs::write(
+            &log,
+            "{\"type\": \"progress\", \"value\": 99.0, \"stage\": \"Retry\"}\n{\"type\": \"done\", \"path\": \"C:/w/p.pdf\", \"untranslated\": 3}\n",
+        )
+        .unwrap();
+        assert_eq!(read_events(&log).1, Some(Ok("C:/w/p.pdf".into())));
+        assert_eq!(untranslated(&log), 3);
     }
 }

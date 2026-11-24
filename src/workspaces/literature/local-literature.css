@@ -354,12 +354,25 @@
 /* The translated PDF beside the paper: it fades in once ready, in place of the progress. */
 .paper-translation-reader {
   display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   animation: sf-fade-in var(--sf-motion-content) var(--sf-ease-enter);
 }
+/* One quiet action above the translation, out of the reader's way. */
+.paper-translation-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 2px 6px;
+  color: var(--sf-text-secondary);
+  font-size: 12px;
+}
 .paper-translation-reader > .pdf-reader {
   flex: 1;
+  min-height: 0;
   width: 100%;
 }
 

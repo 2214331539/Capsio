@@ -4006,5 +4006,9 @@
   "没能让 AI 忘掉要替换的回答，请再试一次。": [
     "没能让 AI 忘掉要替换的回答，请再试一次。",
     "Could not make the AI forget the answer being replaced. Try again."
+  ],
+  "重新翻译这篇论文？会再消耗一些点数。": [
+    "重新翻译这篇论文？会再消耗一些点数。",
+    "Translate this paper again? It uses some points again."
   ]
 }

@@ -27,6 +27,9 @@ export const translator = {
     command<TranslationStatus>('translation_status', { projectId, paperId }),
   open: (projectId: string, paperId: string) =>
     command<TranslationStatus>('translation_open', { projectId, paperId }),
+  /** Translates a finished paper again, next; the old translation returns if that fails. */
+  retranslate: (projectId: string, paperId: string) =>
+    command<TranslationStatus>('translation_retranslate', { projectId, paperId }),
   pdf: async (projectId: string, paperId: string) =>
     new Uint8Array(await command<ArrayBuffer>('translation_pdf', { projectId, paperId })),
   events: (callback: (event: TranslationEvent) => void) =>

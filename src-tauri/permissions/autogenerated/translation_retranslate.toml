@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-translation-retranslate"
+description = "Enables the translation_retranslate command without any pre-configured scope."
+commands.allow = ["translation_retranslate"]
+
+[[permission]]
+identifier = "deny-translation-retranslate"
+description = "Denies the translation_retranslate command without any pre-configured scope."
+commands.deny = ["translation_retranslate"]

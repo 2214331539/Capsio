@@ -389,6 +389,7 @@ pub fn run() {
             translator::translation_status,
             translator::translation_open,
             translator::translation_pdf,
+            translator::translation_retranslate,
             notes::note_image,
             library::library_external,
             library::library_import_bytes,

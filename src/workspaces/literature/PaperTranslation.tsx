@@ -1,4 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { confirmAction } from '../../components/prompts';
+import { Button } from '../../components/primitives';
 import type { WorkContext } from '../../domain/context';
 import { t } from '../../i18n';
 import type { LibraryPaper } from '../../platform/library';
@@ -30,6 +32,7 @@ export function PaperTranslation({
   const paperId = paper?.id ?? '';
   const fingerprint = paper?.fingerprint ?? '';
   const [status, setStatus] = useState<TranslationStatus | null>(null);
+  const [problem, setProblem] = useState('');
   const done = status?.state === 'done';
   useEffect(() => {
     if (!paperId) return;
@@ -61,11 +64,28 @@ export function PaperTranslation({
     () => ({ readPdf: () => engine.pdf(projectId, paperId) }),
     [engine, projectId, paperId],
   );
+  // For a translation that came out incomplete: translated paragraphs come from this
+  // device's cache, so mostly the missing ones are paid for again.
+  async function retranslate() {
+    if (!(await confirmAction(t('重新翻译这篇论文？会再消耗一些点数。')))) return;
+    setProblem('');
+    try {
+      setStatus(await engine.retranslate(projectId, paperId));
+    } catch (reason) {
+      setProblem(reason instanceof Error ? reason.message : String(reason));
+    }
+  }
 
   return (
     <section className="paper-translation" aria-label={t('全文翻译')}>
       {done && paper ? (
         <div className="paper-translation-reader">
+          <div className="paper-translation-bar">
+            {problem ? <span role="alert">{problem}</span> : null}
+            <Button variant="ghost" size="sm" onClick={() => void retranslate()}>
+              {t('重新翻译')}
+            </Button>
+          </div>
           <Suspense fallback={<p className="muted">{t('正在打开阅读器…')}</p>}>
             <PdfReader
               assetId={`translation:${paper.id}:${fingerprint}`}

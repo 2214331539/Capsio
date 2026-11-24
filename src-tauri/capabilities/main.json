@@ -127,6 +127,7 @@
     "allow-translation-status",
     "allow-translation-open",
     "allow-translation-pdf",
+    "allow-translation-retranslate",
     "allow-note-image",
     "allow-library-external",
     "allow-library-import-bytes",
