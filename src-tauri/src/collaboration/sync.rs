@@ -911,22 +911,40 @@ fn apply_action(data: &mut Value, project: &str, action: &RecordAction) -> Resul
 }
 
 /// Apply record changes in one workspace save, retrying if the app saved meanwhile.
-fn apply_records(
+/// `guards[i]` names the record action `i` changes and the hash the scan saw it with
+/// (`None`: there was no such record). A record edited here since then keeps the edit:
+/// its actions are skipped and its key returned, so the change is pulled again.
+fn apply_guarded(
     storage: &Storage,
     project: &str,
     actions: &[RecordAction],
-) -> Result<Value, String> {
+    guards: &[Option<(String, Option<String>)>],
+) -> Result<(Value, BTreeSet<String>), String> {
     for _ in 0..3 {
         let data = storage.load()?.ok_or("工作区尚未载入。")?;
         let revision = data["revision"].as_u64().unwrap_or(0);
+        let current = local_records(&data, project);
+        let edited: BTreeSet<String> = guards
+            .iter()
+            .flatten()
+            .filter(|(item_key, scanned)| {
+                current.get(item_key).map(Item::hash) != scanned.as_deref()
+            })
+            .map(|(item_key, _)| item_key.clone())
+            .collect();
         let mut next = data.clone();
-        for action in actions {
+        for (index, action) in actions.iter().enumerate() {
+            if let Some(Some((item_key, _))) = guards.get(index) {
+                if edited.contains(item_key) {
+                    continue;
+                }
+            }
             apply_action(&mut next, project, action)?;
         }
         next["revision"] = json!(revision + 1);
         next["updatedAt"] = json!(capsio_core::workspace::now());
         match storage.save(next, revision) {
-            Ok(saved) => return Ok(saved),
+            Ok(saved) => return Ok((saved, edited)),
             Err(error) if error.contains("已发生变化") => continue,
             Err(error) => return Err(error),
         }
@@ -1168,8 +1186,15 @@ pub(crate) async fn sync(
     // Pages changed on both sides: this side's bytes, merged after the download.
     let mut doc_merges: Vec<(String, Vec<u8>)> = Vec::new();
     let mut records: Vec<RecordAction> = Vec::new();
-    let mut record_keys: Vec<(String, u64)> = Vec::new();
+    // Per record action: its record and the hash the scan saw (see `apply_guarded`).
+    let mut record_guards: Vec<Option<(String, Option<String>)>> = Vec::new();
+    // Remote record changes to apply: key, revision and change number.
+    let mut record_keys: Vec<(String, u64, u64)> = Vec::new();
     let mut pushes: Vec<(String, u64)> = Vec::new();
+    // Edits kept over a remote change already pulled: if the push does not go through,
+    // that change is pulled again so the next push names the right revision.
+    let mut kept_over: BTreeMap<String, u64> = BTreeMap::new();
+    let conflicts_before = state.conflicts.len();
     let mut deferred_from: Option<u64> = None;
     for item_key in keys {
         let Some((domain, path)) = split_key(&item_key) else {
@@ -1199,7 +1224,9 @@ pub(crate) async fn sync(
             }
             Plan::KeepLocal => {
                 if can_push(domain) {
-                    pushes.push((item_key.clone(), remote_revision(newer.unwrap())));
+                    let entity = newer.unwrap();
+                    pushes.push((item_key.clone(), remote_revision(entity)));
+                    kept_over.insert(item_key.clone(), entity["changeSeq"].as_u64().unwrap_or(1));
                 }
             }
             Plan::Adopt => {
@@ -1276,6 +1303,7 @@ pub(crate) async fn sync(
                     downloads.push((item_key.clone(), entity));
                 } else {
                     let revision = remote_revision(&entity);
+                    let guard = Some((item_key.clone(), here.map(|item| item.hash().to_string())));
                     if conflict {
                         let mut copy_id = String::new();
                         let local_snapshot = match here {
@@ -1291,6 +1319,7 @@ pub(crate) async fn sync(
                                 domain,
                                 content: copy,
                             });
+                            record_guards.push(guard.clone());
                         }
                         state.conflicts.push(Conflict {
                             domain: domain.name().into(),
@@ -1312,7 +1341,12 @@ pub(crate) async fn sync(
                             content: entity["content"].clone(),
                         },
                     });
-                    record_keys.push((item_key.clone(), revision));
+                    record_guards.push(guard);
+                    record_keys.push((
+                        item_key.clone(),
+                        revision,
+                        entity["changeSeq"].as_u64().unwrap_or(1),
+                    ));
                 }
             }
         }
@@ -1385,7 +1419,7 @@ pub(crate) async fn sync(
         let file = target(&roots[&Domain::Doc], path);
         let merged = match fs::read(&file) {
             // Deleted elsewhere: an edit made here wins over the deletion.
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Some((mine, 0)),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Some((mine.clone(), 0)),
             Err(_) => None,
             Ok(theirs) => match (
                 serde_json::from_slice::<Value>(&mine),
@@ -1399,13 +1433,27 @@ pub(crate) async fn sync(
                         .ok()
                         .map(|bytes| (bytes, conflicts))
                 }
+                // The server's copy is not a readable page; the one made here stays.
+                (Ok(_), Err(_)) => Some((mine.clone(), 0)),
                 _ => None,
             },
         };
         let Some((bytes, _conflicts)) = merged else {
-            outcome
-                .errors
-                .push(format!("{path}：文档合并失败，保留了服务端版本。"));
+            // This side's version is kept beside the sync data, so nothing typed here is lost.
+            let folder = doc_conflict_dir(device.data(), project);
+            let kept =
+                folder.join(conflict_name(path, &device.device_id, &stamp).replace('/', "_"));
+            outcome.errors.push(
+                match fs::create_dir_all(&folder).and_then(|_| fs::write(&kept, &mine)) {
+                    Ok(()) => format!(
+                        "{path}：文档合并失败，保留了服务端版本；本机版本另存在 {}。",
+                        kept.display()
+                    ),
+                    Err(error) => {
+                        format!("{path}：文档合并失败，保留了服务端版本；本机版本另存失败：{error}")
+                    }
+                },
+            );
             continue;
         };
         match write_file(&file, &bytes) {
@@ -1430,10 +1478,17 @@ pub(crate) async fn sync(
 
     // 5. Apply remote record changes in one save.
     if !records.is_empty() {
-        match apply_records(device.storage, project, &records) {
-            Ok(saved) => {
+        match apply_guarded(device.storage, project, &records, &record_guards) {
+            Ok((saved, edited)) => {
                 let now = local_records(&saved, project);
-                for (item_key, revision) in record_keys {
+                for (item_key, revision, seq) in record_keys {
+                    // Edited here during the sync: the edit stays, and the remote change is
+                    // pulled again and decided afresh next time.
+                    if edited.contains(&item_key) {
+                        outcome.deferred += 1;
+                        deferred_from = Some(deferred_from.map_or(seq, |current| current.min(seq)));
+                        continue;
+                    }
                     let entry = now.get(&item_key).map_or(
                         Entry {
                             revision,
@@ -1445,6 +1500,20 @@ pub(crate) async fn sync(
                     outcome.changed.insert(domain.name());
                     state.entries.insert(item_key, entry);
                     outcome.applied += 1;
+                }
+                // Conflicts noted this round for those records did not happen.
+                if !edited.is_empty() {
+                    let before = state.conflicts.len();
+                    let mut index = 0;
+                    state.conflicts.retain(|conflict| {
+                        index += 1;
+                        index <= conflicts_before
+                            || !Domain::parse(&conflict.domain)
+                                .is_some_and(|domain| edited.contains(&key(domain, &conflict.path)))
+                    });
+                    outcome.conflicts = outcome
+                        .conflicts
+                        .saturating_sub(before - state.conflicts.len());
                 }
                 // Conflict copies are new records; push them with the rest.
                 for (item_key, item) in &now {
@@ -1468,8 +1537,13 @@ pub(crate) async fn sync(
     let mut changes: Vec<(String, Value, Option<Item>)> = Vec::new();
     for (item_key, base_revision) in pushes {
         let (domain, path) = split_key(&item_key).unwrap();
-        let item = local.get(&item_key).cloned();
-        let change = match &item {
+        let mut item = local.get(&item_key).cloned();
+        let retry = |from: &mut Option<u64>| {
+            if let Some(&seq) = kept_over.get(&item_key) {
+                *from = Some(from.map_or(seq, |current| current.min(seq)));
+            }
+        };
+        let change = match &mut item {
             None => {
                 json!({"domain": domain.name(), "path": path, "baseRevision": base_revision, "deleted": true})
             }
@@ -1483,13 +1557,17 @@ pub(crate) async fn sync(
                 size,
                 ..
             }) => {
-                let bytes = match fs::read(file) {
+                let bytes = match fs::read(&*file) {
                     Ok(bytes) => bytes,
                     Err(error) => {
                         outcome.errors.push(format!("{path}：{error}"));
+                        retry(&mut deferred_from);
                         continue;
                     }
                 };
+                // Describe the bytes that are sent, even if the file changed since the scan.
+                *hash = format!("{:x}", Sha256::digest(&bytes));
+                *size = bytes.len() as u64;
                 match remote
                     .upload(project, bytes, super::content_type_for_path(path))
                     .await
@@ -1500,6 +1578,7 @@ pub(crate) async fn sync(
                     }),
                     Err(error) => {
                         outcome.errors.push(format!("{path}：{error}"));
+                        retry(&mut deferred_from);
                         continue;
                     }
                 }
@@ -1544,6 +1623,15 @@ pub(crate) async fn sync(
             outcome.pushed += 1;
         }
         for rejected in result["rejected"].as_array().into_iter().flatten() {
+            // An edit kept over a pulled change needs that change again to be pushed right.
+            let kept = rejected["domain"]
+                .as_str()
+                .and_then(Domain::parse)
+                .zip(rejected["path"].as_str())
+                .and_then(|(domain, path)| kept_over.get(&key(domain, path)));
+            if let Some(&seq) = kept {
+                deferred_from = Some(deferred_from.map_or(seq, |current| current.min(seq)));
+            }
             // A conflict means someone pushed first; the next sync merges it.
             if rejected["conflict"] != true {
                 outcome.errors.push(format!(
@@ -1584,6 +1672,12 @@ pub(crate) async fn sync(
 // The last version of each page this device agreed on with the server, for three-way merges.
 fn doc_base_dir(data: &Path, project: &str) -> PathBuf {
     data.join("collaboration").join("doc-base").join(project)
+}
+/// This device's version of a page that could not be merged, outside the synced folders.
+fn doc_conflict_dir(data: &Path, project: &str) -> PathBuf {
+    data.join("collaboration")
+        .join("doc-conflicts")
+        .join(project)
 }
 fn doc_base(data: &Path, project: &str, path: &str) -> Option<Value> {
     if !valid_path(path) || path.contains('/') {
@@ -2200,6 +2294,43 @@ mod tests {
         .unwrap();
         assert_eq!(data["projects"][0]["manuscripts"], json!([]));
         assert!(data["projects"][0].get("question").is_none());
+    }
+
+    #[test]
+    fn a_record_edited_since_the_scan_keeps_the_edit() {
+        let machine = Machine::new("device-a", "owner");
+        machine.edit(|data| data["records"] = json!([note("n1", "Plan", "first")]));
+        let item_key = key(Domain::Record, "n1");
+        let hash_now = || {
+            local_records(&machine.storage.load().unwrap().unwrap(), PROJECT)[&item_key]
+                .hash()
+                .to_string()
+        };
+        let scanned = hash_now();
+        machine.edit(|data| data["records"][0]["body"] = json!("typed meanwhile"));
+        let incoming = [RecordAction::Put {
+            domain: Domain::Record,
+            id: "n1".into(),
+            content: note("n1", "Plan", "from the server"),
+        }];
+        let (_, edited) = apply_guarded(
+            &machine.storage,
+            PROJECT,
+            &incoming,
+            &[Some((item_key.clone(), Some(scanned)))],
+        )
+        .unwrap();
+        assert!(edited.contains(&item_key));
+        assert_eq!(machine.records()[0]["body"], "typed meanwhile");
+        let (_, edited) = apply_guarded(
+            &machine.storage,
+            PROJECT,
+            &incoming,
+            &[Some((item_key.clone(), Some(hash_now())))],
+        )
+        .unwrap();
+        assert!(edited.is_empty());
+        assert_eq!(machine.records()[0]["body"], "from the server");
     }
 
     #[test]

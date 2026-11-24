@@ -154,7 +154,39 @@ fn digest(path: &Path) -> Result<Vec<u8>, String> {
     Ok(hash.finalize().to_vec())
 }
 
-fn copy_verified(source: &Path, target: &Path) -> Result<(), String> {
+/// A link inside the data that copying cannot carry: any on Windows (directory junctions
+/// such as pnpm's), none elsewhere, where links are recreated.
+#[cfg(windows)]
+fn uncopyable_link(root: &Path) -> Result<Option<PathBuf>, String> {
+    use std::os::windows::fs::MetadataExt;
+    let mut pending = vec![root.to_path_buf()];
+    while let Some(dir) = pending.pop() {
+        if !dir.is_dir() {
+            continue;
+        }
+        for entry in fs::read_dir(&dir).map_err(err)? {
+            let entry = entry.map_err(err)?;
+            let meta = fs::symlink_metadata(entry.path()).map_err(err)?;
+            if meta.file_type().is_symlink() || meta.file_attributes() & 0x400 != 0 {
+                return Ok(Some(entry.path()));
+            }
+            if meta.is_dir() {
+                pending.push(entry.path());
+            }
+        }
+    }
+    Ok(None)
+}
+#[cfg(not(windows))]
+fn uncopyable_link(_root: &Path) -> Result<Option<PathBuf>, String> {
+    Ok(None)
+}
+
+fn copy_verified(
+    source: &Path,
+    target: &Path,
+    mappings: &[(PathBuf, PathBuf)],
+) -> Result<(), String> {
     regular(source)?;
     if source.is_dir() {
         fs::create_dir_all(target).map_err(err)?;
@@ -166,7 +198,18 @@ fn copy_verified(source: &Path, target: &Path) -> Result<(), String> {
             {
                 continue;
             }
-            copy_verified(&entry.path(), &target.join(entry.file_name()))?;
+            // A link (a virtual environment's interpreter) moves as a link; one that
+            // pointed into the old folder points into the new one.
+            #[cfg(unix)]
+            if entry.file_type().map_err(err)?.is_symlink() {
+                let link = fs::read_link(entry.path()).map_err(err)?;
+                let link = relocate_path(&link.to_string_lossy(), mappings)
+                    .map(PathBuf::from)
+                    .unwrap_or(link);
+                std::os::unix::fs::symlink(link, target.join(entry.file_name())).map_err(err)?;
+                continue;
+            }
+            copy_verified(&entry.path(), &target.join(entry.file_name()), mappings)?;
         }
     } else {
         fs::create_dir_all(target.parent().ok_or("目标路径无效")?).map_err(err)?;
@@ -284,6 +327,18 @@ fn rewrite_json(path: &Path, mappings: &[(PathBuf, PathBuf)]) -> Result<(), Stri
     Ok(())
 }
 
+/// The same for files the application can do without (backups, saved bindings): one
+/// that does not parse moves unchanged instead of stopping the move.
+fn rewrite_json_if_readable(path: &Path, mappings: &[(PathBuf, PathBuf)]) -> Result<(), String> {
+    let Ok(mut value) = serde_json::from_slice::<Value>(&fs::read(path).map_err(err)?) else {
+        return Ok(());
+    };
+    if relocate_json(&mut value, mappings) {
+        write_json(path, &value)?;
+    }
+    Ok(())
+}
+
 fn visit(path: &Path, action: &mut impl FnMut(&Path) -> Result<(), String>) -> Result<(), String> {
     if !path.exists() {
         return Ok(());
@@ -311,16 +366,22 @@ fn rewrite_owned_metadata(root: &Path, mappings: &[(PathBuf, PathBuf)]) -> Resul
             })
         {
             if p.file_name().is_some_and(|n| n == "literature-roots.json") {
-                let mut roots: BTreeMap<String, String> =
-                    serde_json::from_slice(&fs::read(&p).map_err(err)?).map_err(err)?;
+                let Ok(mut roots) =
+                    serde_json::from_slice::<BTreeMap<String, String>>(&fs::read(&p).map_err(err)?)
+                else {
+                    continue;
+                };
                 for root in roots.values_mut() {
                     if let Some(next) = relocate_path(root, mappings) {
                         *root = next;
                     }
                 }
                 write_json(&p, &roots)?;
-            } else {
+            } else if p.file_name().is_some_and(|n| n == "workspace.json") {
                 rewrite_json(&p, mappings)?;
+            } else {
+                // Backups, including the ones kept of a workspace file that could not be read.
+                rewrite_json_if_readable(&p, mappings)?;
             }
         }
     }
@@ -331,7 +392,7 @@ fn rewrite_owned_metadata(root: &Path, mappings: &[(PathBuf, PathBuf)]) -> Resul
                     || p.file_name()
                         .is_some_and(|n| n == "record.json" || n == "request.json"))
             {
-                rewrite_json(p, mappings)?;
+                rewrite_json_if_readable(p, mappings)?;
             }
             Ok(())
         })?;
@@ -345,7 +406,11 @@ fn rewrite_owned_metadata(root: &Path, mappings: &[(PathBuf, PathBuf)]) -> Resul
                     let mut changed = false;
                     let mut lines = Vec::new();
                     for line in original.lines() {
-                        let mut value: Value = serde_json::from_str(line).map_err(err)?;
+                        // A line cut short by a crash moves as it is.
+                        let Ok(mut value) = serde_json::from_str::<Value>(line) else {
+                            lines.push(line.to_string());
+                            continue;
+                        };
                         if matches!(
                             value["type"].as_str(),
                             Some("session_meta" | "turn_context")
@@ -474,6 +539,13 @@ impl Locator {
         let target = normalized(target)?;
         let active = normalized(active)?;
         reject_linked_worktrees(&active)?;
+        // Found now rather than at the next start, when the copy would stop on it.
+        if let Some(link) = uncopyable_link(&active)? {
+            return Err(format!(
+                "数据文件夹里有目录联接或符号链接，暂时不能迁移：{}。请先删除它（例如项目里的 node_modules，之后可以重新安装），再迁移。",
+                simplified(&link).display()
+            ));
+        }
         let installation = fs::canonicalize(&self.installation).map_err(err)?;
         if target.starts_with(&active)
             || active.starts_with(&target)
@@ -512,6 +584,16 @@ impl Locator {
         write_json(&self.config(), &location)?;
         Ok(location)
     }
+    /// A scheduled move that failed would fail the same way on every start: drop it, so
+    /// the next start uses the data where it is, and say so.
+    fn give_up(&self, error: &str, copy: &str) -> String {
+        match self.cancel() {
+            Ok(_) => format!(
+                "数据迁移没有完成：{error}\n已取消这次迁移，原来的数据没有改动，下次打开 Capsio 会照常使用原来的位置。{copy}"
+            ),
+            Err(_) => format!("{error} 原数据未删除。{copy}"),
+        }
+    }
     pub fn cancel(&self) -> Result<Location, String> {
         let mut location = self.location()?;
         location.pending = None;
@@ -541,7 +623,13 @@ impl Locator {
             } else {
                 &source
             })?;
-            empty(&target)?;
+            if let Err(error) = empty(&target) {
+                return Err(if first {
+                    error
+                } else {
+                    self.give_up(&error, "")
+                });
+            }
             // Holding Storage's lock rejects a running old application before copying.
             let old_work = if first {
                 self.previous_roaming.join("workspace")
@@ -579,10 +667,15 @@ impl Locator {
             } else {
                 vec![(source.clone(), target.clone())]
             };
+            let mut moved = false;
             let result = (|| {
                 for (old, new) in &sources {
                     if old.exists() {
-                        copy_verified(old, &staging.join(new.strip_prefix(&target).map_err(err)?))?;
+                        copy_verified(
+                            old,
+                            &staging.join(new.strip_prefix(&target).map_err(err)?),
+                            &mappings,
+                        )?;
                     }
                 }
                 rewrite_owned_metadata(&staging, &mappings)?;
@@ -593,17 +686,27 @@ impl Locator {
                 )?;
                 fs::remove_dir(&target).map_err(err)?;
                 fs::rename(&staging, &target).map_err(err)?;
-                location.directory = target;
+                moved = true;
+                location.directory = target.clone();
                 location.pending = None;
                 location.cleanup = sources.into_iter().map(|(p, _)| p).collect();
                 // If this fails, the source remains authoritative; keep the verified target for recovery.
                 write_json(&self.config(), &location)
             })();
             if let Err(error) = result {
-                return Err(format!(
-                    "{error} 原数据未删除；迁移副本：{}",
-                    staging.display()
-                ));
+                if first {
+                    return Err(format!(
+                        "{error} 原数据未删除；迁移副本：{}",
+                        staging.display()
+                    ));
+                }
+                let copy = if moved {
+                    format!("复制好的数据留在：{}。", simplified(&target).display())
+                } else {
+                    let _ = fs::remove_dir_all(&staging);
+                    String::new()
+                };
+                return Err(self.give_up(&error, &copy));
             }
             drop(_source_lock);
         } else {
@@ -878,6 +981,94 @@ mod tests {
         assert!(locator.prepare().is_err());
         assert!(!locator.config().exists());
         assert_eq!(fs::read(source.join("workspace.json")).unwrap(), b"corrupt");
+    }
+
+    #[test]
+    fn a_failed_move_is_given_up_and_the_next_start_uses_the_data_in_place() {
+        let (dir, locator) = fixture();
+        let original = locator.prepare().unwrap();
+        let target = dir.path().join("elsewhere");
+        locator.schedule(&original.directory, &target).unwrap();
+        fs::write(
+            original.directory.join("workspace/workspace.json"),
+            b"corrupt",
+        )
+        .unwrap();
+        let error = locator.prepare().unwrap_err();
+        assert!(error.contains("已取消这次迁移"), "{error}");
+        assert!(locator.location().unwrap().pending.is_none());
+        let leftovers: Vec<_> = fs::read_dir(dir.path())
+            .unwrap()
+            .flatten()
+            .filter(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".scientify-move-")
+            })
+            .collect();
+        assert!(leftovers.is_empty());
+        fs::write(original.directory.join("workspace/workspace.json"), b"{}").unwrap();
+        let next = locator.prepare().unwrap();
+        assert_eq!(next.directory, original.directory);
+    }
+
+    #[test]
+    fn damaged_backups_and_cut_short_history_lines_move_unchanged() {
+        let (dir, locator) = fixture();
+        let original = locator.prepare().unwrap();
+        let work = original.directory.join("workspace");
+        write_json(&work.join("workspace.json"), &crate::workspace::empty()).unwrap();
+        fs::write(work.join("workspace-unreadable-1.json"), b"{not json").unwrap();
+        let sessions = work.join("agent/code/sessions");
+        fs::create_dir_all(&sessions).unwrap();
+        let meta =
+            serde_json::json!({"type":"session_meta","payload":{"cwd":work.join("projects/p1")}});
+        fs::write(
+            sessions.join("s.jsonl"),
+            format!("{meta}\n{{\"type\":\"respon"),
+        )
+        .unwrap();
+        let target = dir.path().join("moved");
+        locator.schedule(&original.directory, &target).unwrap();
+        let next = locator.prepare().unwrap();
+        let moved = next.directory.join("workspace");
+        assert_eq!(
+            fs::read(moved.join("workspace-unreadable-1.json")).unwrap(),
+            b"{not json"
+        );
+        let history = fs::read_to_string(moved.join("agent/code/sessions/s.jsonl")).unwrap();
+        assert!(history.contains(&*serde_json::to_string(&moved.join("projects/p1")).unwrap()));
+        assert!(history.ends_with("{\"type\":\"respon\n"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn links_move_as_links_and_follow_the_data() {
+        let (dir, locator) = fixture();
+        let original = locator.prepare().unwrap();
+        let env = original.directory.join("workspace/projects/p1/.venv/bin");
+        fs::create_dir_all(&env).unwrap();
+        fs::write(original.directory.join("workspace/python3"), b"interpreter").unwrap();
+        std::os::unix::fs::symlink(
+            original.directory.join("workspace/python3"),
+            env.join("python"),
+        )
+        .unwrap();
+        std::os::unix::fs::symlink("python", env.join("python3")).unwrap();
+        let target = dir.path().join("moved");
+        locator.schedule(&original.directory, &target).unwrap();
+        let next = locator.prepare().unwrap();
+        let moved = next.directory.join("workspace/projects/p1/.venv/bin");
+        assert_eq!(
+            fs::read_link(moved.join("python")).unwrap(),
+            next.directory.join("workspace/python3")
+        );
+        assert_eq!(
+            fs::read_link(moved.join("python3")).unwrap(),
+            PathBuf::from("python")
+        );
+        assert_eq!(fs::read(moved.join("python3")).unwrap(), b"interpreter");
     }
 
     #[test]
