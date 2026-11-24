@@ -295,11 +295,22 @@ pub(crate) struct Page {
     has_more: bool,
 }
 
+/// For file content to and from OSS. Files run to 200 MiB, so there is no limit on the whole
+/// transfer, only on a connection that never opens or goes quiet: a stalled one would keep
+/// the project "syncing" until the app restarts.
+pub(crate) fn transfer_client() -> Result<reqwest::Client, String> {
+    reqwest::Client::builder()
+        .connect_timeout(std::time::Duration::from_secs(15))
+        .read_timeout(std::time::Duration::from_secs(60))
+        .build()
+        .map_err(|error| error.to_string())
+}
+
 /// Puts file content at a presigned OSS address. OSS refuses an upload without Content-Length
 /// (HTTP 411), and an empty body goes out without one unless it is set: empty files such as a
 /// new train.py.
 async fn put_blob(url: &str, bytes: Vec<u8>, content_type: &str) -> Result<(), String> {
-    let response = reqwest::Client::new()
+    let response = transfer_client()?
         .put(url)
         .header("content-type", content_type)
         .header(reqwest::header::CONTENT_LENGTH, bytes.len())
@@ -329,7 +340,9 @@ static SERVER_DOMAINS: std::sync::Mutex<BTreeMap<String, Vec<String>>> =
 
 impl Remote<'_> {
     /// Whether the server takes this sync type (`syncDomains` in `/v1/client-policy`).
-    async fn supports(&self, domain: &str) -> bool {
+    /// Not knowing is an error: taken as "no", the folders of that type would be left out of
+    /// this round while their earlier entries remain, and look deleted on this device.
+    async fn supports(&self, domain: &str) -> Result<bool, String> {
         match self {
             Remote::Http { endpoint, .. } => {
                 let known = SERVER_DOMAINS
@@ -339,7 +352,7 @@ impl Remote<'_> {
                 let domains = match known {
                     Some(domains) => domains,
                     None => {
-                        let Ok(policy) = super::request_json(
+                        let policy = super::request_json(
                             endpoint,
                             "/client-policy",
                             reqwest::Method::GET,
@@ -347,9 +360,7 @@ impl Remote<'_> {
                             None,
                         )
                         .await
-                        else {
-                            return false;
-                        };
+                        .map_err(|e| format!("无法确认同步服务支持哪些内容：{e}"))?;
                         let domains: Vec<String> = policy["syncDomains"]
                             .as_array()
                             .into_iter()
@@ -362,10 +373,10 @@ impl Remote<'_> {
                         domains
                     }
                 };
-                domains.iter().any(|d| d == domain)
+                Ok(domains.iter().any(|d| d == domain))
             }
             #[cfg(test)]
-            Remote::Memory(_) => true,
+            Remote::Memory(_) => Ok(true),
         }
     }
     async fn pull(&self, project: &str, since: u64) -> Result<Page, String> {
@@ -1088,7 +1099,7 @@ pub(crate) async fn sync(
     );
     roots.insert(Domain::Doc, crate::docs::folder(device.data(), project)?);
     // Older servers know neither; until they do, these folders stay on this device.
-    if remote.supports("writing").await {
+    if remote.supports("writing").await? {
         roots.insert(
             Domain::Writing,
             crate::research::writing_root(device.storage, device.files, project)?,
@@ -1112,6 +1123,11 @@ pub(crate) async fn sync(
             ) else {
                 continue;
             };
+            // The server checks paths too; a file must never land outside its folder even if
+            // what comes back is not what that server would send.
+            if domain.is_file() && !valid_path(path) {
+                continue;
+            }
             remote_items.insert(key(domain, path), entity);
         }
         if page.next_since <= cursor && page.has_more {
@@ -1136,10 +1152,15 @@ pub(crate) async fn sync(
         .is_some_and(|root| crate::code::busy(root));
 
     // 3. Decide per item.
+    // Files of a type with no folder this round are left alone: their earlier entries would
+    // otherwise read as deleted here, and a download would have nowhere to go.
     let keys: BTreeSet<String> = local
         .keys()
         .chain(remote_items.keys())
         .chain(state.entries.keys())
+        .filter(|key| {
+            !matches!(split_key(key), Some((domain, _)) if domain.is_file() && !roots.contains_key(&domain))
+        })
         .cloned()
         .collect();
     let stamp = chrono::Utc::now().format("%Y%m%d-%H%M%S-%f").to_string();

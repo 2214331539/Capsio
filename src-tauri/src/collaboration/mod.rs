@@ -299,7 +299,9 @@ async fn download_blob(state: &AppState, endpoint: &str, blob_id: &str) -> Resul
     let url = response["downloadUrl"]
         .as_str()
         .ok_or("服务器没有返回 OSS 下载地址。")?;
-    let response = reqwest::get(url)
+    let response = sync::transfer_client()?
+        .get(url)
+        .send()
         .await
         .map_err(|error| format!("OSS 下载失败：{error}"))?;
     if !response.status().is_success() {

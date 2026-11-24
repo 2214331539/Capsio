@@ -302,7 +302,7 @@ pub(crate) fn readable(html: &str, base: &str) -> Page {
     let mut out = String::new();
     let mut links = Vec::new();
     let base = tauri::Url::parse(base).ok();
-    walk(root, &mut out, &mut links, base.as_ref());
+    walk(root, &mut out, &mut links, base.as_ref(), 0);
     let mut lines: Vec<String> = Vec::new();
     for line in out.lines() {
         let line = line.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -319,9 +319,23 @@ pub(crate) fn readable(html: &str, base: &str) -> Page {
     }
 }
 
-fn walk(element: ElementRef, out: &mut String, links: &mut Vec<Value>, base: Option<&tauri::Url>) {
+/// Pages nested deeper than this keep their text but lose structure, so a hostile
+/// page cannot overflow the stack.
+const MAX_DEPTH: usize = 256;
+
+fn walk(
+    element: ElementRef,
+    out: &mut String,
+    links: &mut Vec<Value>,
+    base: Option<&tauri::Url>,
+    depth: usize,
+) {
     let name = element.value().name();
     if SKIP.contains(&name) || element.value().attr("aria-hidden") == Some("true") {
+        return;
+    }
+    if depth >= MAX_DEPTH {
+        out.extend(element.text());
         return;
     }
     let block = BLOCK.contains(&name);
@@ -355,7 +369,7 @@ fn walk(element: ElementRef, out: &mut String, links: &mut Vec<Value>, base: Opt
             Node::Text(text) => out.push_str(text),
             Node::Element(_) => {
                 if let Some(child) = ElementRef::wrap(child) {
-                    walk(child, out, links, base);
+                    walk(child, out, links, base, depth + 1);
                 }
             }
             _ => {}

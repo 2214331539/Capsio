@@ -62,18 +62,29 @@ impl Scratch {
         }
         reject_links(&base)?;
         let base = base.canonicalize().map_err(|e| e.to_string())?;
-        for project in std::fs::read_dir(&base).map_err(|e| e.to_string())? {
-            let project = project.map_err(|e| e.to_string())?.path();
+        // One folder that cannot be read or removed must not keep the rest around.
+        let mut failure = None;
+        for project in std::fs::read_dir(&base)
+            .map_err(|e| e.to_string())?
+            .flatten()
+        {
+            let project = project.path();
             if reject_links(&project).is_err() || !project.is_dir() {
                 continue;
             }
-            for conversation in std::fs::read_dir(project).map_err(|e| e.to_string())? {
-                let conversation = conversation.map_err(|e| e.to_string())?.path();
+            let Ok(conversations) = std::fs::read_dir(project) else {
+                continue;
+            };
+            for conversation in conversations.flatten() {
+                let conversation = conversation.path();
                 if reject_links(&conversation).is_err() || !conversation.is_dir() {
                     continue;
                 }
-                for task in std::fs::read_dir(conversation).map_err(|e| e.to_string())? {
-                    let task = task.map_err(|e| e.to_string())?.path();
+                let Ok(tasks) = std::fs::read_dir(conversation) else {
+                    continue;
+                };
+                for task in tasks.flatten() {
+                    let task = task.path();
                     if reject_links(&task).is_err()
                         || !task.is_dir()
                         || !task.join(".scientify-scratch").is_file()
@@ -83,20 +94,24 @@ impl Scratch {
                     if reject_links(&task.join(".scientify-scratch")).is_err() {
                         continue;
                     }
-                    let modified = std::fs::metadata(task.join(".scientify-scratch"))
+                    let Ok(modified) = std::fs::metadata(task.join(".scientify-scratch"))
                         .and_then(|m| m.modified())
-                        .map_err(|e| e.to_string())?;
+                    else {
+                        continue;
+                    };
                     if SystemTime::now()
                         .duration_since(modified)
                         .unwrap_or_default()
                         > Duration::from_secs(24 * 3600)
                     {
-                        Self::remove(&base, &task)?;
+                        if let Err(error) = Self::remove(&base, &task) {
+                            failure.get_or_insert(error);
+                        }
                     }
                 }
             }
         }
-        Ok(())
+        failure.map_or(Ok(()), Err)
     }
 }
 impl Drop for Scratch {

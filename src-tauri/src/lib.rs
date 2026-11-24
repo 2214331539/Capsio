@@ -280,9 +280,12 @@ pub fn run() {
                 yita::stop(window.app_handle());
             }
             // Projects open inside the main window; closing it takes its browser tabs,
-            // terminals and Python checks with it.
+            // terminals, Python checks and AI engines with it.
             if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
                 browser::close_owner(window.app_handle(), window.label());
+                if let Some(agent) = window.app_handle().try_state::<agent::AgentState>() {
+                    agent.close_all();
+                }
                 if let Some(terminal) = window
                     .app_handle()
                     .try_state::<experiments::terminal::TerminalState>()

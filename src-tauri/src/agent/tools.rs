@@ -38,7 +38,7 @@ pub fn instructions(
     }
     if domain == "code" && managed_runs {
         text.push_str("Python 任务先读取 capsio_list_runs 返回的 pythonEnvironment；正式运行的 executable=python 使用实验当前选择的解释器。解释器变化只影响新启动的运行，已有进程保持原环境。");
-        text.push_str("在本机跑实验的训练、评估、测试，优先用 capsio_start_run（正式运行）：有独立 run ID、日志和结果记录，用户在实验页能看到。先保存代码到磁盘。capsio_list_runs 返回已保存配置和正式运行；capsio_run_status 返回实时状态、日志、结果文件，可等待至多 5 秒。用 capsio_read_result 读取结果，再基于真实结果解释，不能编造指标。CAPSIO_RUN_DIR 环境变量指向本次结果目录，把指标 JSON 和结果写入那里。运行有独立 run ID，聊天结束不会停止它。较长运行可告知用户 run ID，之后查询；用户要求停止实验时使用 capsio_stop_run。正式运行只写绑定代码目录和本次结果目录，网络关闭，不自动提权。");
+        text.push_str("在本机跑实验的训练、评估、测试，优先用 capsio_start_run（正式运行）：有独立 run ID、日志和结果记录，用户在实验页能看到。先保存代码到磁盘。capsio_list_runs 返回已保存配置和正式运行；capsio_run_status 返回实时状态、日志、结果文件，可等待至多 5 秒。用 capsio_read_result 读取结果，再基于真实结果解释，不能编造指标。CAPSIO_RUN_DIR 环境变量指向本次结果目录，把指标 JSON 和结果写入那里。运行有独立 run ID，聊天结束不会停止它。较长运行可告知用户 run ID，之后查询；用户要求停止实验时使用 capsio_stop_run。正式运行只写绑定代码目录和本次结果目录，可以联网，不自动提权；只读模式下不能启动。");
         text.push_str("正式运行只管本机。用户要在远程服务器（SSH、云主机、集群）上跑实验，或者需要联网下载数据和依赖时，直接用你的命令工具（ssh、scp、rsync、tmux、nohup 等），按当前权限执行：询问模式下由用户在聊天里批准，完全允许模式直接执行；不要以必须用正式运行为由拒绝。远程长任务放进 tmux 或 nohup，日志写到文件，告诉用户怎么查看；之后用 ssh 读日志和结果文件，基于真实输出汇报。中止聊天和停止实验是两件事。");
     }
     if domain == "code" && git_tools {
@@ -57,7 +57,7 @@ pub fn specifications() -> Value {
         "inputSchema":{"type":"object","properties":properties,"required":required,"additionalProperties":false}})
     };
     json!([
-        tool("capsio_start_run", "Start a managed local experiment in this conversation's code workspace. Returns a persistent run ID immediately. Uses saved files, workspace sandbox, no network; writes outputs to CAPSIO_RUN_DIR. Repeated delivery of this call is idempotent.",
+        tool("capsio_start_run", "Start a managed local experiment in this conversation's code workspace. Returns a persistent run ID immediately. Uses saved files and the workspace sandbox, with network access; unavailable in read-only conversations. Writes outputs to CAPSIO_RUN_DIR. Repeated delivery of this call is idempotent.",
             json!({"name":{"type":"string"},"executable":{"type":"string"},"args":{"type":"array","items":{"type":"string"}},"cwd":{"type":"string","description":"Relative working directory, or ."}}), vec!["name","executable","args","cwd"]),
         tool("capsio_list_runs", "List this workspace's managed runs and saved run configurations.", json!({}), vec![]),
         tool("capsio_run_status", "Read this workspace's run status, log tail, result files and metrics.json if present. Optionally wait 0 to 5 seconds. A running run has no final result yet.", json!({"runId":{"type":"string"},"waitSeconds":{"type":"integer","minimum":0,"maximum":5}}), vec!["runId"]),
@@ -420,11 +420,16 @@ pub fn dispatch(
                 entry.handle.clone(),
                 entry.owner.clone(),
                 entry.browser_tools,
+                entry.permission,
             ))
         });
         // Release the conversation lock while starting a run or waiting for output.
-        let result = handle.and_then(|(handle, owner, browser_tools)| {
+        let result = handle.and_then(|(handle, owner, browser_tools, permission)| {
             let tool = params["tool"].as_str().ok_or("工具名称缺失。")?;
+            // A run writes to the project, which a read-only conversation must not do.
+            if tool == "capsio_start_run" && permission == PermissionMode::ReadOnly {
+                return Err("只读模式下不能启动正式运行，请把权限调到“询问”或以上。".into());
+            }
             if super::web::handles(tool) {
                 super::web::operate(tool, &params["arguments"])
             } else if tool.starts_with("capsio_browser_") {

@@ -174,6 +174,9 @@ fn copy_verified(source: &Path, target: &Path) -> Result<(), String> {
         let mut output = fs::File::create(target).map_err(err)?;
         std::io::copy(&mut input, &mut output).map_err(err)?;
         output.sync_all().map_err(err)?;
+        // Scripts and environments (.venv/bin) keep their execute bits.
+        fs::set_permissions(target, fs::metadata(source).map_err(err)?.permissions())
+            .map_err(err)?;
         if digest(source)? != digest(target)? {
             return Err("复制校验失败，原数据已保留。".into());
         }
@@ -235,6 +238,7 @@ fn relocate_json(value: &mut Value, mappings: &[(PathBuf, PathBuf)]) -> bool {
                         | "agentCwd"
                         | "directory"
                         | "executable"
+                        | "prefix"
                         | "workspaceRoot"
                         | "rollout_path"
                         | "writable_roots"

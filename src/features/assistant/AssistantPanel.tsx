@@ -1087,11 +1087,13 @@ export function AssistantPanel({
     setReplacing(null);
     await runRequest(next);
   }
-  // Regenerate: the question is back in the composer; send it once React has it.
+  // Regenerate: the question is back in the composer; send it once React has it. A
+  // question with no text stays in the composer as an edit instead of sending later.
   useEffect(() => {
-    if (!submitReplacement.current || !replacing || !prompt.trim()) return;
+    if (!submitReplacement.current || !replacing) return;
     submitReplacement.current = false;
-    void submitMessage();
+    if (prompt.trim()) void send();
+    else composerRef.current?.focus();
   }, [prompt, replacing]);
   // "继续" after an interrupted turn, the same way: the word goes in, then it is sent.
   useEffect(() => {
