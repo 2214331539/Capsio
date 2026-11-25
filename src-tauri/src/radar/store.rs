@@ -74,6 +74,22 @@ CREATE TABLE IF NOT EXISTS status (
     state TEXT NOT NULL,
     at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS signals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL,
+    project TEXT,
+    text TEXT NOT NULL,
+    at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS account (
+    key INTEGER PRIMARY KEY CHECK (key = 1),
+    profile TEXT NOT NULL,
+    built INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS highlights (
+    day TEXT PRIMARY KEY,
+    items TEXT NOT NULL
+);
 ";
 
 /// How far a paper got for a project.
@@ -646,9 +662,170 @@ impl Store {
             .map_err(err)
     }
 
-    /// Drops what has aged out: unconsidered works after a month, usage after a quarter.
+    // ---------- the account: signals, profile, highlights ----------
+
+    /// Notes something that says what the user is interested in, such as a question to the
+    /// assistant (only the user's words, never the answer).
+    pub fn note(
+        &self,
+        kind: &str,
+        project: Option<&str>,
+        text: &str,
+        now: i64,
+    ) -> Result<(), String> {
+        self.db
+            .execute(
+                "INSERT INTO signals (kind, project, text, at) VALUES (?1, ?2, ?3, ?4)",
+                params![kind, project, text, now],
+            )
+            .map(drop)
+            .map_err(err)
+    }
+
+    /// The newest signals of a kind after `since`.
+    pub fn signals_since(
+        &self,
+        kind: &str,
+        since: i64,
+        most: usize,
+    ) -> Result<Vec<String>, String> {
+        let mut statement = self
+            .db
+            .prepare(
+                "SELECT text FROM signals WHERE kind = ?1 AND at > ?2 ORDER BY at DESC LIMIT ?3",
+            )
+            .map_err(err)?;
+        let rows = statement
+            .query_map(params![kind, since, most as i64], |row| {
+                row.get::<_, String>(0)
+            })
+            .map_err(err)?;
+        Ok(rows.filter_map(Result::ok).collect())
+    }
+
+    /// What the user did with recommendations after `since`, newest first: the action, the
+    /// reason given and the title.
+    pub fn feedback_since(
+        &self,
+        since: i64,
+        most: usize,
+    ) -> Result<Vec<(String, Option<String>, String)>, String> {
+        let mut statement = self
+            .db
+            .prepare(
+                "SELECT f.action, f.reason, COALESCE(p.title, json_extract(w.work, '$.title'), '')
+                 FROM feedback f
+                 LEFT JOIN picks p ON p.project = f.project AND p.work = f.work
+                 LEFT JOIN works w ON w.id = f.work
+                 WHERE f.at > ?1 AND f.action != 'opened'
+                 ORDER BY f.at DESC LIMIT ?2",
+            )
+            .map_err(err)?;
+        let rows = statement
+            .query_map(params![since, most as i64], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+            })
+            .map_err(err)?;
+        Ok(rows.filter_map(Result::ok).collect())
+    }
+
+    /// Every project's research profile (JSON).
+    pub fn all_profiles(&self) -> Result<Vec<String>, String> {
+        let mut statement = self
+            .db
+            .prepare("SELECT profile FROM profiles ORDER BY built DESC")
+            .map_err(err)?;
+        let rows = statement
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(err)?;
+        Ok(rows.filter_map(Result::ok).collect())
+    }
+
+    /// The account profile (JSON) and when it was built.
+    pub fn account(&self) -> Result<Option<(String, i64)>, String> {
+        self.db
+            .query_row(
+                "SELECT profile, built FROM account WHERE key = 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()
+            .map_err(err)
+    }
+
+    pub fn put_account(&self, profile: &str, now: i64) -> Result<(), String> {
+        self.db
+            .execute(
+                "INSERT OR REPLACE INTO account (key, profile, built) VALUES (1, ?1, ?2)",
+                params![profile, now],
+            )
+            .map(drop)
+            .map_err(err)
+    }
+
+    /// News and blog posts first seen from `since` on, from every project's feeds.
+    pub fn recent_posts(&self, since: i64) -> Result<Vec<Work>, String> {
+        let mut statement = self
+            .db
+            .prepare("SELECT work FROM works WHERE seen >= ?1 ORDER BY seen DESC")
+            .map_err(err)?;
+        let rows = statement
+            .query_map([since], |row| row.get::<_, String>(0))
+            .map_err(err)?;
+        Ok(rows
+            .filter_map(Result::ok)
+            .filter_map(|json| serde_json::from_str::<Work>(&json).ok())
+            .filter(|work| work.kind != crate::scholar::Kind::Paper)
+            .collect())
+    }
+
+    /// A day's field highlights (JSON), once made, even when there were none.
+    pub fn highlights(&self, day: &str) -> Result<Option<String>, String> {
+        self.db
+            .query_row(
+                "SELECT items FROM highlights WHERE day = ?1",
+                [day],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(err)
+    }
+
+    /// Highlights from `since` (a day) on, newest first.
+    pub fn highlights_since(&self, since: &str) -> Result<Vec<(String, String)>, String> {
+        let mut statement = self
+            .db
+            .prepare("SELECT day, items FROM highlights WHERE day >= ?1 ORDER BY day DESC")
+            .map_err(err)?;
+        let rows = statement
+            .query_map([since], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(err)?;
+        Ok(rows.filter_map(Result::ok).collect())
+    }
+
+    pub fn put_highlights(&self, day: &str, items: &str) -> Result<(), String> {
+        self.db
+            .execute(
+                "INSERT OR REPLACE INTO highlights (day, items) VALUES (?1, ?2)",
+                params![day, items],
+            )
+            .map(drop)
+            .map_err(err)
+    }
+
+    /// Drops what has aged out: unconsidered works and highlights after a month, usage after a
+    /// quarter, signals after half a year.
     pub fn prune(&self, now: i64) -> Result<(), String> {
         let month = now - 30 * 86_400;
+        self.db
+            .execute("DELETE FROM signals WHERE at < ?1", [now - 180 * 86_400])
+            .map_err(err)?;
+        let month_day = chrono::DateTime::from_timestamp(month, 0)
+            .map(|time| time.format("%Y-%m-%d").to_string())
+            .unwrap_or_default();
+        self.db
+            .execute("DELETE FROM highlights WHERE day < ?1", [month_day])
+            .map_err(err)?;
         self.db
             .execute(
                 "DELETE FROM works WHERE seen < ?1 AND id NOT IN (SELECT work FROM picks WHERE stage = 'scored')",

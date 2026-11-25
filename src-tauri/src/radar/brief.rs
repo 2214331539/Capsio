@@ -19,7 +19,7 @@ const PER_SOURCE: usize = 2;
 /// A work in a brief of the last week is not shown again.
 const REPEAT_DAYS: i64 = 7;
 /// Briefs are made from this hour on, so a late-night pass does not use up the next day.
-const FROM_HOUR: u32 = 6;
+pub(crate) const FROM_HOUR: u32 = 6;
 
 /// Makes today's brief when it is due and there is something to put in it. Returns how many
 /// entries it holds.

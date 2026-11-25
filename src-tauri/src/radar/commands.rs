@@ -1,7 +1,9 @@
-//! What the recommendations page asks for.
+//! What the recommendations page asks for, and what the assistant is told about the user.
 
+use super::profile::Profile;
 use super::store::{Action, Entry, Store};
 use super::worker::{self, enabled, folder, open, wake};
+use super::{account, highlights};
 use super::{Clock, State};
 use crate::library::{trusted, LibraryState};
 use crate::scholar::Work;
@@ -58,7 +60,8 @@ pub struct Report {
     pub url: String,
 }
 
-/// A project's recommendations: the latest brief and what was kept for later.
+/// A project's recommendations: the latest brief, what was kept for later, and the day's
+/// field highlights, which every project shows.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct View {
@@ -67,6 +70,14 @@ pub struct View {
     pub day: Option<String>,
     pub items: Vec<Item>,
     pub later: Vec<Item>,
+    pub highlights: Vec<Item>,
+}
+
+/// What the model wrote about a work.
+struct Written {
+    title: Option<String>,
+    summary: Option<String>,
+    reason: Option<String>,
 }
 
 pub(super) fn view(store: &Store, project: &str) -> Result<View, String> {
@@ -76,13 +87,9 @@ pub(super) fn view(store: &Store, project: &str) -> Result<View, String> {
         marked(Action::Dismissed)?,
         marked(Action::Later)?,
     );
-    let item = |entry: &Entry| -> Result<Option<Item>, String> {
-        let id = entry.id.as_str();
-        let Some(pick) = store.pick(project, id)? else {
-            return Ok(None);
-        };
+    let item = |work: Work, written: Written, also: &[String]| -> Result<Item, String> {
         let also = store
-            .works(&entry.also)?
+            .works(also)?
             .into_iter()
             .map(|work| Report {
                 source: work.venue.unwrap_or_default(),
@@ -95,25 +102,47 @@ pub(super) fn view(store: &Store, project: &str) -> Result<View, String> {
             (Action::Later, &later),
         ]
         .into_iter()
-        .find(|(_, ids)| ids.iter().any(|other| other == id))
+        .find(|(_, ids)| ids.contains(&work.id))
         .map(|(action, _)| action.name());
-        let work = pick.work;
-        Ok(Some(Item {
-            id: work.id,
+        Ok(Item {
             kind: work.kind.name(),
-            title: pick.title.unwrap_or_else(|| work.title.clone()),
+            title: written.title.unwrap_or_else(|| work.title.clone()),
             original_title: work.title,
-            summary: pick.summary.unwrap_or_default(),
-            reason: pick.reason.unwrap_or_default(),
+            summary: written.summary.unwrap_or_default(),
+            reason: written.reason.unwrap_or_default(),
             authors: work.authors.into_iter().take(6).collect(),
             venue: work.venue,
             published: work.published,
             url: work.url,
             pdf_url: work.pdf_url,
+            id: work.id,
             state,
             also,
-        }))
+        })
     };
+    let picked = |entry: &Entry| -> Result<Option<Item>, String> {
+        let Some(pick) = store.pick(project, &entry.id)? else {
+            return Ok(None);
+        };
+        let written = Written {
+            title: pick.title,
+            summary: pick.summary,
+            reason: pick.reason,
+        };
+        item(pick.work, written, &entry.also).map(Some)
+    };
+    let mut highlights = Vec::new();
+    for highlight in highlights::latest(store, &Clock::local())? {
+        let Some(work) = store.works(std::slice::from_ref(&highlight.id))?.pop() else {
+            continue;
+        };
+        let written = Written {
+            title: Some(highlight.title),
+            summary: Some(highlight.summary),
+            reason: Some(highlight.reason),
+        };
+        highlights.push(item(work, written, &highlight.also)?);
+    }
     let Some((day, entries)) = store.latest_brief(project)? else {
         let state = match store.status(project)?.as_deref() {
             Some("needsPapers") => State::NeedsPapers,
@@ -125,11 +154,12 @@ pub(super) fn view(store: &Store, project: &str) -> Result<View, String> {
             day: None,
             items: Vec::new(),
             later: Vec::new(),
+            highlights,
         });
     };
     let mut items = Vec::new();
     for entry in &entries {
-        items.extend(item(entry)?);
+        items.extend(picked(entry)?);
     }
     let in_brief = |id: &String| entries.iter().any(|entry| entry.id == *id);
     let mut kept = Vec::new();
@@ -137,14 +167,103 @@ pub(super) fn view(store: &Store, project: &str) -> Result<View, String> {
         .iter()
         .filter(|id| !in_brief(id) && !saved.contains(id) && !dismissed.contains(id))
     {
-        kept.extend(item(&Entry::from(id.as_str()))?);
+        kept.extend(picked(&Entry::from(id.as_str()))?);
     }
     Ok(View {
         state: "ready",
         day: Some(day),
         items,
         later: kept,
+        highlights,
     })
+}
+
+/// What the assistant is told about the user and the project while recommendations are on:
+/// the account profile's summary and the project's research topics. Empty otherwise, and on
+/// any failure: the assistant works the same without it.
+pub(crate) fn assistant_context<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    project: &str,
+) -> String {
+    if !enabled(app) {
+        return String::new();
+    }
+    open(app).map_or_else(|_| String::new(), |store| background(&store, project))
+}
+
+/// The profile summary (at most 600 characters) and the project's topics (at most 400).
+pub(super) fn background(store: &Store, project: &str) -> String {
+    let mut parts = Vec::new();
+    let summary = account::saved(store)
+        .ok()
+        .flatten()
+        .map(|account| account.summary(600))
+        .unwrap_or_default();
+    if !summary.is_empty() {
+        parts.push(format!(
+            "<capsio-user>\nCapsio 根据用户的文献库和使用情况整理的背景，供参考：据此把握回答的深度和例子，不必复述；和用户的自定义指令冲突时以指令为准。\n{summary}\n</capsio-user>"
+        ));
+    }
+    let topics = store
+        .profile(project)
+        .ok()
+        .flatten()
+        .and_then(|(json, ..)| serde_json::from_str::<Profile>(&json).ok())
+        .map(|profile| {
+            profile
+                .topics
+                .iter()
+                .map(|topic| {
+                    let keywords: Vec<&str> =
+                        topic.keywords.iter().take(3).map(String::as_str).collect();
+                    format!("{}（{}）", topic.name, keywords.join("、"))
+                })
+                .collect::<Vec<_>>()
+                .join("；")
+                .chars()
+                .take(400)
+                .collect::<String>()
+        })
+        .unwrap_or_default();
+    if !topics.is_empty() {
+        parts.push(format!(
+            "<capsio-research>\n这个项目在研究：{topics}\n</capsio-research>"
+        ));
+    }
+    parts.join("\n\n")
+}
+
+/// The longest question kept as a signal; its gist is in the first few sentences.
+const QUESTION_CHARS: usize = 300;
+
+/// Notes a question the user put to the assistant (only their words) for the account profile,
+/// while recommendations are on.
+#[tauri::command]
+pub async fn radar_note<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    view: tauri::Webview<R>,
+    project_id: Option<String>,
+    text: String,
+) -> Result<(), String> {
+    trusted(&view)?;
+    let project = project_id.filter(|id| capsio_core::workspace::valid_id(id));
+    let text: String = text.trim().chars().take(QUESTION_CHARS).collect();
+    if text.is_empty() || !enabled(&app) {
+        return Ok(());
+    }
+    blocking(move || open(&app)?.note("question", project.as_deref(), &text, Clock::local().now))
+        .await
+}
+
+/// The background the quick chat adds to its instructions; see `assistant_context`.
+#[tauri::command]
+pub async fn radar_context<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    view: tauri::Webview<R>,
+    project_id: String,
+) -> Result<String, String> {
+    trusted(&view)?;
+    blocking(move || Ok(assistant_context(&app, &project_id))).await
 }
 
 /// The project is open: follow it, and look for its recommendations soon.
@@ -176,6 +295,7 @@ pub async fn radar_view<R: tauri::Runtime>(
             day: None,
             items: Vec::new(),
             later: Vec::new(),
+            highlights: Vec::new(),
         });
     }
     blocking(move || self::view(&open(&app)?, &project_id)).await
@@ -375,6 +495,31 @@ pub async fn radar_clear<R: tauri::Runtime>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_assistant_hears_the_profile_and_the_project_s_topics() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(&dir.path().join("radar.sqlite")).unwrap();
+        assert_eq!(background(&store, "p"), "", "nothing known yet");
+        store
+            .put_account(
+                r#"{"facts":[{"topic":"研究","item":"长期方向","value":"智能体记忆","confidence":0.9,"evidence":3}]}"#,
+                0,
+            )
+            .unwrap();
+        store
+            .put_profile(
+                "p",
+                r#"{"topics":[{"name":"长期记忆","keywords":["memory","agents","benchmark","retrieval"],"weight":1}],"categories":["cs.CL"]}"#,
+                3,
+                0,
+            )
+            .unwrap();
+        let told = background(&store, "p");
+        assert!(told.contains("<capsio-user>") && told.contains("研究——长期方向：智能体记忆"));
+        assert!(told.contains("这个项目在研究：长期记忆（memory、agents、benchmark）"));
+        assert!(!background(&store, "other").contains("<capsio-research>"));
+    }
 
     #[test]
     fn titles_become_file_names_the_library_accepts() {

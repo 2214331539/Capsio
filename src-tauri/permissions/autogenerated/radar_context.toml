@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-radar-context"
+description = "Enables the radar_context command without any pre-configured scope."
+commands.allow = ["radar_context"]
+
+[[permission]]
+identifier = "deny-radar-context"
+description = "Denies the radar_context command without any pre-configured scope."
+commands.deny = ["radar_context"]

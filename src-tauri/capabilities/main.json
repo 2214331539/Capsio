@@ -133,6 +133,8 @@
     "allow-radar-feedback",
     "allow-radar-save",
     "allow-radar-clear",
+    "allow-radar-note",
+    "allow-radar-context",
     "allow-note-image",
     "allow-library-external",
     "allow-library-import-bytes",

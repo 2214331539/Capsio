@@ -399,6 +399,8 @@ pub fn run() {
             radar::commands::radar_feedback,
             radar::commands::radar_save,
             radar::commands::radar_clear,
+            radar::commands::radar_note,
+            radar::commands::radar_context,
             notes::note_image,
             library::library_external,
             library::library_import_bytes,

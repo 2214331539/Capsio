@@ -96,8 +96,8 @@ pub(crate) fn json_in<T: DeserializeOwned>(answer: &str) -> Option<T> {
 }
 
 /// What the model is told about the project: its topics and a few of its papers, which
-/// reasons may point to.
-fn context(profile: &Profile, seeds: &[Seed]) -> String {
+/// reasons may point to, and what the account profile says about the user.
+fn context(profile: &Profile, seeds: &[Seed], about: &str) -> String {
     let topics = profile
         .topics
         .iter()
@@ -112,7 +112,14 @@ fn context(profile: &Profile, seeds: &[Seed]) -> String {
         .map(|seed| format!("- {}", seed.title))
         .collect::<Vec<_>>()
         .join("\n");
-    format!("这个项目在研究：\n{topics}\n\n项目文献库里的部分论文：\n{papers}")
+    let project = format!("这个项目在研究：\n{topics}\n\n项目文献库里的部分论文：\n{papers}");
+    if about.is_empty() {
+        project
+    } else {
+        format!(
+            "{project}\n\n关于这位研究者（关注的内容可以放宽；不想看的主题和来源直接拦下或给低分）：\n{about}"
+        )
+    }
 }
 
 fn items(picks: &[Pick], summary_chars: usize) -> String {
@@ -151,8 +158,9 @@ pub(crate) fn run(
     project: &str,
     profile: &Profile,
     seeds: &[Seed],
+    about: &str,
 ) -> Result<(), String> {
-    let context = context(profile, seeds);
+    let context = context(profile, seeds, about);
     let outcome = screen(store, outside, budget, project, &context)
         .and_then(|()| score(store, outside, budget, project, &context));
     match outcome {
@@ -377,7 +385,16 @@ mod tests {
             r#"[{"id":0,"rel":7,"sig":7,"nov":7,"cred":7,"title":"边","summary":"做了 B","reason":"沾边"}]"#.to_string(),
         ]);
         let mut budget = Budget::today(&store, "p", "2026-11-25").unwrap();
-        run(&store, &outside, &mut budget, "p", &Profile::default(), &[]).unwrap();
+        run(
+            &store,
+            &outside,
+            &mut budget,
+            "p",
+            &Profile::default(),
+            &[],
+            "",
+        )
+        .unwrap();
         let scored = store.picks("p", Stage::Scored).unwrap();
         let score_of = |id: &str| {
             scored
@@ -404,7 +421,15 @@ mod tests {
         // The model has nothing to say to the screening; scoring then fails too.
         let outside = Fake::default();
         let mut budget = Budget::today(&store, "p", "2026-11-25").unwrap();
-        let outcome = run(&store, &outside, &mut budget, "p", &Profile::default(), &[]);
+        let outcome = run(
+            &store,
+            &outside,
+            &mut budget,
+            "p",
+            &Profile::default(),
+            &[],
+            "",
+        );
         assert!(outcome.is_err(), "scoring still needs an answer");
         assert_eq!(store.picks("p", Stage::Passed).unwrap().len(), 2);
     }
@@ -443,7 +468,16 @@ mod tests {
         store.spend("2026-11-25", "p", DAILY_TOKENS).unwrap();
         let outside = Fake::default();
         let mut budget = Budget::today(&store, "p", "2026-11-25").unwrap();
-        run(&store, &outside, &mut budget, "p", &Profile::default(), &[]).unwrap();
+        run(
+            &store,
+            &outside,
+            &mut budget,
+            "p",
+            &Profile::default(),
+            &[],
+            "",
+        )
+        .unwrap();
         assert!(outside.questions.borrow().is_empty());
         assert_eq!(
             store.picks("p", Stage::Recalled).unwrap().len(),

@@ -822,6 +822,11 @@ pub async fn agent_start_thread(
         let mut plan = thread_plan(&root, connection.model, domain, record);
         plan.params["modelProvider"] = json!(config::provider_id(&connection));
         let mut extra = custom_instructions(&app.state::<AppState>().storage, &project_id);
+        // What the recommendations know of the user and the project, while they are on.
+        let background = crate::radar::commands::assistant_context(&app, &project_id);
+        if !background.is_empty() {
+            extra += &format!("\n\n{background}");
+        }
         // A click on such a link in the answer opens the page (blockLink.ts).
         if domain != "inbox" {
             extra += &format!("项目文档：回答里提到本项目的文档页时，写成 [页面标题](capsio://docs/{project_id}/<页面 id>)，用户点了会打开那一页；指向页面里的某一块时在后面加 #<块 id>。");

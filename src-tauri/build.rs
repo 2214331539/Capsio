@@ -42,6 +42,8 @@ fn main() {
             "radar_feedback",
             "radar_save",
             "radar_clear",
+            "radar_note",
+            "radar_context",
             "note_image",
             "library_external",
             "library_import_bytes",

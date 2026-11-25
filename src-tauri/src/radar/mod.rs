@@ -9,13 +9,17 @@
 //! model screen and score them (`judge`) and put the day's best in a brief (`brief`), with the
 //! reports of one event as one entry (`events`). `store` keeps it all in one SQLite file.
 //!
+//! Across projects, an account profile (`account`) says who the user is: the screening and
+//! scoring and the assistant read it, and it picks the day's field highlights (`highlights`).
 //! `worker` runs the passes in the background with the real sources and model; `commands`
-//! is what the page asks for.
+//! is what the page and the assistant ask for.
 
+mod account;
 mod brief;
 pub(crate) mod commands;
 mod events;
 mod feeds;
+mod highlights;
 mod judge;
 mod library;
 mod profile;
@@ -115,6 +119,7 @@ fn run_project(
     outside: &dyn Outside,
     project: &str,
     papers: &[Paper],
+    about: &str,
     clock: &Clock,
 ) -> Result<Pass, String> {
     let seeds = library::seeds(store, outside, papers, clock.now)?;
@@ -142,7 +147,15 @@ fn run_project(
     .flatten()
     .collect();
     recall::pick(store, project, &seeds, &profile, clock)?;
-    judge::run(store, outside, &mut budget, project, &profile, &seeds)?;
+    judge::run(
+        store,
+        outside,
+        &mut budget,
+        project,
+        &profile,
+        &seeds,
+        about,
+    )?;
     Ok(Pass {
         brief: brief::make(store, outside, &mut budget, project, clock)?,
         warning: (!unreachable.is_empty()).then(|| unreachable.join("；")),
@@ -329,7 +342,7 @@ pub(crate) mod tests {
             r#"[{"id":0,"rel":9,"sig":7,"nov":8,"cred":6,"use":8,"title":"助手加入跨对话记忆","summary":"助手可以记住之前的对话","reason":"和项目的长期记忆主题相关"},
                 {"id":1,"rel":9,"sig":8,"nov":8,"cred":7,"title":"大模型智能体的分层长期记忆","summary":"把智能体记忆组织成层级","reason":"和 A-MEM 的记忆组织方式直接相关"}]"#.to_string(),
         ]);
-        let made = run_project(&store, &outside, "p", &library(), &today).unwrap();
+        let made = run_project(&store, &outside, "p", &library(), "", &today).unwrap();
         assert_eq!(made.brief, Some(2));
         assert!(
             made.warning
@@ -364,7 +377,7 @@ pub(crate) mod tests {
             ..today.clone()
         };
         assert_eq!(
-            run_project(&store, &outside, "p", &library(), &later).unwrap(),
+            run_project(&store, &outside, "p", &library(), "", &later).unwrap(),
             Pass::default()
         );
         assert_eq!(outside.questions.borrow().len(), 3);
@@ -380,13 +393,13 @@ pub(crate) mod tests {
         let store = Store::open(&dir.path().join("radar.sqlite")).unwrap();
         let today = clock("2026-11-25", 9);
         let outside = Fake::default();
-        run_project(&store, &outside, "small", &library()[..2], &today).unwrap();
+        run_project(&store, &outside, "small", &library()[..2], "", &today).unwrap();
         assert_eq!(view(&store, "small").unwrap().state, "needsPapers");
         let without = Fake {
             no_model: true,
             ..Fake::default()
         };
-        run_project(&store, &without, "p", &library(), &today).unwrap();
+        run_project(&store, &without, "p", &library(), "", &today).unwrap();
         assert_eq!(view(&store, "p").unwrap().state, "noModel");
         assert_eq!(view(&store, "unseen").unwrap().state, "preparing");
     }
@@ -495,8 +508,15 @@ mod live {
             hour: 9,
             ..Clock::local()
         };
-        let outcome =
-            run_project(&store, &Live::new(Some(model)), &project, &papers, &clock).unwrap();
+        let outcome = run_project(
+            &store,
+            &Live::new(Some(model)),
+            &project,
+            &papers,
+            "",
+            &clock,
+        )
+        .unwrap();
         println!(
             "outcome {outcome:?}, tokens {}",
             store.tokens(&clock.day, &project).unwrap()

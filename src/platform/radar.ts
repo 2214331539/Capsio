@@ -27,6 +27,8 @@ export type Recommendations = {
   day: string | null;
   items: Recommendation[];
   later: Recommendation[];
+  /** The day's big news in the user's fields, the same on every project's page. */
+  highlights: Recommendation[];
 };
 
 export type RecommendationAction = 'opened' | 'later' | 'dismissed' | 'saved';
@@ -58,6 +60,12 @@ export const radar = {
   save: (projectId: string, workId: string) =>
     command<SaveOutcome>('radar_save', { projectId, workId }),
   clear: () => command<void>('radar_clear'),
+  /** A question put to the assistant (only the user's words), for the account profile. */
+  note: (projectId: string, text: string) =>
+    isTauri() ? command<void>('radar_note', { projectId, text }) : Promise.resolve(),
+  /** What the assistant is told about the user and the project; empty when off. */
+  context: (projectId: string) =>
+    isTauri() ? command<string>('radar_context', { projectId }) : Promise.resolve(''),
   briefs: (callback: (event: BriefEvent) => void) =>
     isTauri()
       ? listen<BriefEvent>('radar-brief', (event) => callback(event.payload))

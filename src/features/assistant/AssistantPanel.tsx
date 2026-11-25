@@ -44,6 +44,7 @@ import {
   type CredentialBackend,
 } from '../../platform/credentials';
 import { collaboration, officialModelProblem } from '../../platform/collaboration';
+import { radar } from '../../platform/radar';
 import { OfficialModelNotice, openAccountSettings } from './OfficialModelNotice';
 import { startersFor } from './starters';
 import type { WorkspaceStore } from '../../stores/workspace';
@@ -743,6 +744,8 @@ export function AssistantPanel({
 
   async function runRequest(value: Conversation, replaceFrom?: string) {
     setError('');
+    // What Capsio knows of the user and the project; the chat works the same without it.
+    const background = await radar.context(scope).catch(() => '');
     const sent = await chatRuntime.send(
       value,
       {
@@ -756,6 +759,7 @@ export function AssistantPanel({
             store.getState().data?.settings.assistantInstructions,
             store.getState().data?.projects.find((item) => item.id === scope)?.aiInstructions,
           ),
+          background,
         ),
       },
       replaceFrom,
@@ -1063,6 +1067,8 @@ export function AssistantPanel({
       needsReconnect
     )
       return;
+    // The question (only the user's words) tells the recommendations what they care about.
+    void radar.note(scope, prompt).catch(() => {});
     // The global assistant automatically uses the local harness whenever the
     // current page has a project root and the configured provider speaks an
     // OpenAI-shaped protocol. Users should describe the outcome; they should

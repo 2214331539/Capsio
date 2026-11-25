@@ -4,7 +4,7 @@
 use super::library::{Hint, Paper};
 use super::sources::{Query, Source};
 use super::store::Store;
-use super::{run_project, Clock, Outside, State, NO_MODEL};
+use super::{account, highlights, run_project, Clock, Outside, State, NO_MODEL};
 use crate::ai::TextModel;
 use crate::library::LibraryState;
 use crate::scholar::Work;
@@ -257,6 +257,10 @@ fn pass<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
     let stale = radar.stale.lock().map_err(|e| e.to_string())?.take();
     let live = Live::new(crate::ai::background_model(app, stale.as_deref()).ok());
     let workspace = app.state::<AppState>().storage.load()?.unwrap_or_default();
+    // What the account profile says about the user, as the screening and scoring read it.
+    let about = account::saved(&store)?
+        .map(|account| account.summary(600))
+        .unwrap_or_default();
     for project in store.visited_since(clock.now - ACTIVE_DAYS * 86_400)? {
         let open_project = workspace["projects"]
             .as_array()
@@ -282,7 +286,7 @@ fn pass<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
             }
         };
         let papers: Vec<Paper> = papers.into_iter().map(Paper::from).collect();
-        match run_project(&store, &live, &project, &papers, &clock) {
+        match run_project(&store, &live, &project, &papers, &about, &clock) {
             Ok(outcome) => {
                 if let Some(warning) = outcome.warning {
                     log(app, &format!("{project}: {warning}"));
@@ -295,6 +299,18 @@ fn pass<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
                 }
             }
             Err(error) => log(app, &format!("{project}: {error}")),
+        }
+    }
+    // The account profile learns from what the projects found, then the day's highlights.
+    if live.has_model() {
+        match account::refresh(&store, &live, &clock) {
+            Ok(Some(account)) => {
+                if let Err(error) = highlights::make(&store, &live, &account, &clock) {
+                    log(app, &format!("highlights: {error}"));
+                }
+            }
+            Ok(None) => {}
+            Err(error) => log(app, &format!("account: {error}")),
         }
     }
     if let Some(token) = live.refused.into_inner().unwrap_or_default() {

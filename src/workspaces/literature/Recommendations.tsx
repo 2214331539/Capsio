@@ -129,6 +129,7 @@ export function Recommendations({
       return {
         ...current,
         items: current.items.map(update),
+        highlights: current.highlights.map(update),
         later: current.later.map(update).filter((item) => item.state === 'later'),
       };
     });
@@ -262,6 +263,10 @@ export function Recommendations({
     remaining.some((item) => item.kind !== 'paper');
   const shown = remaining.filter((item) => !mixed || shows(filter, item));
   const waiting = (view?.later ?? []).filter((item) => !mixed || shows(filter, item));
+  // The day's big news in the user's fields, above every project's own recommendations.
+  const highlights = (view?.highlights ?? []).filter(
+    (item) => item.state !== 'dismissed' && filter !== 'paper',
+  );
   return (
     <section className="recommendations" aria-label={t('推荐')}>
       <header className="workspace-commandbar">
@@ -292,6 +297,12 @@ export function Recommendations({
           <p className="recommendations-error" role="alert">
             {error}
           </p>
+        ) : null}
+        {highlights.length ? (
+          <section className="recommendations-highlights" aria-label={t('领域要闻')}>
+            <h3>{t('领域要闻')}</h3>
+            <ol className="recommendations-list">{highlights.map(card)}</ol>
+          </section>
         ) : null}
         {view && view.state !== 'ready' ? (
           <p className="recommendations-empty">{t(EMPTY[view.state])}</p>

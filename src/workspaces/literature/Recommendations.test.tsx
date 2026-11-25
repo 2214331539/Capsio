@@ -52,7 +52,13 @@ afterEach(() => {
 });
 
 it('says why there is nothing yet, and shows a brief as soon as it is made', async () => {
-  const { engine, brief } = fakeEngine({ state: 'preparing', day: null, items: [], later: [] });
+  const { engine, brief } = fakeEngine({
+    state: 'preparing',
+    day: null,
+    items: [],
+    later: [],
+    highlights: [],
+  });
   render(<Recommendations projectId="p" onOpenPaper={() => {}} onAsk={() => {}} engine={engine} />);
   expect(await screen.findByText('正在为这个项目准备推荐，第一次需要几分钟。')).toBeTruthy();
   engine.view.mockResolvedValue({
@@ -60,6 +66,7 @@ it('says why there is nothing yet, and shows a brief as soon as it is made', asy
     day: '2026-11-25',
     items: [paper('1')],
     later: [],
+    highlights: [],
   });
   brief({ projectId: 'other', day: '2026-11-25', count: 3 });
   expect(engine.view).toHaveBeenCalledTimes(1);
@@ -78,6 +85,7 @@ it('opening the page settles its notice', async () => {
     day: '2026-11-25',
     items: [paper('1')],
     later: [],
+    highlights: [],
   });
   render(<Recommendations projectId="p" onOpenPaper={() => {}} onAsk={() => {}} engine={engine} />);
   await screen.findByText('中文标题 1');
@@ -92,6 +100,7 @@ it('adds a paper to the library, keeps one for later and dismisses one with a re
     day: '2026-11-25',
     items: [paper('1'), paper('2'), paper('3')],
     later: [],
+    highlights: [],
   });
   render(<Recommendations projectId="p" onOpenPaper={opened} onAsk={asked} engine={engine} />);
   await screen.findByText('中文标题 1');
@@ -123,6 +132,7 @@ it('a paper without an open PDF opens its page instead', async () => {
     day: '2026-11-25',
     items: [paper('1')],
     later: [],
+    highlights: [],
   });
   engine.save.mockResolvedValue({ kind: 'link', url: 'https://doi.org/10.1/x' } as never);
   render(<Recommendations projectId="p" onOpenPaper={() => {}} onAsk={() => {}} engine={engine} />);
@@ -150,6 +160,7 @@ it('shows updates beside papers, with their other sources, and filters between t
     day: '2026-11-25',
     items: [paper('1'), update],
     later: [],
+    highlights: [],
   });
   render(<Recommendations projectId="p" onOpenPaper={() => {}} onAsk={() => {}} engine={engine} />);
   await screen.findByText('新模型发布');
@@ -166,4 +177,31 @@ it('shows updates beside papers, with their other sources, and filters between t
   fireEvent.click(screen.getByRole('button', { name: '论文' }));
   expect(screen.getByText('中文标题 1')).toBeTruthy();
   expect(screen.queryByText('新模型发布')).toBeNull();
+});
+
+it('shows the field highlights above the project recommendations', async () => {
+  const highlight: Recommendation = {
+    ...paper('h'),
+    kind: 'news',
+    title: '新模型发布',
+    venue: 'OpenAI',
+    pdfUrl: null,
+    also: [
+      { source: 'The Verge', url: 'https://theverge.com/h' },
+      { source: 'TechCrunch', url: 'https://techcrunch.com/h' },
+    ],
+  };
+  const { engine } = fakeEngine({
+    state: 'preparing',
+    day: null,
+    items: [],
+    later: [],
+    highlights: [highlight],
+  });
+  render(<Recommendations projectId="p" onOpenPaper={() => {}} onAsk={() => {}} engine={engine} />);
+  const section = await screen.findByRole('region', { name: '领域要闻' });
+  expect(section.textContent).toContain('新模型发布');
+  expect(section.textContent).toContain('另有 2 个来源：');
+  // The project's own state is still told.
+  expect(screen.getByText('正在为这个项目准备推荐，第一次需要几分钟。')).toBeTruthy();
 });
