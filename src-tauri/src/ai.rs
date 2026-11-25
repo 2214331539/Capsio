@@ -762,6 +762,122 @@ pub async fn research_ask_ai(request: AIRequest) -> Result<String, String> {
     }
 }
 
+/// The model background features call (full-text translation, recommendations): the one for
+/// one-shot text features, with its key.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct TextModel {
+    pub provider: String,
+    pub endpoint: String,
+    pub model: String,
+    pub api_key: String,
+    /// The official model, whose key is a token from the collaboration server.
+    pub official: bool,
+}
+
+/// Resolves [`TextModel`] from the saved settings. `stale` is an official-model token the
+/// server refused; a fresh one is asked for instead.
+pub(crate) fn background_model<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    stale: Option<&str>,
+) -> Result<TextModel, String> {
+    use tauri::Manager;
+    let state = app.state::<crate::AppState>();
+    let data = state.storage.load()?.ok_or("工作区尚未载入。")?;
+    let settings = text_connection(&data)?;
+    let provider = settings["provider"]
+        .as_str()
+        .unwrap_or("ollama")
+        .to_string();
+    let mut endpoint = settings["endpoint"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    let model = settings["model"]
+        .as_str()
+        .filter(|name| valid_model(name))
+        .ok_or("没有选择模型。")?
+        .to_string();
+    let official = settings["serviceId"] == "capsio";
+    let api_key = if official {
+        endpoint = crate::collaboration::device(&state)?.endpoint;
+        tauri::async_runtime::block_on(crate::collaboration::model_token(
+            &state,
+            stale.is_some(),
+            stale,
+        ))?
+    } else {
+        crate::credentials::load_for_model(state.storage.directory(), &provider, &endpoint)?
+            .unwrap_or_default()
+    };
+    Ok(TextModel {
+        provider,
+        endpoint,
+        model,
+        api_key,
+        official,
+    })
+}
+
+/// A background model's answer, and the tokens the request used when the service says
+/// (thinking included, which the answer's length does not show).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub(crate) struct Answer {
+    pub text: String,
+    pub tokens: Option<i64>,
+}
+
+/// One instruction and one request to a background model. `max_tokens` must leave room for a
+/// model that thinks before it answers.
+pub(crate) async fn ask(
+    model: &TextModel,
+    system: &str,
+    user: &str,
+    max_tokens: u32,
+) -> Result<Answer, String> {
+    let provider: Provider =
+        serde_json::from_value(json!(model.provider)).map_err(|_| "模型服务类型无效。")?;
+    let request = AIRequest {
+        connection: Connection {
+            endpoint: model.endpoint.clone(),
+            api_key: Some(model.api_key.clone()).filter(|key| !key.is_empty()),
+            provider,
+        },
+        model: model.model.clone(),
+        messages: vec![
+            Message {
+                role: Role::System,
+                content: json!(system),
+            },
+            Message {
+                role: Role::User,
+                content: json!(user),
+            },
+        ],
+        max_tokens: Some(max_tokens),
+        temperature: Some(0.2),
+    };
+    let value = completion(&request, false).await?;
+    let text = output(&value, provider);
+    if text.trim().is_empty() {
+        return Err("模型没有返回文本回答，请检查模型是否支持对话。".into());
+    }
+    Ok(Answer {
+        text,
+        tokens: used_tokens(&value),
+    })
+}
+
+/// The tokens a completion used, as each protocol reports them.
+fn used_tokens(value: &Value) -> Option<i64> {
+    let usage = &value["usage"];
+    let sum = |a: &Value, b: &Value| Some(a.as_i64()? + b.as_i64()?);
+    usage["total_tokens"]
+        .as_i64()
+        .or_else(|| sum(&usage["input_tokens"], &usage["output_tokens"]))
+        .or_else(|| sum(&value["prompt_eval_count"], &value["eval_count"]))
+        .or_else(|| value["usageMetadata"]["totalTokenCount"].as_i64())
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
@@ -1083,5 +1199,28 @@ pub(crate) mod tests {
         let request: AIRequest = serde_json::from_value(json!({"endpoint":"https://example.com/v1","provider":"anthropic","apiKey":"test-only-key","model":"a","messages":[{"role":"user","content":"hello"}]})).unwrap();
         assert!(matches!(request.connection.provider, Provider::Anthropic));
         assert_eq!(request.connection.api_key.as_deref(), Some("test-only-key"));
+    }
+
+    #[test]
+    fn token_usage_is_read_in_every_protocol() {
+        assert_eq!(
+            used_tokens(
+                &json!({"usage":{"prompt_tokens":10,"completion_tokens":90,"total_tokens":100}})
+            ),
+            Some(100)
+        );
+        assert_eq!(
+            used_tokens(&json!({"usage":{"input_tokens":10,"output_tokens":5}})),
+            Some(15)
+        );
+        assert_eq!(
+            used_tokens(&json!({"prompt_eval_count":7,"eval_count":3})),
+            Some(10)
+        );
+        assert_eq!(
+            used_tokens(&json!({"usageMetadata":{"totalTokenCount":42}})),
+            Some(42)
+        );
+        assert_eq!(used_tokens(&json!({"choices":[]})), None);
     }
 }

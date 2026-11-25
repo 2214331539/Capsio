@@ -32,6 +32,7 @@ import { RenamedAppRow } from '../update/RenamedAppRow';
 import { AssistantInstructions } from './AssistantInstructions';
 import { McpServers } from './McpServers';
 import { errorReportsOn, setErrorReports } from '../../platform/error-reports';
+import { radar } from '../../platform/radar';
 import { useProfile } from '../account/profile';
 import { serviceFor } from '../assistant/providers';
 import './settings.css';
@@ -61,6 +62,47 @@ function ErrorReportsRow() {
           setOn(event.target.checked);
         }}
       />
+    </section>
+  );
+}
+
+/** Recommendations are on unless turned off here; their data stays on this device. */
+function RecommendationsRow({ store }: { store: WorkspaceStore }) {
+  const on = useStore(store, (state) => state.data?.settings.recommendations !== false);
+  const [cleared, setCleared] = useState(false);
+  return (
+    <section className="setting-row">
+      <div>
+        <h3>{t('个性化推荐')}</h3>
+        <p>{t('根据项目里的论文每天推荐新论文。只在本机分析，用你选的模型。')}</p>
+      </div>
+      <div className="button-row">
+        <Button
+          disabled={cleared}
+          onClick={async () => {
+            if (!(await confirmAction(t('清除本机的推荐记录？推荐会从头开始。')))) return;
+            try {
+              await radar.clear();
+              setCleared(true);
+            } catch (reason) {
+              store.setState({ error: translateError(String(reason)) });
+            }
+          }}
+        >
+          {cleared ? t('已清除') : t('清除推荐数据')}
+        </Button>
+        <input
+          type="checkbox"
+          aria-label={t('个性化推荐')}
+          checked={on}
+          onChange={(event) => {
+            const value = event.target.checked;
+            void store.getState().update((data) => {
+              data.settings.recommendations = value;
+            });
+          }}
+        />
+      </div>
     </section>
   );
 }
@@ -138,6 +180,7 @@ function DataPreferences({ store }: { store: WorkspaceStore }) {
         </Button>
       </section>
       <ErrorReportsRow />
+      <RecommendationsRow store={store} />
       {state.dirty ? (
         <p className="muted">{t('请先保存或清空未保存的内容，再进行数据导入、导出与恢复。')}</p>
       ) : null}

@@ -385,137 +385,40 @@ async fn papers(query: &str, source: Option<&str>, limit: usize) -> Result<Value
     if query.is_empty() || query.chars().count() > 500 {
         return Err("检索词为空或过长。".into());
     }
-    let arxiv_id = query
-        .trim_start_matches("arXiv:")
-        .trim_start_matches("arxiv:")
-        .chars()
-        .all(|c| c.is_ascii_digit() || c == '.' || c == 'v')
-        && query.contains('.');
-    let results = if source == Some("arxiv") || arxiv_id {
-        arxiv(query, arxiv_id, limit).await?
-    } else {
-        openalex(query, limit).await?
-    };
-    Ok(
-        json!({"query":query,"source":if source == Some("arxiv") || arxiv_id {"arxiv"} else {"openalex"},"results":results}),
-    )
-}
-
-async fn openalex(query: &str, limit: usize) -> Result<Vec<Value>, String> {
+    let by_id = crate::scholar::arxiv_id(query).filter(|_| !query.contains(' '));
     let doi = query
         .trim_start_matches("https://doi.org/")
         .trim_start_matches("doi:")
         .trim();
-    let url = if doi.starts_with("10.") && doi.contains('/') {
-        format!("https://api.openalex.org/works/https://doi.org/{doi}")
-    } else {
-        let mut url =
-            tauri::Url::parse("https://api.openalex.org/works").map_err(|e| e.to_string())?;
-        url.query_pairs_mut()
-            .append_pair("search", query)
-            .append_pair("per-page", &limit.to_string());
-        url.to_string()
-    };
-    let (_, _, body) = get(&url).await?;
-    let value: Value = serde_json::from_str(&body).map_err(|_| "OpenAlex 返回的内容无法解析。")?;
-    let works = match value["results"].as_array() {
-        Some(results) => results.clone(),
-        None if value["id"].is_string() => vec![value],
-        None => vec![],
-    };
-    Ok(works.iter().map(openalex_work).collect())
-}
-
-pub(crate) fn openalex_work(work: &Value) -> Value {
-    let authors: Vec<_> = work["authorships"]
-        .as_array()
-        .map(|list| {
-            list.iter()
-                .filter_map(|a| a["author"]["display_name"].as_str())
-                .take(8)
+    let from_arxiv = source == Some("arxiv") || by_id.is_some();
+    let works = match (&by_id, from_arxiv) {
+        (Some(id), _) => crate::scholar::arxiv_ids(&[id]).await?,
+        (None, true) => crate::scholar::arxiv_search(&format!("all:{query}"), limit).await?,
+        (None, false) if doi.starts_with("10.") && doi.contains('/') => {
+            crate::scholar::openalex_doi(doi)
+                .await?
+                .into_iter()
                 .collect()
-        })
-        .unwrap_or_default();
-    let abstract_text = inverted_abstract(&work["abstract_inverted_index"]);
-    let (abstract_text, _) = clip(&abstract_text, 1500);
-    json!({
-        "title": work["display_name"],
-        "authors": authors,
-        "year": work["publication_year"],
-        "venue": work["primary_location"]["source"]["display_name"],
-        "citations": work["cited_by_count"],
-        "doi": work["doi"],
-        "url": work["primary_location"]["landing_page_url"].as_str().or(work["doi"].as_str()).or(work["id"].as_str()),
-        "pdfUrl": work["best_oa_location"]["pdf_url"].as_str().or(work["open_access"]["oa_url"].as_str()),
-        "abstract": abstract_text,
-    })
-}
-
-fn inverted_abstract(index: &Value) -> String {
-    let Some(words) = index.as_object() else {
-        return String::new();
-    };
-    let mut placed: Vec<(u64, &str)> = Vec::new();
-    for (word, positions) in words {
-        for position in positions.as_array().into_iter().flatten() {
-            if let Some(position) = position.as_u64() {
-                placed.push((position, word));
-            }
         }
-    }
-    placed.sort_by_key(|(position, _)| *position);
-    placed
-        .into_iter()
-        .map(|(_, word)| word)
-        .collect::<Vec<_>>()
-        .join(" ")
+        (None, false) => crate::scholar::openalex_search(query, None, limit).await?,
+    };
+    let results: Vec<Value> = works.iter().map(paper_view).collect();
+    Ok(json!({"query":query,"source":if from_arxiv {"arxiv"} else {"openalex"},"results":results}))
 }
 
-async fn arxiv(query: &str, by_id: bool, limit: usize) -> Result<Vec<Value>, String> {
-    let mut url =
-        tauri::Url::parse("https://export.arxiv.org/api/query").map_err(|e| e.to_string())?;
-    if by_id {
-        let id = query
-            .trim_start_matches("arXiv:")
-            .trim_start_matches("arxiv:");
-        url.query_pairs_mut().append_pair("id_list", id);
-    } else {
-        url.query_pairs_mut()
-            .append_pair("search_query", &format!("all:{query}"))
-            .append_pair("max_results", &limit.to_string());
-    }
-    let (_, _, body) = get(url.as_str()).await?;
-    Ok(arxiv_entries(&body))
-}
-
-pub(crate) fn arxiv_entries(feed: &str) -> Vec<Value> {
-    let document = Html::parse_document(feed);
-    let (entry, title, summary, id, published, author, pdf) = (
-        selector("entry"),
-        selector("title"),
-        selector("summary"),
-        selector("id"),
-        selector("published"),
-        selector("author name"),
-        selector("link[title=pdf]"),
-    );
-    document
-        .select(&entry)
-        .map(|item| {
-            let field = |s: &Selector| item.select(s).next().map(text_of).unwrap_or_default();
-            let (abstract_text, _) = clip(&field(&summary), 1500);
-            json!({
-                "title": field(&title),
-                "authors": item.select(&author).map(text_of).take(8).collect::<Vec<_>>(),
-                "year": field(&published).get(..4),
-                "venue": "arXiv",
-                "url": field(&id),
-                "pdfUrl": item.select(&pdf).next().and_then(|link| link.value().attr("href")),
-                "abstract": abstract_text,
-            })
-        })
-        .filter(|paper| paper["title"].as_str().is_some_and(|t| !t.is_empty()))
-        .collect()
+/// What the Agent is shown of a paper.
+fn paper_view(work: &crate::scholar::Work) -> Value {
+    json!({
+        "title": work.title,
+        "authors": work.authors.iter().take(8).collect::<Vec<_>>(),
+        "year": work.published.as_deref().and_then(|date| date.get(..4)),
+        "venue": work.venue,
+        "citations": work.citations,
+        "doi": work.doi.as_ref().map(|doi| format!("https://doi.org/{doi}")),
+        "url": work.url,
+        "pdfUrl": work.pdf_url,
+        "abstract": clip(&work.summary, 1500).0,
+    })
 }
 
 #[cfg(test)]
@@ -553,27 +456,24 @@ mod tests {
     }
 
     #[test]
-    fn papers_read_openalex_and_arxiv() {
-        let work = json!({"display_name":"Attention Is All You Need","publication_year":2017,"cited_by_count":100,
-            "doi":"https://doi.org/10.1/x","authorships":[{"author":{"display_name":"A. Vaswani"}}],
-            "abstract_inverted_index":{"is":[1],"Attention":[0],"all":[2]},
-            "primary_location":{"landing_page_url":"https://papers.example/1","source":{"display_name":"NeurIPS"}},
-            "best_oa_location":{"pdf_url":"https://papers.example/1.pdf"}});
-        let paper = openalex_work(&work);
-        assert_eq!(paper["abstract"], "Attention is all");
-        assert_eq!(paper["venue"], "NeurIPS");
+    fn papers_show_the_agent_who_when_where_and_a_bounded_abstract() {
+        let work = crate::scholar::Work {
+            title: "Attention Is All You Need".into(),
+            authors: (0..10).map(|i| format!("Author {i}")).collect(),
+            summary: "x".repeat(2000),
+            published: Some("2017-06-12".into()),
+            venue: Some("NeurIPS".into()),
+            doi: Some("10.1/x".into()),
+            url: "https://papers.example/1".into(),
+            pdf_url: Some("https://papers.example/1.pdf".into()),
+            ..Default::default()
+        };
+        let paper = paper_view(&work);
+        assert_eq!(paper["year"], "2017");
+        assert_eq!(paper["authors"].as_array().unwrap().len(), 8);
+        assert_eq!(paper["doi"], "https://doi.org/10.1/x");
         assert_eq!(paper["pdfUrl"], "https://papers.example/1.pdf");
-        let feed = r#"<?xml version='1.0'?><feed xmlns="http://www.w3.org/2005/Atom"><title>query</title>
-            <entry><id>http://arxiv.org/abs/1706.03762v7</id><published>2017-06-12T17:57:34Z</published>
-            <title>Attention Is All
-              You Need</title><summary>The dominant models...</summary><author><name>Ashish Vaswani</name></author>
-            <link title="pdf" href="https://arxiv.org/pdf/1706.03762v7" rel="related" type="application/pdf"/></entry></feed>"#;
-        let entries = arxiv_entries(feed);
-        assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0]["title"], "Attention Is All You Need");
-        assert_eq!(entries[0]["year"], "2017");
-        assert_eq!(entries[0]["authors"][0], "Ashish Vaswani");
-        assert_eq!(entries[0]["pdfUrl"], "https://arxiv.org/pdf/1706.03762v7");
+        assert_eq!(paper["abstract"].as_str().unwrap().len(), 1500);
     }
 }
 

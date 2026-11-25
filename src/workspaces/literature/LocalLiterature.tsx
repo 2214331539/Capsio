@@ -25,6 +25,7 @@ import {
   Folder,
   X,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
 import { Button, Input } from '../../components/primitives';
 import { dismissToast, toast, toastUndo, updateToast } from '../../components/feedback';
@@ -77,7 +78,8 @@ import { translator } from '../../platform/translator';
 import { skipResumeHint } from '../../reader/resume';
 import { BatchBar } from './BatchBar';
 import { BrowserPane } from './BrowserPane';
-import { FeaturePlaceholder } from '../../components/workspace/FeaturePlaceholder';
+import { Recommendations } from './Recommendations';
+import type { RecommendedPaper } from '../../platform/radar';
 import TextMarkdownPreview from '../files/MarkdownPreview';
 import '../files/files.css';
 import type { Project } from '../../domain/workspace';
@@ -128,6 +130,8 @@ export function LocalLiterature({
   requestedBrowser,
   requestedNewBrowser,
   onNewBrowserHandled,
+  requestedRecommendations,
+  onRecommendationsHandled,
 }: {
   project: Project;
   store: WorkspaceStore;
@@ -141,6 +145,9 @@ export function LocalLiterature({
   /** The title bar asked for a new browser tab; open one and report it handled. */
   requestedNewBrowser?: boolean;
   onNewBrowserHandled?: () => void;
+  /** A brief's notice asked for the recommendations; show them and report it handled. */
+  requestedRecommendations?: boolean;
+  onRecommendationsHandled?: () => void;
 }) {
   const readOnly = !canEditProject(project, 'library');
   const viewActive = useActiveView();
@@ -173,6 +180,11 @@ export function LocalLiterature({
     onNewBrowserHandled?.();
     void openWebTab().catch((e) => setError(errorMessage(e)));
   }, [requestedNewBrowser]);
+  useEffect(() => {
+    if (!requestedRecommendations) return;
+    onRecommendationsHandled?.();
+    openRecommendations();
+  }, [requestedRecommendations]);
   const [query, setQuery] = useState(''),
     [searchOpen, setSearchOpen] = useState(false),
     [showNotes, setShowNotes] = useState(false),
@@ -634,6 +646,34 @@ export function LocalLiterature({
     if (tab?.kind === 'web') await browserCommand({ op: 'close', id });
     setSession((s) => closeLocalTab(s, id));
   }
+  /** Shows the project's recommended papers, in their one tab. */
+  function openRecommendations() {
+    setSession((s) => {
+      const existing = s.tabs.find((tab) => tab.kind === 'recommendations');
+      if (existing) return { ...s, active: existing.id };
+      const tab = { id: 'recommendations', kind: 'recommendations' as const, title: t('推荐') };
+      return { ...s, tabs: [...s.tabs, tab], active: tab.id };
+    });
+  }
+  /** Opens a paper the recommendations just added, rescanning if it is not listed yet. */
+  async function openAddedPaper(id: string) {
+    const listed = scan.papers.find((paper) => paper.id === id);
+    const papers = listed ? scan.papers : (await library.command(project.id, { op: 'scan' })).papers;
+    const bound = papers.find((paper) => paper.id === id);
+    if (bound) setSession((s) => openLocalPdf(s, id, filename(bound.path)));
+  }
+  /** Hands a recommended paper to the assistant as what the user is looking at. */
+  function askAbout(paper: RecommendedPaper) {
+    onContext({
+      projectId: project.id,
+      workspace: 'literature',
+      title: paper.originalTitle,
+      text: [paper.originalTitle, paper.authors.join(', '), paper.summary, paper.url]
+        .filter(Boolean)
+        .join('\n'),
+    });
+    window.dispatchEvent(new CustomEvent('capsio-open-project', { detail: { projectId: project.id } }));
+  }
   /** Shows a page of a paper, from a page link in its note or translation. */
   function openPaperPage(id: string, page: number) {
     const bound = scan.papers.find((p) => p.id === id);
@@ -1077,6 +1117,15 @@ export function LocalLiterature({
               <Button
                 variant="ghost"
                 iconOnly
+                aria-label={t('推荐')}
+                aria-pressed={active?.kind === 'recommendations'}
+                onClick={openRecommendations}
+              >
+                <Sparkles />
+              </Button>
+              <Button
+                variant="ghost"
+                iconOnly
                 aria-label={t('更多操作')}
                 onClick={(e) =>
                   void showMenu(
@@ -1394,7 +1443,11 @@ export function LocalLiterature({
             />
             <div className="local-reader" id={panelId} role="tabpanel" aria-label={t('文献呈现区')}>
               {active?.kind === 'recommendations' ? (
-                <FeaturePlaceholder feature="recommendations" />
+                <Recommendations
+                  projectId={project.id}
+                  onOpenPaper={(id) => void openAddedPaper(id).catch((e) => setError(errorMessage(e)))}
+                  onAsk={askAbout}
+                />
               ) : active?.kind === 'web' ? (
                 <BrowserPane
                   key={active.id}

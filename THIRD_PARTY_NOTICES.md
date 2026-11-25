@@ -58,6 +58,14 @@ NuGet dependency and font notices are packaged under `yita/Licenses/` by
 Capsio adds private host pipes, shared model access, scoped storage and AI
 assistant handoff; it does not relicense third-party source as Apache-2.0.
 
+The recommendations ([src-tauri/src/radar](src-tauri/src/radar)) adapt the selection approach
+of [AIHOT](https://github.com/KKKKhazix/AIHOT) (MIT, [license](docs/licenses/AIHOT-LICENSE)):
+a lenient screening pass, scoring on weighted measures, and a second scoring of borderline
+items. The prompts in `radar/prompts/` are rewritten for papers and a single project; no AIHOT
+code is included. The design also follows ideas, not code, from
+[Memobase](https://github.com/memodb-io/memobase) (Apache-2.0) and
+[zotero-arxiv-daily](https://github.com/TideDra/zotero-arxiv-daily) (AGPL-3.0).
+
 Oleafly, VS Code, and other projects appear in design research or documentation as references. Mentioning or studying a project does not grant permission to copy its code under Capsio's license. Any contributed third-party code must identify its source, version, license, and modifications and satisfy its original obligations.
 
 Do not add copyrighted papers, private datasets, credentials, or user research directories to the repository. Examples must be original, public-domain, or explicitly licensed for redistribution, with attribution where required. Provider APIs and any separately downloaded model weights have their own terms.

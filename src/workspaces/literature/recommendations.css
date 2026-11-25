@@ -1,0 +1,121 @@
+/* A project's recommended papers: a quiet reading list, one card per paper. */
+.recommendations {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: var(--sf-surface-canvas);
+}
+.recommendations-day {
+  color: var(--sf-text-muted);
+  font-size: 12px;
+}
+.recommendations-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px 32px;
+}
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.recommendation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: var(--sf-radius);
+  background: var(--sf-surface-raised);
+}
+.recommendation-title {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sf-text-primary);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: start;
+  cursor: pointer;
+}
+.recommendation-title:hover {
+  color: var(--sf-accent);
+}
+.recommendation-original,
+.recommendation-byline {
+  margin: 0;
+  color: var(--sf-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.recommendation-summary {
+  margin: 4px 0 0;
+  color: var(--sf-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.recommendation-reason {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 2px 0 0;
+  color: var(--sf-text-secondary);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.recommendation-reason svg {
+  flex-shrink: 0;
+  color: var(--sf-accent);
+  transform: translateY(1px);
+}
+.recommendation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.recommendations-empty,
+.recommendations-error,
+.recommendations-hint {
+  max-width: 820px;
+  margin: 0 auto 12px;
+  color: var(--sf-text-muted);
+  font-size: 13px;
+}
+.recommendations-empty {
+  padding: 40px 0;
+  text-align: center;
+}
+.recommendations-error {
+  color: var(--sf-status-danger);
+}
+.recommendations-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 4px 6px 10px;
+  border-radius: var(--sf-radius);
+  background: var(--sf-surface-selected);
+}
+.recommendations-later {
+  max-width: 820px;
+  margin: 24px auto 0;
+}
+.recommendations-later h3 {
+  margin: 0 0 8px;
+  color: var(--sf-text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+}

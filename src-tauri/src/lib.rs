@@ -34,9 +34,11 @@ mod library_import;
 #[cfg(debug_assertions)]
 mod literature_smoke;
 mod notes;
+mod radar;
 mod reader;
 mod remote;
 mod research;
+mod scholar;
 mod translator;
 mod writing;
 
@@ -265,6 +267,7 @@ pub fn run() {
         .manage(library_import::ImportState::default())
         .manage(remote::RemoteState::default())
         .manage(translator::TranslatorState::default())
+        .manage(radar::worker::RadarState::default())
         .manage(agent::account::AccountState::default())
         .on_window_event(|window, event| {
             if matches!(event, tauri::WindowEvent::Destroyed) {
@@ -351,6 +354,7 @@ pub fn run() {
             if !isolated_smoke {
                 tray::install(app.handle())?;
                 translator::start(app.handle());
+                radar::worker::start(app.handle());
             }
             yita::refresh(app.handle());
             #[cfg(debug_assertions)]
@@ -390,6 +394,11 @@ pub fn run() {
             translator::translation_open,
             translator::translation_pdf,
             translator::translation_retranslate,
+            radar::commands::radar_visit,
+            radar::commands::radar_view,
+            radar::commands::radar_feedback,
+            radar::commands::radar_save,
+            radar::commands::radar_clear,
             notes::note_image,
             library::library_external,
             library::library_import_bytes,

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-radar-save"
+description = "Enables the radar_save command without any pre-configured scope."
+commands.allow = ["radar_save"]
+
+[[permission]]
+identifier = "deny-radar-save"
+description = "Denies the radar_save command without any pre-configured scope."
+commands.deny = ["radar_save"]

@@ -10,6 +10,7 @@
 //! `.scientify/translations/<fingerprint>.pdf`, which syncs, so the devices of one
 //! account share it: each device lists the papers it is about to translate in its own
 //! small claim file beside the translations, and the others leave those alone.
+use crate::ai::TextModel as Model;
 use crate::library::{trusted, LibraryState};
 use crate::AppState;
 use serde::{Deserialize, Serialize};
@@ -37,16 +38,6 @@ const FIRST_PASS: Duration = Duration::from_secs(45);
 const PASS: Duration = Duration::from_secs(2 * 60);
 /// A paper that fails by itself (not the model) is left alone after this many tries.
 const ATTEMPTS: u32 = 3;
-
-#[derive(Clone)]
-struct Model {
-    provider: String,
-    endpoint: String,
-    model: String,
-    api_key: String,
-    /// The official model, whose token comes from the collaboration server.
-    official: bool,
-}
 
 /// What the translation pane shows: the translated PDF, progress, or a quiet wait.
 #[derive(Serialize, Clone, Debug, PartialEq)]
@@ -285,48 +276,14 @@ fn log(base: &Path, line: &str) {
 
 /// The model translation calls: the assistant's, or another saved one for a ChatGPT sign-in.
 fn model<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<Model, String> {
-    let state = app.state::<AppState>();
-    let data = state.storage.load()?.ok_or("工作区尚未载入。")?;
-    let settings = crate::ai::text_connection(&data)?;
-    let provider = settings["provider"]
-        .as_str()
-        .unwrap_or("ollama")
-        .to_string();
-    let mut endpoint = settings["endpoint"]
-        .as_str()
-        .unwrap_or_default()
-        .to_string();
-    let name = settings["model"]
-        .as_str()
-        .filter(|name| crate::ai::valid_model(name))
-        .ok_or("没有选择模型。")?
-        .to_string();
-    let official = settings["serviceId"] == "capsio";
-    let api_key = if official {
-        endpoint = crate::collaboration::device(&state)?.endpoint;
-        let stale = app
-            .state::<TranslatorState>()
-            .inner
-            .lock()
-            .map_err(|e| e.to_string())?
-            .stale_token
-            .take();
-        tauri::async_runtime::block_on(crate::collaboration::model_token(
-            &state,
-            stale.is_some(),
-            stale.as_deref(),
-        ))?
-    } else {
-        crate::credentials::load_for_model(state.storage.directory(), &provider, &endpoint)?
-            .unwrap_or_default()
-    };
-    Ok(Model {
-        provider,
-        endpoint,
-        model: name,
-        api_key,
-        official,
-    })
+    let stale = app
+        .state::<TranslatorState>()
+        .inner
+        .lock()
+        .map_err(|e| e.to_string())?
+        .stale_token
+        .take();
+    crate::ai::background_model(app, stale.as_deref())
 }
 
 /// Whether an error is about the model service (quota, key, network) rather than the paper.

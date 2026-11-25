@@ -76,6 +76,8 @@ import {
   interruptAgents,
 } from '../features/assistant/agent-runtime';
 import { openConversationEvent, watchAssistant } from '../features/assistant/notices';
+import { followBriefs, openRecommendationsEvent } from '../features/recommendations/briefs';
+import { radar } from '../platform/radar';
 import { cancelChats } from '../features/assistant/chat-runtime';
 import type { Project } from '../domain/workspace';
 import type { WorkContext, WorkspaceId } from '../domain/context';
@@ -560,6 +562,13 @@ export function App({
     const docs = appDocs();
     void migrateNotes(store, docs, openedProject, docsRuntime(docs, openedProject)).catch(() => {});
   }, [openedProject, store]);
+  // Recommendations follow the projects people open, and their briefs reach the notices.
+  useEffect(() => {
+    if (openedProject) void radar.visit(openedProject).catch(() => {});
+  }, [openedProject]);
+  useEffect(() => followBriefs(), []);
+  // A brief's notice: the project whose literature module should show its recommendations.
+  const [recommendationsRequest, setRecommendationsRequest] = useState<string | null>(null);
   const location = project ? (ui.locations[project.id] ?? locationDefault) : locationDefault;
   const workspace = projectModules.some((w) => w.id === location.workspace)
     ? location.workspace
@@ -1088,11 +1097,33 @@ export function App({
         },
       }));
     };
+    // A brief's notice shows that project's recommendations, in its literature module.
+    const openRecommended = (event: Event) => {
+      const detail = (event as CustomEvent<{ projectId: string }>).detail;
+      const target = data?.projects.find((p) => p.id === detail?.projectId);
+      if (!target) return;
+      setUI((s) => ({
+        ...s,
+        projectId: target.id,
+        space: target.space,
+        locations: {
+          ...s.locations,
+          [target.id]: {
+            ...(s.locations[target.id] ?? locationDefault),
+            workspace: 'literature',
+            view: 'local',
+          },
+        },
+      }));
+      setRecommendationsRequest(target.id);
+    };
     window.addEventListener('capsio-open-browser', openBrowser);
+    window.addEventListener(openRecommendationsEvent, openRecommended);
     window.addEventListener('capsio-open-run', openRun);
     return () => {
       window.removeEventListener('capsio-open-source', open);
       window.removeEventListener('capsio-open-browser', openBrowser);
+      window.removeEventListener(openRecommendationsEvent, openRecommended);
       window.removeEventListener('capsio-open-run', openRun);
     };
   }, [data, windowMode]);
@@ -1179,6 +1210,8 @@ export function App({
       requestedBrowser={location.browserId}
       requestedNewBrowser={browserRequest === project.id}
       onNewBrowserHandled={() => setBrowserRequest(null)}
+      requestedRecommendations={recommendationsRequest === project.id}
+      onRecommendationsHandled={() => setRecommendationsRequest(null)}
       width={resourceWidth}
       resize={
         <ResizeHandle

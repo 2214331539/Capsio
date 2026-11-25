@@ -6,6 +6,7 @@ import {
   CircleArrowUp,
   CircleX,
   FlaskConical,
+  Sparkles,
   TriangleAlert,
   UserPlus,
 } from 'lucide-react';
@@ -36,6 +37,11 @@ import {
   noticeText,
   openConversation,
 } from '../features/assistant/notices';
+import {
+  briefNotices,
+  dismissBrief,
+  openRecommendations,
+} from '../features/recommendations/briefs';
 import './notifications.css';
 
 const dismissedKey = 'capsio.home.dismissed';
@@ -82,6 +88,7 @@ export function Notifications({
   const cloud = useCloud();
   const update = useUpdate();
   const assistantItems = useStore(assistantNotices, (state) => state.items);
+  const briefItems = useStore(briefNotices, (state) => state.items);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [dismissed, setDismissed] = useState(readDismissed);
   const [error, setError] = useState('');
@@ -251,6 +258,29 @@ export function Notifications({
           },
         },
         { label: t('知道了'), run: () => dismissAssistantNotice(notice.key) },
+      ],
+    });
+  }
+  // Daily briefs of recommended papers, one per project.
+  for (const brief of briefItems) {
+    const project = data.projects.find((item) => item.id === brief.projectId && !item.archived);
+    if (!project) continue;
+    items.push({
+      key: `brief:${brief.projectId}`,
+      tone: 'info',
+      icon: <Sparkles />,
+      title: t('今日推荐：{count} 篇新论文', { count: brief.count }),
+      detail: project.name,
+      actions: [
+        {
+          label: t('查看'),
+          primary: true,
+          run: () => {
+            close();
+            openRecommendations(brief.projectId);
+          },
+        },
+        { label: t('知道了'), run: () => dismissBrief(brief.projectId) },
       ],
     });
   }

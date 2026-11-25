@@ -37,6 +37,7 @@ uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["clock"] }
 portable-pty = "0.9"
 scraper = "0.24"
+rusqlite = { version = "0.37", features = ["bundled"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

@@ -554,3 +554,33 @@ fn imported_pdfs_skip_duplicates_and_records_merge_without_losing_highlights() {
         .add_text("project", "Zotero/Reading list.md", "other")
         .unwrap());
 }
+
+#[test]
+fn reading_the_whole_library_gives_each_pdf_with_its_full_reference() {
+    let (temp, lib, root) = fixture();
+    fs::create_dir(root.join("nested")).unwrap();
+    fs::write(root.join("nested/b.pdf"), b"%PDF-1.4 second").unwrap();
+    fs::write(root.join("notes.txt"), b"not a paper").unwrap();
+    let papers = lib.papers_for_reading("project").unwrap().unwrap();
+    let mut paths: Vec<_> = papers.iter().map(|paper| paper.path.as_str()).collect();
+    paths.sort();
+    assert_eq!(paths, ["a.pdf", "nested/b.pdf"]);
+    assert!(papers.iter().all(|paper| paper.reference.is_none()));
+    let first = papers.iter().find(|paper| paper.path == "a.pdf").unwrap();
+    let reference = capsio_core::references::Reference {
+        title: "Learning".into(),
+        abstract_text: Some("What it found.".into()),
+        ..Default::default()
+    };
+    lib.merge_record("project", &first.fingerprint, &reference, &[])
+        .unwrap();
+    let again = lib.papers_for_reading("project").unwrap().unwrap();
+    let first = again.iter().find(|paper| paper.path == "a.pdf").unwrap();
+    let reference = first.reference.as_ref().unwrap();
+    assert_eq!(reference["title"], "Learning");
+    assert_eq!(reference["abstract"], "What it found.");
+    assert!(LocalLibrary::new(temp.path().join("other"))
+        .papers_for_reading("project")
+        .unwrap()
+        .is_none());
+}

@@ -203,6 +203,17 @@ pub enum Operation {
 }
 /// A library's translations folder, and each PDF in it with its fingerprint.
 pub type TranslationCandidates = (PathBuf, Vec<(PathBuf, String)>);
+/// A PDF in a library with what is known about it, for features that read the library as a
+/// whole (recommendations).
+pub struct LibraryPaper {
+    /// Relative to the library folder, with `/`.
+    pub path: String,
+    pub fingerprint: String,
+    /// When the file last changed: for most papers, when they were added.
+    pub modified: std::time::SystemTime,
+    /// The record's `reference` (title, authors, abstract, DOI …), when there is one.
+    pub reference: Option<serde_json::Value>,
+}
 pub struct LocalLibrary {
     data: PathBuf,
     gate: Mutex<()>,
@@ -1433,6 +1444,41 @@ impl LocalLibrary {
             })
             .collect();
         Ok(Some((folder, pdfs)))
+    }
+    /// Every PDF in the library with its fingerprint, when it changed and its record's
+    /// reference. Reads only; `None` without a literature folder.
+    pub fn papers_for_reading(&self, project: &str) -> Result<Option<Vec<LibraryPaper>>> {
+        let (root, entries) = {
+            let _g = self.gate.lock().map_err(err)?;
+            let Some(root) = self.root(project)? else {
+                return Ok(None);
+            };
+            let entries = self.walk(&root)?;
+            (root, entries)
+        };
+        // As for translations, hashing stays outside the gate.
+        let papers = entries
+            .into_iter()
+            .filter(|entry| entry.pdf)
+            .filter_map(|entry| {
+                let file = root.join(&entry.path);
+                let fingerprint = self.fingerprint(&file).ok()?;
+                let modified = fs::metadata(&file).and_then(|m| m.modified()).ok()?;
+                let reference = Self::record_file(&root, &fingerprint)
+                    .and_then(|record| Self::read_record(&record))
+                    .ok()
+                    .flatten()
+                    .and_then(|record| record.get("reference").cloned())
+                    .filter(serde_json::Value::is_object);
+                Some(LibraryPaper {
+                    path: entry.path,
+                    fingerprint,
+                    modified,
+                    reference,
+                })
+            })
+            .collect();
+        Ok(Some(papers))
     }
     pub fn translation_bytes(&self, project: &str, id: &str) -> Result<Vec<u8>> {
         let (_, target, _) = self.translation_paths(project, id)?;
