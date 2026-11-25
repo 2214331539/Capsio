@@ -6,10 +6,19 @@ Node process handles sign-in, sync and the optional model gateway. Desktop
 clients upload and download files straight to OSS through short-lived signed
 URLs, so file bytes never pass through this server.
 
+**Production (since 2026-11-25)** is `https://capsio.cloud`
+(Ubuntu 24.04, PostgreSQL 16, Nginx
+1.24, a host shared with another site). The website, this API (`/v1/`, `/admin`) and the
+forum (`/discuss/`) share the domain: `deploy/nginx/capsio-cloud.conf`. Update
+the service with `bash server/deploy/update.sh`, which deploys a pushed commit
+from GitHub and rolls back if it is unhealthy; `capsio-backup.timer` dumps the
+databases to `/var/backups/capsio` every day. Before that it ran on Tencent
+Cloud at `https://124.221.115.83:8443`, which now forwards to capsio.cloud for
+builds that still use it.
+
 The steps below were run on Ubuntu 26.04 (Node 22, PostgreSQL 18, Nginx 1.28).
-The production host runs Ubuntu 24.04 (Node 18, PostgreSQL 16, Nginx 1.24)
-next to other sites; section 6 covers that case. Everything comes from the
-distribution archive except the application itself.
+Everything comes from the distribution archive except the application itself
+and its Node.
 
 ## 0. Before you start
 
@@ -19,7 +28,7 @@ distribution archive except the application itself.
   API) and from the host to `dysmsapi.aliyuncs.com:443`, which SMS sign-in
   needs. Replace the IP if either fails.
 - **Firewall.** The cloud firewall or security group must allow TCP 80 (for
-  certificate validation) and 443, or 8443 on a shared host (section 6).
+  certificate validation) and 443, or 8443 on a shared host (section 5).
 - **OSS bucket and key.** Create a private bucket and a RAM user whose key can
   only use it. The key needs at least this policy:
 
@@ -88,31 +97,24 @@ the code would otherwise sign anyone in.
 Secrets live only in this file. Desktop builds need nothing but the public
 service address.
 
-## 4. Application
+## 4. Application and service
 
-Build a flat dependency folder from the lockfile on a development machine and
-copy it, so the server never fetches packages:
-
-```bash
-pnpm install --prod --frozen-lockfile --ignore-workspace --config.node-linker=hoisted
-tar -czf server.tgz package.json pnpm-lock.yaml src node_modules
-# on the host
-sudo tar -xzf server.tgz -C /opt/capsio-collab/server
-sudo chown -R root:root /opt/capsio-collab/server
-```
-
-The code stays owned by root; the service account only reads it.
-
-## 5. Service
+Push the commit, then from a machine that can log in to the host with a key:
 
 ```bash
-sudo install -m 644 deploy/capsio-collab.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now capsio-collab
-curl http://127.0.0.1:8081/v1/health   # {"ok":true,...,"database":"ok"}
+bash server/deploy/update.sh [ssh-host] [commit]   # default: your-host, origin/main
 ```
 
-## 6. Nginx and HTTPS
+`deploy/update-remote.sh` runs on the host as root. It installs Node 22 in
+`/opt/capsio-collab/node` when missing, checks out `server/` at the commit,
+installs the dependency from the lockfile, backs up the running code and the
+database to `/root/backups/capsio-collab-<time>`, swaps the new code into
+`/opt/capsio-collab/server` (owned by root; the service account only reads
+it), installs `capsio-collab.service` and the backup timer, restarts and
+checks `/v1/health`, putting the previous version back if it fails. The
+first run installs everything; later runs update.
+
+## 5. Nginx and HTTPS
 
 Install the three files under `deploy/nginx/`:
 
@@ -158,7 +160,7 @@ sudo install -m 644 deploy/acme-renew.service deploy/acme-renew.timer /etc/syste
 sudo systemctl daemon-reload && sudo systemctl enable --now acme-renew.timer
 ```
 
-## 7. Smoke checks
+## 6. Smoke checks
 
 1. `curl https://<host>/v1/health` (`https://<host>:8443/v1/health` on a
    shared host) from outside the host reports `database: ok`.
@@ -169,7 +171,7 @@ sudo systemctl daemon-reload && sudo systemctl enable --now acme-renew.timer
 Point desktop builds at the service with `CAPSIO_COLLAB_ENDPOINT` at build
 time, or change the address under Settings → Collaboration.
 
-## 8. Admin pages and official models
+## 7. Admin pages and official models
 
 The admin pages ship in `admin/` next to `src/`, and `deploy/update.sh`
 uploads both. Nginx must pass `/admin` to the service: the two `/admin`

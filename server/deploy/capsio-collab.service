@@ -9,8 +9,8 @@ User=capsio
 Group=capsio
 WorkingDirectory=/opt/capsio-collab/server
 EnvironmentFile=/etc/capsio-collab.env
-# Node 20 or newer; Ubuntu 26.04 ships it as /usr/bin/node.
-ExecStart=/usr/bin/node src/server.mjs
+# Node 22 beside the service (update-remote.sh installs it); other services keep their own Node.
+ExecStart=/opt/capsio-collab/node/bin/node src/server.mjs
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true

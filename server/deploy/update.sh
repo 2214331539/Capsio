@@ -1,18 +1,12 @@
 #!/usr/bin/env bash
-# Updates the collaboration service's code and admin pages (src/ and admin/; its one dependency is unchanged).
-# Run from Git Bash or a terminal that can reach the host:
-#   bash server/deploy/update.sh [ssh-host]      (default: your-host)
-# SSH asks for the password twice (upload, then login) and sudo once more.
+# Deploys the collaboration service from GitHub (server/ of 2214331539/Capsio) to the host, at a
+# commit that is already pushed (default: origin/main). Uses key login and passwordless sudo:
+#   bash server/deploy/update.sh [ssh-host=your-host] [commit=origin/main]
 set -euo pipefail
 
 host=${1:-your-host}
-here=$(cd "$(dirname "$0")/.." && pwd)
-work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT
-
-tar -czf "$work/capsio-collab-src.tgz" -C "$here" src admin package.json
-cp "$here/deploy/update-remote.sh" "$work/capsio-collab-update-remote.sh"
-echo "Uploading to $host..."
-scp "$work/capsio-collab-src.tgz" "$work/capsio-collab-update-remote.sh" "$host:/tmp/"
-echo "Installing on $host (sudo will ask for the password)..."
-ssh -t "$host" "sudo bash /tmp/capsio-collab-update-remote.sh"
+here=$(cd "$(dirname "$0")" && pwd)
+git -C "$here" fetch --quiet origin
+ref=$(git -C "$here" rev-parse "${2:-origin/main}")
+echo "Deploying $ref to $host..."
+ssh "$host" "sudo REF=$ref bash -s" < "$here/update-remote.sh"

@@ -18,10 +18,15 @@ const FILE_NAME: &str = "collaboration.json";
 const AUTH_FILE_NAME: &str = "collaboration-auth.json";
 pub(crate) const DEFAULT_ENDPOINT: &str = match option_env!("CAPSIO_COLLAB_ENDPOINT") {
     Some(endpoint) => endpoint,
-    None => "https://124.221.115.83:8443",
+    None => "https://capsio.cloud",
 };
-/// Addresses of earlier builds; saved settings that still use one move to the default.
-const LEGACY_ENDPOINTS: &[&str] = &["https://collab.example.com", "https://47.79.122.59"];
+/// Addresses of earlier builds; saved settings that still use one move to the default. The
+/// Tencent Cloud address forwards to capsio.cloud for the builds that still call it.
+const LEGACY_ENDPOINTS: &[&str] = &[
+    "https://collab.example.com",
+    "https://47.79.122.59",
+    "https://124.221.115.83:8443",
+];
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]

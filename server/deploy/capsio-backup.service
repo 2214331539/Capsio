@@ -1,0 +1,7 @@
+[Unit]
+Description=Back up Capsio's databases
+After=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/capsio-backup

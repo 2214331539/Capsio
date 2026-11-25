@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up Capsio's databases every day
+
+[Timer]
+OnCalendar=*-*-* 04:10
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
