@@ -60,9 +60,10 @@ assistant handoff; it does not relicense third-party source as Apache-2.0.
 
 The recommendations ([src-tauri/src/radar](src-tauri/src/radar)) adapt the selection approach
 of [AIHOT](https://github.com/KKKKhazix/AIHOT) (MIT, [license](docs/licenses/AIHOT-LICENSE)):
-a lenient screening pass, scoring on weighted measures, and a second scoring of borderline
-items. The prompts in `radar/prompts/` are rewritten for papers and a single project; no AIHOT
-code is included. The design also follows ideas, not code, from
+a lenient screening pass, scoring on weighted measures, a second scoring of borderline items,
+source tiers, keeping old posts out, and merging the reports of one event with a heat that
+counts each source once and halves by the day. The prompts in `radar/prompts/` are rewritten
+for a single research project; no AIHOT code is included. The design also follows ideas, not code, from
 [Memobase](https://github.com/memodb-io/memobase) (Apache-2.0) and
 [zotero-arxiv-daily](https://github.com/TideDra/zotero-arxiv-daily) (AGPL-3.0).
 

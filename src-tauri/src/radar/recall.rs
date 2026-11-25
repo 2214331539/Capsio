@@ -1,19 +1,24 @@
-//! Which new papers are close to a project, by their words alone: TF-IDF over the library's
-//! titles and abstracts, newer library papers counting more, plus the profile's keywords and
-//! minus what the user dismissed. Cheap enough to run over every new paper, so the model
-//! only reads the closest.
+//! Which new papers and posts are close to a project, by their words alone: TF-IDF over the
+//! library's titles and abstracts, newer library papers counting more, plus the profile's
+//! keywords and minus what the user dismissed. Cheap enough to run over everything new, so the
+//! model only reads the closest.
 
 use super::library::Seed;
 use super::profile::Profile;
 use super::store::{Action, Stage, Store};
 use super::Clock;
-use crate::scholar::Work;
+use crate::scholar::{Kind, Work};
 use std::collections::{HashMap, HashSet};
 
 /// The closest papers per pass that go on to the model.
 const KEEP: usize = 40;
+/// The closest news and blog posts per pass that go on, counted apart so that a busy news day
+/// does not crowd out papers.
+const KEEP_POSTS: usize = 15;
 /// Below this a paper shares too little with the project to be worth the model's time.
 const FLOOR: f64 = 0.03;
+/// Posts, written for a wider readership, share fewer words with papers; screening follows.
+const POST_FLOOR: f64 = 0.01;
 /// A library paper's extra weight for being new halves every this many days: a new paper
 /// counts fully, one this old three quarters, a very old one half.
 const HALF_LIFE_DAYS: f64 = 120.0;
@@ -276,8 +281,8 @@ fn cosine(a: &Vector, b: &Vector) -> f64 {
         .sum()
 }
 
-/// Puts this pass's closest new papers in front of the model; the rest are set aside so
-/// they are not compared again. Returns how many go on.
+/// Puts this pass's closest new papers and posts in front of the model; the rest are set
+/// aside so they are not compared again. Returns how many go on.
 pub(crate) fn pick(
     store: &Store,
     project: &str,
@@ -296,16 +301,27 @@ pub(crate) fn pick(
         .map(|work| (interest.score(work), work))
         .collect();
     scored.sort_by(|a, b| b.0.total_cmp(&a.0));
-    let mut kept = 0;
+    let (mut papers, mut posts) = (0, 0);
     for (score, work) in scored {
-        if kept < KEEP && score >= FLOOR {
-            store.add_pick(project, &work.id, score, Stage::Recalled, clock.now)?;
-            kept += 1;
+        let (kept, keep, floor) = match work.kind {
+            Kind::Paper => (&mut papers, KEEP, FLOOR),
+            Kind::News | Kind::Blog => (&mut posts, KEEP_POSTS, POST_FLOOR),
+        };
+        // Posts from the feeds of other projects' fields are not this project's news.
+        let in_field = work.kind == Kind::Paper
+            || work
+                .categories
+                .iter()
+                .any(|category| profile.categories.contains(category));
+        let stage = if in_field && *kept < keep && score >= floor {
+            *kept += 1;
+            Stage::Recalled
         } else {
-            store.add_pick(project, &work.id, score, Stage::Dropped, clock.now)?;
-        }
+            Stage::Dropped
+        };
+        store.add_pick(project, &work.id, score, stage, clock.now)?;
     }
-    Ok(kept)
+    Ok(papers + posts)
 }
 
 #[cfg(test)]
@@ -370,6 +386,62 @@ mod tests {
         let scores: Vec<f64> = candidates.iter().map(|work| interest.score(work)).collect();
         assert!(scores[0] > 0.2, "{scores:?}");
         assert!(scores[0] > 4.0 * scores[1].max(scores[2]), "{scores:?}");
+    }
+
+    #[test]
+    fn posts_of_the_project_s_fields_go_on_beside_its_papers() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(&dir.path().join("radar.sqlite")).unwrap();
+        let seeds = [seed(
+            "A-MEM: Agentic Memory for LLM Agents",
+            "Long-term memory lets language model agents remember past interactions.",
+            0,
+        )];
+        let post = |id: &str, categories: &[&str]| Work {
+            id: id.into(),
+            title: "A new memory feature for LLM agents".into(),
+            summary: "The assistant now keeps long-term memory across chats.".into(),
+            kind: Kind::News,
+            categories: categories.iter().map(|c| c.to_string()).collect(),
+            ..Work::default()
+        };
+        let paper = Work {
+            id: "paper".into(),
+            ..work(
+                "Hierarchical memory for LLM agents",
+                "We organise long-term memory of language model agents into a hierarchy.",
+            )
+        };
+        let today = super::super::tests::clock("2026-11-25", 9);
+        store
+            .add_works(
+                &[
+                    paper,
+                    post("nlp-news", &["cs.CL"]),
+                    post("security-news", &["cs.CR"]),
+                ],
+                today.now,
+            )
+            .unwrap();
+        let profile = Profile {
+            categories: vec!["cs.CL".into()],
+            ..Profile::default()
+        };
+        let kept = pick(&store, "p", &seeds, &profile, &today);
+        assert_eq!(kept, Ok(2));
+        let recalled: Vec<String> = store
+            .picks("p", Stage::Recalled)
+            .unwrap()
+            .into_iter()
+            .map(|pick| pick.work.id)
+            .collect();
+        assert!(
+            recalled.contains(&"paper".to_string()) && recalled.contains(&"nlp-news".to_string())
+        );
+        assert!(
+            !recalled.contains(&"security-news".to_string()),
+            "another field's news"
+        );
     }
 
     #[test]

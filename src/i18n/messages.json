@@ -4014,14 +4014,19 @@
     "个性化推荐已关闭，可以在 设置 → 数据与备份 里打开。",
     "Recommendations are off. Turn them on in Settings → Data and backup."
   ],
-  "文献库里有 3 篇以上论文后，这里会每天推荐相关的新论文。": [
-    "文献库里有 3 篇以上论文后，这里会每天推荐相关的新论文。",
-    "Once the library has three or more papers, related new papers appear here every day."
+  "文献库里有 3 篇以上论文后，这里会每天推荐相关的新论文和动态。": [
+    "文献库里有 3 篇以上论文后，这里会每天推荐相关的新论文和动态。",
+    "Once the library has three or more papers, related new papers and updates appear here every day."
   ],
-  "在 AI 模型 里选好模型后，这里会每天推荐相关的新论文。": [
-    "在 AI 模型 里选好模型后，这里会每天推荐相关的新论文。",
-    "Choose a model in AI models, and related new papers appear here every day."
+  "在 AI 模型 里选好模型后，这里会每天推荐相关的新论文和动态。": [
+    "在 AI 模型 里选好模型后，这里会每天推荐相关的新论文和动态。",
+    "Choose a model in AI models, and related new papers and updates appear here every day."
   ],
+  "动态": ["动态", "Updates"],
+  "新闻": ["新闻", "News"],
+  "博客": ["博客", "Blog"],
+  "显示的内容": ["显示的内容", "Show"],
+  "另有 {count} 个来源：": ["另有 {count} 个来源：", "Also reported by {count}:"],
   "正在为这个项目准备推荐，第一次需要几分钟。": [
     "正在为这个项目准备推荐，第一次需要几分钟。",
     "Preparing recommendations for this project. The first time takes a few minutes."

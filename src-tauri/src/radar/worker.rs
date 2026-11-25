@@ -25,6 +25,13 @@ const ACTIVE_DAYS: i64 = 7;
 
 /// arXiv asks for at most one request every three seconds.
 const ARXIV_SPACING: Duration = Duration::from_secs(3);
+/// Feeds are small; anything larger is not one.
+const FEED_LIMIT: usize = 8 * 1024 * 1024;
+/// Some sites turn away clients that do not look like a browser or a feed reader.
+const FEED_AGENT: &str = "Mozilla/5.0 (compatible; Capsio/1.0; +https://capsio.cloud)";
+/// A model call that fails for a passing reason is tried again after each of these waits,
+/// so one dropped connection does not end the pass.
+const MODEL_RETRIES: [Duration; 2] = [Duration::from_secs(5), Duration::from_secs(20)];
 
 pub(super) struct Live {
     model: Option<TextModel>,
@@ -92,8 +99,17 @@ impl Outside for Live {
 
     fn ask(&self, system: &str, user: &str, max_tokens: u32) -> Result<crate::ai::Answer, String> {
         let model = self.model.as_ref().ok_or(NO_MODEL)?;
-        let answer =
-            tauri::async_runtime::block_on(crate::ai::ask(model, system, user, max_tokens));
+        let mut waits = MODEL_RETRIES.iter();
+        let answer = loop {
+            let answer =
+                tauri::async_runtime::block_on(crate::ai::ask(model, system, user, max_tokens));
+            match (&answer, waits.next()) {
+                (Err(error), Some(wait)) if crate::ai::transient(error) => {
+                    std::thread::sleep(*wait)
+                }
+                _ => break answer,
+            }
+        };
         if model.official && answer.as_ref().is_err_and(|error| error.contains("401")) {
             *self
                 .refused
@@ -102,6 +118,38 @@ impl Outside for Live {
         }
         answer
     }
+
+    fn feed(&self, url: &str) -> Result<String, String> {
+        tauri::async_runtime::block_on(read_feed(url))
+    }
+}
+
+async fn read_feed(url: &str) -> Result<String, String> {
+    let response = reqwest::Client::builder()
+        .user_agent(FEED_AGENT)
+        .connect_timeout(Duration::from_secs(8))
+        // Some feed servers are slow: one takes 25 seconds for 400 KB.
+        .timeout(Duration::from_secs(45))
+        .build()
+        .map_err(|e| e.to_string())?
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !response.status().is_success() {
+        return Err(format!("HTTP {}", response.status().as_u16()));
+    }
+    if response
+        .content_length()
+        .is_some_and(|size| size as usize > FEED_LIMIT)
+    {
+        return Err("文件过大".into());
+    }
+    let bytes = response.bytes().await.map_err(|e| e.to_string())?;
+    if bytes.len() > FEED_LIMIT {
+        return Err("文件过大".into());
+    }
+    Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
 #[derive(Default)]

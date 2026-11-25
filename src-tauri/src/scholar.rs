@@ -13,7 +13,8 @@ const AGENT: &str = "Capsio/1.0 (desktop research app; https://github.com/221433
 /// Longer abstracts are cut; they only need to say what a paper is about.
 const SUMMARY_CHARS: usize = 3000;
 
-/// A paper as a source describes it.
+/// A paper as a source describes it. The recommendations also keep posts from news sites
+/// and blogs in this shape, with `kind` saying which.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Work {
@@ -36,6 +37,28 @@ pub struct Work {
     /// arXiv categories, or OpenAlex topics.
     pub categories: Vec<String>,
     pub citations: Option<u64>,
+    #[serde(default)]
+    pub kind: Kind,
+}
+
+/// What a work is. Everything from arXiv and OpenAlex is a paper.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Kind {
+    #[default]
+    Paper,
+    News,
+    Blog,
+}
+
+impl Kind {
+    pub fn name(self) -> &'static str {
+        match self {
+            Kind::Paper => "paper",
+            Kind::News => "news",
+            Kind::Blog => "blog",
+        }
+    }
 }
 
 impl Work {

@@ -1,12 +1,15 @@
-//! The model's part: screen the recalled papers loosely, score the rest on five measures and
+//! The model's part: screen what recall kept loosely, score the rest on five measures and
 //! write each one's Chinese title, summary and reason, then score the borderline ones again.
 //! The screening and the five measures follow AIHOT's selection (MIT, github.com/KKKKhazix/
-//! AIHOT), with its audience-wide "resonance" replaced by closeness to this project.
+//! AIHOT), with its audience-wide "resonance" replaced by closeness to this project. Papers,
+//! news and blog posts are weighed differently; the model is told what each is, never its
+//! source, so a name does not sway the score.
 
 use super::library::Seed;
 use super::profile::Profile;
 use super::store::{Pick, Stage, Store};
 use super::Outside;
+use crate::scholar::Kind;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::json;
@@ -17,10 +20,16 @@ const SCREEN_BATCH: usize = 20;
 const SCORE_BATCH: usize = 8;
 /// Room for the answers, and for the thoughts of models that think before answering,
 /// which would otherwise use up a tight limit and leave the answer empty.
-const SCREEN_TOKENS: u32 = 4096;
+const SCREEN_TOKENS: u32 = 8192;
 const SCORE_TOKENS: u32 = 8192;
-/// A paper scoring this much (of 100) is worth recommending.
-pub(crate) const THRESHOLD: i64 = 60;
+/// What a work must score (of 100) to be recommended: a little more for news and blog posts,
+/// which are many and quickly dated (AIHOT's thresholds start at 60 and 65).
+pub(crate) fn threshold(kind: Kind) -> i64 {
+    match kind {
+        Kind::Paper => 60,
+        Kind::News | Kind::Blog => 65,
+    }
+}
 /// Scores this close to the threshold are checked with a second, independent scoring.
 const REVIEW_BAND: i64 = 8;
 /// What a project's model calls may use per day, in tokens as the provider counts them.
@@ -113,12 +122,25 @@ fn items(picks: &[Pick], summary_chars: usize) -> String {
         .map(|(id, pick)| {
             json!({
                 "id": id,
+                "type": match pick.work.kind {
+                    Kind::Paper => "论文",
+                    Kind::News => "新闻",
+                    Kind::Blog => "博客",
+                },
                 "title": pick.work.title,
                 "abstract": pick.work.summary.chars().take(summary_chars).collect::<String>(),
             })
         })
         .collect();
     serde_json::to_string_pretty(&list).unwrap_or_default()
+}
+
+/// What waits at a stage, news and blog posts first: they are stale in two days, while papers
+/// keep for a week, so on a day the budget runs short it is papers that wait for tomorrow.
+fn queue(store: &Store, project: &str, stage: Stage) -> Result<Vec<Pick>, String> {
+    let mut waiting = store.picks(project, stage)?;
+    waiting.sort_by_key(|pick| pick.work.kind == Kind::Paper);
+    Ok(waiting)
 }
 
 /// Screens, then scores, what the project has waiting. Stops quietly at the day's budget.
@@ -146,7 +168,8 @@ struct Verdict {
 }
 
 /// Lets through anything plausibly related, as AIHOT's prefilter does: only clearly unrelated
-/// papers are blocked; one the answer leaves out goes on.
+/// work is blocked; whatever the answer leaves out goes on, and so does a batch that got no
+/// answer at all, so one failed call neither stops the pass nor costs the same call next pass.
 fn screen(
     store: &Store,
     outside: &dyn Outside,
@@ -154,14 +177,18 @@ fn screen(
     project: &str,
     context: &str,
 ) -> Result<(), String> {
-    let waiting = store.picks(project, Stage::Recalled)?;
+    let waiting = queue(store, project, Stage::Recalled)?;
     for batch in waiting.chunks(SCREEN_BATCH) {
-        let answer = budget.ask(
+        let answer = match budget.ask(
             outside,
             SCREEN,
-            &format!("{context}\n\n候选论文：\n{}", items(batch, 500)),
+            &format!("{context}\n\n候选内容：\n{}", items(batch, 500)),
             SCREEN_TOKENS,
-        )?;
+        ) {
+            Ok(answer) => answer,
+            Err(error) if error == SPENT => return Err(error),
+            Err(_) => String::new(),
+        };
         let blocked: Vec<usize> = json_in::<Vec<Verdict>>(&answer)
             .unwrap_or_default()
             .into_iter()
@@ -191,6 +218,8 @@ struct Grade {
     nov: f64,
     #[serde(default)]
     cred: f64,
+    #[serde(default, rename = "use")]
+    usable: f64,
     #[serde(default)]
     title: String,
     #[serde(default)]
@@ -200,15 +229,21 @@ struct Grade {
 }
 
 impl Grade {
-    /// 0–100: closeness 4, substance 3, novelty 2, evidence 1 (AIHOT weighs research papers
-    /// 5/3/1/0/1; here closeness to the project takes the lead).
-    fn score(&self) -> i64 {
+    /// 0–100. Papers: closeness 4, substance 3, novelty 2, evidence 1. News and blog posts:
+    /// closeness 4, substance 2, novelty 2, evidence 1, of use right away 1. (AIHOT weighs
+    /// papers 5/3/1/0/1; here closeness to the project takes the lead.)
+    fn score(&self, kind: Kind) -> i64 {
         let measure = |value: f64| value.clamp(0.0, 10.0);
-        (4.0 * measure(self.rel)
-            + 3.0 * measure(self.sig)
-            + 2.0 * measure(self.nov)
-            + measure(self.cred))
-        .round() as i64
+        let weights = match kind {
+            Kind::Paper => [4.0, 3.0, 2.0, 1.0, 0.0],
+            Kind::News | Kind::Blog => [4.0, 2.0, 2.0, 1.0, 1.0],
+        };
+        [self.rel, self.sig, self.nov, self.cred, self.usable]
+            .into_iter()
+            .zip(weights)
+            .map(|(value, weight)| weight * measure(value))
+            .sum::<f64>()
+            .round() as i64
     }
 }
 
@@ -221,7 +256,7 @@ fn grades(
     let answer = budget.ask(
         outside,
         SCORE,
-        &format!("{context}\n\n新论文：\n{}", items(batch, 1200)),
+        &format!("{context}\n\n新内容：\n{}", items(batch, 1200)),
         SCORE_TOKENS,
     )?;
     let mut graded: Vec<Option<Grade>> = vec![None; batch.len()];
@@ -233,7 +268,7 @@ fn grades(
     Ok(graded)
 }
 
-/// Scores the screened papers; those near the threshold are scored once more and the two
+/// Scores what passed screening; those near their threshold are scored once more and the two
 /// scores averaged, so one lenient or harsh reading does not decide them.
 fn score(
     store: &Store,
@@ -242,16 +277,17 @@ fn score(
     project: &str,
     context: &str,
 ) -> Result<(), String> {
-    let waiting = store.picks(project, Stage::Passed)?;
+    let waiting = queue(store, project, Stage::Passed)?;
     for batch in waiting.chunks(SCORE_BATCH) {
         let first = grades(outside, budget, batch, context)?;
         let borderline: Vec<Pick> = batch
             .iter()
             .zip(&first)
-            .filter(|(_, grade)| {
+            .filter(|(pick, grade)| {
+                let kind = pick.work.kind;
                 grade
                     .as_ref()
-                    .is_some_and(|grade| (grade.score() - THRESHOLD).abs() <= REVIEW_BAND)
+                    .is_some_and(|grade| (grade.score(kind) - threshold(kind)).abs() <= REVIEW_BAND)
             })
             .map(|(pick, _)| pick.clone())
             .collect();
@@ -267,7 +303,10 @@ fn score(
                 .iter()
                 .position(|other| other.work.id == pick.work.id)
                 .and_then(|index| second.get(index).cloned().flatten());
-            let score = again.map_or(grade.score(), |again| (grade.score() + again.score()) / 2);
+            let kind = pick.work.kind;
+            let score = again.map_or(grade.score(kind), |again| {
+                (grade.score(kind) + again.score(kind)) / 2
+            });
             let title = if grade.title.trim().is_empty() {
                 pick.work.title.clone()
             } else {
@@ -309,17 +348,21 @@ mod tests {
             sig: 6.0,
             nov: 6.0,
             cred: 6.0,
+            usable: 10.0,
             title: String::new(),
             summary: String::new(),
             reason: String::new(),
         };
-        assert_eq!(grade(9.0).score(), 36 + 18 + 12 + 6);
-        assert!(grade(9.0).score() - grade(3.0).score() >= 20);
+        assert_eq!(grade(9.0).score(Kind::Paper), 36 + 18 + 12 + 6);
+        assert!(grade(9.0).score(Kind::Paper) - grade(3.0).score(Kind::Paper) >= 20);
         assert_eq!(
-            grade(30.0).score(),
-            grade(10.0).score(),
+            grade(30.0).score(Kind::Paper),
+            grade(10.0).score(Kind::Paper),
             "measures are capped at 10"
         );
+        // A post weighs substance less and counts whether it can be used right away.
+        assert_eq!(grade(9.0).score(Kind::News), 36 + 12 + 12 + 6 + 10);
+        assert!(threshold(Kind::Blog) > threshold(Kind::Paper));
     }
 
     #[test]
@@ -352,6 +395,45 @@ mod tests {
         assert!(
             store.tokens("2026-11-25", "p").unwrap() > 0,
             "calls are counted"
+        );
+    }
+
+    #[test]
+    fn a_screening_call_without_an_answer_lets_its_batch_through() {
+        let (_dir, store) = project_store(&["a", "b"]);
+        // The model has nothing to say to the screening; scoring then fails too.
+        let outside = Fake::default();
+        let mut budget = Budget::today(&store, "p", "2026-11-25").unwrap();
+        let outcome = run(&store, &outside, &mut budget, "p", &Profile::default(), &[]);
+        assert!(outcome.is_err(), "scoring still needs an answer");
+        assert_eq!(store.picks("p", Stage::Passed).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn news_and_blog_posts_are_judged_before_papers() {
+        let (_dir, store) = project_store(&["paper", "post"]);
+        store
+            .add_works(
+                &[crate::scholar::Work {
+                    id: "news".into(),
+                    kind: Kind::News,
+                    ..Default::default()
+                }],
+                0,
+            )
+            .unwrap();
+        store
+            .add_pick("p", "news", 0.01, Stage::Recalled, 0)
+            .unwrap();
+        let order: Vec<String> = queue(&store, "p", Stage::Recalled)
+            .unwrap()
+            .into_iter()
+            .map(|pick| pick.work.id)
+            .collect();
+        assert_eq!(
+            order,
+            ["news", "paper", "post"],
+            "papers keep their order after it"
         );
     }
 

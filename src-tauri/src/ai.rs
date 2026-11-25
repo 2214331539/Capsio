@@ -207,12 +207,24 @@ fn authorize(call: RequestBuilder, connection: &Connection) -> RequestBuilder {
         None => call,
     }
 }
+const TIMED_OUT: &str = "模型请求超时，请检查服务或缩小上下文。";
+const UNREACHABLE: &str = "无法连接模型服务，请检查地址、网络与服务状态。";
+const LIMITED: &str = "请求受限（429），请检查服务额度或稍后重试。";
+const SERVICE_ERROR: &str = "模型服务返回 HTTP";
+
+/// Whether a model call failed for a reason that may pass: the network, a timeout, a rate
+/// limit or an error of the service itself, rather than a key or an address that is wrong.
+pub(crate) fn transient(error: &str) -> bool {
+    [TIMED_OUT, UNREACHABLE, LIMITED].contains(&error)
+        || error.starts_with(&format!("{SERVICE_ERROR} 5"))
+}
+
 async fn response(call: RequestBuilder, limit: usize) -> Result<Value, String> {
     let mut response = call.send().await.map_err(|e| {
         if e.is_timeout() {
-            "模型请求超时，请检查服务或缩小上下文。"
+            TIMED_OUT
         } else {
-            "无法连接模型服务，请检查地址、网络与服务状态。"
+            UNREACHABLE
         }
     })?;
     if !response.status().is_success() {
@@ -223,8 +235,8 @@ async fn response(call: RequestBuilder, limit: usize) -> Result<Value, String> {
                 "接口不可用（404/405），请检查服务地址及接口协议；服务需要支持模型列表和聊天接口。"
                     .into()
             }
-            429 => "请求受限（429），请检查服务额度或稍后重试。".into(),
-            status => format!("模型服务返回 HTTP {status}，请检查服务状态。"),
+            429 => LIMITED.into(),
+            status => format!("{SERVICE_ERROR} {status}，请检查服务状态。"),
         });
     }
     if response
@@ -1199,6 +1211,25 @@ pub(crate) mod tests {
         let request: AIRequest = serde_json::from_value(json!({"endpoint":"https://example.com/v1","provider":"anthropic","apiKey":"test-only-key","model":"a","messages":[{"role":"user","content":"hello"}]})).unwrap();
         assert!(matches!(request.connection.provider, Provider::Anthropic));
         assert_eq!(request.connection.api_key.as_deref(), Some("test-only-key"));
+    }
+
+    #[test]
+    fn passing_failures_are_told_from_wrong_settings() {
+        for error in [
+            TIMED_OUT,
+            UNREACHABLE,
+            LIMITED,
+            "模型服务返回 HTTP 503，请检查服务状态。",
+        ] {
+            assert!(transient(error), "{error}");
+        }
+        for error in [
+            "服务拒绝访问（401/403），请检查 API 密钥、服务区域及模型权限。",
+            "模型服务返回 HTTP 400，请检查服务状态。",
+            "模型没有返回文本回答，请检查模型是否支持对话。",
+        ] {
+            assert!(!transient(error), "{error}");
+        }
     }
 
     #[test]

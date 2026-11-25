@@ -1,6 +1,6 @@
 //! What the recommendations page asks for.
 
-use super::store::{Action, Store};
+use super::store::{Action, Entry, Store};
 use super::worker::{self, enabled, folder, open, wake};
 use super::{Clock, State};
 use crate::library::{trusted, LibraryState};
@@ -27,23 +27,35 @@ fn valid_project(project: &str) -> Result<(), String> {
     }
 }
 
-/// A recommended paper as the page shows it.
+/// A recommendation as the page shows it.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Item {
     pub id: String,
+    /// `paper`, `news` or `blog`.
+    pub kind: &'static str,
     /// The model's Chinese title.
     pub title: String,
     pub original_title: String,
     pub summary: String,
     pub reason: String,
     pub authors: Vec<String>,
+    /// The journal or conference of a paper; the site of a post.
     pub venue: Option<String>,
     pub published: Option<String>,
     pub url: String,
     pub pdf_url: Option<String>,
     /// `saved`, `dismissed` or `later`, when the user did something with it.
     pub state: Option<&'static str>,
+    /// Other sources that reported the same event.
+    pub also: Vec<Report>,
+}
+
+/// Another source's report of an event.
+#[derive(Serialize)]
+pub struct Report {
+    pub source: String,
+    pub url: String,
 }
 
 /// A project's recommendations: the latest brief and what was kept for later.
@@ -64,10 +76,19 @@ pub(super) fn view(store: &Store, project: &str) -> Result<View, String> {
         marked(Action::Dismissed)?,
         marked(Action::Later)?,
     );
-    let item = |id: &str| -> Result<Option<Item>, String> {
+    let item = |entry: &Entry| -> Result<Option<Item>, String> {
+        let id = entry.id.as_str();
         let Some(pick) = store.pick(project, id)? else {
             return Ok(None);
         };
+        let also = store
+            .works(&entry.also)?
+            .into_iter()
+            .map(|work| Report {
+                source: work.venue.unwrap_or_default(),
+                url: work.url,
+            })
+            .collect();
         let state = [
             (Action::Saved, &saved),
             (Action::Dismissed, &dismissed),
@@ -79,6 +100,7 @@ pub(super) fn view(store: &Store, project: &str) -> Result<View, String> {
         let work = pick.work;
         Ok(Some(Item {
             id: work.id,
+            kind: work.kind.name(),
             title: pick.title.unwrap_or_else(|| work.title.clone()),
             original_title: work.title,
             summary: pick.summary.unwrap_or_default(),
@@ -89,9 +111,10 @@ pub(super) fn view(store: &Store, project: &str) -> Result<View, String> {
             url: work.url,
             pdf_url: work.pdf_url,
             state,
+            also,
         }))
     };
-    let Some((day, ids)) = store.latest_brief(project)? else {
+    let Some((day, entries)) = store.latest_brief(project)? else {
         let state = match store.status(project)?.as_deref() {
             Some("needsPapers") => State::NeedsPapers,
             Some("noModel") => State::NoModel,
@@ -105,15 +128,16 @@ pub(super) fn view(store: &Store, project: &str) -> Result<View, String> {
         });
     };
     let mut items = Vec::new();
-    for id in &ids {
-        items.extend(item(id)?);
+    for entry in &entries {
+        items.extend(item(entry)?);
     }
+    let in_brief = |id: &String| entries.iter().any(|entry| entry.id == *id);
     let mut kept = Vec::new();
     for id in later
         .iter()
-        .filter(|id| !ids.contains(id) && !saved.contains(id) && !dismissed.contains(id))
+        .filter(|id| !in_brief(id) && !saved.contains(id) && !dismissed.contains(id))
     {
-        kept.extend(item(id)?);
+        kept.extend(item(&Entry::from(id.as_str()))?);
     }
     Ok(View {
         state: "ready",

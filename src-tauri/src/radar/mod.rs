@@ -1,18 +1,21 @@
-//! Recommendations: Capsio follows what each project studies and brings it new papers, each
-//! with the reason it was picked, in a daily brief. It works in the background while the app
+//! Recommendations: Capsio follows what each project studies and brings it new papers, news
+//! and blog posts, each with the reason it was picked, in a daily brief. It works in the background while the app
 //! is open, keeps everything on this device and calls the model the user chose for text
 //! features; people only see the results. Design: docs/产品设计/专题/主动推荐与用户画像设计方案.md.
 //!
 //! A pass, for each project opened in the last week: read its library as seeds (`library`),
-//! keep its research profile current (`profile`), fetch new papers (`sources`), keep the
-//! closest by text (`recall`), have the model screen and score them (`judge`) and put the
-//! day's best in a brief (`brief`). `store` keeps it all in one SQLite file.
+//! keep its research profile current (`profile`), fetch new papers (`sources`) and the posts
+//! of its fields' news sites and blogs (`feeds`), keep the closest by text (`recall`), have the
+//! model screen and score them (`judge`) and put the day's best in a brief (`brief`), with the
+//! reports of one event as one entry (`events`). `store` keeps it all in one SQLite file.
 //!
 //! `worker` runs the passes in the background with the real sources and model; `commands`
 //! is what the page asks for.
 
 mod brief;
 pub(crate) mod commands;
+mod events;
+mod feeds;
 mod judge;
 mod library;
 mod profile;
@@ -93,6 +96,8 @@ pub(crate) trait Outside {
     fn has_model(&self) -> bool;
     /// One instruction and one request to the model.
     fn ask(&self, system: &str, user: &str, max_tokens: u32) -> Result<crate::ai::Answer, String>;
+    /// A news or blog feed's document.
+    fn feed(&self, url: &str) -> Result<String, String>;
 }
 
 /// What one project's pass came to.
@@ -129,12 +134,18 @@ fn run_project(
     };
     store.set_status(project, State::Preparing.name(), clock.now)?;
     // Unreachable sources leave what was fetched before to work with.
-    let warning = sources::refresh(store, outside, project, &profile, clock).err();
+    let unreachable: Vec<String> = [
+        sources::refresh(store, outside, project, &profile, clock).err(),
+        feeds::refresh(store, outside, &profile, clock).err(),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
     recall::pick(store, project, &seeds, &profile, clock)?;
     judge::run(store, outside, &mut budget, project, &profile, &seeds)?;
     Ok(Pass {
-        brief: brief::make(store, project, clock)?,
-        warning,
+        brief: brief::make(store, outside, &mut budget, project, clock)?,
+        warning: (!unreachable.is_empty()).then(|| unreachable.join("；")),
     })
 }
 
@@ -161,6 +172,9 @@ pub(crate) mod tests {
         pub answers: RefCell<VecDeque<String>>,
         pub questions: RefCell<Vec<String>>,
         pub no_model: bool,
+        /// Feed documents by address; other feeds cannot be reached.
+        pub feeds: RefCell<HashMap<String, String>>,
+        pub feeds_asked: RefCell<Vec<String>>,
     }
 
     impl Outside for Fake {
@@ -195,6 +209,14 @@ pub(crate) mod tests {
                 .pop_front()
                 .ok_or("no answer left")?;
             Ok(crate::ai::Answer { text, tokens: None })
+        }
+        fn feed(&self, url: &str) -> Result<String, String> {
+            self.feeds_asked.borrow_mut().push(url.to_string());
+            self.feeds
+                .borrow()
+                .get(url)
+                .cloned()
+                .ok_or_else(|| "unreachable".to_string())
         }
     }
 
@@ -292,22 +314,34 @@ pub(crate) mod tests {
                 ..Work::default()
             },
         ]);
+        // Of the field's news sources only TechCrunch answers, with one fresh post.
+        outside.feeds.borrow_mut().insert(
+            feeds::source("TechCrunch").unwrap().url.clone(),
+            "<rss><channel><item><title>An assistant gets agent memory</title>\
+             <link>https://techcrunch.com/memory</link><pubDate>Wed, 25 Nov 2026 01:00:00 GMT</pubDate>\
+             <description>The assistant now keeps memory across chats.</description></item></channel></rss>"
+                .into(),
+        );
+        // News is screened and scored before papers, so the post is first in each batch.
         outside.answers.borrow_mut().extend([
             r#"{"topics":[{"name":"智能体记忆","keywords":["agent memory","long-term memory"],"weight":1}],"categories":["cs.CL"]}"#.to_string(),
-            r#"[{"id":0,"verdict":"pass"}]"#.to_string(),
-            r#"[{"id":0,"rel":9,"sig":8,"nov":8,"cred":7,"title":"大模型智能体的分层长期记忆","summary":"把智能体记忆组织成层级","reason":"和 A-MEM 的记忆组织方式直接相关"}]"#.to_string(),
+            r#"[{"id":0,"verdict":"pass"},{"id":1,"verdict":"pass"}]"#.to_string(),
+            r#"[{"id":0,"rel":9,"sig":7,"nov":8,"cred":6,"use":8,"title":"助手加入跨对话记忆","summary":"助手可以记住之前的对话","reason":"和项目的长期记忆主题相关"},
+                {"id":1,"rel":9,"sig":8,"nov":8,"cred":7,"title":"大模型智能体的分层长期记忆","summary":"把智能体记忆组织成层级","reason":"和 A-MEM 的记忆组织方式直接相关"}]"#.to_string(),
         ]);
         let made = run_project(&store, &outside, "p", &library(), &today).unwrap();
-        assert_eq!(
-            made,
-            Pass {
-                brief: Some(1),
-                warning: None
-            }
+        assert_eq!(made.brief, Some(2));
+        assert!(
+            made.warning
+                .is_some_and(|warning| warning.contains("OpenAI")),
+            "the sources that did not answer are noted"
         );
         let shown = view(&store, "p").unwrap();
         assert_eq!(shown.state, "ready");
-        assert_eq!(shown.items.len(), 1);
+        assert_eq!(shown.items.len(), 2);
+        assert_eq!(shown.items[1].kind, "news");
+        assert_eq!(shown.items[1].title, "助手加入跨对话记忆");
+        assert_eq!(shown.items[1].venue.as_deref(), Some("TechCrunch"));
         assert_eq!(shown.items[0].title, "大模型智能体的分层长期记忆");
         assert_eq!(
             shown.items[0].original_title,
@@ -324,9 +358,13 @@ pub(crate) mod tests {
             "profile, screening, scoring"
         );
 
-        // The next pass the same day has nothing new and asks nothing.
+        // The next pass, half an hour later, has nothing new and asks nothing.
+        let later = Clock {
+            now: today.now + 1800,
+            ..today.clone()
+        };
         assert_eq!(
-            run_project(&store, &outside, "p", &library(), &clock("2026-11-25", 10)).unwrap(),
+            run_project(&store, &outside, "p", &library(), &later).unwrap(),
             Pass::default()
         );
         assert_eq!(outside.questions.borrow().len(), 3);
@@ -463,6 +501,30 @@ mod live {
             "outcome {outcome:?}, tokens {}",
             store.tokens(&clock.day, &project).unwrap()
         );
+        for stage in [
+            store::Stage::Dropped,
+            store::Stage::Recalled,
+            store::Stage::Blocked,
+            store::Stage::Passed,
+            store::Stage::Scored,
+        ] {
+            let picks = store.picks(&project, stage).unwrap();
+            let posts = picks
+                .iter()
+                .filter(|pick| pick.work.kind != crate::scholar::Kind::Paper);
+            println!(
+                "{stage:?}: {} papers, {} posts",
+                picks.len() - posts.clone().count(),
+                posts.count()
+            );
+        }
+        for pick in store.picks(&project, store::Stage::Scored).unwrap() {
+            if pick.work.kind != crate::scholar::Kind::Paper {
+                let venue = pick.work.venue.as_deref().unwrap_or_default();
+                let title = pick.title.as_deref().unwrap_or_default();
+                println!("post {:?} {venue}: {title}", pick.score);
+            }
+        }
         println!(
             "profile {}",
             store
@@ -473,8 +535,11 @@ mod live {
         );
         let shown = view(&store, &project).unwrap();
         for item in &shown.items {
-            println!("- {} | {}", item.title, item.original_title);
+            println!("- [{}] {} | {}", item.kind, item.title, item.original_title);
             println!("  {}\n  理由：{}", item.summary, item.reason);
+            for report in &item.also {
+                println!("  另见 {}", report.source);
+            }
         }
         assert_eq!(shown.state, "ready");
     }

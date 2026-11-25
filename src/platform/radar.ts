@@ -1,28 +1,32 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 
-/** A recommended paper as the recommendations page shows it. */
-export type RecommendedPaper = {
+/** A recommended paper, news story or blog post as the recommendations page shows it. */
+export type Recommendation = {
   id: string;
+  kind: 'paper' | 'news' | 'blog';
   /** The model's Chinese title. */
   title: string;
   originalTitle: string;
   summary: string;
   reason: string;
   authors: string[];
+  /** A paper's journal or conference; a post's site. */
   venue: string | null;
   published: string | null;
   url: string;
   pdfUrl: string | null;
   state: 'saved' | 'dismissed' | 'later' | null;
+  /** Other sources that reported the same event. */
+  also: { source: string; url: string }[];
 };
 
 /** A project's recommendations: the latest brief, or why there is none yet. */
 export type Recommendations = {
   state: 'off' | 'needsPapers' | 'noModel' | 'preparing' | 'ready';
   day: string | null;
-  items: RecommendedPaper[];
-  later: RecommendedPaper[];
+  items: Recommendation[];
+  later: Recommendation[];
 };
 
 export type RecommendationAction = 'opened' | 'later' | 'dismissed' | 'saved';

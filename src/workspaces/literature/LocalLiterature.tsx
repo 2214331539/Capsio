@@ -79,7 +79,7 @@ import { skipResumeHint } from '../../reader/resume';
 import { BatchBar } from './BatchBar';
 import { BrowserPane } from './BrowserPane';
 import { Recommendations } from './Recommendations';
-import type { RecommendedPaper } from '../../platform/radar';
+import type { Recommendation } from '../../platform/radar';
 import TextMarkdownPreview from '../files/MarkdownPreview';
 import '../files/files.css';
 import type { Project } from '../../domain/workspace';
@@ -658,12 +658,14 @@ export function LocalLiterature({
   /** Opens a paper the recommendations just added, rescanning if it is not listed yet. */
   async function openAddedPaper(id: string) {
     const listed = scan.papers.find((paper) => paper.id === id);
-    const papers = listed ? scan.papers : (await library.command(project.id, { op: 'scan' })).papers;
+    const papers = listed
+      ? scan.papers
+      : (await library.command(project.id, { op: 'scan' })).papers;
     const bound = papers.find((paper) => paper.id === id);
     if (bound) setSession((s) => openLocalPdf(s, id, filename(bound.path)));
   }
   /** Hands a recommended paper to the assistant as what the user is looking at. */
-  function askAbout(paper: RecommendedPaper) {
+  function askAbout(paper: Recommendation) {
     onContext({
       projectId: project.id,
       workspace: 'literature',
@@ -672,7 +674,9 @@ export function LocalLiterature({
         .filter(Boolean)
         .join('\n'),
     });
-    window.dispatchEvent(new CustomEvent('capsio-open-project', { detail: { projectId: project.id } }));
+    window.dispatchEvent(
+      new CustomEvent('capsio-open-project', { detail: { projectId: project.id } }),
+    );
   }
   /** Shows a page of a paper, from a page link in its note or translation. */
   function openPaperPage(id: string, page: number) {
@@ -1445,7 +1449,9 @@ export function LocalLiterature({
               {active?.kind === 'recommendations' ? (
                 <Recommendations
                   projectId={project.id}
-                  onOpenPaper={(id) => void openAddedPaper(id).catch((e) => setError(errorMessage(e)))}
+                  onOpenPaper={(id) =>
+                    void openAddedPaper(id).catch((e) => setError(errorMessage(e)))
+                  }
                   onAsk={askAbout}
                 />
               ) : active?.kind === 'web' ? (

@@ -3,6 +3,7 @@
 
 use crate::scholar::Work;
 use rusqlite::{params, Connection, OptionalExtension};
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 const SCHEMA: &str = "
@@ -56,6 +57,10 @@ CREATE TABLE IF NOT EXISTS visits (
 );
 CREATE TABLE IF NOT EXISTS fetched (
     project TEXT PRIMARY KEY,
+    at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS feeds (
+    id TEXT PRIMARY KEY,
     at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS usage (
@@ -137,7 +142,44 @@ pub(crate) struct SeedRow {
     pub checked: i64,
 }
 
-/// A paper considered for a project, with the model's view of it once scored.
+/// One entry of a brief: a work and, for an event several sources reported, the other reports.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub(crate) struct Entry {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub also: Vec<String>,
+}
+
+impl From<&str> for Entry {
+    fn from(id: &str) -> Self {
+        Self {
+            id: id.to_string(),
+            also: Vec::new(),
+        }
+    }
+}
+
+/// A brief's entries. Briefs made before events were lists of ids.
+fn entries(json: &str) -> Option<Vec<Entry>> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Saved {
+        Id(String),
+        Entry(Entry),
+    }
+    let saved: Vec<Saved> = serde_json::from_str(json).ok()?;
+    Some(
+        saved
+            .into_iter()
+            .map(|item| match item {
+                Saved::Id(id) => Entry::from(id.as_str()),
+                Saved::Entry(entry) => entry,
+            })
+            .collect(),
+    )
+}
+
+/// A work considered for a project, with the model's view of it once scored.
 #[derive(Clone, Debug)]
 pub(crate) struct Pick {
     pub work: Work,
@@ -304,6 +346,26 @@ impl Store {
             .map_err(err)
     }
 
+    /// When a news or blog feed was last read, shared by all projects.
+    pub fn feed_read(&self, feed: &str) -> Result<Option<i64>, String> {
+        self.db
+            .query_row("SELECT at FROM feeds WHERE id = ?1", [feed], |row| {
+                row.get(0)
+            })
+            .optional()
+            .map_err(err)
+    }
+
+    pub fn mark_feed_read(&self, feed: &str, at: i64) -> Result<(), String> {
+        self.db
+            .execute(
+                "INSERT OR REPLACE INTO feeds (id, at) VALUES (?1, ?2)",
+                params![feed, at],
+            )
+            .map(drop)
+            .map_err(err)
+    }
+
     // ---------- picks ----------
 
     pub fn add_pick(
@@ -409,7 +471,7 @@ impl Store {
 
     // ---------- briefs ----------
 
-    pub fn brief(&self, project: &str, day: &str) -> Result<Option<Vec<String>>, String> {
+    pub fn brief(&self, project: &str, day: &str) -> Result<Option<Vec<Entry>>, String> {
         let items: Option<String> = self
             .db
             .query_row(
@@ -419,11 +481,11 @@ impl Store {
             )
             .optional()
             .map_err(err)?;
-        Ok(items.and_then(|json| serde_json::from_str(&json).ok()))
+        Ok(items.and_then(|json| entries(&json)))
     }
 
-    /// The latest brief: its day and its works in order.
-    pub fn latest_brief(&self, project: &str) -> Result<Option<(String, Vec<String>)>, String> {
+    /// The latest brief: its day and its entries in order.
+    pub fn latest_brief(&self, project: &str) -> Result<Option<(String, Vec<Entry>)>, String> {
         let row: Option<(String, String)> = self
             .db
             .query_row(
@@ -433,10 +495,11 @@ impl Store {
             )
             .optional()
             .map_err(err)?;
-        Ok(row.and_then(|(day, json)| Some((day, serde_json::from_str(&json).ok()?))))
+        Ok(row.and_then(|(day, json)| Some((day, entries(&json)?))))
     }
 
-    /// Works in a project's briefs from `since` (a day, `YYYY-MM-DD`) on.
+    /// Every work in a project's briefs from `since` (a day, `YYYY-MM-DD`) on, the other
+    /// reports of an event included.
     pub fn briefed_since(&self, project: &str, since: &str) -> Result<Vec<String>, String> {
         let mut statement = self
             .db
@@ -447,8 +510,9 @@ impl Store {
             .map_err(err)?;
         Ok(rows
             .filter_map(Result::ok)
-            .filter_map(|json| serde_json::from_str::<Vec<String>>(&json).ok())
+            .filter_map(|json| entries(&json))
             .flatten()
+            .flat_map(|entry| std::iter::once(entry.id).chain(entry.also))
             .collect())
     }
 
@@ -456,7 +520,7 @@ impl Store {
         &self,
         project: &str,
         day: &str,
-        items: &[String],
+        items: &[Entry],
         now: i64,
     ) -> Result<(), String> {
         let json = serde_json::to_string(items).map_err(|e| e.to_string())?;
@@ -644,9 +708,27 @@ mod tests {
         store
             .put_brief("p", "2026-11-25", &["a".into()], 300)
             .unwrap();
-        assert_eq!(store.latest_brief("p").unwrap().unwrap().1, ["a"]);
+        assert_eq!(
+            store.latest_brief("p").unwrap().unwrap().1,
+            [Entry::from("a")]
+        );
         assert_eq!(store.briefed_since("p", "2026-11-20").unwrap(), ["a"]);
         assert!(store.briefed_since("p", "2026-11-26").unwrap().is_empty());
+    }
+
+    #[test]
+    fn briefs_saved_as_lists_of_ids_still_read() {
+        assert_eq!(
+            entries(r#"["a","b"]"#).unwrap(),
+            [Entry::from("a"), Entry::from("b")]
+        );
+        let event = Entry {
+            id: "a".into(),
+            also: vec!["b".into()],
+        };
+        let json = serde_json::to_string(&[event.clone(), Entry::from("c")]).unwrap();
+        assert_eq!(json, r#"[{"id":"a","also":["b"]},{"id":"c"}]"#);
+        assert_eq!(entries(&json).unwrap(), [event, Entry::from("c")]);
     }
 
     #[test]
