@@ -25,7 +25,7 @@ and its Node.
 - **Reachability from mainland China.** Check that users can reach the host
   before deploying. An overseas IP can be blocked for TCP while ping still
   works: test TCP to port 22 from mainland probes (for example the Globalping
-  API) and from the host to `dysmsapi.aliyuncs.com:443`, which SMS sign-in
+  API) and from the host to `dypnsapi.aliyuncs.com:443`, which SMS sign-in
   needs. Replace the IP if either fails.
 - **Firewall.** The cloud firewall or security group must allow TCP 80 (for
   certificate validation) and 443, or 8443 on a shared host (section 5).
@@ -47,8 +47,12 @@ and its Node.
 
   Without it OSS answers `AccessDenied ... ImplicitDeny`. The service signs
   URLs with signature V4, which new accounts and new buckets require.
-- **SMS.** An approved signature and verification-code template in Alibaba
-  Cloud SMS, and a RAM key that may only send SMS.
+- **SMS.** Production uses Alibaba Cloud Phone Number Verification Service
+  (PNVS, `dypnsapi.aliyuncs.com`): it makes the code, texts it with a system
+  signature and template (login template `100001`) and checks it. The RAM key
+  needs `SendSmsVerifyCode` and `CheckSmsVerifyCode`. The older choice,
+  `SMS_SERVICE=sms`, texts codes the server makes through Short Message Service
+  (`dysmsapi.aliyuncs.com`) and needs an approved signature and template there.
 
 ## 1. Packages, account and folders
 
@@ -86,8 +90,10 @@ from `.env.example`. Required:
 - `OSS_BUCKET`, `OSS_REGION` (for example `cn-hangzhou`), `OSS_ENDPOINT`
   (`https://oss-cn-hangzhou.aliyuncs.com`), `OSS_ACCESS_KEY_ID`,
   `OSS_ACCESS_KEY_SECRET`
-- `SMS_ACCESS_KEY_ID`, `SMS_ACCESS_KEY_SECRET`, `SMS_SIGN_NAME`,
-  `SMS_TEMPLATE_CODE`
+- `SMS_SERVICE` (`pnvs` or `sms`, default `sms`), `SMS_ACCESS_KEY_ID`,
+  `SMS_ACCESS_KEY_SECRET`, `SMS_SIGN_NAME`, `SMS_TEMPLATE_CODE`. Codes have six
+  digits and last five minutes; the server still allows one a minute per
+  number and five tries per code, and a code works once.
 
 For test accounts set `DEV_SMS_CODE` together with `DEV_SMS_PHONES` (a
 comma-separated list). Those numbers sign in with the fixed code and receive

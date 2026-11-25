@@ -44,6 +44,9 @@ export function readConfig(env = process.env) {
       urlTtl: integer(env.OSS_URL_TTL_SECONDS, 900, 60, 3600),
     },
     sms: {
+      // `sms`: Short Message Service texts codes this server makes; `pnvs`: Phone Number
+      // Verification Service makes, texts and checks them (sms.mjs).
+      service: (optional(env, 'SMS_SERVICE') || 'sms').toLowerCase(),
       accessKeyId: optional(env, 'SMS_ACCESS_KEY_ID') || optional(env, 'ALIBABA_CLOUD_ACCESS_KEY_ID') || optional(env, 'ALIBABA_CLOUD_SMS_ACCESS_KEY_ID'),
       accessKeySecret: optional(env, 'SMS_ACCESS_KEY_SECRET') || optional(env, 'ALIBABA_CLOUD_ACCESS_KEY_SECRET') || optional(env, 'ALIBABA_CLOUD_SMS_ACCESS_KEY_SECRET'),
       signName: optional(env, 'SMS_SIGN_NAME') || optional(env, 'ALIBABA_CLOUD_SMS_SIGN_NAME'),
@@ -82,6 +85,7 @@ export function assertProductionConfig(config) {
   } catch {
     missing.push('OSS_REGION');
   }
+  if (!['sms', 'pnvs'].includes(config.sms.service)) missing.push('SMS_SERVICE (sms or pnvs)');
   if (config.sms.developmentCode && !config.sms.developmentPhones.length) {
     // Without a list the fixed code would sign anyone in as any number.
     missing.push('DEV_SMS_PHONES (required with DEV_SMS_CODE)');

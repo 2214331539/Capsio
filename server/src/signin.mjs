@@ -3,7 +3,7 @@
 import crypto from 'node:crypto';
 import { hashSecret } from './jwt.mjs';
 import { fail } from './http.mjs';
-import { sendVerificationCode } from './sms.mjs';
+import { CODE_MINUTES, checkVerificationCode, sendVerificationCode, serviceChecksCodes } from './sms.mjs';
 
 const codeRequests = new Map();
 const CODE_WINDOW_MS = 10 * 60_000;
@@ -39,24 +39,30 @@ function phoneCode(config, phone) {
   return String(crypto.randomInt(100000, 1_000_000));
 }
 
+/** Whether the SMS service, rather than this server, makes and checks the number's code. */
+const remoteCode = (config, phone) => !usesDevelopmentCode(config, phone) && serviceChecksCodes(config);
+
 /** Stores a fresh code for the number and texts it; one a minute per number. */
 export async function sendCode(db, config, phone, address) {
   limitCodeRequests(address);
-  const code = phoneCode(config, phone);
+  // When the service holds the code, the row still carries the minute check, the expiry, the
+  // attempts and the single use; its hash is then only a token for that use.
+  const remote = remoteCode(config, phone);
+  const code = remote ? crypto.randomUUID() : phoneCode(config, phone);
   const hash = hashSecret(`${config.jwtSecret}:${phone}:${code}`);
   // The minute check and the new code are one statement, so requests sent together cannot
   // all pass the check.
   const stored = await db.query(
     `INSERT INTO auth_codes(phone, code_hash, expires_at, last_sent_at, attempts)
-     VALUES ($1, $2, NOW() + INTERVAL '5 minutes', NOW(), 0)
+     VALUES ($1, $2, NOW() + $3 * INTERVAL '1 minute', NOW(), 0)
      ON CONFLICT (phone) DO UPDATE SET code_hash = EXCLUDED.code_hash,
        expires_at = EXCLUDED.expires_at, last_sent_at = EXCLUDED.last_sent_at, attempts = 0
      WHERE auth_codes.last_sent_at < NOW() - INTERVAL '60 seconds'
      RETURNING phone`,
-    [phone, hash],
+    [phone, hash, CODE_MINUTES],
   );
   if (!stored.rowCount) throw fail(429, '验证码发送过于频繁，请稍后再试。');
-  if (!usesDevelopmentCode(config, phone)) await sendVerificationCode(config, phone, code);
+  if (!usesDevelopmentCode(config, phone)) await sendVerificationCode(config, phone, remote ? null : code);
 }
 
 export async function authenticateCode(db, config, phone, code) {
@@ -76,9 +82,10 @@ export async function authenticateCode(db, config, phone, code) {
     if (left.rows[0]) throw fail(429, '验证码尝试次数过多，请重新获取。');
     throw fail(400, '验证码已过期，请重新获取。');
   }
-  if (hashSecret(`${config.jwtSecret}:${phone}:${code}`) !== stored.code_hash) {
-    throw fail(400, '验证码不正确。');
-  }
+  const matches = remoteCode(config, phone)
+    ? await checkVerificationCode(config, phone, code)
+    : hashSecret(`${config.jwtSecret}:${phone}:${code}`) === stored.code_hash;
+  if (!matches) throw fail(400, '验证码不正确。');
   // A code works once: of two requests with it, only the one that removes it goes on.
   const used = await db.query('DELETE FROM auth_codes WHERE phone = $1 AND code_hash = $2', [
     phone,
