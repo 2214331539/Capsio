@@ -7,7 +7,7 @@ use super::store::Store;
 use super::{account, highlights, run_project, Clock, Outside, State, NO_MODEL};
 use crate::ai::TextModel;
 use crate::library::LibraryState;
-use crate::scholar::Work;
+use crate::scholar::{OpenAlex, Work};
 use crate::AppState;
 use serde_json::json;
 use std::path::PathBuf;
@@ -39,6 +39,8 @@ pub(super) struct Live {
     last_arxiv: Mutex<Option<Instant>>,
     /// The official-model token the server refused during this pass.
     refused: Mutex<Option<String>>,
+    /// How OpenAlex is reached: through Capsio's service while the user is signed in.
+    scholar: OpenAlex,
     /// OpenAlex refused for its daily budget this pass: keyless requests share one per network
     /// address, and asking again only adds refusals.
     openalex_spent: AtomicBool,
@@ -53,8 +55,15 @@ impl Live {
             model,
             last_arxiv: Mutex::new(None),
             refused: Mutex::new(None),
+            scholar: OpenAlex::direct(),
             openalex_spent: AtomicBool::new(false),
         }
+    }
+
+    /// Reaches OpenAlex this way instead of directly.
+    pub(super) fn reaching(mut self, scholar: OpenAlex) -> Self {
+        self.scholar = scholar;
+        self
     }
 
     /// An OpenAlex call, unless OpenAlex already refused this pass.
@@ -94,11 +103,9 @@ impl Outside for Live {
                 self.arxiv_turn();
                 tauri::async_runtime::block_on(crate::scholar::arxiv_newest(&query.text, 50))
             }
-            Source::OpenAlex => self.openalex(crate::scholar::openalex_search(
-                &query.text,
-                Some(&query.since),
-                25,
-            )),
+            Source::OpenAlex => {
+                self.openalex(self.scholar.search(&query.text, Some(&query.since), 25))
+            }
         }
     }
 
@@ -109,14 +116,14 @@ impl Outside for Live {
                 .map(|works| works.into_iter().next());
         }
         if let Some(doi) = &hint.doi {
-            if let Some(work) = self.openalex(crate::scholar::openalex_doi(doi))? {
+            if let Some(work) = self.openalex(self.scholar.doi(doi))? {
                 return Ok(Some(work));
             }
         }
         if hint.title.is_empty() {
             return Ok(None);
         }
-        self.openalex(crate::scholar::openalex_title(&hint.title))
+        self.openalex(self.scholar.title(&hint.title))
     }
 
     fn has_model(&self) -> bool {
@@ -150,11 +157,11 @@ impl Outside for Live {
     }
 
     fn by_doi(&self, doi: &str) -> Result<Option<Work>, String> {
-        self.openalex(crate::scholar::openalex_doi(doi))
+        self.openalex(self.scholar.doi(doi))
     }
 
     fn citing(&self, ids: &[String], since: &str) -> Result<Vec<(Work, Vec<String>)>, String> {
-        self.openalex(crate::scholar::openalex_citing(ids, since, 50))
+        self.openalex(self.scholar.citing(ids, since, 50))
     }
 }
 
@@ -247,6 +254,16 @@ pub(super) fn wake<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     }
 }
 
+/// OpenAlex through Capsio's service, with its API key, while the user is signed in;
+/// otherwise directly.
+fn scholar_route<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> OpenAlex {
+    let state = app.state::<AppState>();
+    match tauri::async_runtime::block_on(crate::collaboration::access(&state)) {
+        Ok((endpoint, token)) => OpenAlex::through(&endpoint, &token),
+        Err(_) => OpenAlex::direct(),
+    }
+}
+
 /// Deletes everything kept on this device, once any pass running has finished.
 pub(super) fn clear<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
     let radar = app.state::<RadarState>();
@@ -289,7 +306,8 @@ fn pass<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
     let store = open(app)?;
     store.prune(clock.now)?;
     let stale = radar.stale.lock().map_err(|e| e.to_string())?.take();
-    let live = Live::new(crate::ai::background_model(app, stale.as_deref()).ok());
+    let live = Live::new(crate::ai::background_model(app, stale.as_deref()).ok())
+        .reaching(scholar_route(app));
     let workspace = app.state::<AppState>().storage.load()?.unwrap_or_default();
     // Who the user is, as the screening, the scoring and the alerts read it.
     let profile = account::saved(&store)?;

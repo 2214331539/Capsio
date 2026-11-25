@@ -236,102 +236,163 @@ pub fn arxiv_feed(feed: &str) -> Vec<Work> {
 
 // ---------- OpenAlex ----------
 
-/// Full-text search, optionally only works published on or after `since` (`YYYY-MM-DD`).
-pub async fn openalex_search(
-    query: &str,
-    since: Option<&str>,
-    limit: usize,
-) -> Result<Vec<Work>, String> {
-    let limit = limit.clamp(1, 50).to_string();
-    let filter = since.map(|day| format!("from_publication_date:{day}"));
-    let mut pairs = vec![("search", query), ("per-page", limit.as_str())];
-    if let Some(filter) = &filter {
-        pairs.push(("filter", filter));
-        pairs.push(("sort", "publication_date:desc"));
+/// How OpenAlex is reached. OpenAlex gives keyless requests a daily budget per network address,
+/// which everyone behind one address shares; a signed-in user's requests go through Capsio's
+/// service instead, which adds its API key, and straight to OpenAlex when that fails.
+#[derive(Clone, Debug, Default)]
+pub struct OpenAlex {
+    /// The service's address and the user's access token.
+    through: Option<(String, String)>,
+}
+
+impl OpenAlex {
+    /// Straight to OpenAlex.
+    pub fn direct() -> Self {
+        Self::default()
     }
-    openalex_list(&url(OPENALEX, &pairs)).await
-}
 
-/// Works published on or after `since` that cite any of these OpenAlex works, newest first,
-/// each with the ones among them it cites.
-pub async fn openalex_citing(
-    ids: &[String],
-    since: &str,
-    limit: usize,
-) -> Result<Vec<(Work, Vec<String>)>, String> {
-    if ids.is_empty() {
-        return Ok(Vec::new());
+    /// Through Capsio's service at `endpoint`, signed in with `token`.
+    pub fn through(endpoint: &str, token: &str) -> Self {
+        Self {
+            through: Some((
+                endpoint.trim_end_matches('/').to_string(),
+                token.to_string(),
+            )),
+        }
     }
-    let filter = format!("cites:{},from_publication_date:{since}", ids.join("|"));
-    let limit = limit.clamp(1, 50).to_string();
-    let body = fetch(&url(
-        OPENALEX,
-        &[
-            ("filter", filter.as_str()),
-            ("sort", "publication_date:desc"),
-            ("per-page", limit.as_str()),
-        ],
-    ))
-    .await?;
-    let value: Value = serde_json::from_str(&body).map_err(|_| "OpenAlex 返回的内容无法解析。")?;
-    Ok(value["results"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .map(|item| {
-            let cited = item["referenced_works"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .filter_map(|id| id.as_str())
-                .map(|id| id.trim_start_matches("https://openalex.org/").to_string())
-                .filter(|id| ids.contains(id))
-                .collect();
-            (openalex_work(item), cited)
-        })
-        .filter(|(work, _)| !work.title.is_empty())
-        .collect())
-}
 
-/// The work with this DOI, if OpenAlex knows it.
-pub async fn openalex_doi(doi: &str) -> Result<Option<Work>, String> {
-    let body = match fetch(
-        &reqwest::Url::parse(&format!("{OPENALEX}/https://doi.org/{doi}"))
-            .map_err(|e| e.to_string())?,
-    )
-    .await
-    {
-        Ok(body) => body,
-        Err(error) if error.contains("HTTP 404") => return Ok(None),
-        Err(error) => return Err(error),
-    };
-    let value: Value = serde_json::from_str(&body).map_err(|_| "OpenAlex 返回的内容无法解析。")?;
-    Ok(Some(openalex_work(&value)))
-}
-
-/// The work best matching a title, when one matches closely enough to be the same paper.
-pub async fn openalex_title(title: &str) -> Result<Option<Work>, String> {
-    let wanted = normalized_title(title);
-    if wanted.split(' ').count() < 3 {
-        return Ok(None);
+    async fn get(&self, url: &reqwest::Url) -> Result<String, String> {
+        if let Some((endpoint, token)) = &self.through {
+            let address = format!("{endpoint}/v1/openalex{}", url.path());
+            if let Ok(mut proxied) = reqwest::Url::parse(&address) {
+                proxied.set_query(url.query());
+                let answer = async {
+                    let response = client()?
+                        .get(proxied)
+                        .bearer_auth(token)
+                        .send()
+                        .await
+                        .map_err(|e| e.to_string())?;
+                    // The service's own refusals (signed out, its limit, no key) and OpenAlex's
+                    // alike fall back to asking OpenAlex directly; a 404 is OpenAlex's answer.
+                    match response.status().as_u16() {
+                        200 => response.text().await.map_err(|e| e.to_string()),
+                        404 => Err("api.openalex.org 返回 HTTP 404。".to_string()),
+                        status => Err(format!("HTTP {status}")),
+                    }
+                };
+                match answer.await {
+                    Ok(body) => return Ok(body),
+                    Err(error) if error.contains("HTTP 404") => return Err(error),
+                    Err(_) => {}
+                }
+            }
+        }
+        fetch(url).await
     }
-    let filter = format!("title.search:{}", title.replace([',', '|', ':'], " "));
-    let works = openalex_list(&url(OPENALEX, &[("filter", &filter), ("per-page", "5")])).await?;
-    Ok(works
-        .into_iter()
-        .find(|work| same_title(&normalized_title(&work.title), &wanted)))
-}
 
-async fn openalex_list(url: &reqwest::Url) -> Result<Vec<Work>, String> {
-    let body = fetch(url).await?;
-    let value: Value = serde_json::from_str(&body).map_err(|_| "OpenAlex 返回的内容无法解析。")?;
-    Ok(value["results"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .map(openalex_work)
-        .filter(|work| !work.title.is_empty())
-        .collect())
+    async fn list(&self, url: &reqwest::Url) -> Result<Vec<Work>, String> {
+        let body = self.get(url).await?;
+        let value: Value =
+            serde_json::from_str(&body).map_err(|_| "OpenAlex 返回的内容无法解析。")?;
+        Ok(value["results"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(openalex_work)
+            .filter(|work| !work.title.is_empty())
+            .collect())
+    }
+
+    /// Full-text search, optionally only works published on or after `since` (`YYYY-MM-DD`).
+    pub async fn search(
+        &self,
+        query: &str,
+        since: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<Work>, String> {
+        let limit = limit.clamp(1, 50).to_string();
+        let filter = since.map(|day| format!("from_publication_date:{day}"));
+        let mut pairs = vec![("search", query), ("per-page", limit.as_str())];
+        if let Some(filter) = &filter {
+            pairs.push(("filter", filter));
+            pairs.push(("sort", "publication_date:desc"));
+        }
+        self.list(&url(OPENALEX, &pairs)).await
+    }
+
+    /// Works published on or after `since` that cite any of these OpenAlex works, newest
+    /// first, each with the ones among them it cites.
+    pub async fn citing(
+        &self,
+        ids: &[String],
+        since: &str,
+        limit: usize,
+    ) -> Result<Vec<(Work, Vec<String>)>, String> {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let filter = format!("cites:{},from_publication_date:{since}", ids.join("|"));
+        let limit = limit.clamp(1, 50).to_string();
+        let body = self
+            .get(&url(
+                OPENALEX,
+                &[
+                    ("filter", filter.as_str()),
+                    ("sort", "publication_date:desc"),
+                    ("per-page", limit.as_str()),
+                ],
+            ))
+            .await?;
+        let value: Value =
+            serde_json::from_str(&body).map_err(|_| "OpenAlex 返回的内容无法解析。")?;
+        Ok(value["results"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|item| {
+                let cited = item["referenced_works"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|id| id.as_str())
+                    .map(|id| id.trim_start_matches("https://openalex.org/").to_string())
+                    .filter(|id| ids.contains(id))
+                    .collect();
+                (openalex_work(item), cited)
+            })
+            .filter(|(work, _)| !work.title.is_empty())
+            .collect())
+    }
+
+    /// The work with this DOI, if OpenAlex knows it.
+    pub async fn doi(&self, doi: &str) -> Result<Option<Work>, String> {
+        let address = reqwest::Url::parse(&format!("{OPENALEX}/https://doi.org/{doi}"))
+            .map_err(|e| e.to_string())?;
+        let body = match self.get(&address).await {
+            Ok(body) => body,
+            Err(error) if error.contains("HTTP 404") => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        let value: Value =
+            serde_json::from_str(&body).map_err(|_| "OpenAlex 返回的内容无法解析。")?;
+        Ok(Some(openalex_work(&value)))
+    }
+
+    /// The work best matching a title, when one matches closely enough to be the same paper.
+    pub async fn title(&self, title: &str) -> Result<Option<Work>, String> {
+        let wanted = normalized_title(title);
+        if wanted.split(' ').count() < 3 {
+            return Ok(None);
+        }
+        let filter = format!("title.search:{}", title.replace([',', '|', ':'], " "));
+        let works = self
+            .list(&url(OPENALEX, &[("filter", &filter), ("per-page", "5")]))
+            .await?;
+        Ok(works
+            .into_iter()
+            .find(|work| same_title(&normalized_title(&work.title), &wanted)))
+    }
 }
 
 pub fn openalex_work(work: &Value) -> Work {
@@ -559,9 +620,12 @@ mod live {
         let since = (chrono::Local::now() - chrono::Duration::days(30))
             .format("%Y-%m-%d")
             .to_string();
-        let recent =
-            tauri::async_runtime::block_on(openalex_search("agent memory", Some(&since), 5))
-                .unwrap();
+        let recent = tauri::async_runtime::block_on(OpenAlex::direct().search(
+            "agent memory",
+            Some(&since),
+            5,
+        ))
+        .unwrap();
         assert!(
             recent.iter().all(|work| work
                 .published
@@ -569,9 +633,10 @@ mod live {
                 .is_some_and(|day| day >= since.as_str())),
             "{recent:?}"
         );
-        let found =
-            tauri::async_runtime::block_on(openalex_title("A-MEM: Agentic Memory for LLM Agents"))
-                .unwrap();
+        let found = tauri::async_runtime::block_on(
+            OpenAlex::direct().title("A-MEM: Agentic Memory for LLM Agents"),
+        )
+        .unwrap();
         assert!(
             found.as_ref().is_some_and(|work| !work.summary.is_empty()),
             "{found:?}"

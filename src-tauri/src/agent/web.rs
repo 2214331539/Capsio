@@ -395,12 +395,17 @@ async fn papers(query: &str, source: Option<&str>, limit: usize) -> Result<Value
         (Some(id), _) => crate::scholar::arxiv_ids(&[id]).await?,
         (None, true) => crate::scholar::arxiv_search(&format!("all:{query}"), limit).await?,
         (None, false) if doi.starts_with("10.") && doi.contains('/') => {
-            crate::scholar::openalex_doi(doi)
+            crate::scholar::OpenAlex::direct()
+                .doi(doi)
                 .await?
                 .into_iter()
                 .collect()
         }
-        (None, false) => crate::scholar::openalex_search(query, None, limit).await?,
+        (None, false) => {
+            crate::scholar::OpenAlex::direct()
+                .search(query, None, limit)
+                .await?
+        }
     };
     let results: Vec<Value> = works.iter().map(paper_view).collect();
     Ok(json!({"query":query,"source":if from_arxiv {"arxiv"} else {"openalex"},"results":results}))

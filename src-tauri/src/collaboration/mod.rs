@@ -607,12 +607,20 @@ pub async fn collaboration_access_token<R: tauri::Runtime>(
     state: State<'_, AppState>,
 ) -> Result<String, String> {
     trusted(&view)?;
-    let auth = read_auth(&state)?.ok_or("请先登录协作服务器。")?;
+    access(&state).await.map(|(_, token)| token)
+}
+
+/// The service's address and a current access token for the signed-in user, refreshed when it
+/// is about to expire.
+pub(crate) async fn access(state: &AppState) -> Result<(String, String), String> {
+    let auth = read_auth(state)?.ok_or("请先登录协作服务器。")?;
+    let endpoint = read(state)?.endpoint;
     let expires_at = token_expires_at(&auth.access_token).unwrap_or_default();
     if expires_at > chrono::Utc::now().timestamp() + 60 {
-        return Ok(auth.access_token);
+        return Ok((endpoint, auth.access_token));
     }
-    fresh_token(&state, &read(&state)?.endpoint, &auth.access_token).await
+    let token = fresh_token(state, &endpoint, &auth.access_token).await?;
+    Ok((endpoint, token))
 }
 
 /// This device's token for the official models: (endpoint, user, token id, token).

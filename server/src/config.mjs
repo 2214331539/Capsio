@@ -60,6 +60,10 @@ export function readConfig(env = process.env) {
         .map((phone) => phone.trim())
         .filter(Boolean),
     },
+    // OpenAlex's API key, for signed-in users' paper searches through /v1/openalex.
+    openalex: {
+      apiKey: optional(env, 'OPENALEX_API_KEY'),
+    },
     officialModel: {
       endpoint: optional(env, 'OFFICIAL_MODEL_ENDPOINT'),
       chatEndpoint: optional(env, 'OFFICIAL_MODEL_CHAT_ENDPOINT'),

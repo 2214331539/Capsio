@@ -5,6 +5,7 @@ import { readConfig, assertProductionConfig } from './config.mjs';
 import { createDb, initDb, withTransaction } from './db.mjs';
 import { hashSecret, signToken, verifyToken } from './jwt.mjs';
 import { normalizePhone } from './sms.mjs';
+import { handleOpenAlex } from './openalex.mjs';
 import { deleteObject, objectKey, objectSize, signedDownloadUrl, signedUploadUrl } from './oss.mjs';
 import { pullEntities, pushEntities } from './sync.mjs';
 import { body, clientAddress, send } from './http.mjs';
@@ -296,6 +297,7 @@ async function handle(request, response, context) {
     if (await handleBilling(request, response, context, path, url)) return;
 
     const user = await caller(request, context);
+    if (await handleOpenAlex(request, response, context, path, url, user)) return;
     if (request.method === 'GET' && path === '/v1/me') {
       const result = await db.query('SELECT password_hash, nickname FROM users WHERE id = $1', [user.sub]);
       return send(response, 200, {
