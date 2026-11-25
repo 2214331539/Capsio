@@ -6,12 +6,12 @@ Node process handles sign-in, sync and the optional model gateway. Desktop
 clients upload and download files straight to OSS through short-lived signed
 URLs, so file bytes never pass through this server.
 
-**Production (since 2026-11-25)** is `https://capsio.cloud`
-(Ubuntu 24.04, PostgreSQL 16, Nginx
-1.24, a host shared with another site). The website, this API (`/v1/`, `/admin`) and the
-forum (`/discuss/`) share the domain: `deploy/nginx/capsio-cloud.conf`. Update
-the service with `bash server/deploy/update.sh`, which deploys a pushed commit
-from GitHub and rolls back if it is unhealthy; `capsio-backup.timer` dumps the
+**Production (since 2026-11-25)** is `https://capsio.cloud` (Ubuntu 24.04,
+PostgreSQL 16, Nginx 1.24, a host shared with another site). The website, this
+API (`/v1/`, `/admin`) and the forum (`/discuss/`) share the domain:
+`deploy/nginx/capsio-cloud.conf`. Update the service with
+`bash server/deploy/update.sh <ssh-host>`, which deploys a pushed commit from
+GitHub and rolls back if it is unhealthy; `capsio-backup.timer` dumps the
 databases to `/var/backups/capsio` every day. Before that it ran on Tencent
 Cloud at `https://124.221.115.83:8443`, which now forwards to capsio.cloud for
 builds that still use it.
@@ -108,7 +108,7 @@ service address.
 Push the commit, then from a machine that can log in to the host with a key:
 
 ```bash
-bash server/deploy/update.sh [ssh-host] [commit]   # default: your-host, origin/main
+bash server/deploy/update.sh <ssh-host> [commit]   # commit: origin/main by default
 ```
 
 `deploy/update-remote.sh` runs on the host as root. It installs Node 22 in
