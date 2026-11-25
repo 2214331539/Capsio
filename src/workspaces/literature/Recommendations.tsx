@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Sparkles, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button, segmentThumb } from '../../components/primitives';
 import { Menu, type MenuAnchor } from '../../components/primitives/Menu';
 import { toast, toastUndo } from '../../components/feedback';
@@ -193,7 +193,7 @@ export function Recommendations({
         {paper.summary ? <p className="recommendation-summary">{paper.summary}</p> : null}
         {paper.reason ? (
           <p className="recommendation-reason">
-            <Sparkles size={13} aria-hidden="true" />
+            <span className="recommendation-label">{t('推荐理由')}</span>
             {paper.reason}
           </p>
         ) : null}

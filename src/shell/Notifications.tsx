@@ -5,8 +5,9 @@ import {
   Bot,
   CircleArrowUp,
   CircleX,
+  FileText,
   FlaskConical,
-  Sparkles,
+  Newspaper,
   TriangleAlert,
   UserPlus,
 } from 'lucide-react';
@@ -271,7 +272,7 @@ export function Notifications({
     items.push({
       key: `alert:${alert.workId}`,
       tone: 'info',
-      icon: <Sparkles />,
+      icon: <FileText />,
       title: t('新论文提醒：{title}', { title: alert.title }),
       detail: `${alert.why} · ${project.name}`,
       actions: [
@@ -294,7 +295,7 @@ export function Notifications({
     items.push({
       key: `brief:${brief.projectId}`,
       tone: 'info',
-      icon: <Sparkles />,
+      icon: <Newspaper />,
       title: t('今日推荐：{count} 篇新论文', { count: brief.count }),
       detail: project.name,
       actions: [

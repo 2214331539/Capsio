@@ -66,18 +66,14 @@
   line-height: 1.55;
 }
 .recommendation-reason {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
   margin: 2px 0 0;
   color: var(--sf-text-secondary);
   font-size: 12.5px;
   line-height: 1.5;
 }
-.recommendation-reason svg {
-  flex-shrink: 0;
-  color: var(--sf-accent);
-  transform: translateY(1px);
+.recommendation-label {
+  margin-right: 6px;
+  color: var(--sf-text-muted);
 }
 .recommendation-actions {
   display: flex;

@@ -25,7 +25,7 @@ import {
   Folder,
   X,
   Trash2,
-  Sparkles,
+  Newspaper,
 } from 'lucide-react';
 import { Button, Input } from '../../components/primitives';
 import { dismissToast, toast, toastUndo, updateToast } from '../../components/feedback';
@@ -1125,7 +1125,7 @@ export function LocalLiterature({
                 aria-pressed={active?.kind === 'recommendations'}
                 onClick={openRecommendations}
               >
-                <Sparkles />
+                <Newspaper />
               </Button>
               <Button
                 variant="ghost"
