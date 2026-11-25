@@ -3,6 +3,7 @@
 # into /var/backups/capsio, keeping 14 days. File contents live in OSS and are not part of it.
 # Installed as /usr/local/sbin/capsio-backup; capsio-backup.timer runs it.
 set -euo pipefail
+umask 077
 
 dir=/var/backups/capsio
 stamp=$(date +%Y%m%d-%H%M%S)
