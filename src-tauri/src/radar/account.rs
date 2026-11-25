@@ -84,6 +84,15 @@ impl Account {
         Self { facts: kept }
     }
 
+    /// The authors the user follows, by name as papers list them.
+    pub fn followed(&self) -> Vec<String> {
+        self.facts
+            .iter()
+            .filter(|f| f.topic == "关注" && f.item == "作者" && f.confidence >= SURE)
+            .map(|f| f.value.clone())
+            .collect()
+    }
+
     /// One line per topic, its items and their surest values, cut to `limit` characters at a
     /// line's end.
     pub fn summary(&self, limit: usize) -> String {

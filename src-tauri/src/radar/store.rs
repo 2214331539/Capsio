@@ -90,6 +90,23 @@ CREATE TABLE IF NOT EXISTS highlights (
     day TEXT PRIMARY KEY,
     items TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS openalex_ids (
+    key TEXT PRIMARY KEY,
+    id TEXT,
+    checked INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS citations (
+    project TEXT NOT NULL,
+    work TEXT NOT NULL,
+    cited TEXT NOT NULL,
+    PRIMARY KEY (project, work)
+);
+CREATE TABLE IF NOT EXISTS alerts (
+    project TEXT NOT NULL,
+    work TEXT NOT NULL,
+    day TEXT NOT NULL,
+    PRIMARY KEY (project, work)
+);
 ";
 
 /// How far a paper got for a project.
@@ -203,6 +220,8 @@ pub(crate) struct Pick {
     pub title: Option<String>,
     pub summary: Option<String>,
     pub reason: Option<String>,
+    /// The titles of the library papers it cites, when it was found by citing them.
+    pub cites: Option<String>,
 }
 
 pub(crate) struct Store {
@@ -427,8 +446,10 @@ impl Store {
         let mut statement = self
             .db
             .prepare(&format!(
-                "SELECT w.work, p.score, p.title, p.summary, p.reason
-                 FROM picks p JOIN works w ON w.id = p.work WHERE {filter}"
+                "SELECT w.work, p.score, p.title, p.summary, p.reason, c.cited
+                 FROM picks p JOIN works w ON w.id = p.work
+                 LEFT JOIN citations c ON c.project = p.project AND c.work = p.work
+                 WHERE {filter}"
             ))
             .map_err(err)?;
         let rows = statement
@@ -439,18 +460,20 @@ impl Store {
                     row.get::<_, Option<String>>(2)?,
                     row.get::<_, Option<String>>(3)?,
                     row.get::<_, Option<String>>(4)?,
+                    row.get::<_, Option<String>>(5)?,
                 ))
             })
             .map_err(err)?;
         Ok(rows
             .filter_map(Result::ok)
-            .filter_map(|(json, score, title, summary, reason)| {
+            .filter_map(|(json, score, title, summary, reason, cites)| {
                 Some(Pick {
                     work: serde_json::from_str(&json).ok()?,
                     score,
                     title,
                     summary,
                     reason,
+                    cites,
                 })
             })
             .collect())
@@ -808,6 +831,88 @@ impl Store {
             .execute(
                 "INSERT OR REPLACE INTO highlights (day, items) VALUES (?1, ?2)",
                 params![day, items],
+            )
+            .map(drop)
+            .map_err(err)
+    }
+
+    // ---------- citations and alerts ----------
+
+    /// The OpenAlex work a library paper was found to be, by its DOI or `title:` and its
+    /// normalised title (`Some(None)`: looked up, not found), and when.
+    pub fn openalex_id(&self, key: &str) -> Result<Option<(Option<String>, i64)>, String> {
+        self.db
+            .query_row(
+                "SELECT id, checked FROM openalex_ids WHERE key = ?1",
+                [key],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()
+            .map_err(err)
+    }
+
+    pub fn put_openalex_id(&self, key: &str, id: Option<&str>, now: i64) -> Result<(), String> {
+        self.db
+            .execute(
+                "INSERT OR REPLACE INTO openalex_ids (key, id, checked) VALUES (?1, ?2, ?3)",
+                params![key, id, now],
+            )
+            .map(drop)
+            .map_err(err)
+    }
+
+    /// A work found because it cites these library papers (their titles) puts it in front of
+    /// the model, unless the model has already seen it.
+    pub fn add_citation(
+        &self,
+        project: &str,
+        work: &str,
+        cited: &str,
+        now: i64,
+    ) -> Result<(), String> {
+        self.db
+            .execute(
+                "INSERT OR REPLACE INTO citations (project, work, cited) VALUES (?1, ?2, ?3)",
+                params![project, work, cited],
+            )
+            .map_err(err)?;
+        self.add_pick(project, work, 1.0, Stage::Recalled, now)?;
+        self.db
+            .execute(
+                "UPDATE picks SET stage = 'recalled' WHERE project = ?1 AND work = ?2 AND stage = 'dropped'",
+                params![project, work],
+            )
+            .map(drop)
+            .map_err(err)
+    }
+
+    /// The works a project was alerted to.
+    pub fn alerted(&self, project: &str) -> Result<Vec<String>, String> {
+        let mut statement = self
+            .db
+            .prepare("SELECT work FROM alerts WHERE project = ?1")
+            .map_err(err)?;
+        let rows = statement
+            .query_map([project], |row| row.get::<_, String>(0))
+            .map_err(err)?;
+        Ok(rows.filter_map(Result::ok).collect())
+    }
+
+    /// Alerts raised on a day, across projects.
+    pub fn alerts_on(&self, day: &str) -> Result<usize, String> {
+        self.db
+            .query_row("SELECT COUNT(*) FROM alerts WHERE day = ?1", [day], |row| {
+                row.get::<_, i64>(0)
+            })
+            .map(|count| count as usize)
+            .map_err(err)
+    }
+
+    pub fn put_alert(&self, project: &str, work: &str, day: &str) -> Result<(), String> {
+        self.db
+            .execute(
+                "INSERT OR IGNORE INTO alerts (project, work, day) VALUES (?1, ?2, ?3)",
+                params![project, work, day],
             )
             .map(drop)
             .map_err(err)

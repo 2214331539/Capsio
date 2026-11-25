@@ -127,7 +127,7 @@ fn items(picks: &[Pick], summary_chars: usize) -> String {
         .iter()
         .enumerate()
         .map(|(id, pick)| {
-            json!({
+            let mut item = json!({
                 "id": id,
                 "type": match pick.work.kind {
                     Kind::Paper => "论文",
@@ -136,7 +136,11 @@ fn items(picks: &[Pick], summary_chars: usize) -> String {
                 },
                 "title": pick.work.title,
                 "abstract": pick.work.summary.chars().take(summary_chars).collect::<String>(),
-            })
+            });
+            if let Some(cites) = &pick.cites {
+                item["cites"] = json!(format!("引用了文献库里的《{cites}》"));
+            }
+            item
         })
         .collect();
     serde_json::to_string_pretty(&list).unwrap_or_default()

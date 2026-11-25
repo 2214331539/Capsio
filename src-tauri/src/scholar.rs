@@ -39,6 +39,9 @@ pub struct Work {
     pub citations: Option<u64>,
     #[serde(default)]
     pub kind: Kind,
+    /// Its OpenAlex work id (`W…`), when it came from OpenAlex.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub openalex: Option<String>,
 }
 
 /// What a work is. Everything from arXiv and OpenAlex is a paper.
@@ -249,6 +252,47 @@ pub async fn openalex_search(
     openalex_list(&url(OPENALEX, &pairs)).await
 }
 
+/// Works published on or after `since` that cite any of these OpenAlex works, newest first,
+/// each with the ones among them it cites.
+pub async fn openalex_citing(
+    ids: &[String],
+    since: &str,
+    limit: usize,
+) -> Result<Vec<(Work, Vec<String>)>, String> {
+    if ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let filter = format!("cites:{},from_publication_date:{since}", ids.join("|"));
+    let limit = limit.clamp(1, 50).to_string();
+    let body = fetch(&url(
+        OPENALEX,
+        &[
+            ("filter", filter.as_str()),
+            ("sort", "publication_date:desc"),
+            ("per-page", limit.as_str()),
+        ],
+    ))
+    .await?;
+    let value: Value = serde_json::from_str(&body).map_err(|_| "OpenAlex 返回的内容无法解析。")?;
+    Ok(value["results"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|item| {
+            let cited = item["referenced_works"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|id| id.as_str())
+                .map(|id| id.trim_start_matches("https://openalex.org/").to_string())
+                .filter(|id| ids.contains(id))
+                .collect();
+            (openalex_work(item), cited)
+        })
+        .filter(|(work, _)| !work.title.is_empty())
+        .collect())
+}
+
 /// The work with this DOI, if OpenAlex knows it.
 pub async fn openalex_doi(doi: &str) -> Result<Option<Work>, String> {
     let body = match fetch(
@@ -358,6 +402,7 @@ pub fn openalex_work(work: &Value) -> Work {
         citations: work["cited_by_count"].as_u64(),
         doi,
         arxiv,
+        openalex: openalex.clone(),
         ..Work::default()
     }
     .identify(openalex.as_deref())

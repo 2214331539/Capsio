@@ -11,6 +11,7 @@ use crate::scholar::Work;
 use crate::AppState;
 use serde_json::json;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
@@ -38,7 +39,13 @@ pub(super) struct Live {
     last_arxiv: Mutex<Option<Instant>>,
     /// The official-model token the server refused during this pass.
     refused: Mutex<Option<String>>,
+    /// OpenAlex refused for its daily budget this pass: keyless requests share one per network
+    /// address, and asking again only adds refusals.
+    openalex_spent: AtomicBool,
 }
+
+/// What OpenAlex calls fail with once its budget is spent for the pass.
+const OPENALEX_SPENT: &str = "OpenAlex 今天的免费额度已用完，稍后再试。";
 
 impl Live {
     pub(super) fn new(model: Option<TextModel>) -> Self {
@@ -46,7 +53,26 @@ impl Live {
             model,
             last_arxiv: Mutex::new(None),
             refused: Mutex::new(None),
+            openalex_spent: AtomicBool::new(false),
         }
+    }
+
+    /// An OpenAlex call, unless OpenAlex already refused this pass.
+    fn openalex<T>(
+        &self,
+        call: impl std::future::Future<Output = Result<T, String>>,
+    ) -> Result<T, String> {
+        if self.openalex_spent.load(Ordering::Relaxed) {
+            return Err(OPENALEX_SPENT.into());
+        }
+        let result = tauri::async_runtime::block_on(call);
+        if result
+            .as_ref()
+            .is_err_and(|error| error.contains("openalex.org") && error.contains("HTTP 429"))
+        {
+            self.openalex_spent.store(true, Ordering::Relaxed);
+        }
+        result
     }
 
     fn arxiv_turn(&self) {
@@ -68,7 +94,7 @@ impl Outside for Live {
                 self.arxiv_turn();
                 tauri::async_runtime::block_on(crate::scholar::arxiv_newest(&query.text, 50))
             }
-            Source::OpenAlex => tauri::async_runtime::block_on(crate::scholar::openalex_search(
+            Source::OpenAlex => self.openalex(crate::scholar::openalex_search(
                 &query.text,
                 Some(&query.since),
                 25,
@@ -83,14 +109,14 @@ impl Outside for Live {
                 .map(|works| works.into_iter().next());
         }
         if let Some(doi) = &hint.doi {
-            if let Some(work) = tauri::async_runtime::block_on(crate::scholar::openalex_doi(doi))? {
+            if let Some(work) = self.openalex(crate::scholar::openalex_doi(doi))? {
                 return Ok(Some(work));
             }
         }
         if hint.title.is_empty() {
             return Ok(None);
         }
-        tauri::async_runtime::block_on(crate::scholar::openalex_title(&hint.title))
+        self.openalex(crate::scholar::openalex_title(&hint.title))
     }
 
     fn has_model(&self) -> bool {
@@ -121,6 +147,14 @@ impl Outside for Live {
 
     fn feed(&self, url: &str) -> Result<String, String> {
         tauri::async_runtime::block_on(read_feed(url))
+    }
+
+    fn by_doi(&self, doi: &str) -> Result<Option<Work>, String> {
+        self.openalex(crate::scholar::openalex_doi(doi))
+    }
+
+    fn citing(&self, ids: &[String], since: &str) -> Result<Vec<(Work, Vec<String>)>, String> {
+        self.openalex(crate::scholar::openalex_citing(ids, since, 50))
     }
 }
 
@@ -257,10 +291,8 @@ fn pass<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
     let stale = radar.stale.lock().map_err(|e| e.to_string())?.take();
     let live = Live::new(crate::ai::background_model(app, stale.as_deref()).ok());
     let workspace = app.state::<AppState>().storage.load()?.unwrap_or_default();
-    // What the account profile says about the user, as the screening and scoring read it.
-    let about = account::saved(&store)?
-        .map(|account| account.summary(600))
-        .unwrap_or_default();
+    // Who the user is, as the screening, the scoring and the alerts read it.
+    let profile = account::saved(&store)?;
     for project in store.visited_since(clock.now - ACTIVE_DAYS * 86_400)? {
         let open_project = workspace["projects"]
             .as_array()
@@ -286,7 +318,7 @@ fn pass<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
             }
         };
         let papers: Vec<Paper> = papers.into_iter().map(Paper::from).collect();
-        match run_project(&store, &live, &project, &papers, &about, &clock) {
+        match run_project(&store, &live, &project, &papers, profile.as_ref(), &clock) {
             Ok(outcome) => {
                 if let Some(warning) = outcome.warning {
                     log(app, &format!("{project}: {warning}"));
@@ -295,6 +327,12 @@ fn pass<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
                     let _ = app.emit(
                         "radar-brief",
                         json!({"projectId": project, "day": clock.day, "count": count}),
+                    );
+                }
+                for alert in outcome.alerts {
+                    let _ = app.emit(
+                        "radar-alert",
+                        json!({"projectId": project, "workId": alert.work_id, "title": alert.title, "why": alert.why}),
                     );
                 }
             }

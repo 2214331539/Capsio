@@ -15,6 +15,7 @@
 //! is what the page and the assistant ask for.
 
 mod account;
+mod alerts;
 mod brief;
 pub(crate) mod commands;
 mod events;
@@ -24,6 +25,7 @@ mod judge;
 mod library;
 mod profile;
 mod recall;
+mod relations;
 mod sources;
 mod store;
 pub(crate) mod worker;
@@ -102,6 +104,11 @@ pub(crate) trait Outside {
     fn ask(&self, system: &str, user: &str, max_tokens: u32) -> Result<crate::ai::Answer, String>;
     /// A news or blog feed's document.
     fn feed(&self, url: &str) -> Result<String, String>;
+    /// The OpenAlex work with this DOI.
+    fn by_doi(&self, doi: &str) -> Result<Option<Work>, String>;
+    /// Works published on or after `since` citing these OpenAlex works, each with the ones
+    /// among them it cites.
+    fn citing(&self, ids: &[String], since: &str) -> Result<Vec<(Work, Vec<String>)>, String>;
 }
 
 /// What one project's pass came to.
@@ -109,6 +116,8 @@ pub(crate) trait Outside {
 struct Pass {
     /// How many papers today's brief holds, when it was made in this pass.
     brief: Option<usize>,
+    /// What is worth telling at once.
+    alerts: Vec<alerts::Alert>,
     /// What went wrong without stopping the pass, for the log.
     warning: Option<String>,
 }
@@ -119,7 +128,7 @@ fn run_project(
     outside: &dyn Outside,
     project: &str,
     papers: &[Paper],
-    about: &str,
+    account: Option<&account::Account>,
     clock: &Clock,
 ) -> Result<Pass, String> {
     let seeds = library::seeds(store, outside, papers, clock.now)?;
@@ -142,11 +151,13 @@ fn run_project(
     let unreachable: Vec<String> = [
         sources::refresh(store, outside, project, &profile, clock).err(),
         feeds::refresh(store, outside, &profile, clock).err(),
+        relations::refresh(store, outside, project, &seeds, clock).err(),
     ]
     .into_iter()
     .flatten()
     .collect();
     recall::pick(store, project, &seeds, &profile, clock)?;
+    let about = account.map_or_else(String::new, |account| account.summary(600));
     judge::run(
         store,
         outside,
@@ -154,10 +165,13 @@ fn run_project(
         project,
         &profile,
         &seeds,
-        about,
+        &about,
     )?;
+    let brief = brief::make(store, outside, &mut budget, project, clock)?;
+    let followed = account.map(account::Account::followed).unwrap_or_default();
     Ok(Pass {
-        brief: brief::make(store, outside, &mut budget, project, clock)?,
+        brief,
+        alerts: alerts::raise(store, project, &followed, clock)?,
         warning: (!unreachable.is_empty()).then(|| unreachable.join("；")),
     })
 }
@@ -188,6 +202,10 @@ pub(crate) mod tests {
         /// Feed documents by address; other feeds cannot be reached.
         pub feeds: RefCell<HashMap<String, String>>,
         pub feeds_asked: RefCell<Vec<String>>,
+        /// OpenAlex ids by DOI; papers citing library papers, with what they cite.
+        pub openalex: RefCell<HashMap<String, String>>,
+        pub citing: RefCell<Vec<(Work, Vec<String>)>>,
+        pub citing_asked: RefCell<Vec<Vec<String>>>,
     }
 
     impl Outside for Fake {
@@ -230,6 +248,23 @@ pub(crate) mod tests {
                 .get(url)
                 .cloned()
                 .ok_or_else(|| "unreachable".to_string())
+        }
+        fn by_doi(&self, doi: &str) -> Result<Option<Work>, String> {
+            Ok(self.openalex.borrow().get(doi).map(|id| Work {
+                id: format!("doi:{doi}"),
+                openalex: Some(id.clone()),
+                ..Work::default()
+            }))
+        }
+        fn citing(&self, ids: &[String], _since: &str) -> Result<Vec<(Work, Vec<String>)>, String> {
+            self.citing_asked.borrow_mut().push(ids.to_vec());
+            Ok(self
+                .citing
+                .borrow()
+                .iter()
+                .filter(|(_, cited)| cited.iter().any(|id| ids.contains(id)))
+                .cloned()
+                .collect())
         }
     }
 
@@ -342,7 +377,7 @@ pub(crate) mod tests {
             r#"[{"id":0,"rel":9,"sig":7,"nov":8,"cred":6,"use":8,"title":"助手加入跨对话记忆","summary":"助手可以记住之前的对话","reason":"和项目的长期记忆主题相关"},
                 {"id":1,"rel":9,"sig":8,"nov":8,"cred":7,"title":"大模型智能体的分层长期记忆","summary":"把智能体记忆组织成层级","reason":"和 A-MEM 的记忆组织方式直接相关"}]"#.to_string(),
         ]);
-        let made = run_project(&store, &outside, "p", &library(), "", &today).unwrap();
+        let made = run_project(&store, &outside, "p", &library(), None, &today).unwrap();
         assert_eq!(made.brief, Some(2));
         assert!(
             made.warning
@@ -377,7 +412,7 @@ pub(crate) mod tests {
             ..today.clone()
         };
         assert_eq!(
-            run_project(&store, &outside, "p", &library(), "", &later).unwrap(),
+            run_project(&store, &outside, "p", &library(), None, &later).unwrap(),
             Pass::default()
         );
         assert_eq!(outside.questions.borrow().len(), 3);
@@ -393,13 +428,13 @@ pub(crate) mod tests {
         let store = Store::open(&dir.path().join("radar.sqlite")).unwrap();
         let today = clock("2026-11-25", 9);
         let outside = Fake::default();
-        run_project(&store, &outside, "small", &library()[..2], "", &today).unwrap();
+        run_project(&store, &outside, "small", &library()[..2], None, &today).unwrap();
         assert_eq!(view(&store, "small").unwrap().state, "needsPapers");
         let without = Fake {
             no_model: true,
             ..Fake::default()
         };
-        run_project(&store, &without, "p", &library(), "", &today).unwrap();
+        run_project(&store, &without, "p", &library(), None, &today).unwrap();
         assert_eq!(view(&store, "p").unwrap().state, "noModel");
         assert_eq!(view(&store, "unseen").unwrap().state, "preparing");
     }
@@ -434,6 +469,7 @@ mod live {
             title: title.to_string(),
             summary: String::new(),
             added: clock.now,
+            doi: None,
         })
         .collect();
         let profile = profile::Profile {
@@ -465,6 +501,54 @@ mod live {
             );
         }
         assert!(fetched > 0 && kept > 0);
+    }
+
+    /// The new papers citing a real project's library, through OpenAlex, without a model:
+    /// `cargo test -p capsio --lib radar::live::real_citations -- --ignored --nocapture`, with
+    /// `CAPSIO_LIVE_WORKSPACE` and `CAPSIO_LIVE_PROJECT` as below.
+    #[test]
+    #[ignore]
+    fn real_citations_of_a_library() {
+        let workspace =
+            PathBuf::from(std::env::var("CAPSIO_LIVE_WORKSPACE").expect("CAPSIO_LIVE_WORKSPACE"));
+        let project = std::env::var("CAPSIO_LIVE_PROJECT").expect("CAPSIO_LIVE_PROJECT");
+        let papers: Vec<Paper> = capsio_core::library::LocalLibrary::new(workspace)
+            .papers_for_reading(&project)
+            .unwrap()
+            .expect("the project has a literature folder")
+            .into_iter()
+            .map(Paper::from)
+            .collect();
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(&dir.path().join("radar.sqlite")).unwrap();
+        let live = Live::new(None);
+        let clock = Clock::local();
+        let seeds = library::seeds(&store, &live, &papers, clock.now).unwrap();
+        let with_doi = seeds.iter().filter(|seed| seed.doi.is_some()).count();
+        let found = relations::refresh(&store, &live, &project, &seeds, &clock).unwrap();
+        for seed in &seeds {
+            let key = seed.doi.clone().unwrap_or_else(|| {
+                format!("title:{}", crate::scholar::normalized_title(&seed.title))
+            });
+            let id = store.openalex_id(&key).unwrap().and_then(|(id, _)| id);
+            println!("  {:?} <- {}", id, seed.title);
+        }
+        println!(
+            "{} library papers, {with_doi} with a DOI, {found} citing papers this week",
+            seeds.len()
+        );
+        for pick in store
+            .picks(&project, store::Stage::Recalled)
+            .unwrap()
+            .iter()
+            .take(10)
+        {
+            println!(
+                "- {} (cites {})",
+                pick.work.title,
+                pick.cites.as_deref().unwrap_or("?")
+            );
+        }
     }
 
     /// A whole pass on a real project with the model its workspace uses for text features.
@@ -513,7 +597,7 @@ mod live {
             &Live::new(Some(model)),
             &project,
             &papers,
-            "",
+            None,
             &clock,
         )
         .unwrap();

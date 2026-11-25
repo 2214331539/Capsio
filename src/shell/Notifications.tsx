@@ -38,7 +38,9 @@ import {
   openConversation,
 } from '../features/assistant/notices';
 import {
+  alertNotices,
   briefNotices,
+  dismissAlert,
   dismissBrief,
   openRecommendations,
 } from '../features/recommendations/briefs';
@@ -89,6 +91,7 @@ export function Notifications({
   const update = useUpdate();
   const assistantItems = useStore(assistantNotices, (state) => state.items);
   const briefItems = useStore(briefNotices, (state) => state.items);
+  const alertItems = useStore(alertNotices, (state) => state.items);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [dismissed, setDismissed] = useState(readDismissed);
   const [error, setError] = useState('');
@@ -258,6 +261,29 @@ export function Notifications({
           },
         },
         { label: t('知道了'), run: () => dismissAssistantNotice(notice.key) },
+      ],
+    });
+  }
+  // Recommendations worth telling at once: a paper citing the library, a followed author's.
+  for (const alert of alertItems) {
+    const project = data.projects.find((item) => item.id === alert.projectId && !item.archived);
+    if (!project) continue;
+    items.push({
+      key: `alert:${alert.workId}`,
+      tone: 'info',
+      icon: <Sparkles />,
+      title: t('新论文提醒：{title}', { title: alert.title }),
+      detail: `${alert.why} · ${project.name}`,
+      actions: [
+        {
+          label: t('查看'),
+          primary: true,
+          run: () => {
+            close();
+            openRecommendations(alert.projectId);
+          },
+        },
+        { label: t('知道了'), run: () => dismissAlert(alert.workId) },
       ],
     });
   }

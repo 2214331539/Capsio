@@ -202,6 +202,7 @@ mod tests {
             title: Some(format!("标题 {id}")),
             summary: None,
             reason: None,
+            cites: None,
         }
     }
 

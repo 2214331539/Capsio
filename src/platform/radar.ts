@@ -38,6 +38,9 @@ export type SaveOutcome = { kind: 'added'; paperId: string } | { kind: 'link'; u
 /** A new daily brief, made in the background. */
 export type BriefEvent = { projectId: string; day: string; count: number };
 
+/** A recommendation worth telling at once, and why. */
+export type AlertEvent = { projectId: string; workId: string; title: string; why: string };
+
 function command<T>(name: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri()) return Promise.reject(new Error('推荐只能在 Capsio 桌面应用中使用。'));
   return invoke<T>(name, args);
@@ -69,6 +72,10 @@ export const radar = {
   briefs: (callback: (event: BriefEvent) => void) =>
     isTauri()
       ? listen<BriefEvent>('radar-brief', (event) => callback(event.payload))
+      : Promise.resolve(() => {}),
+  alerts: (callback: (event: AlertEvent) => void) =>
+    isTauri()
+      ? listen<AlertEvent>('radar-alert', (event) => callback(event.payload))
       : Promise.resolve(() => {}),
 };
 export type Radar = typeof radar;

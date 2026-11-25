@@ -335,6 +335,7 @@ mod tests {
             title: title.into(),
             summary: summary.into(),
             added,
+            doi: None,
         }
     }
     fn work(title: &str, summary: &str) -> Work {

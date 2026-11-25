@@ -53,6 +53,9 @@ pub(crate) struct Seed {
     pub summary: String,
     /// When it was added (its file last changed), in seconds since 1970.
     pub added: i64,
+    /// Its DOI, from its record, or arXiv's DOI for a file named by its arXiv id: how
+    /// OpenAlex finds the papers that cite it.
+    pub doi: Option<String>,
 }
 
 pub(crate) fn seeds(
@@ -108,11 +111,15 @@ pub(crate) fn seeds(
             }
         };
         if !title.is_empty() {
+            let arxiv = crate::scholar::arxiv_id(stem(&paper.path));
             seeds.push(Seed {
                 fingerprint: paper.fingerprint.clone(),
                 title,
                 summary,
                 added: paper.modified,
+                doi: field("doi")
+                    .map(|doi| doi.trim_start_matches("https://doi.org/").to_lowercase())
+                    .or_else(|| arxiv.map(|id| format!("10.48550/arxiv.{}", id.to_lowercase()))),
             });
         }
     }

@@ -4051,6 +4051,7 @@
   ],
   "今天的推荐都处理完了。": ["今天的推荐都处理完了。", "That's all for today."],
   "今日推荐：{count} 篇新论文": ["今日推荐：{count} 篇新论文", "Today: {count} new papers for you"],
+  "新论文提醒：{title}": ["新论文提醒：{title}", "New paper: {title}"],
   "个性化推荐": ["个性化推荐", "Personalized recommendations"],
   "根据项目里的论文每天推荐新论文。只在本机分析，用你选的模型。": [
     "根据项目里的论文每天推荐新论文。只在本机分析，用你选的模型。",

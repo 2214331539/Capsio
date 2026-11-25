@@ -338,16 +338,22 @@ fn real_python_environment_terminal_and_formal_run_work_without_a_model() {
         .join("experiments")
         .join(run["id"].as_str().unwrap())
         .join("artifacts/metrics.json");
+    // The file can appear before the service has finished writing it: wait for whole JSON.
     let deadline = Instant::now() + Duration::from_secs(15);
-    while !metrics.is_file() {
+    let output: Value = loop {
+        if let Some(value) = std::fs::read(&metrics)
+            .ok()
+            .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        {
+            break value;
+        }
         assert!(
             Instant::now() < deadline,
             "service did not start: {}",
             call("experiment_log", json!({"runId":run["id"]}))
         );
         std::thread::sleep(Duration::from_millis(80));
-    }
-    let output: Value = serde_json::from_slice(&std::fs::read(metrics).unwrap()).unwrap();
+    };
     assert_eq!(output["fixture"], 42);
     use std::io::{Read, Write};
     let mut socket =
