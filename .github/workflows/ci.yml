@@ -23,11 +23,15 @@ jobs:
         shell: pwsh
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the secret check reads the whole history
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: pnpm
+      - name: No credentials or server login details
+        run: node scripts/check-secrets.mjs --all
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -54,7 +58,7 @@ jobs:
       - name: Type checking
         run: pnpm check
       - name: Release platform mapping and development data
-        run: node --test scripts/platform.test.mjs scripts/dev-data.test.mjs scripts/prepare-tectonic.test.mjs
+        run: node --test scripts/platform.test.mjs scripts/dev-data.test.mjs scripts/prepare-tectonic.test.mjs scripts/check-secrets.test.mjs
       - name: Frontend tests
         run: pnpm test --maxWorkers=2
       - name: Install UI test browser

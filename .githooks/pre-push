@@ -1,0 +1,4 @@
+#!/bin/sh
+# Refuses a push that carries credentials or server login details (scripts/check-secrets.mjs).
+# Turn it on once per clone: git config core.hooksPath .githooks
+exec node scripts/check-secrets.mjs --pre-push

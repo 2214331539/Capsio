@@ -9,6 +9,7 @@
   },
   "description": "Capsio local desktop research workspace",
   "scripts": {
+    "check:secrets": "node scripts/check-secrets.mjs --all",
     "predev": "node scripts/prepare-icons.mjs && node scripts/prepare-pdf.mjs && node scripts/prepare-agent.mjs && node scripts/prepare-tectonic.mjs && node scripts/prepare-babeldoc.mjs",
     "prebuild": "node scripts/prepare-icons.mjs && node scripts/prepare-pdf.mjs && node scripts/prepare-agent.mjs && node scripts/prepare-tectonic.mjs && node scripts/prepare-babeldoc.mjs && node scripts/prepare-licenses.mjs",
     "prepare:agent": "node scripts/prepare-agent.mjs",
