@@ -837,7 +837,10 @@ mod tests {
 
     #[test]
     fn reads_targets_the_way_people_type_them() {
-        assert_eq!(destination("deploy@1.2.3.4").unwrap(), vec!["deploy@1.2.3.4"]);
+        assert_eq!(
+            destination("deploy@1.2.3.4").unwrap(),
+            vec!["deploy@1.2.3.4"]
+        );
         assert_eq!(
             destination("deploy@1.2.3.4:2222").unwrap(),
             vec!["-p", "2222", "deploy@1.2.3.4"]
