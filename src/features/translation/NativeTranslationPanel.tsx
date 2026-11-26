@@ -127,7 +127,7 @@ export function NativeTranslationPanel() {
       </div>
       <p className="muted">
         {t(
-          '语言、术语表、字体、浮窗外观、纠错记忆和问答记录在翻译设置中管理。模型与密钥沿用 AI 助手的配置。',
+          '语言、术语表、字体、浮窗外观、纠错记忆和问答记录在翻译设置中管理。专业版翻译默认用 Capsio 官方模型，其他套餐用 AI 助手的模型。',
         )}
       </p>
       {error && (

@@ -523,7 +523,7 @@ export function ModelConnectionForm({
           ) : null}
           <p className="settings-note">
             {account
-              ? t('请求从这台电脑发出，用你的订阅额度。划词翻译和全文翻译仍用其他模型。')
+              ? t('请求从这台电脑发出，用你的订阅额度。翻译和推荐用 Capsio 官方模型。')
               : official
                 ? t('标有“专业版可用”的模型需要个人专业版，选择时会显示开通方式。')
                 : t('密钥只存在这台电脑上，不随项目同步。')}

@@ -299,7 +299,7 @@ pub(crate) struct Page {
 /// transfer, only on a connection that never opens or goes quiet: a stalled one would keep
 /// the project "syncing" until the app restarts.
 pub(crate) fn transfer_client() -> Result<reqwest::Client, String> {
-    reqwest::Client::builder()
+    crate::network::client(reqwest::Client::builder())
         .connect_timeout(std::time::Duration::from_secs(15))
         .read_timeout(std::time::Duration::from_secs(60))
         .build()

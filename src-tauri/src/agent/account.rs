@@ -119,7 +119,7 @@ fn start(
         &args,
         &home,
         &home,
-        &[],
+        &crate::network::environment(true),
         Some(sink),
     )
 }

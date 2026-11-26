@@ -170,7 +170,7 @@ async fn request_json(
     payload: Option<Value>,
 ) -> Result<Value, String> {
     let url = format!("{}/v1{}", endpoint.trim_end_matches('/'), path);
-    let client = reqwest::Client::builder()
+    let client = crate::network::client(reqwest::Client::builder())
         .connect_timeout(std::time::Duration::from_secs(10))
         .timeout(std::time::Duration::from_secs(30))
         .build()
@@ -446,7 +446,10 @@ pub async fn collaboration_login<R: tauri::Runtime>(
         Some(json!({"phone": phone.trim(), "code": code.trim()})),
     )
     .await?;
-    signed_in(&state, endpoint, &result)
+    let current = signed_in(&state, endpoint, &result)?;
+    // Translation runs on the official model once signed in.
+    crate::yita::refresh(view.app_handle());
+    Ok(current)
 }
 
 /// Signs in by SMS code or password, registers, or resets the password; all four end signed in.
@@ -483,7 +486,9 @@ pub async fn collaboration_sign_in<R: tauri::Runtime>(
         _ => return Err("登录方式无效。".into()),
     };
     let result = request_json(&endpoint, path, reqwest::Method::POST, None, Some(body)).await?;
-    signed_in(&state, endpoint, &result)
+    let current = signed_in(&state, endpoint, &result)?;
+    crate::yita::refresh(view.app_handle());
+    Ok(current)
 }
 
 /// The signed-in account as the server knows it, including whether it has a password.
@@ -587,6 +592,7 @@ pub async fn collaboration_logout<R: tauri::Runtime>(
         .await;
     }
     clear_auth(&state)?;
+    crate::yita::refresh(view.app_handle());
     snapshot(&state)
 }
 
@@ -708,6 +714,55 @@ async fn forget_model_token(state: &AppState, endpoint: &str) {
     }
 }
 
+/// The plan last heard of for a user: who, when and which (`free`, `pro`, `team`).
+type KnownPlan = (String, std::time::Instant, String);
+const PLAN_FRESH: std::time::Duration = std::time::Duration::from_secs(600);
+
+fn plan_slot() -> &'static std::sync::Mutex<Option<KnownPlan>> {
+    static SLOT: OnceLock<std::sync::Mutex<Option<KnownPlan>>> = OnceLock::new();
+    SLOT.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+fn remember_plan(user: &str, summary: &Value) {
+    if let (Some(plan), Ok(mut slot)) = (summary["plan"]["id"].as_str(), plan_slot().lock()) {
+        *slot = Some((
+            user.to_string(),
+            std::time::Instant::now(),
+            plan.to_string(),
+        ));
+    }
+}
+
+/// The signed-in user's plan as last heard, without asking the server.
+pub(crate) fn known_plan(state: &AppState) -> Option<String> {
+    let user = snapshot(state).ok()?.user_id?;
+    let slot = plan_slot().lock().ok()?;
+    slot.as_ref()
+        .filter(|(owner, _, _)| *owner == user)
+        .map(|(_, _, plan)| plan.clone())
+}
+
+/// The signed-in user's plan, asked of the server when the last answer is ten minutes old.
+pub(crate) async fn plan(state: &AppState) -> Option<String> {
+    let current = snapshot(state).ok()?;
+    let user = current.user_id.clone()?;
+    let fresh = plan_slot().lock().ok().and_then(|slot| {
+        slot.as_ref()
+            .filter(|(owner, at, _)| *owner == user && at.elapsed() < PLAN_FRESH)
+            .map(|(_, _, plan)| plan.clone())
+    });
+    if fresh.is_some() {
+        return fresh;
+    }
+    let path = "/billing/summary";
+    if let Ok(summary) =
+        auth_request(state, &current.endpoint, path, reqwest::Method::GET, None).await
+    {
+        remember_plan(&user, &summary);
+    }
+    known_plan(state)
+}
+
 /// Plan, points, limits and storage of the signed-in account.
 #[tauri::command]
 pub async fn collaboration_billing<R: tauri::Runtime>(
@@ -716,14 +771,18 @@ pub async fn collaboration_billing<R: tauri::Runtime>(
 ) -> Result<Value, String> {
     trusted(&view)?;
     let endpoint = read(&state)?.endpoint;
-    auth_request(
+    let summary = auth_request(
         &state,
         &endpoint,
         "/billing/summary",
         reqwest::Method::GET,
         None,
     )
-    .await
+    .await?;
+    if let Some(user) = snapshot(&state)?.user_id {
+        remember_plan(&user, &summary);
+    }
+    Ok(summary)
 }
 
 /// Points per day and per model over the last `days` days.

@@ -126,3 +126,27 @@ it('uses another installation’s data after a restart and can undo it', async (
   await waitFor(() => expect(screen.queryByText('重启后使用')).toBeNull());
   expect(adapter.scheduleStorage).not.toHaveBeenCalled();
 });
+
+it('sets a proxy for every connection, and only a plain http address', async () => {
+  const { user, store } = await fixture();
+  const nav = within(screen.getByRole('navigation', { name: '设置分类' }));
+  await user.click(nav.getByRole('button', { name: '网络' }));
+  const mode = screen.getByRole('combobox', { name: '代理' }) as HTMLSelectElement;
+  expect(mode.value).toBe('system');
+  await user.selectOptions(mode, 'manual');
+  const address = screen.getByRole('textbox', { name: '代理地址' });
+  await user.type(address, 'socks5://127.0.0.1:1080{Enter}');
+  expect(screen.getByRole('alert').textContent).toContain('http://地址:端口');
+  await user.clear(address);
+  await user.type(address, 'http://127.0.0.1:7890/{Enter}');
+  await waitFor(() =>
+    expect(store.getState().data?.settings.network).toEqual({
+      proxy: 'manual',
+      proxyUrl: 'http://127.0.0.1:7890',
+    }),
+  );
+  expect(screen.queryByRole('alert')).toBeNull();
+  await user.selectOptions(mode, 'none');
+  await waitFor(() => expect(store.getState().data?.settings.network).toEqual({ proxy: 'none' }));
+  expect(screen.queryByRole('textbox', { name: '代理地址' })).toBeNull();
+});

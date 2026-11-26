@@ -74,6 +74,8 @@ export type WebSources = {
   groups: { id: string; name: string; order: number }[];
   items: WebSource[];
 };
+/** The proxy every connection goes through: the system's, none, or an http://host:port. */
+export type NetworkSettings = { proxy: 'system' | 'none' | 'manual'; proxyUrl?: string };
 export type TranslationSettings = {
   enabled: boolean;
   sourceLanguage: string;
@@ -118,6 +120,7 @@ export type Workspace = {
     };
     shortcuts?: ShortcutSettings;
     translation?: TranslationSettings;
+    network?: NetworkSettings;
   };
   navigation: {
     [key: string]: unknown;

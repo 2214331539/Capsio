@@ -15,6 +15,7 @@ import {
   CircleHelp,
   Cloud,
   Database,
+  Globe,
   Keyboard,
   Languages,
   Palette,
@@ -25,6 +26,7 @@ import { ShortcutsSettings } from './ShortcutsSettings';
 import { DataLocationRows } from './DataLocation';
 import { AccountPreferences } from './AccountPreferences';
 import { CollaborationPreferences } from './CollaborationPreferences';
+import { NetworkPreferences } from './NetworkPreferences';
 import { ModelPreferences } from './ModelPreferences';
 import type { ResearchBackend } from '../../platform/research';
 import { UpdatePanel } from '../update/UpdatePanel';
@@ -211,6 +213,7 @@ export function SettingsDialog({
     | 'translation'
     | 'account'
     | 'collaboration'
+    | 'network'
     | 'data'
     | 'about';
 }) {
@@ -242,6 +245,7 @@ export function SettingsDialog({
     { id: 'translation', label: t('翻译'), icon: Languages },
     { id: 'account', label: t('账号与订阅'), icon: UserRound },
     { id: 'collaboration', label: t('协作'), icon: Cloud },
+    { id: 'network', label: t('网络'), icon: Globe },
     { id: 'data', label: t('数据与备份'), icon: Database },
     { id: 'about', label: t('关于 Capsio'), icon: CircleHelp },
   ] as const;
@@ -346,6 +350,9 @@ export function SettingsDialog({
         </section>
         <section hidden={section !== 'collaboration'} aria-label={t('协作')}>
           <CollaborationPreferences store={store} />
+        </section>
+        <section hidden={section !== 'network'} aria-label={t('网络')}>
+          <NetworkPreferences store={store} />
         </section>
         <section hidden={section !== 'data'} aria-label={t('数据与备份')}>
           <DataPreferences store={store} />

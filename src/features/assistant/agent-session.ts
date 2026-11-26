@@ -16,6 +16,10 @@ import {
 import { t } from '../../i18n';
 import { errorMessage } from '../../domain/errors';
 
+/** Engine errors that mean the service could not be reached at all. */
+const UNREACHABLE =
+  /error sending request|stream disconnected|failed to connect|connection (refused|reset|closed)|timed out|dns error|tls handshake/i;
+
 export type AgentPhase = 'idle' | 'opening' | 'running' | 'waiting' | 'stopping';
 export type AgentOperation = { id: string; label: string; status: string; output: string };
 /** A step of the plan the engine keeps for this turn: pending, inProgress or completed. */
@@ -183,9 +187,13 @@ export class AgentSession {
   }
   private failure(reason: unknown) {
     const value = errorMessage(reason);
-    return this.connection.apiKey
+    const shown = this.connection.apiKey
       ? value.split(this.connection.apiKey).join(t('[已隐藏密钥]'))
       : value;
+    // Some places reach ChatGPT only through a proxy; say what to do rather than show a socket error.
+    return this.connection.provider === 'chatgpt' && UNREACHABLE.test(shown)
+      ? `${t('连不上 ChatGPT。如果需要代理才能访问，请在代理软件里打开“系统代理”，再重新发送。')}\n${shown}`
+      : shown;
   }
   async open(): Promise<boolean> {
     this.set({ phase: 'opening', error: null });

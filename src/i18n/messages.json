@@ -2029,6 +2029,10 @@
     "此连接未通过聊天验证，请进入项目使用 Agent 或更换模型。",
     "Chat verification failed. Open a project to use the Agent, or choose another model."
   ],
+  "连不上 ChatGPT。如果需要代理才能访问，请在代理软件里打开“系统代理”，再重新发送。": [
+    "连不上 ChatGPT。如果需要代理才能访问，请在代理软件里打开“系统代理”，再重新发送。",
+    "Can't reach ChatGPT. If you need a proxy for it, turn on \"system proxy\" in your proxy app, then send again."
+  ],
   "ChatGPT 账号只能通过 Agent 使用：请在可以编辑的项目里提问，或换一个模型。": [
     "ChatGPT 账号只能通过 Agent 使用：请在可以编辑的项目里提问，或换一个模型。",
     "A ChatGPT sign-in works only through the Agent: ask in a project you can edit, or choose another model."
@@ -2129,9 +2133,9 @@
   ],
   "打开完整翻译设置": ["打开完整翻译设置", "Open translation settings"],
   "翻译剪贴板": ["翻译剪贴板", "Translate clipboard"],
-  "语言、术语表、字体、浮窗外观、纠错记忆和问答记录在翻译设置中管理。模型与密钥沿用 AI 助手的配置。": [
-    "语言、术语表、字体、浮窗外观、纠错记忆和问答记录在翻译设置中管理。模型与密钥沿用 AI 助手的配置。",
-    "Manage languages, glossary, fonts, appearance, saved corrections and AI records in translation settings. Models and credentials are shared with the AI assistant."
+  "语言、术语表、字体、浮窗外观、纠错记忆和问答记录在翻译设置中管理。专业版翻译默认用 Capsio 官方模型，其他套餐用 AI 助手的模型。": [
+    "语言、术语表、字体、浮窗外观、纠错记忆和问答记录在翻译设置中管理。专业版翻译默认用 Capsio 官方模型，其他套餐用 AI 助手的模型。",
+    "Manage languages, glossary, fonts, appearance, saved corrections and AI records in translation settings. Professional plans translate on the Capsio official model; other plans use the assistant's model."
   ],
   "划词翻译请在 Capsio 桌面应用中使用。": [
     "划词翻译请在 Capsio 桌面应用中使用。",
@@ -3829,13 +3833,13 @@
   "用 ChatGPT 登录": ["用 ChatGPT 登录", "Sign in with ChatGPT"],
   "请先登录 ChatGPT 账号。": ["请先登录 ChatGPT 账号。", "Sign in to ChatGPT first."],
   "获取模型": ["获取模型", "Get models"],
-  "请求从这台电脑发出，用你的订阅额度。划词翻译和全文翻译仍用其他模型。": [
-    "请求从这台电脑发出，用你的订阅额度。划词翻译和全文翻译仍用其他模型。",
-    "Requests go from this computer and use your plan. Selection and full-text translation keep using another model."
+  "请求从这台电脑发出，用你的订阅额度。翻译和推荐用 Capsio 官方模型。": [
+    "请求从这台电脑发出，用你的订阅额度。翻译和推荐用 Capsio 官方模型。",
+    "Requests go from this computer and use your plan. Translation and recommendations use the Capsio official model."
   ],
-  "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Capsio 官方模型）。": [
-    "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Capsio 官方模型）。",
-    "The ChatGPT account only runs the AI assistant. Selection translation needs another model; add one in model settings (such as the Capsio official model)."
+  "ChatGPT 账号只用于 AI 助手。翻译和推荐要用 Capsio 官方模型：请先登录账号，或在模型设置里再添加一个模型。": [
+    "ChatGPT 账号只用于 AI 助手。翻译和推荐要用 Capsio 官方模型：请先登录账号，或在模型设置里再添加一个模型。",
+    "The ChatGPT account only runs the AI assistant. Translation and recommendations use the Capsio official model: sign in to your account, or add another model in model settings."
   ],
   "请先在模型设置里登录 ChatGPT 账号。": [
     "请先在模型设置里登录 ChatGPT 账号。",
@@ -4075,6 +4079,28 @@
   "稍后读": ["稍后读", "Read later"],
   "领域要闻": ["领域要闻", "Field highlights"],
   "推荐理由": ["推荐理由", "Why"],
+  "推荐列表": ["推荐列表", "Recommendations list"],
+  "网络": ["网络", "Network"],
+  "代理": ["代理", "Proxy"],
+  "不使用代理": ["不使用代理", "No proxy"],
+  "手动设置": ["手动设置", "Manual"],
+  "代理地址": ["代理地址", "Proxy address"],
+  "代理地址要写成 http://地址:端口。": [
+    "代理地址要写成 http://地址:端口。",
+    "Write the proxy as http://host:port."
+  ],
+  "AI、翻译、文献检索、同步和内置浏览器都按这里连接，本机地址不走代理。改动对新的连接生效，内置浏览器要重新打开标签页。": [
+    "AI、翻译、文献检索、同步和内置浏览器都按这里连接，本机地址不走代理。改动对新的连接生效，内置浏览器要重新打开标签页。",
+    "AI, translation, literature search, sync and the built-in browser connect this way; local addresses skip the proxy. Changes apply to new connections; reopen browser tabs to use them."
+  ],
+  "译文位置": ["译文位置", "In translation"],
+  "原文位置": ["原文位置", "In original"],
+  "⌘ + 点击定位原文": ["⌘ + 点击定位原文", "⌘ + click to find it in the original"],
+  "Ctrl + 点击定位原文": ["Ctrl + 点击定位原文", "Ctrl + click to find it in the original"],
+  "项目推荐": ["项目推荐", "For this project"],
+  "打开原文": ["打开原文", "Open source"],
+  "已加入": ["已加入", "Added"],
+  "切换下一条、上一条": ["切换下一条、上一条", "next and previous"],
   "不感兴趣": ["不感兴趣", "Not interested"],
   "不感兴趣的原因": ["不感兴趣的原因", "Why not"],
   "推荐根据项目里的论文自动生成，可以在设置里关闭。": [

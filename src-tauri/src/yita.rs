@@ -91,14 +91,12 @@ fn model_identity(model: &Value) -> String {
 }
 
 fn configuration<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<Value, String> {
-    let data = app
-        .state::<crate::AppState>()
-        .storage
-        .load()?
-        .unwrap_or_default();
+    let state = app.state::<crate::AppState>();
+    let data = state.storage.load()?.unwrap_or_default();
     // Include provider/endpoint in Yita's in-memory cache identity, without transferring any secret.
     let model = model_identity(
-        &crate::ai::text_connection(&data).unwrap_or_else(|_| data["settings"]["model"].clone()),
+        &crate::ai::translation_connection(&state, &data)
+            .unwrap_or_else(|_| data["settings"]["model"].clone()),
     );
     Ok(
         json!({"type":"configure", "model":model, "legacy":data["settings"]["translation"].as_object().cloned().unwrap_or_default(), "language":"zh-CN"}),
@@ -243,6 +241,8 @@ async fn ensure_started<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<
         }
         let _ = host.emit("translation-service-stopped", error);
     });
+    // The plan picks the model, so it is known before the first configuration.
+    crate::collaboration::plan(&app.state::<crate::AppState>()).await;
     send(app, configuration(app)?).await?;
     Ok(())
 }
@@ -290,7 +290,7 @@ async fn model_request<R: tauri::Runtime>(
 ) -> Result<(crate::ai::AIRequest, Option<String>), String> {
     let state = app.state::<crate::AppState>();
     let data = state.storage.load()?.ok_or("请先配置 AI 模型。")?;
-    let model = &crate::ai::text_connection(&data)?;
+    let model = &crate::ai::translation_connection(&state, &data)?;
     if body["model"] != model_identity(model) {
         return Err("模型配置已更新，请重新翻译。".into());
     }
@@ -392,6 +392,7 @@ pub fn refresh<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     }
     let host = app.clone();
     tauri::async_runtime::spawn(async move {
+        crate::collaboration::plan(&host.state::<crate::AppState>()).await;
         let result = async { command(&host, configuration(&host)?).await }.await;
         if let Err(error) = result {
             let _ = host.emit("translation-service-stopped", error);

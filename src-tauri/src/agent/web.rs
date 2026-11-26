@@ -77,7 +77,7 @@ struct Papers {
 }
 
 pub(crate) fn client() -> Result<reqwest::Client, String> {
-    reqwest::Client::builder()
+    crate::network::client(reqwest::Client::builder())
         .user_agent(AGENT)
         .connect_timeout(Duration::from_secs(10))
         .timeout(Duration::from_secs(25))

@@ -166,7 +166,7 @@ impl Outside for Live {
 }
 
 async fn read_feed(url: &str) -> Result<String, String> {
-    let response = reqwest::Client::builder()
+    let response = crate::network::client(reqwest::Client::builder())
         .user_agent(FEED_AGENT)
         .connect_timeout(Duration::from_secs(8))
         // Some feed servers are slow: one takes 25 seconds for 400 KB.
@@ -306,7 +306,7 @@ fn pass<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
     let store = open(app)?;
     store.prune(clock.now)?;
     let stale = radar.stale.lock().map_err(|e| e.to_string())?.take();
-    let live = Live::new(crate::ai::background_model(app, stale.as_deref()).ok())
+    let live = Live::new(crate::ai::background_model(app, stale.as_deref(), false).ok())
         .reaching(scholar_route(app));
     let workspace = app.state::<AppState>().storage.load()?.unwrap_or_default();
     // Who the user is, as the screening, the scoring and the alerts read it.

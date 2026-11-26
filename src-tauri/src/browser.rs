@@ -47,7 +47,8 @@ fn trace(message: impl std::fmt::Display) {
 }
 
 // WebView2 uses the OS proxy configuration by default (including PAC/bypass rules).
-// An explicit override is opt-in; never flatten Windows per-protocol rules.
+// An explicit override is opt-in (a proxy typed in Settings → Network, or CAPSIO_BROWSER_PROXY
+// for testing); never flatten Windows per-protocol rules.
 fn parse_proxy_url(raw: &str) -> Result<tauri::Url, String> {
     let url = tauri::Url::parse(raw.trim()).ok().filter(|url| {
         matches!(url.scheme(), "http" | "socks5")
@@ -68,7 +69,10 @@ fn configure_browser_proxy<R: tauri::Runtime>(
 ) -> Result<WebviewBuilder<R>, String> {
     match std::env::var("CAPSIO_BROWSER_PROXY") {
         Ok(raw) if !raw.trim().is_empty() => Ok(builder.proxy_url(parse_proxy_url(&raw)?)),
-        _ => Ok(builder),
+        _ => Ok(match crate::network::browser() {
+            Some(url) => builder.proxy_url(url),
+            None => builder,
+        }),
     }
 }
 

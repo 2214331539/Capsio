@@ -181,10 +181,12 @@ fn client(url: &Url) -> Result<Client, String> {
         .timeout(Duration::from_secs(90))
         .connect_timeout(Duration::from_secs(10))
         .redirect(reqwest::redirect::Policy::none());
-    // Remote APIs use the OS/environment proxy; a local Ollama must remain local.
-    if local(url) {
-        builder = builder.no_proxy();
-    }
+    // Remote APIs use the proxy set in Settings → Network; a local Ollama must remain local.
+    builder = if local(url) {
+        builder.no_proxy()
+    } else {
+        crate::network::client(builder)
+    };
     builder.build().map_err(|_| "网络客户端初始化失败。".into())
 }
 fn authorize(call: RequestBuilder, connection: &Connection) -> RequestBuilder {
@@ -337,9 +339,56 @@ pub(crate) fn text_connection(data: &Value) -> Result<Value, String> {
             value
         })
         .ok_or_else(|| {
-            "ChatGPT 账号只用于 AI 助手。划词翻译需要另一个模型，请在模型设置里再添加一个（如 Capsio 官方模型）。"
+            "ChatGPT 账号只用于 AI 助手。翻译和推荐要用 Capsio 官方模型：请先登录账号，或在模型设置里再添加一个模型。"
                 .into()
         })
+}
+
+/// The official model work falls back on, and professional plans translate on: quick, cheap
+/// and open to every plan.
+pub(crate) const TRANSLATION_MODEL: &str = "deepseek-flash";
+
+/// The connection the app's own model work runs on. `account` is the official service's
+/// address once the user has signed in. With `official_first` (translation on a professional
+/// plan) the work takes the official DeepSeek, whatever the conversation model is; otherwise
+/// it keeps the text connection and falls back to the official model, on the user's own
+/// points, when there is none (a ChatGPT sign-in alone).
+pub(crate) fn work_connection(
+    data: &Value,
+    account: Option<&str>,
+    official_first: bool,
+) -> Result<Value, String> {
+    let official = |endpoint: &str| json!({"provider":"openai","serviceId":"capsio","endpoint":endpoint,"model":TRANSLATION_MODEL});
+    match account {
+        Some(endpoint) if official_first => Ok(official(endpoint)),
+        Some(endpoint) => Ok(text_connection(data).unwrap_or_else(|_| official(endpoint))),
+        None => text_connection(data),
+    }
+}
+
+/// Whether a plan translates on the official DeepSeek by default: the professional ones do;
+/// everyone else translates on their own model or subscription.
+pub(crate) fn translates_officially(plan: Option<&str>) -> bool {
+    matches!(plan, Some("pro" | "team"))
+}
+
+/// [`work_connection`] for translation, with the plan as last heard.
+pub(crate) fn translation_connection(
+    state: &crate::AppState,
+    data: &Value,
+) -> Result<Value, String> {
+    let account = signed_in(state);
+    let official = account.is_some()
+        && translates_officially(crate::collaboration::known_plan(state).as_deref());
+    work_connection(data, account.as_deref(), official)
+}
+
+/// The official service's address, when the user is signed in to it.
+pub(crate) fn signed_in(state: &crate::AppState) -> Option<String> {
+    crate::collaboration::device(state)
+        .ok()
+        .filter(|device| device.authenticated)
+        .map(|device| device.endpoint)
 }
 fn text_model(value: &Value, provider: Provider) -> bool {
     if matches!(provider, Provider::Gemini) {
@@ -837,16 +886,23 @@ pub(crate) struct TextModel {
     pub official: bool,
 }
 
-/// Resolves [`TextModel`] from the saved settings. `stale` is an official-model token the
-/// server refused; a fresh one is asked for instead.
+/// Resolves [`TextModel`] from the saved settings (see [`work_connection`]). `stale` is an
+/// official-model token the server refused; a fresh one is asked for instead.
 pub(crate) fn background_model<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     stale: Option<&str>,
+    translating: bool,
 ) -> Result<TextModel, String> {
     use tauri::Manager;
     let state = app.state::<crate::AppState>();
     let data = state.storage.load()?.ok_or("工作区尚未载入。")?;
-    let settings = text_connection(&data)?;
+    let settings = if translating {
+        // Background threads may wait on the server; the plan decides the model.
+        tauri::async_runtime::block_on(crate::collaboration::plan(&state));
+        translation_connection(&state, &data)?
+    } else {
+        work_connection(&data, signed_in(&state).as_deref(), false)?
+    };
     let provider = settings["provider"]
         .as_str()
         .unwrap_or("ollama")
@@ -1105,6 +1161,35 @@ pub(crate) mod tests {
         let chosen = text_connection(&data).unwrap();
         assert_eq!(chosen["model"], "s");
         assert!(chosen.get("id").is_none());
+    }
+
+    #[test]
+    fn professional_plans_translate_on_the_official_deepseek() {
+        assert!(translates_officially(Some("pro")));
+        assert!(translates_officially(Some("team")));
+        assert!(!translates_officially(Some("free")));
+        assert!(!translates_officially(None));
+    }
+
+    #[test]
+    fn official_first_work_runs_on_the_official_deepseek_once_signed_in() {
+        let own = json!({"provider":"openai","endpoint":"https://a.example/v1","model":"m"});
+        let mut data = json!({"settings":{"model":own.clone()}});
+        let account = Some("https://capsio.example");
+        let translating = work_connection(&data, account, true).unwrap();
+        assert_eq!(translating["serviceId"], "capsio");
+        assert_eq!(translating["endpoint"], "https://capsio.example");
+        assert_eq!(translating["model"], TRANSLATION_MODEL);
+        // Other work keeps the user's model, and before signing in so does translation.
+        assert_eq!(work_connection(&data, account, false).unwrap(), own);
+        assert_eq!(work_connection(&data, None, true).unwrap(), own);
+        // A ChatGPT sign-in alone: the official model does the work instead of failing.
+        data["settings"]["model"] = json!({"provider":"chatgpt","endpoint":"","model":"gpt"});
+        assert_eq!(
+            work_connection(&data, account, false).unwrap()["serviceId"],
+            "capsio"
+        );
+        assert!(work_connection(&data, None, false).is_err());
     }
 
     #[test]

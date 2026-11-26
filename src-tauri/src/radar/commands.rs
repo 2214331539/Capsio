@@ -405,7 +405,7 @@ pub async fn radar_save<R: tauri::Runtime>(
 }
 
 async fn download_pdf(url: &str) -> Result<Vec<u8>, String> {
-    let response = reqwest::Client::builder()
+    let response = crate::network::client(reqwest::Client::builder())
         .connect_timeout(Duration::from_secs(15))
         .timeout(Duration::from_secs(120))
         .build()

@@ -344,7 +344,7 @@ fn model<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<Model, String> 
         .map_err(|e| e.to_string())?
         .stale_token
         .take();
-    crate::ai::background_model(app, stale.as_deref())
+    crate::ai::background_model(app, stale.as_deref(), true)
 }
 
 /// Whether an error is about the model service (quota, key, network) rather than the paper.
@@ -908,6 +908,8 @@ fn run_engine(
     for name in ["VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH", "PYTHONSTARTUP"] {
         env.remove(name);
     }
+    // The proxy set in Settings → Network; following the system, Python reads it itself.
+    env.extend(crate::network::environment(false));
     let log = work.join("run.log");
     let last = Mutex::new(-1.0f64);
     let code = crate::local_process::run_logged(python, &args, &work, &env, &log, stop, || {

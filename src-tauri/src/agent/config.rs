@@ -197,16 +197,16 @@ fn provider_overrides(endpoint: &str) -> [String; 5] {
 /// Environment entries the engine process needs.
 pub fn environment(connection: &Connection<'_>) -> Vec<(String, String)> {
     if connection.provider == CHATGPT {
-        return Vec::new();
+        return crate::network::environment(true);
     }
-    match connection
+    let key = connection
         .api_key
         .map(str::trim)
         .filter(|key| !key.is_empty())
-    {
-        Some(key) => vec![(KEY_ENV.to_string(), key.to_string())],
-        None => vec![(KEY_ENV.to_string(), "local-no-key".to_string())],
-    }
+        .unwrap_or("local-no-key");
+    let mut set = vec![(KEY_ENV.to_string(), key.to_string())];
+    set.extend(crate::network::environment(false));
+    set
 }
 
 #[cfg(test)]
@@ -293,7 +293,9 @@ mod tests {
         assert!(args.contains("forced_login_method=\"chatgpt\""));
         assert!(!args.contains("model_providers."));
         assert_eq!(provider_id(&chatgpt), "openai");
-        assert!(environment(&chatgpt).is_empty());
+        assert!(environment(&chatgpt)
+            .iter()
+            .all(|(name, _)| name != KEY_ENV));
         assert_eq!(provider_id(&connection("openai", "", None)), PROVIDER_ID);
     }
 

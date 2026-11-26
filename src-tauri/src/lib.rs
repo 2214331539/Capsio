@@ -33,6 +33,7 @@ mod library;
 mod library_import;
 #[cfg(debug_assertions)]
 mod literature_smoke;
+mod network;
 mod notes;
 mod radar;
 mod reader;
@@ -61,8 +62,10 @@ async fn workspace_load(state: State<'_, AppState>) -> Result<LoadResult, String
     let storage = state.storage.clone();
     let legacy = state.legacy.clone();
     tauri::async_runtime::spawn_blocking(move || {
+        let workspace = storage.load()?;
+        network::update(workspace.as_ref());
         Ok(LoadResult {
-            workspace: storage.load()?,
+            workspace,
             directory: storage.directory().display().to_string(),
             legacy_available: legacy.join("workspace.json").is_file(),
         })
@@ -109,6 +112,7 @@ async fn workspace_save<R: tauri::Runtime>(
         app.state::<experiments::ExperimentState>()
             .protect(storage.load()?.as_ref(), Some(&workspace))?;
         let saved = storage.save(workspace, expected_revision)?;
+        network::update(Some(&saved));
         if ["model", "translation"].iter().any(|key| {
             current.as_ref().map(|data| &data["settings"][key]) != Some(&saved["settings"][key])
         }) {
@@ -338,6 +342,15 @@ pub fn run() {
                 storage: Arc::new(Storage::open(directory).map_err(std::io::Error::other)?),
                 legacy,
             });
+            // Background work may start before the window loads the workspace.
+            network::update(
+                app.state::<AppState>()
+                    .storage
+                    .load()
+                    .ok()
+                    .flatten()
+                    .as_ref(),
+            );
             #[cfg(debug_assertions)]
             if isolated_smoke {
                 let data = app.state::<AppState>().storage.directory().to_path_buf();
