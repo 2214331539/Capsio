@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../i18n';
 import { Skeleton } from '../components/feedback';
+import './web-preview.css';
 
 /** A Word document rendered in the app, close to its print layout. */
 export function DocxView({ bytes }: { bytes: Uint8Array }) {

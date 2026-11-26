@@ -30,6 +30,7 @@ import {
   ChevronsDownUp,
   Undo2,
   Redo2,
+  Eye,
 } from 'lucide-react';
 import { undoDepth, redoDepth } from '@codemirror/commands';
 import type { Project } from '../../domain/workspace';
@@ -378,6 +379,17 @@ export function FileWorkspace(props: FileWorkspaceProps) {
           mode={mode}
           shortcuts={shortcuts}
           onContext={onContext}
+          onPreview={
+            // HTML runs in the built-in browser (charts and all), over this module.
+            workspaceRoot && /\.html?$/i.test(activePath!)
+              ? () =>
+                  window.dispatchEvent(
+                    new CustomEvent('capsio-preview-file', {
+                      detail: { projectId: project.id, root: workspaceRoot, path: activePath },
+                    }),
+                  )
+              : undefined
+          }
           extensions={props.editorExtensions?.(activePath!)}
           onCursor={props.onCursor}
           onSaveCopy={(content) => {
@@ -407,12 +419,14 @@ function FileDocument({
   onSaveCopy,
   extensions,
   onCursor,
+  onPreview,
 }: {
   session: FileSession;
   project: Project;
   mode: Mode;
   shortcuts?: import('../../platform/shortcuts').ShortcutSettings;
   onContext: (value: WorkContext) => void;
+  onPreview?: () => void;
   extensions?: Extension[];
   onCursor?: (path: string, line: number) => void;
   onSaveCopy: (content: string) => void;
@@ -569,6 +583,12 @@ function FileDocument({
               </Button>
             ))}
           </div>
+        ) : null}
+        {onPreview ? (
+          <Button variant="ghost" size="sm" onClick={onPreview}>
+            <Eye size={14} aria-hidden="true" />
+            {t('预览')}
+          </Button>
         ) : null}
         <span className={`sf-file-save-state ${snapshot.dirty ? 'is-dirty' : ''}`}>
           {snapshot.dirty ? t('未保存') : loaded ? t('已保存') : ''}

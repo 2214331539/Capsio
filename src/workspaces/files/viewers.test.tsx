@@ -15,6 +15,10 @@ vi.mock('../../editor/CodeEditor', () => ({
     return <textarea aria-label={`编辑 ${session.path}`} value={data.content} readOnly />;
   },
 }));
+vi.mock('../../shell/OfficeViews', () => ({
+  DocxView: ({ bytes }: { bytes: Uint8Array }) => <p>Word {bytes.length}</p>,
+  PptxView: () => <p>PowerPoint</p>,
+}));
 afterEach(cleanup);
 
 it('tells images, PDFs, binaries, tables and notebooks apart by extension', () => {
@@ -168,4 +172,51 @@ it('opens a CSV as a table and its text in the source view', async () => {
       (screen.getByRole('textbox', { name: '编辑 metrics.csv' }) as HTMLTextAreaElement).value,
     ).toContain('step,loss'),
   );
+});
+
+it('shows Word and PowerPoint files in the editor area and names the formats it cannot show', async () => {
+  const { project, store, backend } = setup();
+  const open = (activePath: string) => (
+    <FileWorkspace
+      project={project}
+      store={store}
+      backend={backend}
+      mode="experiments"
+      view="files"
+      activePath={activePath}
+      workspaceRoot="F:/main"
+      onContext={vi.fn()}
+    />
+  );
+  const view = render(open('report/summary.docx'));
+  expect(await screen.findByText('Word 4')).toBeTruthy();
+  expect(backend.readBinary).toHaveBeenCalledWith('p1', 'report/summary.docx', 'F:/main');
+  view.rerender(open('slides/talk.pptx'));
+  expect(await screen.findByText('PowerPoint')).toBeTruthy();
+  view.rerender(open('data/raw.xlsx'));
+  expect(await screen.findByText('这种格式不能在应用里预览。')).toBeTruthy();
+  expect(backend.readFile).not.toHaveBeenCalled();
+});
+
+it('previews an HTML file in the built-in browser from its editor', async () => {
+  const { project, store, backend } = setup();
+  const user = userEvent.setup();
+  const previews: unknown[] = [];
+  const listen = (event: Event) => previews.push((event as CustomEvent).detail);
+  window.addEventListener('capsio-preview-file', listen);
+  render(
+    <FileWorkspace
+      project={project}
+      store={store}
+      backend={backend}
+      mode="experiments"
+      view="files"
+      activePath="plots/loss.html"
+      workspaceRoot="F:/main"
+      onContext={vi.fn()}
+    />,
+  );
+  await user.click(await screen.findByRole('button', { name: '预览' }));
+  expect(previews).toEqual([{ projectId: 'p1', root: 'F:/main', path: 'plots/loss.html' }]);
+  window.removeEventListener('capsio-preview-file', listen);
 });

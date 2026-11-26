@@ -6,8 +6,10 @@ import type { PdfBackend, ResearchBackend } from '../../platform/research';
 import { t, translateError } from '../../i18n';
 import { errorMessage } from '../../domain/errors';
 import MarkdownPreview from './MarkdownPreview';
+import { DocxView, PptxView } from '../../shell/OfficeViews';
 
 const PdfReader = lazy(() => import('../../reader/PdfReader'));
+const OLD_OFFICE = /\.(doc|ppt|xls|xlsx)$/i;
 
 const IMAGE_TYPES: Record<string, string> = {
   png: 'image/png',
@@ -166,8 +168,20 @@ export function BinaryView({
               }
             />
           </div>
+        ) : /\.docx$/i.test(path) ? (
+          <div className="sf-file-preview">
+            <DocxView bytes={bytes} />
+          </div>
+        ) : /\.pptx$/i.test(path) ? (
+          <div className="sf-file-preview">
+            <PptxView bytes={bytes} />
+          </div>
         ) : (
-          <div className="sf-file-loading">{t('此文件不是文本，不能在编辑器中打开。')}</div>
+          <div className="sf-file-loading">
+            {OLD_OFFICE.test(path)
+              ? t('这种格式不能在应用里预览。')
+              : t('此文件不是文本，不能在编辑器中打开。')}
+          </div>
         )}
       </div>
       {kind !== 'pdf' && bytes ? (
