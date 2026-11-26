@@ -41,6 +41,7 @@ import type { WorkspaceStore } from '../../stores/workspace';
 import { useCloud } from '../../features/projects/cloud';
 import { useActiveView } from '../../components/workspace/ViewTransition';
 import { useSidebarSlot } from '../../shell/Sidebar';
+import { listenZoom } from '../../platform/zoom-gestures';
 import { DocsSide, PageIcon, type PageAction } from './DocsSide';
 import {
   HistoryDialog,
@@ -465,6 +466,16 @@ function DocsHome({
   );
 }
 
+const ZOOM_KEY = 'capsio.docs.zoom';
+const clampZoom = (value: number) => Math.min(2, Math.max(0.5, value));
+function savedZoom() {
+  try {
+    return clampZoom(Number(localStorage.getItem(ZOOM_KEY)) || 1);
+  } catch {
+    return 1;
+  }
+}
+
 function DocPage({
   runtime,
   id,
@@ -506,6 +517,21 @@ function DocPage({
   const cloud = useCloud();
   const [menu, setMenu] = useState<MenuAnchor | null>(null);
   const selection = useRef('');
+  // Ctrl + wheel or a trackpad pinch scales the page; the size is kept for every page.
+  const [zoom, setZoom] = useState(savedZoom);
+  const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!scroller) return;
+    return listenZoom(scroller, (factor) => setZoom((value) => clampZoom(value * factor)));
+  }, [scroller]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(ZOOM_KEY, String(zoom));
+    } catch {
+      /* Without storage the size lasts until the app closes. */
+    }
+  }, [zoom]);
+  const percent = Math.round(zoom * 100);
   // "Saved" shows for a moment after a save finishes, then gives way to who edited and when.
   const [savedFlash, setSavedFlash] = useState(false);
   const wasSaving = useRef(false);
@@ -739,6 +765,11 @@ function DocPage({
             }}
           />
         </span>
+        {percent !== 100 ? (
+          <Button variant="ghost" size="sm" tooltip={t('恢复 100%')} onClick={() => setZoom(1)}>
+            {`${percent}%`}
+          </Button>
+        ) : null}
         <Button
           variant="ghost"
           iconOnly
@@ -760,7 +791,7 @@ function DocPage({
           <MoreHorizontal size={15} />
         </Button>
       </header>
-      <div className="doc-scroll">
+      <div className="doc-scroll" ref={setScroller}>
         {page.cover ? (
           <PageCover
             cover={page.cover}
@@ -770,7 +801,7 @@ function DocPage({
             onChange={(cover) => runtime.edit(id, { cover })}
           />
         ) : null}
-        <article className="doc-column">
+        <article className="doc-column" style={percent === 100 ? undefined : { zoom }}>
           <div className="doc-head">
             {readOnly || (page.icon && page.cover) ? null : (
               <div className="doc-head-actions">

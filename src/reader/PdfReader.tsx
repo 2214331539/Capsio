@@ -30,6 +30,7 @@ import { destinationOffset, ReaderLinkService, type PdfLinkTarget } from './pdf-
 import { errorMessage } from '../domain/errors';
 import { dismissToast, toast, toastUndo } from '../components/feedback';
 import { takeResumeHint } from './resume';
+import { listenZoom } from '../platform/zoom-gestures';
 import './reader.css';
 import { PdfOutlinePanel } from './PdfOutlinePanel';
 
@@ -290,20 +291,9 @@ export default function PdfReader({
   useEffect(() => {
     const host = scroll.current;
     if (!host) return;
-    const wheel = (event: WheelEvent) => {
-      if (!event.ctrlKey) return;
-      event.preventDefault();
-      if (!document || !event.deltaY) return;
-      const rect = host.getBoundingClientRect();
-      const delta =
-        event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? host.clientHeight : 1);
-      changeZoom(position.current.zoom * Math.exp(-Math.max(-100, Math.min(100, delta)) * 0.002), {
-        x: Math.max(0, event.clientX - rect.left),
-        y: Math.max(0, event.clientY - rect.top),
-      });
-    };
-    host.addEventListener('wheel', wheel, { passive: false });
-    return () => host.removeEventListener('wheel', wheel);
+    return listenZoom(host, (factor, at) => {
+      if (document) changeZoom(position.current.zoom * factor, at);
+    });
   }, [changeZoom, document]);
   useEffect(
     () => () => {

@@ -275,6 +275,7 @@
   "收起全部": ["收起全部", "Collapse all"],
   "将选中文字加入目录": ["将选中文字加入目录", "Add selected text to outline"],
   "恢复隐藏标题": ["恢复隐藏标题", "Restore hidden headings"],
+  "恢复 100%": ["恢复 100%", "Reset to 100%"],
   "重新识别标题": ["重新识别标题", "Rebuild outline"],
   "翻译": ["翻译", "Translate"],
   "原文": ["原文", "Original"],

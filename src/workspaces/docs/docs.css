@@ -1508,6 +1508,7 @@ dialog.doc-dialog > .doc-dialog-note + * {
     inset: 0 auto auto 0;
     max-width: none;
     padding: 0;
+    zoom: 1 !important;
   }
   .doc-add-icon,
   .doc-template-row,

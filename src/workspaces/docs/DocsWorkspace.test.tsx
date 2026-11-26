@@ -115,6 +115,47 @@ it('opens a page, edits its title and saves it', async () => {
   });
 });
 
+it('scales the page with Ctrl + wheel or a pinch and puts it back at 100%', async () => {
+  localStorage.removeItem('capsio.docs.zoom');
+  const first = meeting();
+  const { docs, view, store, backend, library } = await setup([first]);
+  view.rerender(
+    <DocsWorkspace
+      project={project}
+      store={store}
+      backend={backend}
+      docs={docs}
+      library={library}
+      activePage={first.id}
+      onOpenPage={() => {}}
+      onContext={() => {}}
+      onTool={() => {}}
+    />,
+  );
+  await screen.findByRole('textbox', { name: '页面标题' });
+  const scroller = document.querySelector('.doc-scroll')!;
+  const column = document.querySelector<HTMLElement>('.doc-column')!;
+  const wheel = (init: WheelEventInit) =>
+    act(() => void scroller.dispatchEvent(new WheelEvent('wheel', { cancelable: true, ...init })));
+  // A wheel without Ctrl scrolls as usual.
+  wheel({ deltaY: -100 });
+  expect(column.style.zoom).toBe('');
+  wheel({ deltaY: -100, ctrlKey: true });
+  expect(Number(column.style.zoom)).toBeGreaterThan(1.2);
+  // WebKit's pinch: gesture events with the scale since the pinch began.
+  act(() => {
+    scroller.dispatchEvent(new Event('gesturestart', { cancelable: true }));
+    scroller.dispatchEvent(
+      Object.assign(new Event('gesturechange', { cancelable: true }), { scale: 0.5 }),
+    );
+  });
+  expect(Number(column.style.zoom)).toBeLessThan(0.7);
+  expect(localStorage.getItem('capsio.docs.zoom')).toBe(column.style.zoom);
+  await userEvent.setup().click(screen.getByRole('button', { name: /%$/ }));
+  expect(column.style.zoom).toBe('');
+  expect(screen.queryByRole('button', { name: /%$/ })).toBeNull();
+});
+
 it('moves a page and its subpages to the recycle bin and back', async () => {
   const parent = meeting();
   const child = newPage({ parent: parent.id, order: 'V', title: '11 月 16 日' });
