@@ -12,7 +12,7 @@ import {
   TextLayer,
   type PageViewport,
   type PDFDocumentProxy,
-} from 'pdfjs-dist';
+} from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { pdfLinkLabel, type ReaderLinkService } from './pdf-links';
 import { t } from '../i18n';
 import type { PaperAnnotation } from '../platform/library';

@@ -1,6 +1,6 @@
-import 'pdfjs-dist';
+import 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { PDFDocumentProxy, PageViewport } from 'pdfjs-dist';
-import { EventBus, LinkTarget, PDFLinkService } from 'pdfjs-dist/web/pdf_viewer.mjs';
+import { EventBus, LinkTarget, PDFLinkService } from 'pdfjs-dist/legacy/web/pdf_viewer.mjs';
 import { isTauri } from '@tauri-apps/api/core';
 import { browserCommand } from '../platform/browser-pane';
 import { t } from '../i18n';

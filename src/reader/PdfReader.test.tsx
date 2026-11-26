@@ -14,9 +14,9 @@ const links = vi.hoisted(() => ({
   textLayerError: null as Error | null,
 }));
 
-vi.mock('pdfjs-dist', async (importOriginal) => {
+vi.mock('pdfjs-dist/legacy/build/pdf.mjs', async (importOriginal) => {
   vi.stubGlobal('DOMMatrix', class {});
-  const actual = await importOriginal<typeof import('pdfjs-dist')>();
+  const actual = await importOriginal<typeof import('pdfjs-dist/legacy/build/pdf.mjs')>();
   function viewport(scale: number) {
     return {
       width: 600 * scale,

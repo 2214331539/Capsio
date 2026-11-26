@@ -1,8 +1,8 @@
 import type { PDFDocumentProxy, PDFDocumentLoadingTask } from 'pdfjs-dist';
 
 export async function loadTextPdf(data: ArrayBuffer | Uint8Array): Promise<PDFDocumentLoadingTask> {
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
-  const { default: worker } = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const { default: worker } = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
   GlobalWorkerOptions.workerSrc = worker;
   const base = import.meta.env.BASE_URL + 'pdfjs/';
   return getDocument({
