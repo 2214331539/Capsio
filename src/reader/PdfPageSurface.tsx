@@ -15,6 +15,8 @@ import {
 } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { pdfLinkLabel, type ReaderLinkService } from './pdf-links';
 import { t } from '../i18n';
+import '../platform/stream-iteration';
+import { reportError } from '../platform/error-reports';
 import type { PaperAnnotation } from '../platform/library';
 import { annotationAt, toBox, toPdfRects, type PdfRect } from './annotations';
 import { easing, motion, reducedMotion } from '../platform/motion';
@@ -177,7 +179,12 @@ export function PdfPageSurface({
 
             const [textResult, annotationResult] = await Promise.all([textTask, annotationTask]);
             if (stale) return;
-            if (textResult.error) console.warn('PDF text content failed:', textResult.error);
+            // Without text the page cannot be selected or translated; report it, since
+            // nothing on screen says why.
+            if (textResult.error) {
+              console.warn('PDF text content failed:', textResult.error);
+              reportError(textResult.error, 'pdf-text');
+            }
             if (annotationResult.error)
               console.warn('PDF annotations failed:', annotationResult.error);
             const content = textResult.value;
@@ -196,6 +203,7 @@ export function PdfPageSurface({
                 await layer.render();
               } catch (error) {
                 console.warn('PDF text layer failed:', error);
+                reportError(error, 'pdf-text-layer');
               }
               // As pdf.js's own viewer does: while a drag is selecting, this block covers
               // the page, so leaving a column does not select the rest of the page.

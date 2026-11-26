@@ -1,4 +1,5 @@
 import type { PDFDocumentProxy, PDFDocumentLoadingTask } from 'pdfjs-dist';
+import '../platform/stream-iteration';
 
 export async function loadTextPdf(data: ArrayBuffer | Uint8Array): Promise<PDFDocumentLoadingTask> {
   const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf.mjs');

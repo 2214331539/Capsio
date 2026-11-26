@@ -1,4 +1,5 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import '../platform/stream-iteration';
 
 export interface PdfHeading {
   id: string;
