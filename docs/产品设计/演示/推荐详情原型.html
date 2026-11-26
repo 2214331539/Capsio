@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>推荐 · 三个方向</title>
+<style>
+  :root {
+    --ink: #161a18; --text: #2b302d; --muted: #6b726e; --faint: #9aa19d;
+    --line: #e6e8e6; --line-strong: #d5d9d6; --bg: #fafaf9; --surface: #ffffff; --hover: #f3f4f2;
+    --accent: #3d5a80; --accent-soft: #eef2f7; --ok: #4f7a5e;
+    --radius: 10px; --shadow: 0 1px 2px rgba(16, 24, 20, .04), 0 8px 24px rgba(16, 24, 20, .06);
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eceeec; color: var(--text); font-size: 14px; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .switch { position: sticky; top: 0; z-index: 20; display: flex; gap: 6px; align-items: center; padding: 10px 20px; background: #eceeec; }
+  .switch strong { margin-right: 10px; color: var(--ink); }
+  .switch button { padding: 6px 14px; border: 1px solid var(--line-strong); border-radius: 999px; background: #fff; }
+  .switch button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
+  .switch span { margin-left: 12px; color: var(--muted); font-size: 12.5px; }
+  .app { width: 1280px; height: 820px; margin: 0 20px 24px; display: flex; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); position: relative; }
+  .rail { width: 200px; flex: none; padding: 14px 10px; background: var(--bg); border-right: 1px solid var(--line); }
+  .rail .proj { padding: 6px 10px 14px; font-weight: 600; color: var(--ink); }
+  .rail .nav { display: block; width: 100%; text-align: left; padding: 7px 10px; border: 0; border-radius: 7px; background: none; color: var(--muted); }
+  .rail .nav.on { background: var(--hover); color: var(--ink); font-weight: 600; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .bar { display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 20px; border-bottom: 1px solid var(--line); flex: none; }
+  .bar h1 { margin: 0; font-size: 15px; color: var(--ink); }
+  .bar .sub { color: var(--muted); font-size: 12.5px; }
+  .seg { display: flex; padding: 2px; border-radius: 8px; background: var(--hover); margin-left: auto; }
+  .seg button { padding: 4px 12px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 13px; }
+  .seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .kind { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; }
+  .kind i { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+  .kind.paper i { background: var(--accent); } .kind.news i { background: #a07d4f; } .kind.blog i { background: var(--ok); }
+  .meta { color: var(--muted); font-size: 12.5px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 7px; background: #fff; font-size: 13px; }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { border-color: var(--ink); background: var(--ink); color: #fff; }
+  .btn.ghost { border-color: transparent; background: none; color: var(--muted); }
+  .btn.ghost:hover { background: var(--hover); color: var(--ink); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); font-size: 12.5px; color: var(--text); }
+  .chip b { font-weight: 600; }
+  .section { margin-top: 22px; }
+  .section h3 { margin: 0 0 8px; font-size: 12px; font-weight: 600; letter-spacing: .04em; color: var(--muted); }
+  .points { display: grid; grid-template-columns: 56px 1fr; gap: 8px 14px; margin: 0; }
+  .points dt { color: var(--muted); font-size: 13px; }
+  .points dd { margin: 0; line-height: 1.6; }
+  .abstract { line-height: 1.75; margin: 0; }
+  .toggle { border: 0; background: none; color: var(--accent); font-size: 12.5px; padding: 0; margin-left: 8px; }
+  .kbd { display: inline-block; min-width: 18px; padding: 0 5px; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; font-size: 11px; text-align: center; color: var(--muted); background: #fff; }
+  .scroll { overflow: auto; }
+
+  /* A: the reading desk */
+  .a-list { width: 400px; flex: none; border-right: 1px solid var(--line); }
+  .a-group { padding: 14px 18px 6px; font-size: 12px; color: var(--faint); font-weight: 600; }
+  .a-row { display: block; width: 100%; text-align: left; padding: 12px 18px; border: 0; border-bottom: 1px solid var(--line); background: none; }
+  .a-row:hover { background: var(--bg); }
+  .a-row.on { background: var(--hover); }
+  .a-row .t { margin: 6px 0 4px; color: var(--ink); font-weight: 600; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .a-row .r { color: var(--muted); font-size: 12.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .a-detail { flex: 1; min-width: 0; padding: 26px 36px 40px; }
+  .d-title { margin: 8px 0 4px; font-size: 22px; line-height: 1.4; color: var(--ink); }
+  .d-orig { margin: 0 0 8px; color: var(--muted); }
+  .d-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .why { margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); line-height: 1.65; }
+  .why .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .a-foot { margin-top: 28px; color: var(--faint); font-size: 12px; }
+
+  /* B: the brief */
+  .b-page { flex: 1; padding: 28px 44px 40px; }
+  .b-head { display: flex; align-items: baseline; gap: 14px; }
+  .b-head h2 { margin: 0; font-size: 22px; color: var(--ink); }
+  .b-stats { color: var(--muted); }
+  .b-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0 26px; }
+  .b-card { text-align: left; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; transition: box-shadow .15s, border-color .15s; }
+  .b-card:hover { border-color: var(--line-strong); box-shadow: var(--shadow); }
+  .b-card .n { color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .b-card .t { margin: 8px 0; color: var(--ink); font-weight: 600; line-height: 1.45; font-size: 15px; }
+  .b-card .r { color: var(--muted); font-size: 12.5px; line-height: 1.55; }
+  .b-sec { display: flex; align-items: center; justify-content: space-between; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .b-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; width: 100%; text-align: left; padding: 12px 6px; border: 0; border-bottom: 1px solid var(--line); background: none; }
+  .b-row:hover { background: var(--bg); }
+  .b-row .t { color: var(--ink); font-weight: 600; }
+  .b-row .r { grid-column: 1; color: var(--muted); font-size: 12.5px; }
+  .b-row .go { grid-row: 1 / span 2; grid-column: 2; align-self: center; color: var(--faint); }
+  .b-detail { flex: 1; display: grid; grid-template-columns: 1fr 300px; min-height: 0; }
+  .b-body { padding: 18px 44px 90px; border-right: 1px solid var(--line); }
+  .crumb { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; }
+  .crumb button { border: 0; background: none; color: var(--muted); padding: 0; }
+  .crumb button:hover { color: var(--ink); }
+  .b-side { padding: 22px 22px; background: var(--bg); }
+  .b-side h3 { margin: 0 0 10px; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .b-side .block { margin-bottom: 22px; }
+  .lib { display: block; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; margin-bottom: 6px; font-size: 13px; line-height: 1.45; }
+  .lib small { display: block; color: var(--muted); margin-top: 2px; }
+  .score { display: grid; grid-template-columns: 44px 1fr 24px; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 12.5px; color: var(--muted); }
+  .score .track { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+  .score .track span { display: block; height: 100%; background: var(--ink); }
+  .stack { display: grid; gap: 8px; }
+  .stack .btn { justify-content: center; }
+  .b-pager { position: absolute; left: 200px; right: 300px; bottom: 0; display: flex; justify-content: space-between; align-items: center; padding: 12px 44px; border-top: 1px solid var(--line); background: rgba(255,255,255,.96); }
+
+  /* C: cards and a drawer */
+  .c-page { flex: 1; padding: 22px 26px 40px; }
+  .c-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .c-card { text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; transition: box-shadow .15s, border-color .15s; }
+  .c-card:hover { border-color: var(--line-strong); box-shadow: var(--shadow); }
+  .c-card .top { display: flex; justify-content: space-between; }
+  .c-card .s { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+  .c-card .t { color: var(--ink); font-weight: 600; font-size: 15px; line-height: 1.45; }
+  .c-card .sum { color: var(--text); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .c-card .why { padding: 8px 10px; font-size: 12.5px; color: var(--muted); }
+  .c-card .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+  .veil { position: absolute; inset: 0; background: rgba(22, 26, 24, .18); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 580px; background: #fff; border-left: 1px solid var(--line-strong); box-shadow: -12px 0 32px rgba(16,24,20,.08); transform: translateX(100%); transition: transform .24s cubic-bezier(.2,.8,.2,1); display: flex; flex-direction: column; }
+  .open .veil { opacity: 1; pointer-events: auto; } .open .drawer { transform: none; }
+  .drawer .head { display: flex; align-items: center; gap: 8px; height: 52px; padding: 0 18px; border-bottom: 1px solid var(--line); flex: none; }
+  .drawer .head .sp { flex: 1; }
+  .drawer .body { flex: 1; overflow: auto; padding: 22px 28px 40px; }
+  .preview { margin-top: 10px; height: 150px; border: 1px solid var(--line); border-radius: 8px; background: repeating-linear-gradient(#fff 0 13px, #f1f2f0 13px 14px); position: relative; }
+  .preview::after { content: "第 1 页预览"; position: absolute; right: 10px; bottom: 8px; font-size: 11.5px; color: var(--faint); }
+  .note { width: 1280px; margin: 0 20px 18px; color: var(--muted); line-height: 1.7; font-size: 13px; }
+  .note b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="switch">
+  <strong>推荐 · 二级详情</strong>
+  <button data-go="a" aria-pressed="true">A 阅读台</button>
+  <button data-go="b" aria-pressed="false">B 简报</button>
+  <button data-go="c" aria-pressed="false">C 卡片墙</button>
+  <span>点击任意一条看详情；A 支持 <span class="kbd">J</span> <span class="kbd">K</span> 切换</span>
+</div>
+<p class="note" id="note"></p>
+<div class="app" id="app"></div>
+
+<script>
+// Made-up items for the mock-up; no real paper, outlet or person.
+const items = [
+  { id: 1, kind: 'paper', label: '论文', title: 'TideMem：按会话潮汐整理的智能体记忆', orig: 'TideMem: Session-Tidal Consolidation for Agent Memory',
+    who: 'Hana Okafor, Jiwoo Park, Tomas Lind', venue: 'arXiv', date: '11-25', score: 92,
+    sum: '每次会话结束时把零散记录合并成少量摘要条目，检索开销下降一半，长程问答准确率不降。',
+    why: '引用了文献库里的《Retrieval-Augmented Memory》，同样关注检索开销，但把整理放在会话结束时。',
+    links: [['引用了', 'Retrieval-Augmented Memory'], ['相近', 'A-MEM']],
+    points: [['问题', '长程智能体的记忆越积越多，检索变慢、噪声变大。'], ['方法', '会话结束时按主题合并记录，保留决策和出处，丢弃过程性细节。'], ['结果', 'LongMemEval 上准确率持平（91.2 vs 91.8），每轮读取的 token 减少 49%。']],
+    abs: '长程智能体在多次会话中积累的记录会持续增长。我们提出 TideMem：在每次会话结束时，把语义相近的记录合并为少量摘要条目，同时保留关键决策及其来源。在三个基准上，TideMem 将每轮读取量降低近一半，而问答准确率基本不变。',
+    sc: { 相关: 9, 新颖: 7, 证据: 8 } },
+  { id: 2, kind: 'paper', label: '论文', title: 'Ledger：把决策当作一等公民的长程记忆', orig: 'Ledger: Decisions as First-Class Records in Long-Horizon Memory',
+    who: 'Priya Raman, Owen Hart', venue: 'arXiv', date: '11-25', score: 88,
+    sum: '只记录"谁在什么时候决定了什么"，在需要回溯理由的问题上明显好于摘要式记忆。',
+    why: '和项目的记录格式思路接近，可以对照它的字段设计。', links: [['相近', 'Retrieval-Augmented Memory']],
+    points: [['问题', '摘要式记忆丢失了决策的时间和依据。'], ['方法', '以决策为单位记录，附带时间、依据和撤销关系。'], ['结果', '在"为什么当时这样做"类问题上提升 12.3 分。']],
+    abs: '我们认为长程记忆的核心单位应是决策而非对话片段。Ledger 以"主体—决策—依据—时间"四元组记录，并显式维护决策之间的覆盖与撤销关系。', sc: { 相关: 9, 新颖: 8, 证据: 6 } },
+  { id: 3, kind: 'news', label: '新闻', title: '评测：多会话任务里，智能体最常忘记的是用户的约定', orig: 'Agents forget user agreements first in multi-session tasks',
+    who: 'Research Digest', venue: 'Research Digest', date: '11-26', score: 81,
+    sum: '对多款智能体做连续一周的日程和写作任务，失败多出在忘记前几次会话里的约定。',
+    why: '失败案例和项目关注的跨会话状态有关，可作为动机部分的例子。', links: [],
+    also: ['ML Weekly', 'Lab Notes'],
+    points: [['发生了什么', '一项为期一周的实测，覆盖 6 款智能体、42 个任务。'], ['关键发现', '61% 的失败源于遗忘早先会话中的用户约定。']],
+    abs: '这项测评让智能体连续一周处理日程安排与长文写作，并在会话之间插入新的约定。结果显示，大部分失败并非能力不足，而是忘记了用户此前提出的要求。', sc: { 相关: 8, 新颖: 6, 证据: 6 } },
+  { id: 4, kind: 'paper', label: '论文', title: 'DriftBench：环境在变化时的记忆评测', orig: 'DriftBench: Evaluating Memory When the Environment Drifts',
+    who: 'Lena Vogt, Arjun Mehta, Sun Wei', venue: 'arXiv', date: '11-24', score: 84,
+    sum: '在会话之间改动文件和设置，检验记忆能否发现旧信息已经过时。',
+    why: '提供了动态环境下的评测，可以补上项目里静态评测的空白。', links: [['补充', 'LongMemEval']],
+    points: [['问题', '现有记忆评测假设环境不变。'], ['方法', '会话间随机修改文件、配置和事实，要求模型识别过时记忆。'], ['结果', '最强基线在变化后的问题上下降 23 分。']],
+    abs: 'DriftBench 在每次会话之间对环境施加可控的变化，评估智能体能否识别并更新已过时的记忆。', sc: { 相关: 8, 新颖: 8, 证据: 7 } },
+  { id: 5, kind: 'blog', label: '博客', title: '我们怎样维护一套长期使用的智能体评测集', orig: 'Keeping an agent evaluation suite useful for a year',
+    who: 'Lab Notes', venue: 'Lab Notes', date: '11-25', score: 76,
+    sum: '从任务采样、判分规则到回归追踪，介绍维护评测集的做法，附开源脚本。',
+    why: '项目在做记忆评测，文中的回归追踪做法可以直接参考。', links: [],
+    points: [['主要内容', '任务采样、判分规则、回归追踪三部分。'], ['可直接用的', '开源的判分脚本和回归报告模板。']],
+    abs: '一篇来自实践团队的经验总结：评测集如何随模型迭代保持区分度，以及怎样避免判分规则悄悄漂移。', sc: { 相关: 7, 新颖: 5, 证据: 6 } },
+];
+const papers = items.filter((i) => i.kind === 'paper');
+const posts = items.filter((i) => i.kind !== 'paper');
+const kind = (i) => `<span class="kind ${i.kind}"><i></i>${i.label}</span>`;
+const metaLine = (i) => `${i.kind === 'paper' ? i.who + ' · ' : ''}${i.venue} · ${i.date}`;
+const actions = (i, cls = 'd-actions') => `<div class="${cls}">
+  ${i.kind === 'paper' ? '<button class="btn primary">加入文献库</button><button class="btn">打开 PDF</button>' : '<button class="btn primary">打开原文</button>'}
+  <button class="btn">问 AI</button><button class="btn ghost">稍后读</button><button class="btn ghost">不感兴趣</button></div>`;
+const why = (i) => `<p class="why">${i.why}${i.links.length ? `<span class="links">${i.links.map(([k, t]) => `<span class="chip">${k} <b>${t}</b></span>`).join('')}</span>` : ''}</p>`;
+const pointsHtml = (i) => `<dl class="points">${i.points.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+const detailBody = (i) => `
+  ${kind(i)} <span class="meta">· ${metaLine(i)}</span>
+  <h2 class="d-title">${i.title}</h2><p class="d-orig">${i.orig}</p>
+  ${actions(i)}
+  <div class="section"><h3>为什么推荐</h3>${why(i)}</div>
+  <div class="section"><h3>要点</h3>${pointsHtml(i)}</div>
+  <div class="section"><h3>摘要<button class="toggle">看原文</button></h3><p class="abstract">${i.abs}</p></div>
+  ${i.also ? `<div class="section"><h3>同一件事的其他报道</h3>${i.also.map((s) => `<span class="chip">${s}</span>`).join(' ')}</div>` : ''}`;
+const rail = (on) => `<nav class="rail"><div class="proj">长程智能体记忆</div>
+  ${['文献库', '推荐', '笔记', '实验', '写作'].map((n) => `<button class="nav ${n === on ? 'on' : ''}">${n}</button>`).join('')}</nav>`;
+const bar = (title, sub) => `<div class="bar"><h1>${title}</h1><span class="sub">${sub}</span>
+  <div class="seg"><button class="on">全部</button><button>论文</button><button>动态</button></div></div>`;
+
+const notes = {
+  a: '<b>A 阅读台</b>：左边是今天的推荐，一条只有标题、来源和一句理由；右边是选中的那一条，一直在。适合一条条读过去，键盘 J / K 上下切换，不用来回进出页面。',
+  b: '<b>B 简报</b>：先看今天最值得读的 3 条，再按论文和动态扫一遍；点进去是工作区里的二级页面，有面包屑和返回，右栏放与项目的关系、评分依据和操作。适合先扫一眼再挑着看。',
+  c: '<b>C 卡片墙</b>：卡片里多一点信息（摘要两行、推荐理由），点开从右边拉出详情，带第一页预览，不离开当前页。适合信息量稍大、需要快速比较的时候。',
+};
+
+let mode = 'a', selected = 1, page = null;
+function render() {
+  document.getElementById('note').innerHTML = notes[mode];
+  const app = document.getElementById('app');
+  app.className = 'app';
+  const it = items.find((i) => i.id === selected);
+  if (mode === 'a') {
+    const row = (i) => `<button class="a-row ${i.id === selected ? 'on' : ''}" data-id="${i.id}">
+      ${kind(i)} <span class="meta">· ${i.venue} · ${i.date}</span><div class="t">${i.title}</div><div class="r">${i.why}</div></button>`;
+    app.innerHTML = rail('推荐') + `<div class="main">${bar('推荐', '11 月 26 日 · 5 条新内容')}
+      <div style="display:flex;flex:1;min-height:0">
+        <div class="a-list scroll"><div class="a-group">论文</div>${papers.map(row).join('')}<div class="a-group">动态</div>${posts.map(row).join('')}</div>
+        <div class="a-detail scroll">${detailBody(it)}<p class="a-foot"><span class="kbd">J</span> 下一条　<span class="kbd">K</span> 上一条　<span class="kbd">A</span> 加入文献库</p></div>
+      </div></div>`;
+  } else if (mode === 'b') {
+    if (page) {
+      const i = items.find((x) => x.id === page);
+      const idx = items.indexOf(i);
+      app.innerHTML = rail('推荐') + `<div class="main"><div class="b-detail">
+        <div class="b-body scroll"><div class="crumb"><button data-back>推荐</button><span>/</span><span>${i.label}</span></div>
+          <div style="margin-top:14px">${detailBody(i).replace('class="d-actions"', 'class="d-actions" style="display:none"')}</div></div>
+        <aside class="b-side scroll">
+          <div class="block"><h3>与你的项目</h3>${i.links.length ? i.links.map(([k, t]) => `<span class="lib">${t}<small>文献库 · ${k}</small></span>`).join('') : '<span class="meta">和文献库里的论文没有直接关系，按研究方向推荐。</span>'}</div>
+          <div class="block"><h3>为什么排在前面</h3>${Object.entries(i.sc).map(([k, v]) => `<div class="score">${k}<span class="track"><span style="width:${v * 10}%"></span></span>${v}</div>`).join('')}</div>
+          <div class="block stack">${i.kind === 'paper' ? '<button class="btn primary">加入文献库</button><button class="btn">打开 PDF</button>' : '<button class="btn primary">打开原文</button>'}<button class="btn">问 AI</button><button class="btn ghost">稍后读</button><button class="btn ghost">不感兴趣</button></div>
+        </aside></div>
+        <div class="b-pager"><button class="btn ghost" data-step="-1" ${idx === 0 ? 'disabled' : ''}>← 上一条</button><span class="meta">${idx + 1} / ${items.length}</span><button class="btn ghost" data-step="1" ${idx === items.length - 1 ? 'disabled' : ''}>下一条 →</button></div></div>`;
+    } else {
+      const top = [items[0], items[3], items[2]];
+      const row = (i) => `<button class="b-row" data-open="${i.id}"><span class="t">${i.title}</span><span class="go">›</span><span class="r">${metaLine(i)}　${i.why}</span></button>`;
+      app.innerHTML = rail('推荐') + `<div class="main"><div class="b-page scroll">
+        <div class="b-head"><h2>11 月 26 日</h2><span class="b-stats">3 篇论文 · 2 条动态 · 1 条引用提醒</span><div class="seg"><button class="on">全部</button><button>论文</button><button>动态</button></div></div>
+        <div class="b-top">${top.map((i, n) => `<button class="b-card" data-open="${i.id}"><span class="n">0${n + 1} · ${i.label}</span><div class="t">${i.title}</div><div class="r">${i.why}</div></button>`).join('')}</div>
+        <div class="b-sec">论文<span class="meta">${papers.length} 篇</span></div>${papers.map(row).join('')}
+        <div class="b-sec" style="margin-top:22px">动态<span class="meta">${posts.length} 条</span></div>${posts.map(row).join('')}
+      </div></div>`;
+    }
+  } else {
+    const card = (i) => `<button class="c-card" data-drawer="${i.id}"><div class="top">${kind(i)}<span class="s">${i.score}</span></div>
+      <div class="t">${i.title}</div><div class="sum">${i.sum}</div><div class="why">推荐理由　${i.why}</div>
+      <div class="foot"><span class="meta">${i.venue} · ${i.date}</span><span class="meta">稍后读 · 不感兴趣</span></div></button>`;
+    app.innerHTML = rail('推荐') + `<div class="main">${bar('推荐', '11 月 26 日 · 5 条新内容')}<div class="c-page scroll"><div class="c-grid">${items.map(card).join('')}</div></div></div>
+      <div class="veil" data-close></div><aside class="drawer">${page ? `<div class="head"><button class="btn ghost" data-close>关闭</button><span class="sp"></span><button class="btn ghost" data-step="-1">上一条</button><button class="btn ghost" data-step="1">下一条</button></div>
+      <div class="body">${detailBody(items.find((i) => i.id === page))}${items.find((i) => i.id === page).kind === 'paper' ? '<div class="section"><h3>第一页</h3><div class="preview"></div></div>' : ''}</div>` : ''}</aside>`;
+    if (page) requestAnimationFrame(() => app.classList.add('open'));
+  }
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('button,[data-close]');
+  if (!t) return;
+  if (t.dataset.go) { mode = t.dataset.go; page = null; document.querySelectorAll('.switch button').forEach((b) => b.setAttribute('aria-pressed', b === t)); }
+  else if (t.dataset.id) selected = +t.dataset.id;
+  else if (t.dataset.open) page = +t.dataset.open;
+  else if (t.dataset.drawer) page = +t.dataset.drawer;
+  else if (t.dataset.back !== undefined || t.dataset.close !== undefined) page = null;
+  else if (t.dataset.step) { const list = items.map((i) => i.id); const at = list.indexOf(page); page = list[Math.max(0, Math.min(list.length - 1, at + +t.dataset.step))]; }
+  else if (t.classList.contains('toggle')) { const p = t.closest('.section').querySelector('.abstract'); const i = items.find((x) => x.id === (mode === 'a' ? selected : page)); const zh = p.dataset.orig !== '1'; p.textContent = zh ? i.orig + ' — ' + 'Original abstract would appear here.' : i.abs; p.dataset.orig = zh ? '1' : '0'; t.textContent = zh ? '看译文' : '看原文'; return; }
+  else return;
+  render();
+});
+document.addEventListener('keydown', (e) => {
+  if (mode !== 'a') return;
+  const list = [...papers, ...posts].map((i) => i.id);
+  const at = list.indexOf(selected);
+  if (e.key === 'j') selected = list[Math.min(list.length - 1, at + 1)];
+  else if (e.key === 'k') selected = list[Math.max(0, at - 1)];
+  else return;
+  render();
+});
+render();
+</script>
+</body>
+</html>
