@@ -39,19 +39,73 @@ const PASS: Duration = Duration::from_secs(2 * 60);
 /// A paper that fails by itself (not the model) is left alone after this many tries.
 const ATTEMPTS: u32 = 3;
 
-/// What the translation pane shows: the translated PDF, progress, or a quiet wait.
+/// What the translation pane shows: the translated PDF, progress, or why it is waiting.
 #[derive(Serialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Status {
-    /// `done`, `translating` or `waiting`.
+    /// `done`, `translating`, `waiting`, `paused` or `failed`.
     state: &'static str,
     /// 0–100 while translating.
     progress: f64,
+    /// Waiting in this device's queue: how many papers go first, the running one included.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ahead: Option<usize>,
+    /// Why it is paused or failed, in the user's words.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reason: Option<String>,
+    /// Paused: seconds until it tries again by itself.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    resume_in: Option<u64>,
 }
 
 impl Status {
     fn new(state: &'static str, progress: f64) -> Self {
-        Self { state, progress }
+        Self {
+            state,
+            progress,
+            ahead: None,
+            reason: None,
+            resume_in: None,
+        }
+    }
+    fn paused(reason: String, resume_in: Duration) -> Self {
+        Self {
+            reason: Some(reason),
+            resume_in: Some(resume_in.as_secs()),
+            ..Self::new("paused", 0.0)
+        }
+    }
+    fn failed() -> Self {
+        Self {
+            reason: Some(format!("试了 {ATTEMPTS} 次都没有翻译成功。")),
+            ..Self::new("failed", 0.0)
+        }
+    }
+}
+
+/// A model failure as the pane says it. The worker keeps the full message in its log.
+fn pause_reason(message: &str) -> String {
+    let lower = message.to_lowercase();
+    if lower.contains("429") || lower.contains("rate limit") || message.contains("太频繁") {
+        "模型服务繁忙".into()
+    } else if lower.contains("402") || lower.contains("quota") || message.contains("额度") {
+        "官方模型额度已用完".into()
+    } else if lower.contains("401") || lower.contains("403") {
+        "模型账号无法使用，请检查设置里的模型".into()
+    } else if lower.contains("timed out")
+        || lower.contains("connect")
+        || message.contains("连接")
+        || message.contains("网络")
+    {
+        "网络或模型服务暂时连不上".into()
+    } else if message
+        .chars()
+        .any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c))
+        && message.chars().count() <= 60
+    {
+        message.trim_end_matches('。').to_string()
+    } else {
+        "模型暂时不可用".into()
     }
 }
 
@@ -110,6 +164,8 @@ struct Inner {
     wanted: HashSet<String>,
     first_seen: HashMap<String, Instant>,
     paused_until: Option<Instant>,
+    /// Why the work is paused, as the pane says it.
+    pause_reason: Option<String>,
     /// An official-model token the server turned down; the next one is fetched fresh.
     stale_token: Option<String>,
     worker: bool,
@@ -471,6 +527,7 @@ fn pass<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
             .is_some_and(|until| until <= Instant::now())
         {
             inner.paused_until = None;
+            inner.pause_reason = None;
         }
         (
             inner.wanted.clone(),
@@ -688,15 +745,19 @@ fn settle<R: tauri::Runtime>(app: &tauri::AppHandle<R>, job: &Job, outcome: Resu
             } else {
                 Duration::from_secs(30 * 60)
             };
+            let reason = pause_reason(&message);
             if let Ok(mut inner) = translator.inner.lock() {
                 inner.paused_until = Some(Instant::now() + rest);
+                inner.pause_reason = Some(reason.clone());
                 inner.queue.push_front(job.clone());
             }
-            notify(app, job, Status::new("waiting", 0.0));
+            notify(app, job, Status::paused(reason, rest));
         }
         Err(Failure::Paper) => {
             let mut local = load_local(app);
-            *local.failures.entry(job.fingerprint.clone()).or_default() += 1;
+            let failures = local.failures.entry(job.fingerprint.clone()).or_default();
+            *failures += 1;
+            let given_up = *failures >= ATTEMPTS;
             save_local(app, &local);
             if let Ok(mut inner) = translator.inner.lock() {
                 inner.wanted.remove(&job.fingerprint);
@@ -709,7 +770,12 @@ fn settle<R: tauri::Runtime>(app: &tauri::AppHandle<R>, job: &Job, outcome: Resu
                 notify(app, job, Status::new("done", 100.0));
                 return;
             }
-            notify(app, job, Status::new("waiting", 0.0));
+            let status = if given_up {
+                Status::failed()
+            } else {
+                Status::new("waiting", 0.0)
+            };
+            notify(app, job, status);
         }
         Err(Failure::Stopped) => {}
     }
@@ -932,20 +998,63 @@ fn read_events(log: &Path) -> (Option<f64>, Option<Result<String, String>>) {
     (progress, end)
 }
 
-fn status(state: &TranslatorState, target: &Path, fingerprint: &str) -> Status {
+/// `failures`: how often this device failed on the paper (see `Local`).
+fn status(state: &TranslatorState, target: &Path, fingerprint: &str, failures: u32) -> Status {
     if target.is_file() {
         return Status::new("done", 100.0);
     }
-    match state.inner.lock().ok().and_then(|inner| {
-        inner
-            .running
-            .as_ref()
-            .filter(|(job, _, _)| job.fingerprint == fingerprint)
-            .map(|(_, progress, _)| *progress)
-    }) {
-        Some(progress) => Status::new("translating", progress),
+    let Ok(inner) = state.inner.lock() else {
+        return Status::new("waiting", 0.0);
+    };
+    if let Some((_, progress, _)) = inner
+        .running
+        .as_ref()
+        .filter(|(job, _, _)| job.fingerprint == fingerprint)
+    {
+        return Status::new("translating", *progress);
+    }
+    let queued = inner
+        .queue
+        .iter()
+        .position(|job| job.fingerprint == fingerprint);
+    if let (Some(until), true) = (
+        inner.paused_until,
+        queued.is_some() || inner.wanted.contains(fingerprint),
+    ) {
+        let reason = inner
+            .pause_reason
+            .clone()
+            .unwrap_or_else(|| "模型暂时不可用".into());
+        return Status::paused(reason, until.saturating_duration_since(Instant::now()));
+    }
+    match queued {
+        Some(index) => Status {
+            ahead: Some(index + usize::from(inner.running.is_some())),
+            ..Status::new("waiting", 0.0)
+        },
+        None if failures >= ATTEMPTS => Status::failed(),
+        // Not in the queue yet, or another device is translating it.
         None => Status::new("waiting", 0.0),
     }
+}
+
+/// `status` for a paper, with this device's failures on it.
+fn status_of<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    target: &Path,
+    fingerprint: &str,
+) -> Status {
+    let failures = load_local(app)
+        .failures
+        .get(fingerprint)
+        .copied()
+        .unwrap_or(0);
+    status(
+        &app.state::<TranslatorState>(),
+        target,
+        fingerprint,
+        failures,
+    )
 }
 
 fn paths<R: tauri::Runtime>(
@@ -967,11 +1076,7 @@ pub async fn translation_status<R: tauri::Runtime>(
 ) -> Result<Status, String> {
     trusted(&view)?;
     let (_, target, fingerprint) = paths(&app, &project_id, &paper_id)?;
-    Ok(status(
-        &app.state::<TranslatorState>(),
-        &target,
-        &fingerprint,
-    ))
+    Ok(status_of(&app, &target, &fingerprint))
 }
 
 /// Someone opened the paper in translation: translate it next unless it is done or
@@ -1004,7 +1109,7 @@ pub async fn translation_open<R: tauri::Runtime>(
             wake(&app);
         }
     }
-    Ok(status(&translator, &target, &fingerprint))
+    Ok(status_of(&app, &target, &fingerprint))
 }
 
 /// Where a translation being redone waits, on this device only, until the new one is done.
@@ -1053,7 +1158,7 @@ pub async fn translation_retranslate<R: tauri::Runtime>(
         .wanted
         .insert(fingerprint.clone());
     wake(&app);
-    Ok(status(&translator, &target, &fingerprint))
+    Ok(status_of(&app, &target, &fingerprint))
 }
 
 /// The translated PDF's bytes.
@@ -1073,6 +1178,96 @@ pub async fn translation_pdf<R: tauri::Runtime>(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+/// Ends a pause now, after the user fixed what stopped it (a model, a network, quota).
+#[tauri::command]
+pub async fn translation_resume<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    view: tauri::Webview<R>,
+    project_id: String,
+    paper_id: String,
+) -> Result<Status, String> {
+    trusted(&view)?;
+    let (_, target, fingerprint) = paths(&app, &project_id, &paper_id)?;
+    if let Ok(mut inner) = app.state::<TranslatorState>().inner.lock() {
+        inner.paused_until = None;
+        inner.pause_reason = None;
+        inner.wanted.insert(fingerprint.clone());
+    }
+    wake(&app);
+    Ok(status_of(&app, &target, &fingerprint))
+}
+
+/// Saves a copy of the translated PDF where the user picks. False when they cancel.
+#[tauri::command]
+pub async fn translation_save<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    view: tauri::Webview<R>,
+    project_id: String,
+    paper_id: String,
+    name: String,
+) -> Result<bool, String> {
+    use tauri_plugin_dialog::DialogExt;
+    trusted(&view)?;
+    let (_, target, _) = paths(&app, &project_id, &paper_id)?;
+    if !target.is_file() {
+        return Err("译文还没有生成。".into());
+    }
+    let stem: String = name
+        .chars()
+        .map(|c| {
+            if r#"<>:"/\|?*"#.contains(c) || c.is_control() {
+                ' '
+            } else {
+                c
+            }
+        })
+        .collect::<String>()
+        .trim()
+        .chars()
+        .take(120)
+        .collect();
+    let stem = if stem.is_empty() {
+        "译文".into()
+    } else {
+        stem
+    };
+    tauri::async_runtime::spawn_blocking(move || {
+        let Some(file) = app
+            .dialog()
+            .file()
+            .add_filter("PDF", &["pdf"])
+            .set_file_name(format!("{stem}.pdf"))
+            .blocking_save_file()
+        else {
+            return Ok(false);
+        };
+        let path = file.into_path().map_err(|e| e.to_string())?;
+        std::fs::copy(&target, path).map_err(|e| format!("无法导出译文：{e}"))?;
+        Ok(true)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Shows the translated PDF in the system file manager.
+#[tauri::command]
+pub async fn translation_reveal<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    view: tauri::Webview<R>,
+    project_id: String,
+    paper_id: String,
+) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    trusted(&view)?;
+    let (_, target, _) = paths(&app, &project_id, &paper_id)?;
+    if !target.is_file() {
+        return Err("译文还没有生成。".into());
+    }
+    app.opener()
+        .reveal_item_in_dir(target)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
@@ -1197,6 +1392,70 @@ mod tests {
         assert_eq!(text.lines().count(), 2);
         assert!(text.lines().next().unwrap().ends_with("first second"));
         assert!(text.lines().nth(1).unwrap().len() < 700);
+    }
+
+    #[test]
+    fn the_pane_hears_its_place_in_the_queue_a_pause_and_why_or_that_it_failed() {
+        let dir = tempfile::tempdir().unwrap();
+        let job = |name: &str| Job {
+            project: "p".into(),
+            fingerprint: name.into(),
+            source: dir.path().join(format!("{name}.src.pdf")),
+            target: dir.path().join(format!("{name}.pdf")),
+        };
+        let state = TranslatorState::default();
+        {
+            let mut inner = state.inner.lock().unwrap();
+            inner.running = Some((job("a"), 40.0, Arc::new(AtomicBool::new(false))));
+            inner.queue = VecDeque::from([job("b"), job("c")]);
+        }
+        let target = |name: &str| dir.path().join(format!("{name}.pdf"));
+        assert_eq!(
+            status(&state, &target("a"), "a", 0),
+            Status::new("translating", 40.0)
+        );
+        assert_eq!(status(&state, &target("c"), "c", 0).ahead, Some(2));
+        // Not queued here and given up on after three tries.
+        assert_eq!(status(&state, &target("d"), "d", ATTEMPTS).state, "failed");
+        assert_eq!(
+            status(&state, &target("d"), "d", 1),
+            Status::new("waiting", 0.0)
+        );
+        {
+            let mut inner = state.inner.lock().unwrap();
+            inner.paused_until = Some(Instant::now() + Duration::from_secs(600));
+            inner.pause_reason = Some(pause_reason("Error code: 429 - Too Many Requests"));
+        }
+        let paused = status(&state, &target("b"), "b", 0);
+        assert_eq!(paused.state, "paused");
+        assert_eq!(paused.reason.as_deref(), Some("模型服务繁忙"));
+        assert!(paused.resume_in.is_some_and(|seconds| seconds > 590));
+        std::fs::write(target("b"), "%PDF-").unwrap();
+        assert_eq!(
+            status(&state, &target("b"), "b", 0),
+            Status::new("done", 100.0)
+        );
+    }
+
+    #[test]
+    fn pause_reasons_are_said_plainly() {
+        assert_eq!(pause_reason("官方模型额度已用完。"), "官方模型额度已用完");
+        assert_eq!(
+            pause_reason("HTTP 401 Unauthorized"),
+            "模型账号无法使用，请检查设置里的模型"
+        );
+        assert_eq!(
+            pause_reason("APIConnectionError: Connection error."),
+            "网络或模型服务暂时连不上"
+        );
+        assert_eq!(
+            pause_reason("请先在设置里选择 AI 模型"),
+            "请先在设置里选择 AI 模型"
+        );
+        assert_eq!(
+            pause_reason("Traceback (most recent call last): KeyError"),
+            "模型暂时不可用"
+        );
     }
 
     #[test]

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Languages } from 'lucide-react';
+import { AlertCircle, Languages, PauseCircle } from 'lucide-react';
 import { t } from '../../i18n';
 import {
   translator as nativeTranslator,
@@ -50,8 +50,12 @@ export function ProgressRing({
   );
 }
 
-/** What a translation tab shows before its name: the language mark, or the ring while it works. */
+/** What a translation tab shows before its name: the language mark, the ring while it works,
+ *  or a still mark when it is paused or failed, so nothing turns for work that is not moving. */
 export function TranslationIcon({ status }: { status?: TranslationStatus }) {
+  if (status?.state === 'paused') return <PauseCircle size={14} aria-label={t('翻译已暂停')} />;
+  if (status?.state === 'failed')
+    return <AlertCircle size={14} aria-label={t('这篇论文没能翻译出来')} />;
   if (status && status.state !== 'done')
     return (
       <ProgressRing

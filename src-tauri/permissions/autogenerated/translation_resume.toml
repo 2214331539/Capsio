@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-translation-resume"
+description = "Enables the translation_resume command without any pre-configured scope."
+commands.allow = ["translation_resume"]
+
+[[permission]]
+identifier = "deny-translation-resume"
+description = "Denies the translation_resume command without any pre-configured scope."
+commands.deny = ["translation_resume"]
