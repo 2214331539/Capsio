@@ -216,7 +216,54 @@ const SERVICE_ERROR: &str = "模型服务返回 HTTP";
 /// limit or an error of the service itself, rather than a key or an address that is wrong.
 pub(crate) fn transient(error: &str) -> bool {
     [TIMED_OUT, UNREACHABLE, LIMITED].contains(&error)
+        || error.ends_with("（rate_limited）")
         || error.starts_with(&format!("{SERVICE_ERROR} 5"))
+}
+
+/// The refusals of Capsio's official model gateway (server/src/billing), with our words for
+/// each. A remote error body can echo credentials, so its text never reaches the UI or the
+/// logs: only a code from this list is read from it, and these words are shown instead.
+const GATEWAY_CODES: [(&str, &str); 6] = [
+    ("rate_limited", "请求太频繁，请稍后再试。"),
+    ("daily_limit", "今天的用量已到单日上限，明天 0 点恢复。"),
+    ("quota_exhausted", "官方模型额度已用完。"),
+    (
+        "model_not_in_plan",
+        "当前套餐不包含这个模型，请换一个模型。",
+    ),
+    ("model_token_invalid", "官方模型连接已失效，请重新连接。"),
+    ("account_disabled", "账号已停用。"),
+];
+
+/// A gateway refusal read from a failed response: its code, the message to show (ending in
+/// the code, for the app to recognise) and the seconds it asked to wait.
+pub(crate) struct Refusal {
+    pub code: &'static str,
+    pub message: String,
+    pub retry_after: Option<u64>,
+}
+
+pub(crate) async fn gateway_refusal(mut response: reqwest::Response) -> Option<Refusal> {
+    let retry_after = response
+        .headers()
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.trim().parse::<u64>().ok());
+    let mut body = Vec::new();
+    while let Ok(Some(chunk)) = response.chunk().await {
+        body.extend_from_slice(&chunk);
+        if body.len() > 8 * 1024 {
+            return None;
+        }
+    }
+    let value: Value = serde_json::from_slice(&body).ok()?;
+    let wanted = value["code"].as_str()?;
+    let (code, text) = GATEWAY_CODES.iter().find(|(code, _)| *code == wanted)?;
+    Some(Refusal {
+        code,
+        message: format!("{text}（{code}）"),
+        retry_after,
+    })
 }
 
 async fn response(call: RequestBuilder, limit: usize) -> Result<Value, String> {
@@ -228,8 +275,12 @@ async fn response(call: RequestBuilder, limit: usize) -> Result<Value, String> {
         }
     })?;
     if !response.status().is_success() {
+        let status = response.status().as_u16();
+        if let Some(refusal) = gateway_refusal(response).await {
+            return Err(refusal.message);
+        }
         // Remote error bodies/URLs can echo credentials. Never send them to the UI or logs.
-        return Err(match response.status().as_u16() {
+        return Err(match status {
             401 | 403 => "服务拒绝访问（401/403），请检查 API 密钥、服务区域及模型权限。".into(),
             404 | 405 => {
                 "接口不可用（404/405），请检查服务地址及接口协议；服务需要支持模型列表和聊天接口。"
@@ -868,7 +919,10 @@ pub(crate) async fn ask(
         max_tokens: Some(max_tokens),
         temperature: Some(0.2),
     };
-    let value = completion(&request, false).await?;
+    // Work the app does by itself: the official gateway gives it an allowance of its own,
+    // so it never takes a slot from a conversation. Other services ignore the header.
+    let call = completion_call(&request, false, false)?.header("x-capsio-background", "1");
+    let value = response(call, 1024 * 1024).await?;
     let text = output(&value, provider);
     if text.trim().is_empty() {
         return Err("模型没有返回文本回答，请检查模型是否支持对话。".into());
@@ -980,6 +1034,62 @@ pub(crate) mod tests {
         });
         (address, handle)
     }
+    #[test]
+    fn a_rate_limited_chat_waits_and_retries_and_other_refusals_show_only_our_words() {
+        let reply = |status: &str, headers: &str, body: &str| {
+            format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\n{headers}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            )
+        };
+        let limited = reply(
+            "429 Too Many Requests",
+            "Retry-After: 1\r\n",
+            r#"{"error":"请求太频繁，请稍后再试。","code":"rate_limited","retryAfter":1}"#,
+        );
+        let ok = reply("200 OK", "", r#"{"ok":true}"#);
+        let call = |base: &str| {
+            reqwest::Client::new()
+                .post(format!("{base}/v1/chat/completions"))
+                .json(&json!({"model":"m"}))
+        };
+        let (base, handle) = server_factory(2, move |index, _| {
+            if index == 0 {
+                limited.clone()
+            } else {
+                ok.clone()
+            }
+        });
+        let started = Instant::now();
+        let response = tauri::async_runtime::block_on(stream::send(call(&base))).unwrap();
+        assert!(response.status().is_success());
+        assert!(started.elapsed() >= Duration::from_secs(1));
+        assert_eq!(handle.join().unwrap().len(), 2);
+
+        // No quota is not a moment's wait: our words and the code, at once.
+        let quota = reply(
+            "402 Payment Required",
+            "",
+            r#"{"error":"x","code":"quota_exhausted"}"#,
+        );
+        let (base, handle) = server_factory(1, move |_, _| quota.clone());
+        let error = tauri::async_runtime::block_on(stream::send(call(&base))).unwrap_err();
+        assert_eq!(error.message, "官方模型额度已用完。（quota_exhausted）");
+        assert_eq!(handle.join().unwrap().len(), 1);
+
+        // Another service's own words never reach the UI: they could echo a key.
+        let theirs = reply(
+            "429 Too Many Requests",
+            "",
+            r#"{"error":{"message":"key sk-test-only over limit"}}"#,
+        );
+        let (base, handle) = server_factory(1, move |_, _| theirs.clone());
+        let error = tauri::async_runtime::block_on(stream::send(call(&base))).unwrap_err();
+        assert!(!error.message.contains("sk-"));
+        assert_eq!(handle.join().unwrap().len(), 1);
+        assert!(transient("请求太频繁，请稍后再试。（rate_limited）"));
+    }
+
     #[test]
     fn text_features_leave_a_chatgpt_sign_in_to_the_agent() {
         let own = json!({"provider":"openai","endpoint":"https://a.example/v1","model":"m"});

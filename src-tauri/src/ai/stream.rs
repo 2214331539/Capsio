@@ -72,18 +72,43 @@ impl std::fmt::Debug for StreamError {
     }
 }
 
+/// How often a request the official gateway turned down for its rate limit is sent again,
+/// after waiting as long as it asked (at most `RATE_WAIT_MAX` seconds each time).
+const RATE_RETRIES: u32 = 2;
+const RATE_WAIT_MAX: u64 = 8;
+
 pub(super) async fn send(call: RequestBuilder) -> Result<reqwest::Response, StreamError> {
-    let response = call.send().await.map_err(|_| StreamError {
-        message: "模型连接失败或超时，请检查服务。".into(),
-        status: 503,
-    })?;
-    if !response.status().is_success() {
-        return Err(StreamError {
-            message: http_error(response.status()),
-            status: response.status().as_u16(),
-        });
+    let mut call = call;
+    let mut attempt = 0;
+    loop {
+        let again = call.try_clone();
+        let response = call.send().await.map_err(|_| StreamError {
+            message: "模型连接失败或超时，请检查服务。".into(),
+            status: 503,
+        })?;
+        let status = response.status();
+        if status.is_success() {
+            return Ok(response);
+        }
+        let refusal = gateway_refusal(response).await;
+        match (refusal, again) {
+            // A moment of too many requests at once: wait, then send it again.
+            (Some(refusal), Some(next))
+                if refusal.code == "rate_limited" && attempt < RATE_RETRIES =>
+            {
+                let wait = refusal.retry_after.unwrap_or(2).clamp(1, RATE_WAIT_MAX);
+                tokio::time::sleep(std::time::Duration::from_secs(wait)).await;
+                attempt += 1;
+                call = next;
+            }
+            (refusal, _) => {
+                return Err(StreamError {
+                    message: refusal.map_or_else(|| http_error(status), |refusal| refusal.message),
+                    status: status.as_u16(),
+                })
+            }
+        }
     }
-    Ok(response)
 }
 
 pub(super) fn bounded_bytes(

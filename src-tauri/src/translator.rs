@@ -740,8 +740,9 @@ fn settle<R: tauri::Runtime>(app: &tauri::AppHandle<R>, job: &Job, outcome: Resu
             notify(app, job, Status::new("done", 100.0));
         }
         Err(Failure::Model(message)) => {
+            // Too many requests passes within a minute or two; no quota or no network takes longer.
             let rest = if message.contains("429") || message.to_lowercase().contains("rate limit") {
-                Duration::from_secs(10 * 60)
+                Duration::from_secs(2 * 60)
             } else {
                 Duration::from_secs(30 * 60)
             };
