@@ -109,31 +109,67 @@ export const mathRehypePlugins: PluggableList = [
   [rehypeKatex, { trust: false, strict: 'ignore', maxExpand: 1000, maxSize: 20 }],
 ];
 
+// Math that already has delimiters, and inline code: never rewritten.
+const DELIMITED =
+  /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|(?<![\\$])\$(?!\$)[^$\n]+?(?<!\\)\$|`[^`\n]+`)/g;
+const INLINE_DOLLAR = /(?<![\\$])\$(?!\$)([^$\n]+?)(?<!\\)\$/g;
+// A `$$` block starting a line, possibly in a list or quote, up to a `$$` ending a line.
+const DISPLAY = /^((?:[ \t]*>)*[ \t]*)\$\$([\s\S]*?)\$\$[ \t]*$/gm;
+const ENVIRONMENT =
+  /\\begin\{(aligned|align\*?|equation\*?|gather\*?|gathered|cases|split|multline\*?|array|[pbvBV]?matrix)\}[\s\S]*?\\end\{\1\}/g;
+
 /**
- * Models occasionally return a small TeX fragment without delimiters, for
- * example `{A_b}`. Normalize only recognisable fragments and never touch code
- * fences, so ordinary prose and source snippets remain unchanged.
+ * Fixes how models commonly lay out TeX so it renders: `$$` blocks whose delimiters share
+ * a line with the formula (shown as display math), `|` in a formula inside a table cell
+ * (which would split the cell), and environments, fractions, roots and small fragments
+ * such as `{A_b}` written without delimiters. Code, and math that already has delimiters,
+ * are left exactly as they are.
  */
 export function normalizeMathDelimiters(source: string) {
   return source
     .split(/(```[\s\S]*?```|~~~[\s\S]*?~~~)/g)
-    .map((part, index) => {
-      if (index % 2 === 1) return part;
-      let value = part.replace(
-        /\{([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+|\^[A-Za-z0-9]+))\}/g,
-        (_match, expression: string) => `\\(${expression}\\)`,
-      );
-      // Bare fraction/square-root commands are another common provider
-      // formatting error. Limit this to a complete, single-line command.
-      const hasUnclosedDelimiter =
-        (value.match(/\\\[/g)?.length ?? 0) > (value.match(/\\\]\s*/g)?.length ?? 0) ||
-        (value.match(/\\\(/g)?.length ?? 0) > (value.match(/\\\)\s*/g)?.length ?? 0);
-      if (!hasUnclosedDelimiter)
-        value = value.replace(
-          /(?<![\\$])((?:\\frac\{[^{}\n]+\}\{[^{}\n]+\}|\\sqrt\{[^{}\n]+\}))(?![\\$])/g,
-          (_match, expression: string) => `\\(${expression}\\)`,
-        );
-      return value;
-    })
+    .map((part, index) => (index % 2 === 1 ? part : normalizeProse(part)))
     .join('');
+}
+
+function normalizeProse(text: string) {
+  const value = text
+    .replace(DISPLAY, (match, prefix: string, content: string) => {
+      if (!content.trim() || content.includes('$$') || /\n[ \t>]*\n/.test(content)) return match;
+      const lines = content.split('\n');
+      const opening = lines[0].trim();
+      const closing = lines.length > 1 ? lines[lines.length - 1].replace(/^[ \t>]*/, '') : '';
+      if (lines.length > 1 && !opening && !closing.trim()) return match;
+      const body = [
+        ...(opening ? [prefix + opening] : []),
+        ...lines.slice(1, -1),
+        ...(closing.trim() ? [prefix + closing.trim()] : []),
+      ];
+      return [prefix + '$$', ...body, prefix + '$$'].join('\n');
+    })
+    .replace(/^[ \t]*\|.*$/gm, (row) =>
+      row.replace(INLINE_DOLLAR, (_match, inner: string) => {
+        return `$${inner.replace(/(?<!\\)\|/g, '\\vert ')}$`;
+      }),
+    );
+  return value
+    .split(DELIMITED)
+    .map((piece, index) => (index % 2 === 1 ? piece : withDelimiters(piece)))
+    .join('');
+}
+
+/** TeX in plain prose that a model left without delimiters. */
+function withDelimiters(prose: string) {
+  const value = prose.replace(
+    /\{([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+|\^[A-Za-z0-9]+))\}/g,
+    (_match, expression: string) => `\\(${expression}\\)`,
+  );
+  // A delimiter still open here is being streamed in; wait for the rest.
+  if (/\\\[|\\\(|\$\$/.test(value)) return value;
+  return value
+    .replace(ENVIRONMENT, (environment) => `\n$$\n${environment}\n$$\n`)
+    .replace(
+      /(?<![\\$])((?:\\frac\{[^{}\n]+\}\{[^{}\n]+\}|\\sqrt\{[^{}\n]+\}))(?![\\$])/g,
+      (_match, expression: string) => `\\(${expression}\\)`,
+    );
 }

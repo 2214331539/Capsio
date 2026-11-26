@@ -204,6 +204,17 @@ describe('Markdown', () => {
     expect(blocks.find((block) => block.type === 'todo')!.props).toEqual({ checked: true });
   });
 
+  it('reads the TeX the AI writes, \\( \\) and \\[ \\] included, as formulas', () => {
+    const blocks = markdownToBlocks(
+      '设 \\(x_i\\) 为样本。\n\n\\[\n\\bar{x} = \\frac{1}{n}\\sum_i x_i\n\\]\n\n$$E = mc^2$$',
+    );
+    expect(blocks[0].content).toContainEqual({ type: 'math', latex: 'x_i' });
+    expect(blocks.slice(1).map((block) => [block.type, block.props?.latex])).toEqual([
+      ['math', '\\bar{x} = \\frac{1}{n}\\sum_i x_i'],
+      ['math', 'E = mc^2'],
+    ]);
+  });
+
   it('takes the first heading of an imported file as its title', () => {
     const page = markdownToPage('# 阅读笔记\n\n第一段\n\n- 要点');
     expect(page.title).toBe('阅读笔记');

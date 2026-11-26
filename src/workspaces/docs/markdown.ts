@@ -5,8 +5,8 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
 import type { Nodes, PhrasingContent, Root, RootContent } from 'mdast';
+import { mathRemarkPlugins, normalizeMathDelimiters } from '../../features/notes/math';
 import { blockId, type Block, type Inline, type Marks } from './model';
 
 // ---------- To Markdown ----------
@@ -161,7 +161,7 @@ function phrasing(nodes: PhrasingContent[], marks: Marks, options: ParseOptions)
         case 'link':
           return phrasing(node.children, { ...marks, link: node.url }, options);
         case 'inlineMath':
-          return [{ type: 'math', latex: node.value }];
+          return [{ type: 'math', latex: node.value.trim() }];
         case 'break':
           return [{ type: 'break' }];
         case 'image':
@@ -224,6 +224,13 @@ function toBlocks(nodes: RootContent[] | Nodes[], options: ParseOptions): Block[
   for (const node of nodes as RootContent[]) {
     switch (node.type) {
       case 'paragraph': {
+        // A paragraph that is only display math, `\[ … \]`, becomes a math block.
+        const parts = node.children.filter((child) => child.type !== 'text' || child.value.trim());
+        const only = parts.length === 1 ? parts[0] : null;
+        if (only?.type === 'inlineMath' && displayed(only)) {
+          out.push({ id: blockId(), type: 'math', props: { latex: only.value.trim() } });
+          break;
+        }
         // A paragraph that is only an image becomes an image block.
         if (node.children.length === 1 && node.children[0].type === 'image') {
           const image = node.children[0];
@@ -293,8 +300,20 @@ function toBlocks(nodes: RootContent[] | Nodes[], options: ParseOptions): Block[
   return out;
 }
 
+/** `\[ … \]` arrives as inline math marked for display (features/notes/math.ts). */
+function displayed(node: Nodes) {
+  const className = (node.data as { hProperties?: { className?: string[] } } | undefined)
+    ?.hProperties?.className;
+  return !!className?.includes('math-display');
+}
+
 export function markdownToBlocks(markdown: string, options: ParseOptions = {}): Block[] {
-  const tree = unified().use(remarkParse).use(remarkGfm).use(remarkMath).parse(markdown) as Root;
+  // The same TeX the AI's answers render: `$`, `$$`, `\( \)` and `\[ \]`.
+  const tree = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(mathRemarkPlugins)
+    .parse(normalizeMathDelimiters(markdown)) as Root;
   return toBlocks(tree.children, options);
 }
 
