@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import type { PdfBackend } from '../platform/research';
@@ -452,7 +452,9 @@ it('deletes a highlight at once and puts it back from the undo offer, saving bot
   );
   await user.click(await screen.findByRole('button', { name: '批注列表' }));
   await user.click(await screen.findByRole('button', { name: /Research text/ }));
-  await user.click(await screen.findByRole('button', { name: '删除批注' }));
+  // The note opened from the list; the list has a delete button of its own too.
+  const note = await screen.findByRole('dialog', { name: '批注' });
+  await user.click(within(note).getByRole('button', { name: '删除批注' }));
   await waitFor(() =>
     expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ annotations: [] })),
   );
