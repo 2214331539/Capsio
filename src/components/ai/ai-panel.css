@@ -1027,12 +1027,15 @@
   opacity: 0.7;
 }
 .sf-ai-file span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .sf-ai-file small {
+  flex: none;
   color: var(--sf-text-muted);
+  white-space: nowrap;
 }
 .sf-ai-file.is-add svg {
   color: var(--sf-status-success);
@@ -1556,4 +1559,11 @@
   flex: none;
   color: var(--sf-text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* A conversation's title in the history menu: one line, cut with an ellipsis. */
+.sf-ai-session-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

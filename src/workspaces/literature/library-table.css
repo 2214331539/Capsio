@@ -14,10 +14,11 @@
   border-bottom: 1px solid var(--sf-border-subtle);
 }
 .library-table-head h1 {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  min-width: 0;
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.012em;
@@ -26,8 +27,10 @@
   flex: 1;
 }
 .library-table-head [role='status'] {
+  flex: none;
   color: var(--sf-text-muted);
   font-size: 12px;
+  white-space: nowrap;
 }
 .library-table-head .sf-button {
   height: 30px;
@@ -57,6 +60,7 @@
   top: 0;
   z-index: 1;
   height: 32px;
+  white-space: nowrap;
   background: var(--sf-surface-canvas);
   color: var(--sf-text-muted);
   font-size: 12px;

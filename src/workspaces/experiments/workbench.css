@@ -113,6 +113,12 @@
   font-weight: 600;
   cursor: pointer;
 }
+.sf-side-section > header > button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .sf-side-section > header > button > svg {
   flex: none;
   transition: transform 120ms ease;
@@ -147,6 +153,8 @@
   color: var(--sf-text-primary);
 }
 .sf-side-section-count {
+  flex: none;
+  white-space: nowrap;
   min-width: 18px;
   margin-left: 4px;
   padding: 0 5px;
@@ -438,6 +446,21 @@
 .sf-diff-view > header > small {
   color: var(--sf-text-muted);
   font-size: 11.5px;
+}
+/* The file name and its folder shorten with an ellipsis; the staged label stays whole. */
+.sf-diff-view > header > :is(strong, span:not(.spacer)) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sf-diff-view > header > strong {
+  flex: none;
+  max-width: 50%;
+}
+.sf-diff-view > header > small {
+  flex: none;
+  white-space: nowrap;
 }
 .sf-diff-view > header > .sf-button {
   align-self: center;

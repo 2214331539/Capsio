@@ -134,6 +134,7 @@
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
+    white-space: nowrap;
     min-height: 20px;
     padding: 0 5px;
     border: 1px solid var(--sf-border-subtle);

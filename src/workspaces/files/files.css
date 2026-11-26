@@ -377,6 +377,9 @@
 .sf-resource-heading > span {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sf-resource-heading > .sf-button {
   width: 22px;

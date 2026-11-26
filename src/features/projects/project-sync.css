@@ -277,6 +277,8 @@ dialog.sync-compare-dialog {
   font-size: 11.5px;
 }
 .share-role {
+  flex: none;
+  white-space: nowrap;
   padding: 0 8px;
   color: var(--sf-text-muted);
   font-size: 12.5px;

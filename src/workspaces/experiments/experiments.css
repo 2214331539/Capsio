@@ -382,6 +382,8 @@
   padding: 0 12px;
   border-bottom: 1px solid var(--sf-border-subtle);
   color: var(--sf-text-secondary);
+  /* Status, source and time stay on one line; only the run name wraps. */
+  white-space: nowrap;
 }
 .sf-experiment-runs th {
   position: sticky;

@@ -170,6 +170,8 @@ dialog.settings-dialog.sf-model-settings-dialog {
   overflow-wrap: anywhere;
 }
 .sf-chatgpt-name em {
+  flex: none;
+  white-space: nowrap;
   padding: 1px 6px;
   border-radius: 4px;
   background: var(--sf-surface-hover);
