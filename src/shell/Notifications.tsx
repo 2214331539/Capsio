@@ -77,11 +77,14 @@ type Item = {
 /** Things that need the user: new team projects, sync trouble and failed runs this week. */
 export function Notifications({
   store,
+  projectId,
   onOpenRemote,
   onOpenSource,
   onSyncSettings,
 }: {
   store: WorkspaceStore;
+  /** The open project, whose recommendations the panel leads to. */
+  projectId?: string;
   onOpenRemote(project: CollaborationProject, team: boolean): Promise<void>;
   onOpenSource(source: WorkContext): void;
   onSyncSettings(): void;
@@ -281,7 +284,7 @@ export function Notifications({
           primary: true,
           run: () => {
             close();
-            openRecommendations(alert.projectId);
+            openRecommendations(alert.projectId, alert.workId);
           },
         },
         { label: t('知道了'), run: () => dismissAlert(alert.workId) },
@@ -333,7 +336,22 @@ export function Notifications({
         ) : null}
       </Button>
       <Popover anchor={anchor} label={t('通知')} width={340} align="end" onClose={close}>
-        <div className="sf-notice-head">{t('通知')}</div>
+        <div className="sf-notice-head">
+          {t('通知')}
+          {projectId ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                close();
+                openRecommendations(projectId);
+              }}
+            >
+              <Newspaper />
+              {t('推荐')}
+            </Button>
+          ) : null}
+        </div>
         {items.length ? (
           <ul className="sf-notices">
             {items.map((item) => (

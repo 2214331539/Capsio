@@ -31,6 +31,7 @@ import { errorMessage } from '../domain/errors';
 import { dismissToast, toast, toastUndo } from '../components/feedback';
 import { takeResumeHint } from './resume';
 import { listenZoom } from '../platform/zoom-gestures';
+import { listenPdfSpot, takePdfSpot, type PdfSpot } from './pdf-sync';
 import './reader.css';
 import { PdfOutlinePanel } from './PdfOutlinePanel';
 
@@ -43,7 +44,12 @@ const readingPositions = new WeakMap<PdfBackend, Map<string, ReadingPosition>>()
 export type RecordStore = {
   load(): Promise<PaperRecord | null>;
   save(record: PaperRecord): Promise<PaperRecord>;
+  /** Another reader of the same record changed it (the paper and its translation share one). */
+  subscribe?(listener: (record: PaperRecord) => void): () => void;
 };
+/** The other version of this paper (its translation, or the original), and how to show a
+ *  place in it. */
+export type Counterpart = { label: string; locate(spot: PdfSpot): void };
 export default function PdfReader({
   assetId,
   title,
@@ -56,6 +62,7 @@ export default function PdfReader({
   record,
   readOnly = false,
   onQuote,
+  counterpart,
 }: {
   assetId: string;
   title: string;
@@ -70,6 +77,8 @@ export default function PdfReader({
   readOnly?: boolean;
   /** Adds a passage to the paper's note. */
   onQuote?: (text: string, page: number) => void;
+  /** Selected text or Ctrl + click (⌘ on a Mac) shows the same place in the other version. */
+  counterpart?: Counterpart;
 }) {
   const scroll = useRef<HTMLDivElement>(null);
   const pages = useRef<HTMLDivElement>(null);
@@ -132,8 +141,15 @@ export default function PdfReader({
         setAnnotations(value?.annotations ?? []);
       })
       .catch((reason) => live && setError(errorMessage(reason)));
+    // The same record open in another reader: its changes show here too.
+    const stop = record?.subscribe?.((value) => {
+      saved.current = value;
+      annotationsNow.current = value.annotations ?? [];
+      setAnnotations(value.annotations ?? []);
+    });
     return () => {
       live = false;
+      stop?.();
     };
   }, [record]);
   /** Shows the change at once and saves in order, the newest list last. */
@@ -314,6 +330,28 @@ export default function PdfReader({
     window.addEventListener('capsio-pdf-page', handler);
     return () => window.removeEventListener('capsio-pdf-page', handler);
   }, [paperId, document]);
+  // A place asked for from the other version: scroll to it and mark it for a moment.
+  const [spot, setSpot] = useState<(PdfSpot & { at: number }) | null>(null);
+  useEffect(() => {
+    if (!document) return;
+    const show = ({ page: number, point }: PdfSpot) => {
+      if (!Number.isInteger(number) || number < 1 || number > document.numPages) return;
+      // A little above the place, so it does not sit on the top edge.
+      void linkCallbacks.current.followLink({
+        pageNumber: number,
+        destArray: [null, { name: 'XYZ' }, null, point[1] + 60],
+      });
+      setSpot({ page: number, point, at: Date.now() });
+    };
+    const waiting = takePdfSpot(assetId);
+    if (waiting) show(waiting);
+    return listenPdfSpot(assetId, show);
+  }, [assetId, document]);
+  useEffect(() => {
+    if (!spot) return;
+    const timer = window.setTimeout(() => setSpot(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [spot]);
   const widthRef = useRef(width);
   widthRef.current = width;
   // While the panel is being resized the drawn pages are only scaled as one layer on the GPU,
@@ -648,6 +686,12 @@ export default function PdfReader({
                     setPicked(null);
                     setOpened({ id, at, edit: false });
                   }}
+                  onLocate={
+                    counterpart
+                      ? (number, point) => counterpart.locate({ page: number, point })
+                      : undefined
+                  }
+                  spot={spot?.page === number ? spot : null}
                   onSelection={(page, text, value, where) => {
                     setSelection(value);
                     setSelectionPage(page);
@@ -726,6 +770,21 @@ export default function PdfReader({
               ? () => {
                   onQuote(picked.text, picked.page);
                   setPicked(null);
+                }
+              : undefined
+          }
+          locate={
+            counterpart && picked.rects.length
+              ? {
+                  label: counterpart.label,
+                  run: () => {
+                    const [x1, y1, x2, y2] = picked.rects[0];
+                    counterpart.locate({
+                      page: picked.page,
+                      point: [Math.min(x1, x2), Math.max(y1, y2)],
+                    });
+                    setPicked(null);
+                  },
                 }
               : undefined
           }

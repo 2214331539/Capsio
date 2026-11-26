@@ -568,7 +568,10 @@ export function App({
   }, [openedProject]);
   useEffect(() => followBriefs(), []);
   // A brief's notice: the project whose literature module should show its recommendations.
-  const [recommendationsRequest, setRecommendationsRequest] = useState<string | null>(null);
+  const [recommendationsRequest, setRecommendationsRequest] = useState<{
+    projectId: string;
+    item?: string;
+  } | null>(null);
   const location = project ? (ui.locations[project.id] ?? locationDefault) : locationDefault;
   const workspace = projectModules.some((w) => w.id === location.workspace)
     ? location.workspace
@@ -1099,7 +1102,7 @@ export function App({
     };
     // A brief's notice shows that project's recommendations, in its literature module.
     const openRecommended = (event: Event) => {
-      const detail = (event as CustomEvent<{ projectId: string }>).detail;
+      const detail = (event as CustomEvent<{ projectId: string; item?: string }>).detail;
       const target = data?.projects.find((p) => p.id === detail?.projectId);
       if (!target) return;
       setUI((s) => ({
@@ -1115,7 +1118,7 @@ export function App({
           },
         },
       }));
-      setRecommendationsRequest(target.id);
+      setRecommendationsRequest({ projectId: target.id, item: detail.item });
     };
     window.addEventListener('capsio-open-browser', openBrowser);
     window.addEventListener(openRecommendationsEvent, openRecommended);
@@ -1210,7 +1213,10 @@ export function App({
       requestedBrowser={location.browserId}
       requestedNewBrowser={browserRequest === project.id}
       onNewBrowserHandled={() => setBrowserRequest(null)}
-      requestedRecommendations={recommendationsRequest === project.id}
+      requestedRecommendations={recommendationsRequest?.projectId === project.id}
+      recommendationFocus={
+        recommendationsRequest?.projectId === project.id ? recommendationsRequest.item : undefined
+      }
       onRecommendationsHandled={() => setRecommendationsRequest(null)}
       width={resourceWidth}
       resize={
@@ -1403,6 +1409,7 @@ export function App({
             ready ? (
               <Notifications
                 store={store}
+                projectId={project?.id}
                 onOpenRemote={openRemoteProject}
                 onOpenSource={(source) =>
                   window.dispatchEvent(new CustomEvent('capsio-open-source', { detail: source }))

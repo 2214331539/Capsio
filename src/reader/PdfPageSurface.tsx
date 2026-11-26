@@ -39,6 +39,8 @@ export function PdfPageSurface({
   annotations,
   activeAnnotation,
   onAnnotation,
+  onLocate,
+  spot,
 }: {
   document: PDFDocumentProxy;
   page: number;
@@ -55,6 +57,10 @@ export function PdfPageSurface({
   activeAnnotation?: string | null;
   /** A highlight or note on this page was clicked. */
   onAnnotation?(id: string, at: DOMRect): void;
+  /** Ctrl (⌘ on a Mac) + click: this point, in PDF points, is wanted in the other version. */
+  onLocate?(page: number, point: [number, number]): void;
+  /** A place shown here a moment ago, in PDF points, and when it was asked for. */
+  spot?: { point: [number, number]; at: number } | null;
 }) {
   const surface = useRef<HTMLDivElement>(null);
   const [base, setBase] = useState({ width: 600, height: 800 });
@@ -309,19 +315,30 @@ export function PdfPageSurface({
     }
     callbacks.current.onSelection(page, text.current, value, where);
   }
-  /** The highlight or underline under the pointer, if any. */
-  function hitAt(event: ReactMouseEvent<HTMLDivElement>) {
+  /** The point under the pointer, in PDF points. */
+  function pointAt(event: ReactMouseEvent<HTMLDivElement>): [number, number] | undefined {
     const layer = surface.current?.querySelector<HTMLElement>('.textLayer') ?? surface.current;
-    if (!onAnnotation || !annotations?.length || !unitRef.current || !layer) return undefined;
+    if (!unitRef.current || !layer) return undefined;
     const bounds = layer.getBoundingClientRect();
     const scaleNow = bounds.width / unitRef.current.width;
     const [x, y] = unitRef.current.convertToPdfPoint(
       (event.clientX - bounds.left) / scaleNow,
       (event.clientY - bounds.top) / scaleNow,
     );
-    return annotationAt(annotations, page - 1, x, y);
+    return [x, y];
+  }
+  /** The highlight or underline under the pointer, if any. */
+  function hitAt(event: ReactMouseEvent<HTMLDivElement>) {
+    if (!onAnnotation || !annotations?.length) return undefined;
+    const point = pointAt(event);
+    return point ? annotationAt(annotations, page - 1, point[0], point[1]) : undefined;
   }
   function open(event: ReactMouseEvent<HTMLDivElement>) {
+    if ((event.ctrlKey || event.metaKey) && onLocate) {
+      const point = pointAt(event);
+      if (point) onLocate(page, point);
+      return;
+    }
     if (window.getSelection()?.toString().trim()) return;
     const hit = hitAt(event);
     if (hit) onAnnotation?.(hit.id, new DOMRect(event.clientX, event.clientY, 0, 0));
@@ -361,6 +378,14 @@ export function PdfPageSurface({
             onClick={open}
             onMouseMove={hover}
           />
+          {unit && spot ? (
+            <span
+              key={spot.at}
+              className="pdf-spot"
+              aria-hidden="true"
+              style={{ top: unit.convertToViewportPoint(spot.point[0], spot.point[1])[1] * scale }}
+            />
+          ) : null}
           {unit && annotations?.length ? (
             <div className="pdf-highlights">
               {annotations.map((annotation) =>

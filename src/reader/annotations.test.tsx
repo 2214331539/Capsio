@@ -98,6 +98,27 @@ it('offers highlight colors only where highlights can be kept', async () => {
   expect(screen.queryByRole('button', { name: '黄色高亮' })).toBeNull();
   expect(screen.queryByRole('button', { name: '摘录到笔记' })).toBeNull();
   expect(screen.getByRole('button', { name: '复制' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '原文位置' })).toBeNull();
+});
+
+it('finds the selection in the other version of the paper', async () => {
+  const user = userEvent.setup();
+  const locate = vi.fn();
+  render(
+    <SelectionToolbar
+      box={new DOMRect(300, 300, 100, 20)}
+      canAnnotate
+      onHighlight={vi.fn()}
+      onUnderline={vi.fn()}
+      onComment={vi.fn()}
+      onCopy={vi.fn()}
+      onAsk={vi.fn()}
+      locate={{ label: '原文位置', run: locate }}
+      onClose={vi.fn()}
+    />,
+  );
+  await user.click(screen.getByRole('button', { name: '原文位置' }));
+  expect(locate).toHaveBeenCalled();
 });
 
 it('keeps a typed comment when the popover closes, recolors and deletes', async () => {

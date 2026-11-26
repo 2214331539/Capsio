@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
-import { Copy, MessageSquarePlus, NotebookPen, StickyNote, Trash2, Underline } from 'lucide-react';
+import {
+  Copy,
+  LocateFixed,
+  MessageSquarePlus,
+  NotebookPen,
+  StickyNote,
+  Trash2,
+  Underline,
+} from 'lucide-react';
 import { Button, Textarea } from '../components/primitives';
 import { Mascot } from '../components/ai/Mascot';
 import { t } from '../i18n';
@@ -87,6 +95,7 @@ export function SelectionToolbar({
   onCopy,
   onAsk,
   onQuote,
+  locate,
   onClose,
 }: {
   box: DOMRect;
@@ -97,6 +106,8 @@ export function SelectionToolbar({
   onCopy(): void;
   onAsk(): void;
   onQuote?: () => void;
+  /** The same place in the other version of the paper. */
+  locate?: { label: string; run(): void };
   onClose(): void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -135,6 +146,15 @@ export function SelectionToolbar({
       <Button variant="ghost" iconOnly size="sm" aria-label={t('问 AI')} onClick={onAsk}>
         <Mascot size={16} />
       </Button>
+      {locate ? (
+        <>
+          <span className="pdf-toolbar-sep" />
+          <Button variant="ghost" size="sm" onClick={locate.run}>
+            <LocateFixed />
+            {locate.label}
+          </Button>
+        </>
+      ) : null}
     </div>
   );
 }

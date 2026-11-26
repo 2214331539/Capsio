@@ -41,6 +41,8 @@ const FILTERS: [Filter, string][] = [
 const shows = (filter: Filter, item: Recommendation) =>
   filter === 'all' || (filter === 'paper') === (item.kind === 'paper');
 
+const KIND: Record<Recommendation['kind'], string> = { paper: '论文', news: '新闻', blog: '博客' };
+
 function dayLabel(day: string) {
   const local = (offset: number) => {
     const date = new Date(Date.now() - offset * 86_400_000);
@@ -58,18 +60,27 @@ function byline(item: Recommendation) {
   return [authors, item.venue, item.published].filter(Boolean).join(' · ');
 }
 
+/** Keys typed into a field are text, not list moves. */
+const typing = (target: EventTarget | null) =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+
 /**
  * New papers, news and blog posts for a project, picked in the background from what its
- * library is about, each with the reason it was picked. The page only shows them and passes
- * on what the user does.
+ * library is about, each with the reason it was picked. A reading desk: the list on the left,
+ * the one being read on the right, J and K to move between them. The page only shows them and
+ * passes on what the user does.
  */
 export function Recommendations({
   projectId,
+  focus,
   onOpenPaper,
   onAsk,
   engine = radar,
 }: {
   projectId: string;
+  /** A recommendation to show first, such as the one a notice was about. */
+  focus?: string | null;
   onOpenPaper: (paperId: string) => void;
   onAsk: (paper: Recommendation) => void;
   engine?: Radar;
@@ -79,16 +90,21 @@ export function Recommendations({
   const [saving, setSaving] = useState<string | null>(null);
   const [hinted, setHinted] = useState(() => localStorage.getItem(HINTED) === '1');
   const [filter, setFilter] = useState<Filter>('all');
+  const [selected, setSelected] = useState<string | null>(focus ?? null);
   const [reasons, setReasons] = useState<{ paper: Recommendation; anchor: MenuAnchor } | null>(
     null,
   );
   const live = useRef(true);
+  const index = useRef<HTMLElement>(null);
   useEffect(
     () => () => {
       live.current = false;
     },
     [],
   );
+  useEffect(() => {
+    if (focus) setSelected(focus);
+  }, [focus]);
 
   const load = useCallback(
     () =>
@@ -135,6 +151,41 @@ export function Recommendations({
     });
   const failed = (reason: unknown) => setError(errorMessage(reason));
 
+  const remaining = view?.items.filter((item) => item.state !== 'dismissed') ?? [];
+  // The filter appears once a brief holds both papers and updates.
+  const mixed =
+    remaining.some((item) => item.kind === 'paper') &&
+    remaining.some((item) => item.kind !== 'paper');
+  // The day's big news in the user's fields comes first, then the project's own, then what
+  // was kept for later; each shows once.
+  const seen = new Set<string>();
+  const once = (item: Recommendation) => !seen.has(item.id) && !!seen.add(item.id);
+  const highlights = (view?.highlights ?? []).filter(
+    (item) => item.state !== 'dismissed' && filter !== 'paper' && once(item),
+  );
+  const shown = remaining.filter((item) => (!mixed || shows(filter, item)) && once(item));
+  const waiting = (view?.later ?? []).filter(
+    (item) => (!mixed || shows(filter, item)) && once(item),
+  );
+  const entries = [...highlights, ...shown, ...waiting];
+  const current = entries.find((item) => item.id === selected) ?? entries[0] ?? null;
+
+  function select(item: Recommendation | undefined) {
+    if (!item) return;
+    setSelected(item.id);
+    const list = index.current;
+    const target = [...(list?.querySelectorAll<HTMLElement>('[data-id]') ?? [])].find(
+      (row) => row.dataset.id === item.id,
+    );
+    // Focus in the list follows the selection, so its ring never marks another row.
+    if (list?.contains(document.activeElement)) target?.focus({ preventScroll: true });
+    target?.scrollIntoView?.({ block: 'nearest' });
+  }
+  function step(by: number) {
+    const at = current ? entries.indexOf(current) : -1;
+    select(entries[Math.min(Math.max(at + by, 0), entries.length - 1)]);
+  }
+
   function open(paper: Recommendation) {
     void engine.feedback(projectId, paper.id, 'opened').catch(() => {});
     void openBrowserSource(projectId, paper.url).catch(failed);
@@ -165,6 +216,10 @@ export function Recommendations({
     engine.feedback(projectId, paper.id, 'later', { undo }).catch(failed);
   }
   function dismiss(paper: Recommendation, reason: string) {
+    // Reading goes on with the next one.
+    const at = entries.indexOf(paper);
+    const next = entries[at + 1] ?? entries[at - 1];
+    if (next) setSelected(next.id);
     mark(paper.id, 'dismissed');
     engine.feedback(projectId, paper.id, 'dismissed', { reason }).catch(failed);
     toastUndo(t('已忽略'), async () => {
@@ -173,43 +228,51 @@ export function Recommendations({
     });
   }
 
-  function card(paper: Recommendation) {
+  function row(item: Recommendation) {
+    const state =
+      item.state === 'saved' ? t('已加入') : item.state === 'later' ? t('稍后读') : null;
     return (
-      <li key={paper.id} className="recommendation">
-        <button type="button" className="recommendation-title" onClick={() => open(paper)}>
-          {paper.title}
-        </button>
-        {paper.originalTitle !== paper.title ? (
-          <p className="recommendation-original">{paper.originalTitle}</p>
-        ) : null}
-        <p className="recommendation-byline">
-          {paper.kind !== 'paper' ? (
-            <span className="recommendation-kind">
-              {paper.kind === 'news' ? t('新闻') : t('博客')}
+      <li key={item.id}>
+        <button
+          type="button"
+          className="recommendations-row"
+          data-id={item.id}
+          aria-current={item === current ? 'true' : undefined}
+          onClick={() => select(item)}
+        >
+          <span className="recommendations-row-meta">
+            <span className="recommendations-row-kind">{t(KIND[item.kind])}</span>
+            <span className="recommendations-row-source">
+              {[item.venue, item.published].filter(Boolean).join(' · ')}
             </span>
-          ) : null}
+            {state ? <span className="recommendations-row-state">{state}</span> : null}
+          </span>
+          <span className="recommendations-row-title">{item.title}</span>
+          {item.reason ? <span className="recommendations-row-reason">{item.reason}</span> : null}
+        </button>
+      </li>
+    );
+  }
+
+  function group(label: string, items: Recommendation[]) {
+    return items.length ? (
+      <section className="recommendations-group" aria-label={t(label)}>
+        <h3>{t(label)}</h3>
+        <ol>{items.map(row)}</ol>
+      </section>
+    ) : null;
+  }
+
+  function detail(paper: Recommendation) {
+    return (
+      <article key={paper.id} className="recommendation" aria-label={paper.title}>
+        <p className="recommendation-byline">
+          <span className="recommendation-kind">{t(KIND[paper.kind])}</span>
           {byline(paper)}
         </p>
-        {paper.summary ? <p className="recommendation-summary">{paper.summary}</p> : null}
-        {paper.reason ? (
-          <p className="recommendation-reason">
-            <span className="recommendation-label">{t('推荐理由')}</span>
-            {paper.reason}
-          </p>
-        ) : null}
-        {paper.also.length ? (
-          <p className="recommendation-also">
-            {t('另有 {count} 个来源：', { count: paper.also.length })}
-            {paper.also.map((report) => (
-              <button
-                key={report.url}
-                type="button"
-                onClick={() => void openBrowserSource(projectId, report.url).catch(failed)}
-              >
-                {report.source}
-              </button>
-            ))}
-          </p>
+        <h2 className="recommendation-title">{paper.title}</h2>
+        {paper.originalTitle !== paper.title ? (
+          <p className="recommendation-original">{paper.originalTitle}</p>
         ) : null}
         <div className="recommendation-actions">
           {paper.kind === 'paper' ? (
@@ -226,6 +289,12 @@ export function Recommendations({
                   : t('加入文献库')}
             </Button>
           ) : null}
+          <Button size="sm" onClick={() => open(paper)}>
+            {t('打开原文')}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => onAsk(paper)}>
+            {t('问 AI')}
+          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -233,9 +302,6 @@ export function Recommendations({
             onClick={() => later(paper)}
           >
             {paper.state === 'later' ? t('已稍后读') : t('稍后读')}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => onAsk(paper)}>
-            {t('问 AI')}
           </Button>
           <Button
             size="sm"
@@ -252,23 +318,60 @@ export function Recommendations({
             {t('不感兴趣')}
           </Button>
         </div>
-      </li>
+        {paper.reason ? (
+          <section className="recommendation-section">
+            <h3>{t('推荐理由')}</h3>
+            <p>{paper.reason}</p>
+          </section>
+        ) : null}
+        {paper.summary ? (
+          <section className="recommendation-section">
+            <h3>{t('摘要')}</h3>
+            <p>{paper.summary}</p>
+          </section>
+        ) : null}
+        {paper.also.length ? (
+          <p className="recommendation-also">
+            {t('另有 {count} 个来源：', { count: paper.also.length })}
+            {paper.also.map((report) => (
+              <button
+                key={report.url}
+                type="button"
+                onClick={() => void openBrowserSource(projectId, report.url).catch(failed)}
+              >
+                {report.source}
+              </button>
+            ))}
+          </p>
+        ) : null}
+        {entries.length > 1 ? (
+          <p className="recommendation-keys">
+            <kbd>J</kbd> <kbd>K</kbd> {t('切换下一条、上一条')}
+          </p>
+        ) : null}
+      </article>
     );
   }
 
-  const remaining = view?.items.filter((item) => item.state !== 'dismissed') ?? [];
-  // The filter appears once a brief holds both papers and updates.
-  const mixed =
-    remaining.some((item) => item.kind === 'paper') &&
-    remaining.some((item) => item.kind !== 'paper');
-  const shown = remaining.filter((item) => !mixed || shows(filter, item));
-  const waiting = (view?.later ?? []).filter((item) => !mixed || shows(filter, item));
-  // The day's big news in the user's fields, above every project's own recommendations.
-  const highlights = (view?.highlights ?? []).filter(
-    (item) => item.state !== 'dismissed' && filter !== 'paper',
-  );
+  const status =
+    view && view.state !== 'ready'
+      ? t(EMPTY[view.state])
+      : view?.state === 'ready' && !shown.length
+        ? t('今天的推荐都处理完了。')
+        : null;
   return (
-    <section className="recommendations" aria-label={t('推荐')}>
+    <section
+      className="recommendations"
+      aria-label={t('推荐')}
+      onKeyDown={(event) => {
+        if (event.ctrlKey || event.metaKey || event.altKey || typing(event.target)) return;
+        const key = event.key.toLowerCase();
+        if (key === 'j' || key === 'arrowdown') step(1);
+        else if (key === 'k' || key === 'arrowup') step(-1);
+        else return;
+        event.preventDefault();
+      }}
+    >
       <header className="workspace-commandbar">
         <span className="workspace-name">{t('推荐')}</span>
         {view?.day ? <span className="recommendations-day">{dayLabel(view.day)}</span> : null}
@@ -292,51 +395,40 @@ export function Recommendations({
           </div>
         ) : null}
       </header>
-      <div className="recommendations-body">
-        {error ? (
-          <p className="recommendations-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        {highlights.length ? (
-          <section className="recommendations-highlights" aria-label={t('领域要闻')}>
-            <h3>{t('领域要闻')}</h3>
-            <ol className="recommendations-list">{highlights.map(card)}</ol>
-          </section>
-        ) : null}
-        {view && view.state !== 'ready' ? (
-          <p className="recommendations-empty">{t(EMPTY[view.state])}</p>
-        ) : null}
-        {view?.state === 'ready' && !hinted ? (
-          <p className="recommendations-hint">
-            {t('推荐根据项目里的论文自动生成，可以在设置里关闭。')}
-            <Button
-              variant="ghost"
-              iconOnly
-              aria-label={t('知道了')}
-              onClick={() => {
-                localStorage.setItem(HINTED, '1');
-                setHinted(true);
-              }}
-            >
-              <X />
-            </Button>
-          </p>
-        ) : null}
-        {view?.state === 'ready' ? (
-          shown.length ? (
-            <ol className="recommendations-list">{shown.map(card)}</ol>
-          ) : (
-            <p className="recommendations-empty">{t('今天的推荐都处理完了。')}</p>
-          )
-        ) : null}
-        {waiting.length ? (
-          <section className="recommendations-later" aria-label={t('稍后读')}>
-            <h3>{t('稍后读')}</h3>
-            <ol className="recommendations-list">{waiting.map(card)}</ol>
-          </section>
-        ) : null}
-      </div>
+      {error ? (
+        <p className="recommendations-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {view?.state === 'ready' && !hinted ? (
+        <p className="recommendations-hint">
+          {t('推荐根据项目里的论文自动生成，可以在设置里关闭。')}
+          <Button
+            variant="ghost"
+            iconOnly
+            aria-label={t('知道了')}
+            onClick={() => {
+              localStorage.setItem(HINTED, '1');
+              setHinted(true);
+            }}
+          >
+            <X />
+          </Button>
+        </p>
+      ) : null}
+      {entries.length ? (
+        <div className="recommendations-desk">
+          <nav className="recommendations-index" aria-label={t('推荐列表')} ref={index}>
+            {group('领域要闻', highlights)}
+            {status ? <p className="recommendations-status">{status}</p> : null}
+            {group('项目推荐', shown)}
+            {group('稍后读', waiting)}
+          </nav>
+          <div className="recommendations-reader">{current ? detail(current) : null}</div>
+        </div>
+      ) : view ? (
+        <p className="recommendations-empty">{status}</p>
+      ) : null}
       <Menu
         anchor={reasons?.anchor ?? null}
         label={t('不感兴趣的原因')}

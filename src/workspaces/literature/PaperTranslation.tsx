@@ -7,6 +7,9 @@ import type { WorkContext } from '../../domain/context';
 import { t } from '../../i18n';
 import type { LibraryPaper } from '../../platform/library';
 import { translator, type TranslationStatus, type Translator } from '../../platform/translator';
+import { isMacOS } from '../../platform/os';
+import type { RecordStore } from '../../reader/PdfReader';
+import { translationAsset, type PdfSpot } from '../../reader/pdf-sync';
 
 const PdfReader = lazy(() => import('../../reader/PdfReader'));
 /** A translation finished on another device arrives by sync; look again now and then. */
@@ -15,18 +18,28 @@ const POLL = 5000;
 /**
  * A paper's full-text translation beside it: a PDF with the original's layout,
  * formulas and figures. Translation happens in the background by itself; opening the
- * pane shows it, or how far it has got and why it may be waiting.
+ * pane shows it, or how far it has got and why it may be waiting. It keeps the paper's
+ * pages, so it shares the paper's highlights and any place in it is the same place in
+ * the paper.
  */
 export function PaperTranslation({
   projectId,
   paper,
   title,
+  record,
+  readOnly = false,
+  onLocate,
   onContext,
   engine = translator,
 }: {
   projectId: string;
   paper?: LibraryPaper;
   title: string;
+  /** The paper's own record: highlights made here are the paper's. */
+  record?: RecordStore;
+  readOnly?: boolean;
+  /** Shows a place of the translation in the paper. */
+  onLocate?: (spot: PdfSpot) => void;
   onContext?: (context: WorkContext) => void;
   engine?: Translator;
 }) {
@@ -82,13 +95,23 @@ export function PaperTranslation({
     await run(async () => setStatus(await engine.retranslate(projectId, paperId)));
   }
   const name = t('{title}（译文）', { title });
+  const counterpart = useMemo(
+    () => (onLocate ? { label: t('原文位置'), locate: onLocate } : undefined),
+    [onLocate],
+  );
 
   return (
     <section className="paper-translation" aria-label={t('全文翻译')}>
       {done && paper ? (
         <div className="paper-translation-reader">
           <div className="paper-translation-bar">
-            {problem ? <span role="alert">{problem}</span> : null}
+            {problem ? (
+              <span role="alert">{problem}</span>
+            ) : onLocate ? (
+              <span className="paper-translation-tip">
+                {isMacOS() ? t('⌘ + 点击定位原文') : t('Ctrl + 点击定位原文')}
+              </span>
+            ) : null}
             <Button
               variant="ghost"
               size="sm"
@@ -117,12 +140,15 @@ export function PaperTranslation({
           </div>
           <Suspense fallback={<p className="muted">{t('正在打开阅读器…')}</p>}>
             <PdfReader
-              assetId={`translation:${paper.id}:${fingerprint}`}
+              assetId={translationAsset(paper.id, fingerprint)}
               paperId={paper.id}
               title={name}
               projectId={projectId}
               backend={backend}
               compact
+              record={record}
+              readOnly={readOnly}
+              counterpart={counterpart}
               onContext={(context) => onContext?.(context)}
               onTool={() => {}}
             />

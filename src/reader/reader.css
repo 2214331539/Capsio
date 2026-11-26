@@ -809,3 +809,31 @@
     background-position: -100% 0;
   }
 }
+
+/* A place shown from the other version of the paper (original or translation): a band across
+   its line that fades, as SyncTeX marks where it landed. */
+.pdf-spot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  height: 28px;
+  transform: translateY(-50%);
+  background: var(--sf-mark);
+  pointer-events: none;
+  animation: pdf-spot 1.8s ease-out forwards;
+}
+@keyframes pdf-spot {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pdf-spot {
+    animation: none;
+  }
+}

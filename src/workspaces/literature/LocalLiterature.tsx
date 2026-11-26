@@ -76,6 +76,8 @@ import {
 import { TranslationIcon, useTranslationStatus } from '../../features/translation/ProgressRing';
 import { translator } from '../../platform/translator';
 import { skipResumeHint } from '../../reader/resume';
+import { sharedRecord } from '../../reader/shared-record';
+import { showPdfSpot, translationAsset, type PdfSpot } from '../../reader/pdf-sync';
 import { BatchBar } from './BatchBar';
 import { BrowserPane } from './BrowserPane';
 import { Recommendations } from './Recommendations';
@@ -131,6 +133,7 @@ export function LocalLiterature({
   requestedNewBrowser,
   onNewBrowserHandled,
   requestedRecommendations,
+  recommendationFocus,
   onRecommendationsHandled,
 }: {
   project: Project;
@@ -147,6 +150,8 @@ export function LocalLiterature({
   onNewBrowserHandled?: () => void;
   /** A brief's notice asked for the recommendations; show them and report it handled. */
   requestedRecommendations?: boolean;
+  /** The recommendation the notice was about, shown first. */
+  recommendationFocus?: string;
   onRecommendationsHandled?: () => void;
 }) {
   const readOnly = !canEditProject(project, 'library');
@@ -180,8 +185,10 @@ export function LocalLiterature({
     onNewBrowserHandled?.();
     void openWebTab().catch((e) => setError(errorMessage(e)));
   }, [requestedNewBrowser]);
+  const [recommendationShown, setRecommendationShown] = useState<string | null>(null);
   useEffect(() => {
     if (!requestedRecommendations) return;
+    setRecommendationShown(recommendationFocus ?? null);
     onRecommendationsHandled?.();
     openRecommendations();
   }, [requestedRecommendations]);
@@ -271,31 +278,54 @@ export function LocalLiterature({
     notePanel = useId();
   const active = session.tabs.find((t) => t.id === session.active),
     paper = scan.papers.find((p) => p.id === active?.paperId);
-  // Translation tabs show how far their translation has got.
+  // Translation tabs show how far their translation has got; the open paper offers its
+  // translation's place once there is one.
   const translationStatus = useTranslationStatus(
     project.id,
-    session.notes.filter(isTranslationTab).flatMap((id) => {
-      const bound = scan.papers.find((p) => p.id === paperOfTab(id));
-      return bound ? [{ id: bound.id, fingerprint: bound.fingerprint }] : [];
-    }),
+    [
+      ...session.notes.filter(isTranslationTab).map((id) => paperOfTab(id)),
+      ...(paper ? [paper.id] : []),
+    ]
+      .filter((id, index, all) => all.indexOf(id) === index)
+      .flatMap((id) => {
+        const bound = scan.papers.find((p) => p.id === id);
+        return bound ? [{ id: bound.id, fingerprint: bound.fingerprint }] : [];
+      }),
   );
   const [selection, setSelection] = useState<WorkContext>();
-  // The open paper's highlights live in its record, which follows the PDF.
-  const paperId = paper?.id;
-  const recordStore = useMemo<RecordStore | undefined>(
-    () =>
-      paperId && library.record && library.saveRecord
-        ? {
-            load: () => library.record!(project.id, paperId),
-            save: async (record) => {
-              const saved = await library.saveRecord!(project.id, paperId, record);
-              requestProjectSync(project.id);
-              return saved;
-            },
-          }
-        : undefined,
-    [library, project.id, paperId],
-  );
+  // A paper's highlights live in its record, which follows the PDF. The paper and its
+  // translation share one, so a highlight made in either shows in both.
+  const records = useMemo(() => new Map<string, RecordStore>(), [library, project.id]);
+  function recordFor(id: string | undefined) {
+    if (!id || !library.record || !library.saveRecord) return undefined;
+    let store = records.get(id);
+    if (!store) {
+      store = sharedRecord({
+        load: () => library.record!(project.id, id),
+        save: async (record) => {
+          const saved = await library.saveRecord!(project.id, id, record);
+          requestProjectSync(project.id);
+          return saved;
+        },
+      });
+      records.set(id, store);
+    }
+    return store;
+  }
+  const recordStore = recordFor(paper?.id);
+  /** Shows a place of a paper in its own reader, opening it there if need be. */
+  function locateOriginal(id: string, spot: PdfSpot) {
+    const bound = scan.papers.find((p) => p.id === id);
+    if (!bound) return;
+    skipResumeHint(id);
+    try {
+      localStorage.setItem(`capsio.reader.${id}`, String(spot.page));
+    } catch {
+      /* Optional location. */
+    }
+    setSession((s) => openLocalPdf(s, id, filename(bound.path)));
+    showPdfSpot(id, spot);
+  }
   /** Adds a passage to the end of the paper's note and shows the note. */
   async function quote(id: string, text: string, page: number) {
     try {
@@ -1449,6 +1479,7 @@ export function LocalLiterature({
               {active?.kind === 'recommendations' ? (
                 <Recommendations
                   projectId={project.id}
+                  focus={recommendationShown}
                   onOpenPaper={(id) =>
                     void openAddedPaper(id).catch((e) => setError(errorMessage(e)))
                   }
@@ -1503,6 +1534,17 @@ export function LocalLiterature({
                     record={recordStore}
                     readOnly={readOnly}
                     onQuote={(text, page) => void quote(paper.id, text, page)}
+                    counterpart={
+                      translationStatus[paper.fingerprint]?.state === 'done'
+                        ? {
+                            label: t('译文位置'),
+                            locate: (spot) => {
+                              openTranslation(paper.id);
+                              showPdfSpot(translationAsset(paper.id, paper.fingerprint), spot);
+                            },
+                          }
+                        : undefined
+                    }
                     onContext={(value) => {
                       // Name the open PDF so the agent can read the whole paper, not just this page.
                       const next = { ...value, paperPath: paper.path };
@@ -1611,6 +1653,9 @@ export function LocalLiterature({
                         scan.papers.find((p) => p.id === paperOfTab(session.activeNote!))?.path ??
                           '',
                       ).replace(/\.pdf$/i, '')}
+                      record={recordFor(paperOfTab(session.activeNote))}
+                      readOnly={readOnly}
+                      onLocate={(spot) => locateOriginal(paperOfTab(session.activeNote!), spot)}
                       onContext={(value) => {
                         setSelection(value);
                         changed.current(value);

@@ -36,10 +36,11 @@ export function dismissAlert(workId: string) {
   alertNotices.setState({ items: items.filter((item) => item.workId !== workId) });
 }
 
-/** Shows a project's recommendations; looking at them settles its notice. */
-export function openRecommendations(projectId: string) {
+/** Shows a project's recommendations, `item` first when given; looking at them settles its
+ *  notice. */
+export function openRecommendations(projectId: string, item?: string) {
   dismissBrief(projectId);
-  window.dispatchEvent(new CustomEvent(openRecommendationsEvent, { detail: { projectId } }));
+  window.dispatchEvent(new CustomEvent(openRecommendationsEvent, { detail: { projectId, item } }));
 }
 
 /** Collects briefs and alerts as they come; an alert also shows once. Returns the way to stop. */
@@ -49,7 +50,7 @@ export function followBriefs(engine = radar): () => void {
     engine.alerts((alert) => {
       noticeAlert(alert);
       toast(t('新论文提醒：{title}', { title: alert.title }), {
-        action: { label: t('查看'), run: () => openRecommendations(alert.projectId) },
+        action: { label: t('查看'), run: () => openRecommendations(alert.projectId, alert.workId) },
       });
     }),
   ];
