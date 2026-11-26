@@ -71,7 +71,8 @@ fn scientify_installation() -> Vec<PathBuf> {
         .collect()
 }
 
-#[cfg(not(windows))]
+// macOS finds Scientify's settings by folder name instead (see its production_locator).
+#[cfg(not(any(windows, target_os = "macos")))]
 fn scientify_installation() -> Vec<PathBuf> {
     Vec::new()
 }
