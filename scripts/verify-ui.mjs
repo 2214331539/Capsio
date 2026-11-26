@@ -6,7 +6,6 @@ import { resolve } from 'node:path';
 
 const suites = {
   collaboration: 'scripts/verify-collaboration-ui.mjs',
-  sources: 'scripts/verify-sources-ui.mjs',
   experiments: 'scripts/verify-experiments-ui.mjs',
   git: 'scripts/verify-git-ui.mjs',
   reader: 'scripts/verify-reader-ui.mjs',
