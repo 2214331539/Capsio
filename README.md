@@ -1,146 +1,185 @@
 <p align="center">
-  <img src="docs/品牌/Capsio-Logo-Kit/web/icon-192.png" width="88" alt="Capsio logo" />
+  <a href="https://capsio.cloud"><img src="docs/readme/banner.svg" alt="Capsio：一个入口，贯穿科研全过程" width="100%"></a>
 </p>
 
-# Capsio
+<p align="center">
+  <a href="https://capsio.cloud"><b>官网</b></a> ·
+  <a href="https://capsio.cloud/download/"><b>下载</b></a> ·
+  <a href="https://capsio.cloud/docs/">文档</a> ·
+  <a href="https://capsio.cloud/changelog/">更新日志</a> ·
+  <a href="https://capsio.cloud/discuss/">社区</a> ·
+  <a href="README.en.md">English</a>
+</p>
 
-**一个入口，贯穿科研全过程。**
+<p align="center">
+  <a href="https://capsio.cloud/download/"><img src="https://img.shields.io/badge/version-0.6.0--alpha.3-111A17?style=flat-square" alt="Version"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%20x64%20%7C%20macOS%20Apple%20Silicon-5C6662?style=flat-square" alt="Platforms">
+  <a href="https://github.com/2214331539/Capsio/actions/workflows/macos.yml"><img src="https://img.shields.io/github/actions/workflow/status/2214331539/Capsio/macos.yml?branch=main&label=macOS%20build&style=flat-square" alt="macOS build"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-5C6662?style=flat-square" alt="License"></a>
+  <a href="https://github.com/2214331539/Capsio/stargazers"><img src="https://img.shields.io/github/stars/2214331539/Capsio?style=flat-square&color=111A17" alt="Stars"></a>
+</p>
 
-面向计算型研究者的本地科研工具。在同一个项目里阅读论文、记录思考、编辑和运行 Python 实验，并可配置地在本地使用AI辅助。
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/center-dark.webp">
+    <img src="docs/readme/center-light.webp" alt="Capsio 的项目中心" width="100%">
+  </picture>
+</p>
 
-[English](README.en.md) · [快速开始](#快速开始) · [使用文档](docs/使用说明/桌面使用说明.md) · [参与贡献](CONTRIBUTING.md) · [路线图](ROADMAP.md) · [问题反馈](https://github.com/2214331539/Capsio/issues)
+**Capsio 是面向研究者的桌面工作台。** 读论文、记笔记、写代码跑实验、写 LaTeX 论文，都在同一个项目里完成；内置的 AI 助手是一个真正的本地 Agent，能读写你的项目文件、联网检索、运行命令，每一步都可以审批和撤销。
 
-![Stage: Alpha](https://img.shields.io/badge/stage-alpha-orange)
-![Desktop: Windows x64 and macOS arm64](https://img.shields.io/badge/desktop-Windows_x64_%7C_macOS_arm64-blue)
-[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
+做一个课题，往往要在 arXiv、PDF 阅读器、ChatGPT、Google Scholar、VS Code、Git 和 Overleaf 之间来回切换。Capsio 把这些放进一个入口：文件还是你自己的文件，工具都围着当前的项目转。
 
-> **当前是早期开发版本。** Windows x64 与 macOS Apple Silicon 安装包通过 [GitHub Releases](https://github.com/2214331539/Capsio/releases) 分发，标记为 Pre-release。Windows 尚未签名；Mac 为 ad-hoc 签名、未公证预览版。不提供 Intel Mac、Linux 或移动端安装包。
+## 功能一览
 
-## 为什么做 Capsio
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>📄 文献：读、标、译、管</h3>
+      <p>本地 PDF 目录树，高亮、下划线、批注和便签；全文翻译保留原版式，任意应用里划词即译。Zotero、BibTeX、RIS 一键迁入，分类、笔记和高亮都带过来。</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🗞️ 推荐：每天值得读的</h3>
+      <p>按项目的研究方向，每天整理一份简报：新论文、新闻和博客，每条写明推荐理由。有新工作引用了你文献库里的论文时，会即时提醒。</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>🤖 AI 助手：本地 Agent</h3>
+      <p>基于 OpenAI Codex 引擎，在你的项目目录里读写文件、运行命令、联网搜索和检索学术数据库。四档权限、逐步审批、撤销本轮、MCP 和自定义指令；可用官方模型，也可接入自己的模型服务。</p>
+    </td>
+    <td valign="top">
+      <h3>🧪 实验：面向科研的代码工作台</h3>
+      <p>编辑器、Python 与 Conda 环境、终端、Git（差异、暂存、分支、储藏、worktree），以及 SSH 连接云主机。CSV、Notebook、图片、PDF、Word、PPT 都能直接打开。</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>✍️ 写作：本地的 Overleaf</h3>
+      <p>内置 Tectonic 和常用宏包，离线也能编译；SyncTeX 双向跳转，<code>\cite</code> 直接搜文献库并写入 bib；可从 Overleaf 导入，也能导出投稿用的源码包。</p>
+    </td>
+    <td valign="top">
+      <h3>📝 文档：块编辑器</h3>
+      <p>标题、公式、表格、待办、代码、附件和链接卡片，导出 Word；Ctrl + 滚轮或双指缩放。AI 写出的 Markdown 和公式插入后原样保留。</p>
+    </td>
+  </tr>
+</table>
 
-完成一个科研项目需要去Arxiv上搜论文，用本地PDF阅读器打开，用ChatGPT翻译和理解，再去Google Scholar搜论文。确定论文思路以后有不得不打开VScode跑实验代码，又要拿Git做版本管理，多个baseline还得开多个文件夹，忙到最后打开Overleaf开始写论文...
+### 阅读与批注
 
-流程太繁琐了，工具太分散了，需要一个统一入口。
+选中文字即可高亮、下划线、批注、摘录到笔记或交给 AI；批注列表按阅读顺序排列，点一下跳回原处。
 
-这个入口就是Capsio：
+<p align="center">
+  <img src="docs/readme/demo-reader.webp" alt="在 PDF 里选中文字、高亮、写批注，再打开批注列表" width="100%">
+</p>
 
-- **本地文件可以继续使用。** 文献是 PDF，单篇论文笔记是相邻的 Markdown 文件，代码保留在托管或自行关联的目录里。
-- **每次实验都有记录。** 查看实际命令、环境、代码状态、日志和产物；手动运行无需模型密钥。
-- **AI 按需接入。** 使用自己的模型服务；Agent 会话绑定具体项目与目录，执行过程提供审批和中止入口。
-- **界面围绕当前任务。** 阅读、编辑、实验和笔记共享工作区，辅助面板按需打开。
+<table>
+  <tr>
+    <td width="50%"><img src="docs/readme/recommendations.webp" alt="文献推荐：每日简报和领域要闻"></td>
+    <td width="50%"><img src="docs/readme/docs.webp" alt="文档：公式、表格和待办"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>每日推荐：论文和动态，每条附推荐理由</sub></td>
+    <td align="center"><sub>文档：公式、表格、待办与代码</sub></td>
+  </tr>
+</table>
 
-## 当前可以做什么
+<p align="center">
+  <img src="docs/readme/reader.webp" alt="PDF 阅读器：高亮、批注与批注列表" width="100%">
+  <br><sub>PDF 阅读器：多色高亮、下划线、批注和批注列表</sub>
+</p>
 
-| 工作         | 当前能力                                                                                           |
-| ------------ | -------------------------------------------------------------------------------------------------- |
-| 管理课题     | 个人项目书架、搜索、收藏、归档、目录关联；手机号协作登录、项目绑定与文献同步（默认连接托管服务，可切换自托管） |
-| 阅读文献     | 本地 PDF 目录树、搜索、分页或连续阅读、选文摘录、与 PDF 配对的 Markdown 笔记                       |
-| 浏览网页     | Windows / macOS 原生网页标签、地址与关键词输入、前进后退、下载到文献目录                                   |
-| 整理研究笔记 | 项目笔记、快速笔记、自动保存与来源返回                                                             |
-| 开展实验     | 代码编辑、Python 解释器与 venv/已有 Conda 管理、交互终端、本地运行、日志、停止、产物及基础指标比较 |
-| 管理代码版本 | Git diff、暂存、提交、本地分支、历史、stash 和 worktree                                            |
-| 撰写草稿     | 文献/代码区内的 Markdown 编辑与预览；独立 LaTeX 论文撰写页暂为占位                                 |
-| 使用 AI      | 多种模型协议、流式对话、本地 Agent、会话恢复、审批及关联实验运行                                   |
+## 下载
 
-建议从一个小任务开始：**创建项目 → 关联文献与代码目录 → 阅读并记笔记 → 运行 Python 脚本 → 查看日志与结果。**
+前往 **[capsio.cloud/download](https://capsio.cloud/download/)** 下载最新版本。安装后会在应用内检查更新，Windows 在后台静默安装。
 
-## 快速开始
-
-### 下载安装
-
-在 [Releases](https://github.com/2214331539/Capsio/releases) 打开最新的预发布版本，按设备选择安装包。普通使用无需安装 Node.js 或 Rust。
-
-| 平台 | 文件 | 安装方式 |
+| 平台 | 系统要求 | 安装包 |
 | --- | --- | --- |
-| Windows 10 / 11 x64 | `Capsio_<版本>_windows_x64_setup.exe` | 运行安装器 |
-| macOS 14+ Apple Silicon（M 系列） | `Capsio_<版本>_macos_arm64.dmg` | 打开 DMG，将 Capsio 拖入 Applications |
+| Windows | Windows 10 / 11，x64 | `Capsio_windows_x64_setup.exe` |
+| macOS | macOS 14 及以上，Apple Silicon（M 系列） | `Capsio_macos_arm64.dmg` |
 
-Mac 首次打开可能被系统阻止。确认下载来源后，在系统设置 → 隐私与安全性中使用“仍要打开”；无需关闭 Gatekeeper。可用 `shasum -a 256 <安装包>` 对照发布页校验值。
+> [!NOTE]
+> Capsio 目前是 **Alpha 预览版**。Windows 安装包尚未签名，可能提示“未知发布者”；Mac 版为 ad-hoc 签名、未公证，首次打开请在“系统设置 → 隐私与安全性”里点“仍要打开”。暂不提供 Intel Mac、Linux 和移动端版本。
 
-- 适用于 Windows 10 / 11 x64；缺少 WebView2 时系统需要联网安装运行时。
-- Python 与 Git 按需自行安装。阅读论文与笔记无需模型密钥；AI 使用自己的模型服务配置。
-- 当前程序未签名，Windows 可能显示“未知发布者”。发布说明附 SHA-256，可使用 `Get-FileHash <压缩包路径> -Algorithm SHA256` 核对完整性。
-- 更新前关闭应用并备份 `CapsioData` 和关联的外部目录，再运行新版本。第一版暂不提供自动更新。
+## 从源码运行
 
-### 从源码运行桌面版
+需要 [Node.js 24 LTS](https://nodejs.org/)、pnpm 10.11.0 和 Rust stable。Windows 还需要 [MSVC C++ 生成工具与 WebView2](https://v2.tauri.app/start/prerequisites/#windows)；Mac 需要 macOS 14+ 和 [Xcode 命令行工具](https://v2.tauri.app/start/prerequisites/#macos)，请使用原生 arm64 的 Node 与 Rust。
 
-共同依赖为 [Node.js 24 LTS](https://nodejs.org/)、pnpm 10.11.0、Rust stable。Windows x64 还需 [MSVC C++ Build Tools 和 WebView2](https://v2.tauri.app/start/prerequisites/#windows)；Apple Silicon Mac 需要 macOS 14+ 与 [Xcode Command Line Tools](https://v2.tauri.app/start/prerequisites/#macos)（`xcode-select --install`）。使用原生 arm64 的 Node / Rust，不通过 Rosetta 构建。
-
-```powershell
+```bash
 git clone https://github.com/2214331539/Capsio.git
 cd Capsio
-corepack enable
-corepack prepare pnpm@10.11.0 --activate
+corepack enable && corepack prepare pnpm@10.11.0 --activate
 pnpm install --frozen-lockfile
 pnpm start
 ```
 
-首次启动会准备 PDF 资源并从 GitHub 下载固定版本的 Agent 引擎，需要网络。Python 和 Git 按对应功能自行安装；阅读与笔记无需配置模型。
+首次启动会准备 PDF 资源，并从 GitHub 下载固定版本的 Agent 引擎和 LaTeX 引擎。`pnpm dev` 只启动浏览器里的界面预览，没有文件访问、终端和实验运行，不能当作 Web 版使用。
 
-### 构建本机可执行程序
+<details>
+<summary><b>打包与检查</b></summary>
 
-```powershell
+```bash
+# 本机可执行程序（不打安装包）
 pnpm tauri build --no-bundle
-```
 
-Windows 构建后运行 `Capsio-MVP.cmd`。该脚本从仓库构建目录选择最新程序，本身不是安装包。Windows NSIS 打包命令为 `node node_modules/@tauri-apps/cli/tauri.js build --bundles nsis -- --locked`，产物位于 `target/release/bundle/nsis/`。自动发布和分支约定见[版本发布说明](docs/技术方案/版本发布与分支管理.md)，签名与自动更新仍在[路线图](ROADMAP.md)中。
+# Windows NSIS 安装包，产物在 target/release/bundle/nsis/
+node node_modules/@tauri-apps/cli/tauri.js build --bundles nsis -- --locked
 
-Mac 打包命令为 `node node_modules/@tauri-apps/cli/tauri.js build --bundles app,dmg -- --locked`，产物位于 `target/release/bundle/dmg/`。本机无证书时使用 ad-hoc 签名。
+# macOS DMG，产物在 target/release/bundle/dmg/
+node node_modules/@tauri-apps/cli/tauri.js build --bundles app,dmg -- --locked
 
-`pnpm dev` 用于前端浏览器预览，使用独立数据。它不具备桌面文件访问、真实终端、实验执行和内嵌浏览器能力，不能当作完整 Web 版。
-
-## 数据与 AI
-
-- PDF、相邻论文笔记和代码保留在本地目录。应用元数据、项目研究笔记和运行记录由本地数据目录管理。
-- Windows 正式构建默认在可写安装目录附近使用 `CapsioData/`；Mac 默认使用 `~/Library/Application Support/Capsio/CapsioData/`。设置中可以安排数据迁移。开发构建使用源码目录旁边的 `CapsioDevData/`，所有工作树共用，见[开发与验收流程](docs/开发流程/开发与验收流程.md)。
-- **JSON 导出不包含 PDF 和源码。** 完整备份需要复制应用数据和外部关联目录；详细步骤见[数据说明](docs/使用说明/桌面使用说明.md#数据与文件)。
-- 使用远程模型时，选定材料或 Agent 读取的内容可能发送给所配置的服务商，费用遵循该服务商规则。本地优先不等于所有功能离线运行。
-- 当前模型密钥保存在本机未加密的凭据文件中。不要分享整个数据目录、浏览器资料或带密钥的日志；该限制与报告方式见[安全说明](SECURITY.md)。
-- 手动终端和手动实验使用用户授予信任后的本机权限；AI 正式运行使用工作区沙箱。两者的权限范围不同。
-
-## 当前边界
-
-- 项目概览、LaTeX 论文页和部分文献订阅能力仍显示「开发中 / 敬请期待」。协作登录默认使用托管协作服务，自托管地址位于登录页高级设置。
-- 订阅推荐和新论文收件箱尚未启用；没有 PDF OCR、批注系统或全文语料库。
-- 暂无 Notebook 单元执行、断点调试、远程 GPU 调度，以及完整 Git 远程与冲突解决界面。
-- 独立 LaTeX 编辑与编译尚未开放。记录运行条件不等于完整冻结所有依赖或保证可复现。
-- 文件草稿不保证崩溃恢复；终端进程不会在应用重启后恢复。
-- Mac 预览版使用 WKWebView；网站兼容性、最低系统版本与完整人工科研流程仍需实机反馈。Intel、Linux 暂不支持，见[跨平台实现与验证范围](docs/技术方案/跨平台适配路线.md)。
-
-## 参与开发
-
-欢迎代码、文档、翻译、复现报告和科研示例。请先阅读[贡献指南](CONTRIBUTING.md)与[社区行为规范](CODE_OF_CONDUCT.md)。小修复可以直接提交 PR；新功能、依赖、数据结构或权限改动先通过 Issue 讨论范围。
-
-技术栈为 **Tauri 2 + Rust、React 19 + TypeScript、Vite、Zustand、CodeMirror 和 PDF.js**。界面、原生能力及存储边界见[架构入口](docs/技术方案/总体架构.md#0-当前基线与-uiux-固定准则)。
-
-```text
-src/                     React 工作区、编辑器、PDF 阅读器与类型化 IPC
-src-tauri/               桌面窗口、文件、进程、浏览器与 Agent 集成
-crates/capsio-core/   本地存储、校验与文件事务
-scripts/                 资源准备和验收工具
-docs/                    产品设计、UI/UX、技术方案与开发流程
-```
-
-运行检查前先执行 `pnpm run build`，准备被 Git 忽略的资源和协议绑定。
-
-```powershell
-pnpm check
-pnpm test --maxWorkers=2
+# 检查（先运行一次 pnpm run build，准备被 Git 忽略的资源）
+pnpm check && pnpm test
 cargo fmt --all --check
 cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 ```
 
-当前 [Windows CI](.github/workflows/ci.yml) 与 [Apple Silicon CI](.github/workflows/macos.yml) 执行各自构建与回归检查；Mac CI 还验证受控原生浏览器和 DMG。CI 通过不代替完整人工验收。文档修改只需检查事实与链接。协作决策与维护职责见[治理规则](GOVERNANCE.md)。
+带应用内更新的正式版本由 `scripts/build-release.mjs` 打包，流程见[开发与验收流程](docs/开发流程/开发与验收流程.md)和[版本发布](docs/技术方案/版本发布与分支管理.md)。
 
-## 文档与许可
+</details>
 
-- [桌面使用说明](docs/使用说明/桌面使用说明.md)：文件、模型、存储、备份与操作细节。
-- [产品设计](docs/产品设计/README.md)：功能模块、页面结构和每页内容；设计目标不等于已交付功能，以各页的“现状”为准。
-- [文档索引](docs/README.md)：产品设计、UI/UX、技术方案、开发流程与更新记录。
-- [路线图](ROADMAP.md)：当前重点和接受贡献的方向。
-- [安全说明](SECURITY.md)：已知边界及私密报告方式。
+## 架构
 
-Capsio 原创代码与文档采用 [Apache License 2.0](LICENSE)。贡献者保留各自版权；第三方组件遵循其原始许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。许可证不授予 Capsio 名称或标识的商标使用权，也不代表对衍生发行版的官方背书。
+```mermaid
+flowchart LR
+  UI["React 19 + TypeScript<br/>工作区、编辑器、PDF.js 阅读器"] -- 类型化 IPC --> Core["Tauri 2 + Rust<br/>文件、进程、浏览器、同步"]
+  Core --> Store["capsio-core<br/>本地存储与文件事务"]
+  Core --> Agent["Codex 引擎<br/>本地 Agent"]
+  Core --> TeX["Tectonic<br/>LaTeX 编译"]
+  Core --> Yita["Yita<br/>系统级划词翻译"]
+  Core -. 可选 .-> Cloud["capsio.cloud<br/>账号、同步、官方模型"]
+```
 
-感谢 Tauri、React、CodeMirror、PDF.js、xterm.js、OpenAI Codex 和其他依赖的维护者。Capsio 是独立项目，与这些项目及其维护组织无官方隶属关系。
+```text
+src/                  React 工作区、编辑器、PDF 阅读器与类型化 IPC
+src-tauri/            桌面窗口、文件、进程、浏览器、Agent 与同步
+crates/capsio-core/   本地存储、校验与文件事务
+server/               协作服务（账号、同步、计费、管理后台）
+vendor/yita/          划词翻译组件
+scripts/              资源准备、打包、发布与验收工具
+docs/                 产品设计、技术方案、开发流程与更新记录
+```
+
+更多见[总体架构](docs/技术方案/总体架构.md)。
+
+## 数据与隐私
+
+- **文件留在本地。** PDF、笔记和代码都在你自己的目录里；应用数据在 Windows 安装目录旁的 `CapsioData/`，Mac 在 `~/Library/Application Support/Capsio/`，可以在设置里迁移。
+- **同步是可选的。** 登录后同一账号的多台设备自动同步项目，也可以邀请成员协作；AI 对话只存在本机。
+- **AI 发送什么，由你决定。** 使用远程模型时，你选中的内容或 Agent 读取的文件会发给所配置的服务商；Agent 的每一次写入和命令都可以设置为需要审批。
+- 模型密钥目前保存在本机未加密的凭据文件里，不要分享整个数据目录。完整说明见[安全说明](SECURITY.md)和[桌面使用说明](docs/使用说明/桌面使用说明.md)。
+
+## 参与贡献
+
+欢迎代码、文档、翻译、问题反馈和科研场景的使用案例。提交前请阅读[贡献指南](CONTRIBUTING.md)和[行为规范](CODE_OF_CONDUCT.md)：小修复可以直接发 PR，新功能、新依赖或数据结构的改动请先开 Issue 讨论。路线图见 [ROADMAP.md](ROADMAP.md)，治理方式见 [GOVERNANCE.md](GOVERNANCE.md)。
+
+- 问题与建议：[GitHub Issues](https://github.com/2214331539/Capsio/issues)
+- 交流与讨论：[Capsio 社区](https://capsio.cloud/discuss/)
+- 文档索引：[docs/README.md](docs/README.md)
+
+## 许可
+
+Capsio 的原创代码和文档采用 [Apache License 2.0](LICENSE)，第三方组件遵循各自的许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。许可证不授予 Capsio 名称和标志的商标使用权。
+
+感谢 [Tauri](https://tauri.app)、[React](https://react.dev)、[PDF.js](https://mozilla.github.io/pdf.js/)、[CodeMirror](https://codemirror.net)、[Tiptap](https://tiptap.dev)、[xterm.js](https://xtermjs.org)、[Tectonic](https://tectonic-typesetting.github.io)、[OpenAI Codex](https://github.com/openai/codex)、[BabelDOC](https://github.com/funstory-ai/BabelDOC) 等项目的维护者。Capsio 是独立项目，与这些项目及其维护组织没有隶属关系。
