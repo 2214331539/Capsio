@@ -2029,6 +2029,10 @@
     "此连接未通过聊天验证，请进入项目使用 Agent 或更换模型。",
     "Chat verification failed. Open a project to use the Agent, or choose another model."
   ],
+  "ChatGPT 账号只能通过 Agent 使用：请在可以编辑的项目里提问，或换一个模型。": [
+    "ChatGPT 账号只能通过 Agent 使用：请在可以编辑的项目里提问，或换一个模型。",
+    "A ChatGPT sign-in works only through the Agent: ask in a project you can edit, or choose another model."
+  ],
   "手动填写模型 ID": ["手动填写模型 ID", "Enter model ID manually"],
   "模型 ID": ["模型 ID", "Model ID"],
   "上次回答连接已断开，可以继续提问。": [

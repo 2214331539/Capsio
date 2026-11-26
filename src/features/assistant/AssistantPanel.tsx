@@ -1165,6 +1165,11 @@ export function AssistantPanel({
       setError(t('此连接未通过聊天验证，请进入项目使用 Agent 或更换模型。'));
       return;
     }
+    // A ChatGPT sign-in only works through the agent; without this the settings just reopened.
+    if (settings.provider === 'chatgpt') {
+      setError(t('ChatGPT 账号只能通过 Agent 使用：请在可以编辑的项目里提问，或换一个模型。'));
+      return;
+    }
     if (
       !settings.model.trim() ||
       !settings.endpoint.trim() ||
