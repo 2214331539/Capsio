@@ -3,7 +3,12 @@ import type { WorkContext } from '../../domain/context';
 import type { Entity, ModelSettings } from '../../domain/workspace';
 import type { AIContentPart } from '../../platform/research';
 import type { WorkspaceStore } from '../../stores/workspace';
-import type { AgentDomain, AgentSkillRef, PermissionMode } from '../../platform/agent';
+import type {
+  AgentDomain,
+  AgentSkillRef,
+  PermissionMode,
+  ReasoningEffort,
+} from '../../platform/agent';
 import { asPermission } from './permissions';
 import type { AgentGoal } from './agent-session';
 
@@ -39,7 +44,7 @@ export type Conversation = Entity & {
   context: ContextSnapshot[];
   /** Shared by the native Yita question window and this sidebar. */
   translationContext?: { source: string; translation: string; explanation: string };
-  modelSelection?: { profileId: string; settings: ModelSettings };
+  modelSelection?: { profileId: string; settings: ModelSettings; effort?: ReasoningEffort };
   chatRun?: {
     status: 'running' | 'completed' | 'interrupted' | 'failed';
     model: string;

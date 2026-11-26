@@ -1015,6 +1015,8 @@ fn with_entry<R: tauri::Runtime, T>(
     }
     action(entry)
 }
+/// The reasoning efforts the engine takes (ReasoningEffort in the app-server protocol).
+const REASONING_EFFORTS: [&str; 5] = ["minimal", "low", "medium", "high", "xhigh"];
 #[tauri::command]
 #[allow(clippy::too_many_arguments)] // Existing flat IPC fields plus optional images.
 pub async fn agent_start_turn(
@@ -1029,8 +1031,12 @@ pub async fn agent_start_turn(
     permission: Option<PermissionMode>,
     skills: Option<Vec<skills::SkillRef>>,
     place: Option<place::TurnPlace>,
+    effort: Option<String>,
 ) -> Result<TurnHandle, String> {
     super::library::trusted(&view)?;
+    // How hard the model thinks, for this turn and the ones after it; null leaves it to the
+    // model's default (the composer's "自动").
+    let effort = effort.filter(|value| REASONING_EFFORTS.contains(&value.as_str()));
     crate::collaboration::permissions::require_write(
         &app.state::<AppState>().storage,
         &project_id,
@@ -1071,7 +1077,7 @@ pub async fn agent_start_turn(
             }
         };
         entry.scratch = Some(scratch);
-        let response = match entry.session.call("turn/start",json!({"threadId":thread_id,"cwd":execution::canonical_path(root),"approvalPolicy":permission.approval_policy(),"sandboxPolicy":sandbox,"input":input}),TURN_BUDGET) {
+        let response = match entry.session.call("turn/start",json!({"threadId":thread_id,"cwd":execution::canonical_path(root),"approvalPolicy":permission.approval_policy(),"sandboxPolicy":sandbox,"input":input,"effort":effort}),TURN_BUDGET) {
             Ok(response) => response,
             Err(error) => {
                 // Refused outright, no turn began: a thread that never had one stays new, so

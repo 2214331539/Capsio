@@ -57,6 +57,8 @@ interface Props {
   canSteer?: boolean;
   onSteer?: () => void;
   model: string;
+  /** Where the model comes from (官方, ChatGPT, a service), shown before its name. */
+  source?: string;
   endpoint: string;
   inputRef?: Ref<HTMLTextAreaElement>;
   onPromptChange: (value: string) => void;
@@ -95,6 +97,7 @@ export function AssistantComposer({
   canSteer: supportsSteer = false,
   onSteer,
   model,
+  source,
   endpoint,
   inputRef,
   onPromptChange,
@@ -455,7 +458,16 @@ export function AssistantComposer({
           disabled={disabled || isBusy}
           onClick={onModelMenu}
         >
-          <span>{model || t('Select model')}</span>
+          <span>
+            {model ? (
+              <>
+                {source ? <span className="sf-ai-model-source-name">{source} · </span> : null}
+                {model}
+              </>
+            ) : (
+              t('Select model')
+            )}
+          </span>
           <ChevronUp size={12} />
         </Button>
         {mode === 'agent' ? (

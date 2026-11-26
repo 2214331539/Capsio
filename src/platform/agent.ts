@@ -9,6 +9,8 @@ import type { AIProtocol } from '../domain/workspace';
 /** The inbox domain belongs to chats outside any project. */
 export type AgentDomain = 'literature' | 'code' | 'inbox';
 export type PermissionMode = 'readonly' | 'ask' | 'auto' | 'full';
+/** How hard the model thinks before answering, as the engine names it; unset is the model's default. */
+export type ReasoningEffort = 'low' | 'medium' | 'high';
 /** Where a turn is sent from; the native side turns it into the folder the turn works in. */
 export type TurnPlace = {
   page: WorkspaceId;
@@ -223,6 +225,8 @@ export interface AgentBackend {
     permission?: PermissionMode;
     skills?: AgentSkillRef[];
     place?: TurnPlace;
+    /** How hard the model thinks; null leaves it to the model. */
+    effort?: ReasoningEffort | null;
   }): Promise<TurnHandle>;
   steer?(request: {
     projectId: string;

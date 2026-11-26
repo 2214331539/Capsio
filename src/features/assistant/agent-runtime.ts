@@ -461,6 +461,7 @@ export class AgentRuntime {
         images,
         skills,
         place,
+        seed.modelSelection?.effort,
       );
       const turnId = task.state.turnId;
       if (turnId)

@@ -2377,6 +2377,11 @@
     "Models marked “Pro” need the Personal Pro plan; choosing one shows how to upgrade."
   ],
   "模型来源": ["模型来源", "Model source"],
+  "思考深度": ["思考深度", "Thinking"],
+  "低": ["低", "Low"],
+  "中": ["中", "Medium"],
+  "高": ["高", "High"],
+  "官方": ["官方", "Official"],
   "用 Capsio 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。": [
     "用 Capsio 账号直接使用，不需要密钥，按点数计费。免费版开放部分模型，个人专业版开放全部模型。",
     "Use them with your Capsio account, no key needed, billed in points. Free includes some models; Personal Pro includes all."

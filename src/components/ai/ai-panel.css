@@ -234,6 +234,54 @@
   overflow-wrap: anywhere;
   text-align: start;
 }
+/* The model menu: one source's models at a time, then how hard the model thinks. */
+.sf-ai-model-sources,
+.sf-ai-model-effort {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 6px;
+}
+.sf-ai-model-sources {
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--sf-border-subtle);
+}
+.sf-ai-model-effort {
+  margin-top: 4px;
+  border-top: 1px solid var(--sf-border-subtle);
+  padding-top: 8px;
+}
+.sf-ai-model-effort > span {
+  margin-right: 4px;
+  color: var(--sf-text-secondary);
+  font-size: 12px;
+}
+.sf-ai-model-sources > button,
+.sf-ai-model-effort > button {
+  padding: 3px 9px;
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sf-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sf-ai-model-sources > button:hover,
+.sf-ai-model-effort > button:hover:not(:disabled) {
+  color: var(--sf-text-primary);
+  background: var(--sf-surface-hover);
+}
+.sf-ai-model-sources > button[aria-checked='true'],
+.sf-ai-model-effort > button[aria-checked='true'] {
+  border-color: var(--sf-text-primary);
+  color: var(--sf-text-primary);
+  font-weight: 600;
+}
+.sf-ai-model-source-name {
+  color: var(--sf-text-secondary);
+}
 .sf-ai-progress {
   display: flex;
   align-items: center;

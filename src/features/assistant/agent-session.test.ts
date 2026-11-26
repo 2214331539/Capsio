@@ -278,6 +278,23 @@ describe('AgentSession', () => {
   });
 });
 
+it('sends the conversation’s thinking depth with a turn, and null for the model default', async () => {
+  for (const [effort, sent] of [
+    ['high', 'high'],
+    [undefined, null],
+  ] as const) {
+    const agent = backend();
+    const session = new AgentSession(
+      agent,
+      { projectId: 'p1', domain: 'code', conversationId: 'chat' },
+      connection,
+    );
+    await session.open();
+    await session.send('question', undefined, undefined, undefined, effort);
+    expect(agent.startTurn).toHaveBeenLastCalledWith(expect.objectContaining({ effort: sent }));
+  }
+});
+
 it('ignores a stale completion and deduplicates final text after streaming', async () => {
   const agent = backend();
   const session = new AgentSession(

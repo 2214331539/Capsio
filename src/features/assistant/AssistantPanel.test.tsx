@@ -531,7 +531,7 @@ it('switches configured models from the capsule and cancels unsaved configuratio
   await user.click(screen.getByRole('button', { name: '测试连接' }));
   await user.selectOptions(screen.getByRole('combobox', { name: '选择模型' }), 'other-model');
   await user.click(screen.getByRole('button', { name: '关闭弹窗' }));
-  expect(screen.getByRole('button', { name: '选择模型' }).textContent).toBe('test-model');
+  expect(screen.getByRole('button', { name: '选择模型' }).textContent).toMatch(/test-model$/);
   await user.click(screen.getByRole('button', { name: '选择模型' }));
   await user.click(screen.getByRole('menuitem', { name: '配置其他模型' }));
   await user.click(screen.getByRole('button', { name: '测试连接' }));
@@ -546,7 +546,7 @@ it('switches configured models from the capsule and cancels unsaved configuratio
     }),
   );
   await waitFor(() =>
-    expect(screen.getByRole('button', { name: '选择模型' }).textContent).toBe('test-model'),
+    expect(screen.getByRole('button', { name: '选择模型' }).textContent).toMatch(/test-model$/),
   );
   expect(store.getState().data?.settings.model.model).toBe('other-model');
   expect(store.getState().data?.settings.model.recentModels).toEqual(['other-model', 'test-model']);
@@ -576,23 +576,31 @@ it('binds model choices to each chat and preserves them after remount without ch
   }
   await select('Conversation A');
   await user.click(screen.getByRole('button', { name: '选择模型' }));
-  await user.click(screen.getByRole('menuitemradio', { name: 'Service B · second-model' }));
+  // Picking a source lists its models, and only those; the menu stays open.
+  const menu = screen.getByRole('menu', { name: '选择模型' });
+  await user.click(within(menu).getByRole('radio', { name: 'Service B' }));
+  expect(within(menu).queryByRole('menuitemradio', { name: 'test-model' })).toBeNull();
+  await user.click(within(menu).getByRole('menuitemradio', { name: 'second-model' }));
   await waitFor(() =>
     expect(
       store.getState().data?.sessions.find((chat) => chat.id === a.id)?.modelSelection,
     ).toEqual(expect.objectContaining({ profileId: 'service-b' })),
   );
   await select('Conversation B');
-  expect(screen.getByRole('button', { name: '选择模型' }).textContent).toBe('test-model');
+  expect(screen.getByRole('button', { name: '选择模型' }).textContent).toMatch(/test-model$/);
   await select('Conversation A');
-  expect(screen.getByRole('button', { name: '选择模型' }).textContent).toBe('second-model');
+  expect(screen.getByRole('button', { name: '选择模型' }).textContent).toBe(
+    'Service B · second-model',
+  );
   expect(store.getState().data?.settings.model.model).toBe('test-model');
   await user.type(screen.getByLabelText('向 AI 提问'), 'Save my selection');
   await user.click(screen.getByRole('button', { name: '发送' }));
   await screen.findByText('回答');
   view.unmount();
   render(<AssistantPanel store={store} backend={backend} scope="p1" context={context} />);
-  expect(screen.getByRole('button', { name: '选择模型' }).textContent).toBe('second-model');
+  expect(screen.getByRole('button', { name: '选择模型' }).textContent).toBe(
+    'Service B · second-model',
+  );
 });
 
 it('keeps the composer editable and allows another ordinary chat while streaming', async () => {

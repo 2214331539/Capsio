@@ -61,6 +61,8 @@ import {
   storeConnectionKey,
 } from './connections';
 import { showConversation } from './notices';
+import { serviceFor } from './providers';
+import type { ReasoningEffort } from '../../platform/agent';
 import {
   asConversation,
   freezeContext,
@@ -159,6 +161,8 @@ export function AssistantPanel({
   const [showContext, setShowContext] = useState(false);
   const [officialEndpoint, setOfficialEndpoint] = useState('');
   const [menu, setMenu] = useState<AssistantMenu | null>(null);
+  /** The model source the open menu lists; null is the conversation's own. */
+  const [browsing, setBrowsing] = useState<string | null>(null);
   const pinnedToBottom = useRef(true);
 
   const [credential, setCredential] = useState({ slot: '', key: '', stored: false });
@@ -556,6 +560,7 @@ export function AssistantPanel({
   function openMenu(kind: AssistantMenu['kind'], trigger: HTMLButtonElement) {
     const r = trigger.getBoundingClientRect();
     const upward = kind === 'models' || kind === 'permissions';
+    if (kind === 'models') setBrowsing(null);
     setMenu({
       kind,
       anchor: {
@@ -599,6 +604,51 @@ export function AssistantPanel({
       ...(settings.modelCatalog ?? (model?.endpoint === settings.endpoint ? recentModels : [])),
     ]),
   ].filter(Boolean);
+  // Where models come from: the official models, a ChatGPT account, or one of the user's own
+  // services. The model menu lists one source at a time, so it is always clear which one a
+  // conversation uses.
+  const sourceLabel = (value: AISettings & { name?: string }) => {
+    const service = serviceFor(value);
+    if (service.id === 'capsio') return t('官方');
+    if (service.id === 'chatgpt') return 'ChatGPT';
+    return value.name || t(service.name);
+  };
+  const currentSource = conversation.modelSelection?.profileId ?? 'legacy';
+  const sources = [
+    // The workspace default when it is not a saved connection (settings from before them).
+    ...(defaultSelection.profileId === 'legacy' &&
+    currentSource !== 'legacy' &&
+    defaultSettings.model
+      ? [
+          {
+            id: 'legacy',
+            label: sourceLabel(defaultSettings),
+            settings: defaultSettings,
+            models: [
+              ...new Set([
+                defaultSettings.model,
+                ...(defaultSettings.modelCatalog ?? recentModels),
+              ]),
+            ].filter(Boolean),
+          },
+        ]
+      : []),
+    ...(profiles.some((profile) => profile.id === currentSource)
+      ? []
+      : [{ id: currentSource, label: sourceLabel(settings), settings, models }]),
+    ...profiles.map((profile) =>
+      profile.id === currentSource
+        ? { id: profile.id, label: sourceLabel(profile), settings, models }
+        : {
+            id: profile.id,
+            label: sourceLabel(profile),
+            settings: profile as AISettings,
+            models: [...new Set([profile.model, ...(profile.modelCatalog ?? [])])].filter(Boolean),
+          },
+    ),
+  ];
+  const listed = sources.find((source) => source.id === (browsing ?? currentSource)) ?? sources[0];
+  const effort = conversation.modelSelection?.effort;
   async function saveSettings(value = settingsDraft, keyValue = draftKey) {
     if (
       settingsBusy ||
@@ -715,7 +765,13 @@ export function AssistantPanel({
       return;
     const next = {
       ...conversation,
-      modelSelection: { profileId, settings: structuredClone(value) },
+      modelSelection: {
+        profileId,
+        settings: structuredClone(value),
+        ...(conversation.modelSelection?.effort
+          ? { effort: conversation.modelSelection.effort }
+          : {}),
+      },
     };
     if (savedConversation && !(await persistConversation(store, next))) {
       if (activeConversationId.current === next.id)
@@ -726,6 +782,27 @@ export function AssistantPanel({
     if (activeConversationId.current !== next.id) return;
     setConversation(next);
     setSettings(value);
+  }
+
+  /** How hard the model thinks in this conversation; undefined is the model's default. */
+  async function chooseEffort(value: ReasoningEffort | undefined) {
+    if (agentPending || chatPending || settingsBusy || activeTask?.saving || chatTask?.saving)
+      return;
+    const { effort: _previous, ...selection } = conversation.modelSelection ?? {
+      profileId: currentSource,
+      settings: structuredClone(settings),
+    };
+    const next = {
+      ...conversation,
+      modelSelection: value ? { ...selection, effort: value } : selection,
+    };
+    if (savedConversation && !(await persistConversation(store, next))) {
+      if (activeConversationId.current === next.id)
+        setError(store.getState().error ?? t('模型配置保存失败'));
+      return;
+    }
+    if (activeConversationId.current !== next.id) return;
+    setConversation(next);
   }
 
   async function deleteProfile(id: string) {
@@ -1443,44 +1520,62 @@ export function AssistantPanel({
                 {verification.agent ? t('Agent 工具验证通过') : t('Agent 连接验证未通过')}
               </div>
             ) : null}
-            {models.map((name) => (
+            {/* Choosing a source only changes the list below; the menu stays open. */}
+            {sources.length > 1 ? (
+              <div className="sf-ai-model-sources" role="radiogroup" aria-label={t('模型来源')}>
+                {sources.map((source) => (
+                  <button
+                    key={source.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={source.id === listed.id}
+                    className="sf-ai-model-source"
+                    onClick={() => setBrowsing(source.id)}
+                  >
+                    {source.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {listed.models.map((name) => (
               <Button
                 key={name}
                 role="menuitemradio"
-                aria-checked={name === settings.model}
+                aria-checked={listed.id === currentSource && name === settings.model}
                 variant="ghost"
                 disabled={settingsBusy || busy}
                 onClick={() => {
                   setMenu(null);
-                  void chooseModel(conversation.modelSelection?.profileId ?? 'legacy', {
-                    ...settings,
+                  void chooseModel(listed.id, {
+                    ...listed.settings,
                     model: name,
                     verification:
-                      settings.verification?.model === name ? settings.verification : undefined,
+                      listed.settings.verification?.model === name
+                        ? listed.settings.verification
+                        : undefined,
                   });
                 }}
               >
                 <span className="sf-ai-model-option">{name}</span>
               </Button>
             ))}
-            {profiles
-              .filter((profile) => profile.id !== conversation.modelSelection?.profileId)
-              .map((profile) => (
-                <Button
-                  key={profile.id}
-                  role="menuitemradio"
-                  aria-checked={false}
-                  variant="ghost"
-                  onClick={() => {
-                    setMenu(null);
-                    void chooseModel(profile.id, profile);
-                  }}
-                >
-                  <span className="sf-ai-model-option">
-                    {profile.name} · {profile.model}
-                  </span>
-                </Button>
-              ))}
+            {routesToAgent ? (
+              <div className="sf-ai-model-effort" role="radiogroup" aria-label={t('思考深度')}>
+                <span>{t('思考深度')}</span>
+                {([undefined, 'low', 'medium', 'high'] as const).map((value) => (
+                  <button
+                    key={value ?? 'auto'}
+                    type="button"
+                    role="radio"
+                    aria-checked={effort === value}
+                    disabled={settingsBusy || busy}
+                    onClick={() => void chooseEffort(value)}
+                  >
+                    {value ? { low: t('低'), medium: t('中'), high: t('高') }[value] : t('自动')}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <Button role="menuitem" variant="ghost" onClick={openSettings}>
               <Settings2 size={14} />
               {t('配置其他模型')}
@@ -1915,6 +2010,11 @@ export function AssistantPanel({
         }
         onSteer={() => void steerAgent()}
         model={settings.model}
+        source={
+          sources.length > 1
+            ? sources.find((source) => source.id === currentSource)?.label
+            : undefined
+        }
         endpoint={settings.endpoint}
         onPromptChange={setPrompt}
         attachments={attachments ?? []}

@@ -7,6 +7,7 @@ import {
   type AgentEvent,
   type AgentSkillRef,
   type PermissionMode,
+  type ReasoningEffort,
   type ApprovalDecision,
   type ApprovalRequest,
   type ThreadHandle,
@@ -380,6 +381,7 @@ export class AgentSession {
     images?: { mimeType: string; data: string }[],
     skills?: AgentSkillRef[],
     place?: TurnPlace,
+    effort?: ReasoningEffort,
   ): Promise<boolean> {
     if (!this.snapshot.threadId || hasPendingWork(this.snapshot)) return false;
     this.starting = true;
@@ -409,6 +411,7 @@ export class AgentSession {
         ...(images?.length ? { images } : {}),
         ...(skills?.length ? { skills } : {}),
         ...(place ? { place } : {}),
+        effort: effort ?? null,
       });
       if (!turn.turnId) throw new Error(t('Agent 返回了空 turn 标识。'));
       this.set({ turnId: turn.turnId });
