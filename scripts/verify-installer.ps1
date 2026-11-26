@@ -14,10 +14,10 @@ function Install-Package {
     if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode)" }
 }
 Install-Package
-foreach ($relative in @('capsio.exe', 'codex.exe', 'tectonic.exe', 'babeldoc\capsio-babeldoc.json', 'babeldoc\python\python.exe', 'licenses\Capsio-LICENSE', 'licenses\codex-LICENSE', 'licenses\codex-NOTICE', 'licenses\tectonic-LICENSE', 'licenses\THIRD_PARTY_LICENSES.txt')) {
+foreach ($relative in @('capsio.exe', 'codex\bin\codex.exe', 'codex\bin\codex-code-mode-host.exe', 'tectonic.exe', 'babeldoc\capsio-babeldoc.json', 'babeldoc\python\python.exe', 'licenses\Capsio-LICENSE', 'licenses\codex-LICENSE', 'licenses\codex-NOTICE', 'licenses\tectonic-LICENSE', 'licenses\THIRD_PARTY_LICENSES.txt')) {
     if (-not (Test-Path -LiteralPath (Join-Path $installDirectory $relative))) { throw "Missing payload: $relative" }
 }
-& (Join-Path $installDirectory 'codex.exe') --version
+& (Join-Path $installDirectory 'codex\bin\codex.exe') --version
 if ($LASTEXITCODE -ne 0) { throw 'Installed Agent cannot start.' }
 & (Join-Path $installDirectory 'tectonic.exe') --version
 if ($LASTEXITCODE -ne 0) { throw 'Installed LaTeX engine cannot start.' }

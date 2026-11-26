@@ -78,7 +78,8 @@ if args.bundle:
     if metadata['LSMinimumSystemVersion'] != '14.0':
         raise SystemExit('Unexpected minimum macOS version')
     binary = app / 'Contents/MacOS' / metadata['CFBundleExecutable']
-    engine = app / 'Contents/MacOS/codex'
+    # Codex ships as upstream's whole package in the resources (agent/process.rs engine_path).
+    engine = app / 'Contents/Resources/codex/bin/codex'
     latex = app / 'Contents/MacOS/tectonic'
     translator = app / 'Contents/Resources/babeldoc/python/bin/python3.11'
     for executable in [binary, engine, latex]:
