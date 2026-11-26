@@ -611,7 +611,14 @@ export function sendError(response, error) {
   if (status >= 500) console.error(error);
   if (response.headersSent) return response.end();
   const code = typeof error?.code === 'string' && /^[a-z_]+$/.test(error.code) ? error.code : undefined;
-  return send(response, status, { error: error?.message ?? '服务器内部错误。', ...(code ? { code } : {}) });
+  // A rate limit says when to come back, so clients can wait instead of failing.
+  const retryAfter = Number.isInteger(error?.retryAfter) ? error.retryAfter : undefined;
+  return send(
+    response,
+    status,
+    { error: error?.message ?? '服务器内部错误。', ...(code ? { code } : {}), ...(retryAfter ? { retryAfter } : {}) },
+    retryAfter ? { 'retry-after': String(retryAfter) } : {},
+  );
 }
 
 export function createServer(config, db) {

@@ -2,6 +2,7 @@
 // request to the model's channel, counts the tokens on the way back and takes
 // the points. Nothing of what is asked or answered is stored.
 
+import crypto from 'node:crypto';
 import { body, fail } from '../http.mjs';
 import { withTransaction } from '../db.mjs';
 import { balance, ensureGrants } from './ledger.mjs';
@@ -23,6 +24,9 @@ const KINDS = {
 // requests at once nor takes those slots from the user's conversations. Points and the daily
 // limit apply as usual.
 export const TRANSLATION_LIMITS = { rpm: 600, concurrency: 8 };
+// Work the app does by itself (recommendations; it says so with x-capsio-background: 1) gets
+// an allowance of its own too, so it never takes a slot from a conversation.
+export const BACKGROUND_LIMITS = { rpm: 30, concurrency: 2 };
 
 export const isModelPath = (path) => path in KINDS;
 
@@ -66,9 +70,26 @@ export async function proxyModel(request, response, { config, db }, path, who) {
   if ((await usedToday(db, userId, now)) >= limits.dailyPoints)
     throw fail(429, `今天的用量已到单日上限 ${limits.dailyPoints} 点，明天 0 点恢复。`, 'daily_limit');
   const translating = path.startsWith('/v1/translate/');
-  const release = translating
-    ? acquire(`${userId}:translate`, TRANSLATION_LIMITS)
-    : acquire(userId, limits);
+  const background = request.headers['x-capsio-background'] === '1';
+  let release;
+  try {
+    release = translating
+      ? acquire(`${userId}:translate`, TRANSLATION_LIMITS)
+      : background
+        ? acquire(`${userId}:background`, BACKGROUND_LIMITS)
+        : acquire(userId, limits);
+  } catch (error) {
+    // Kept in the usage log (not the daily totals) so the admin pages show how often it happens.
+    if (error?.code === 'rate_limited')
+      await db
+        .query(
+          `INSERT INTO usage_events(id, user_id, model_id, status, http_status, latency_ms)
+           VALUES ($1, $2, $3, 'limited', 429, 0)`,
+          [crypto.randomUUID(), userId, model.id],
+        )
+        .catch((failure) => console.error('usage', failure));
+    throw error;
+  }
   try {
     await relay({ request, response, config, db, kind, input, model, channels, plan, userId });
   } finally {

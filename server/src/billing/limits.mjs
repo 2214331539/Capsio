@@ -26,11 +26,17 @@ export async function effectiveLimits(db, userId, plan, now = new Date()) {
 /** Takes a slot for one request; call the returned function when it ends. */
 export function acquire(userId, limits, now = Date.now()) {
   const times = (recent.get(userId) ?? []).filter((at) => now - at < 60_000);
+  // `retryAfter`: seconds until a request would get through, sent as Retry-After.
   if (times.length >= limits.rpm)
-    throw fail(429, '请求太频繁，请稍后再试。', 'rate_limited');
+    throw Object.assign(fail(429, '请求太频繁，请稍后再试。', 'rate_limited'), {
+      retryAfter: Math.max(1, Math.ceil((60_000 - (now - times[0])) / 1000)),
+    });
   const active = running.get(userId) ?? 0;
   if (active >= limits.concurrency)
-    throw fail(429, `同时进行的请求不能超过 ${limits.concurrency} 个，请等前面的回答结束。`, 'rate_limited');
+    throw Object.assign(
+      fail(429, `同时进行的请求不能超过 ${limits.concurrency} 个，请等前面的回答结束。`, 'rate_limited'),
+      { retryAfter: 2 },
+    );
   times.push(now);
   recent.set(userId, times);
   running.set(userId, active + 1);

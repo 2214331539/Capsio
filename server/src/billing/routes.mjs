@@ -12,6 +12,8 @@ import { isModelPath, proxyModel } from './proxy.mjs';
 import { redeem, summary, usageByDay } from './account.mjs';
 
 const redeemTries = new Map();
+// Model tokens a device keeps valid at once (see /v1/model-tokens).
+export const KEPT_TOKENS = 3;
 function limitRedeem(userId) {
   const now = Date.now();
   const recent = (redeemTries.get(userId) ?? []).filter((at) => now - at < 10 * 60_000);
@@ -84,35 +86,47 @@ export async function handleBilling(request, response, context, path, url) {
     if (!deviceId) throw fail(400, '缺少设备标识。');
     const token = newModelToken();
     const id = crypto.randomUUID();
-    // A device keeps one token: asking again replaces the old one.
-    await db.query(
-      `UPDATE model_tokens SET revoked_at = NOW()
-        WHERE user_id = $1 AND device_id = $2 AND revoked_at IS NULL`,
-      [who.sub, deviceId],
-    );
     await db.query(
       `INSERT INTO model_tokens(id, user_id, device_id, device_name, token_hash) VALUES ($1, $2, $3, $4, $5)`,
       [id, who.sub, deviceId, deviceName, hashSecret(token)],
+    );
+    // Asking again replaces the device's older tokens, but the latest few stay valid: one part
+    // of the app (translation, recommendations) renewing must not cut off another that is
+    // still answering with the token it had (an agent turn).
+    await db.query(
+      `UPDATE model_tokens SET revoked_at = NOW()
+        WHERE user_id = $1 AND device_id = $2 AND revoked_at IS NULL
+          AND id NOT IN (SELECT id FROM model_tokens
+                          WHERE user_id = $1 AND device_id = $2 AND revoked_at IS NULL
+                          ORDER BY created_at DESC LIMIT ${KEPT_TOKENS})`,
+      [who.sub, deviceId],
     );
     send(response, 201, { id, token });
     return true;
   }
   if (path === '/v1/model-tokens' && method === 'GET') {
     const who = await caller(request, context);
+    // One row per device: its newest token, with the latest use of any of them.
     const result = await db.query(
-      `SELECT id, device_id AS "deviceId", device_name AS "deviceName", created_at AS "createdAt",
-              last_used_at AS "lastUsedAt"
-         FROM model_tokens WHERE user_id = $1 AND revoked_at IS NULL ORDER BY created_at DESC`,
+      `SELECT DISTINCT ON (device_id) id, device_id AS "deviceId", device_name AS "deviceName",
+              created_at AS "createdAt",
+              MAX(last_used_at) OVER (PARTITION BY device_id) AS "lastUsedAt"
+         FROM model_tokens WHERE user_id = $1 AND revoked_at IS NULL
+        ORDER BY device_id, created_at DESC`,
       [who.sub],
     );
+    result.rows.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     send(response, 200, { devices: result.rows });
     return true;
   }
   const tokenMatch = path.match(/^\/v1\/model-tokens\/([^/]+)$/);
   if (tokenMatch && method === 'DELETE') {
     const who = await caller(request, context);
+    // Removing a device ends every token it holds.
     await db.query(
-      'UPDATE model_tokens SET revoked_at = NOW() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL',
+      `UPDATE model_tokens SET revoked_at = NOW()
+        WHERE user_id = $2 AND revoked_at IS NULL
+          AND device_id = (SELECT device_id FROM model_tokens WHERE id = $1 AND user_id = $2)`,
       [decodeURIComponent(tokenMatch[1]), who.sub],
     );
     send(response, 200, { ok: true });

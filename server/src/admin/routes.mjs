@@ -453,8 +453,12 @@ async function route(request, response, { config, db }, path, url) {
     const deviceMatch = action.match(/^devices\/([^/]+)$/);
     if (method === 'DELETE' && deviceMatch) {
       const id = decodeURIComponent(deviceMatch[1]);
+      // A device can hold a few valid tokens at once; all of them end.
       const result = await db.query(
-        'UPDATE model_tokens SET revoked_at = NOW() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL RETURNING device_name',
+        `UPDATE model_tokens SET revoked_at = NOW()
+          WHERE user_id = $2 AND revoked_at IS NULL
+            AND device_id = (SELECT device_id FROM model_tokens WHERE id = $1 AND user_id = $2)
+        RETURNING device_name`,
         [id, userId],
       );
       if (result.rows[0]) await record({ ...target, action: '吊销模型令牌', after: { device: result.rows[0].device_name } });

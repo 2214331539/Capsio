@@ -281,8 +281,10 @@ export async function userDetail(db, userId, now = new Date()) {
       [userId],
     ),
     db.query(
-      `SELECT id, device_name, created_at, last_used_at FROM model_tokens
-        WHERE user_id = $1 AND revoked_at IS NULL ORDER BY created_at DESC`,
+      `SELECT DISTINCT ON (device_id) id, device_name, created_at,
+              MAX(last_used_at) OVER (PARTITION BY device_id) AS last_used_at
+         FROM model_tokens WHERE user_id = $1 AND revoked_at IS NULL
+        ORDER BY device_id, created_at DESC`,
       [userId],
     ),
     db.query('SELECT COUNT(*) AS count, MAX(created_at) AS last FROM refresh_tokens WHERE user_id = $1 AND expires_at > NOW()', [userId]),

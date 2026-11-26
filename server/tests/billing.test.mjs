@@ -5,6 +5,7 @@ import { createDb, initDb } from '../src/db.mjs';
 import { createServer } from '../src/server.mjs';
 import { sealKey, openKey, forgetModels } from '../src/billing/models.mjs';
 import { resetLimits } from '../src/billing/limits.mjs';
+import { KEPT_TOKENS } from '../src/billing/routes.mjs';
 import { runJobs } from '../src/jobs.mjs';
 import { hashSecret } from '../src/jwt.mjs';
 
@@ -279,6 +280,44 @@ test('translation has its own allowance and leaves the conversation limits alone
   assert.ok(translations.every((answer) => answer.status === 200));
   assert.ok(upstreamRequests.at(-1).path.endsWith('/chat/completions'));
   assert.equal(await balanceOf(user), before - 4 * POINTS);
+});
+
+test('a rate limit says when to retry and is logged; background work has its own allowance', options, async () => {
+  const user = await signUp('13700000025');
+  const token = await modelToken(user);
+  await db.query('INSERT INTO user_limits(user_id, rpm) VALUES ($1, 1)', [user.id]);
+  assert.equal((await ask(token)).status, 200);
+  const limited = await ask(token);
+  assert.equal(limited.status, 429);
+  assert.equal(limited.body.code, 'rate_limited');
+  const wait = Number(limited.headers.get('retry-after'));
+  assert.ok(wait >= 1 && wait <= 60, `retry-after ${wait}`);
+  assert.equal(limited.body.retryAfter, wait);
+  const logged = await db.query(
+    "SELECT count(*)::int AS n FROM usage_events WHERE user_id = $1 AND status = 'limited' AND http_status = 429",
+    [user.id],
+  );
+  assert.equal(logged.rows[0].n, 1);
+  // Recommendations running in the background do not wait behind the conversation's limit.
+  const background = await call('POST', '/v1/responses', {
+    token,
+    headers: { 'x-capsio-background': '1' },
+    body: { model: 'fast', stream: true, input: [{ role: 'user', content: '筛选今天的论文' }] },
+  });
+  assert.equal(background.status, 200);
+});
+
+test('a device keeps its newest tokens valid, is listed once, and removing it ends them all', options, async () => {
+  const user = await signUp('13700000026');
+  const tokens = [];
+  for (let i = 0; i < KEPT_TOKENS + 1; i += 1) tokens.push(await modelToken(user));
+  // Renewing in one part of the app does not cut off another still using its token.
+  assert.equal((await ask(tokens[0])).status, 401);
+  for (const token of tokens.slice(1)) assert.equal((await ask(token)).status, 200);
+  const devices = (await call('GET', '/v1/model-tokens', { token: user.token })).body.devices;
+  assert.equal(devices.length, 1);
+  await call('DELETE', `/v1/model-tokens/${devices[0].id}`, { token: user.token });
+  for (const token of tokens.slice(1)) assert.equal((await ask(token)).status, 401);
 });
 
 test('requests that end together are each charged exactly once', options, async () => {
