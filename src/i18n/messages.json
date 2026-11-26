@@ -2100,11 +2100,19 @@
     "Ctrl + Shift + T 翻译剪贴板中的文字。",
     "Ctrl + Shift + T translates the text already on your clipboard."
   ],
+  "⌘⇧T 翻译剪贴板中的文字。": [
+    "⌘⇧T 翻译剪贴板中的文字。",
+    "⌘⇧T translates the text already on your clipboard."
+  ],
   "暂停划词": ["暂停划词", "Pause selection"],
   "启用划词": ["启用划词", "Enable selection"],
   "系统取词尚未就绪，请在翻译设置中检查权限或修复输入捕获。": [
     "系统取词尚未就绪，请在翻译设置中检查权限或修复输入捕获。",
     "Selection capture is not ready. Check permissions or repair input capture in translation settings."
+  ],
+  "系统取词尚未就绪：在“系统设置 → 隐私与安全性”的“辅助功能”和“输入监控”里允许 Capsio 和 Yita Native Helper，再重新打开 Capsio。": [
+    "系统取词尚未就绪：在“系统设置 → 隐私与安全性”的“辅助功能”和“输入监控”里允许 Capsio 和 Yita Native Helper，再重新打开 Capsio。",
+    "Selection capture is not ready. In System Settings → Privacy & Security, allow Capsio and Yita Native Helper under Accessibility and Input Monitoring, then reopen Capsio."
   ],
   "剪贴板快捷键尚未就绪，仍可使用下方按钮。": [
     "剪贴板快捷键尚未就绪，仍可使用下方按钮。",

@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Stdio,
     sync::{Arc, Mutex},
     time::Duration,
@@ -53,6 +53,32 @@ fn executable<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<PathBuf, S
     Err("翻译组件未打包，请运行 pnpm prepare:translation 后重新构建。".into())
 }
 
+/// The component as it can be started: on macOS a download-quarantined one runs from an
+/// unmarked copy, as the full-text engine does (see `translator::runnable`).
+fn launchable<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    executable: PathBuf,
+) -> Result<PathBuf, String> {
+    let (Some(dir), Some(name)) = (executable.parent(), executable.file_name()) else {
+        return Ok(executable);
+    };
+    let modified = std::fs::metadata(&executable)
+        .and_then(|meta| meta.modified())
+        .ok()
+        .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+        .map_or(0, |since| since.as_secs());
+    let stamp = format!(
+        "{:x}",
+        Sha256::digest(format!("{}-{modified}", app.package_info().version).as_bytes())
+    );
+    let copies = app
+        .state::<crate::data_location::DataLocation>()
+        .container
+        .join("yita");
+    let dir = crate::translator::runnable(dir, Path::new(name), &stamp, &copies)?;
+    Ok(dir.join(name))
+}
+
 fn model_identity(model: &Value) -> String {
     format!(
         "capsio-{:x}",
@@ -99,7 +125,7 @@ async fn ensure_started<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<
         .ok_or("数据目录无效")?
         .join("translation");
     std::fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
-    let mut command = tokio::process::Command::new(executable(app)?);
+    let mut command = tokio::process::Command::new(launchable(app, executable(app)?)?);
     command
         .env(
             "CAPSIO_TRANSLATION_DATA",

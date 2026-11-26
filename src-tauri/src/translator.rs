@@ -195,27 +195,32 @@ fn quarantined(path: &Path) -> bool {
         .is_ok_and(|output| output.status.success())
 }
 
-/// Where the engine runs from. macOS refuses code carrying the download quarantine of
-/// an app that is not notarized, which Capsio cannot be yet. A quarantined engine
-/// is cloned into the data folder (an APFS clone takes no extra space), the mark taken
-/// off the copy, and run from there; once per version, without asking anything.
-fn runnable(engine: &Engine, base: &Path) -> Result<PathBuf, String> {
-    if !cfg!(target_os = "macos") || !quarantined(&engine.dir.join(&engine.executable)) {
-        return Ok(engine.dir.clone());
+/// Where a bundled component runs from. macOS refuses code carrying the download
+/// quarantine of an app that is not notarized, which Capsio cannot be yet. A quarantined
+/// component is cloned into `copies` in the data folder (an APFS clone takes no extra
+/// space), the mark taken off the copy, and run from there; once per stamp, without
+/// asking anything. Used for this engine and for the selection translator.
+pub(crate) fn runnable(
+    dir: &Path,
+    executable: &Path,
+    stamp: &str,
+    copies: &Path,
+) -> Result<PathBuf, String> {
+    if !cfg!(target_os = "macos") || !quarantined(&dir.join(executable)) {
+        return Ok(dir.to_path_buf());
     }
-    let copies = base.join("engine");
-    let copy = copies.join(engine.stamp.chars().take(16).collect::<String>());
+    let copy = copies.join(stamp.chars().take(16).collect::<String>());
     if copy.join(".ready").is_file() {
         return Ok(copy);
     }
     // Older versions and an interrupted copy go first.
-    let _ = std::fs::remove_dir_all(&copies);
-    std::fs::create_dir_all(&copies).map_err(|e| e.to_string())?;
+    let _ = std::fs::remove_dir_all(copies);
+    std::fs::create_dir_all(copies).map_err(|e| e.to_string())?;
     let partial = copies.join("partial");
     let copied = |flags: &str| {
         Command::new("/bin/cp")
             .arg(flags)
-            .arg(&engine.dir)
+            .arg(dir)
             .arg(&partial)
             .status()
             .is_ok_and(|status| status.success())
@@ -231,11 +236,11 @@ fn runnable(engine: &Engine, base: &Path) -> Result<PathBuf, String> {
         .args(["-dr", "com.apple.quarantine"])
         .arg(&partial)
         .status();
-    if quarantined(&partial.join(&engine.executable)) {
+    if quarantined(&partial.join(executable)) {
         return Err("无法去掉翻译组件的下载隔离标记。".into());
     }
     std::fs::rename(&partial, &copy).map_err(|e| e.to_string())?;
-    std::fs::write(copy.join(".ready"), &engine.stamp).map_err(|e| e.to_string())?;
+    std::fs::write(copy.join(".ready"), stamp).map_err(|e| e.to_string())?;
     Ok(copy)
 }
 
@@ -718,10 +723,12 @@ fn translate<R: tauri::Runtime>(
 ) -> Result<(), Failure> {
     let base = base(app);
     let engine = engine(app).ok_or_else(|| Failure::Model("翻译组件缺失。".into()))?;
-    let dir = runnable(&engine, &base).map_err(|message| {
-        log(&base, &format!("engine: {message}"));
-        Failure::Model(message)
-    })?;
+    let copies = base.join("engine");
+    let dir =
+        runnable(&engine.dir, &engine.executable, &engine.stamp, &copies).map_err(|message| {
+            log(&base, &format!("engine: {message}"));
+            Failure::Model(message)
+        })?;
     notify(app, job, Status::new("translating", 0.0));
     let result = run_engine(
         &dir.join(&engine.executable),
@@ -1175,7 +1182,9 @@ mod tests {
             executable: PathBuf::from("python/python.exe"),
             stamp: "abc".into(),
         };
-        assert_eq!(runnable(&engine, dir.path()).unwrap(), engine.dir);
+        let copies = dir.path().join("engine");
+        let run = runnable(&engine.dir, &engine.executable, &engine.stamp, &copies);
+        assert_eq!(run.unwrap(), engine.dir);
         assert!(!dir.path().join("engine").exists());
     }
 

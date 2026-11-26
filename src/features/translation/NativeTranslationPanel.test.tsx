@@ -3,9 +3,13 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NativeTranslationPanel } from './NativeTranslationPanel';
 
-const native = vi.hoisted(() => ({ invoke: vi.fn(), stop: vi.fn() }));
+const native = vi.hoisted(() => ({ invoke: vi.fn(), stop: vi.fn(), mac: false }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: native.invoke }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => native.stop) }));
+vi.mock('../../platform/os', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../platform/os')>()),
+  isMacOS: () => native.mac,
+}));
 beforeEach(() => {
   native.invoke.mockImplementation(async (_command, { action }) => ({
     enabled: action.type !== 'enabled' || action.enabled,
@@ -17,6 +21,22 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  native.mac = false;
+});
+
+it('tells Mac users where to allow selection capture, with the Mac shortcut', async () => {
+  native.mac = true;
+  native.invoke.mockResolvedValue({
+    enabled: true,
+    running: false,
+    hotkeyRunning: true,
+    settingsError: null,
+  });
+  render(<NativeTranslationPanel />);
+  const notice = await screen.findByRole('status');
+  expect(notice.textContent).toContain('辅助功能');
+  expect(notice.textContent).toContain('输入监控');
+  expect(screen.getByText('⌘⇧T 翻译剪贴板中的文字。')).toBeTruthy();
 });
 
 it('opens the original settings and controls the same native engine without a second translator', async () => {

@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { Button } from '../../components/primitives';
 import { t, translateError } from '../../i18n';
+import { isMacOS } from '../../platform/os';
 
 type TranslationStatus = {
   enabled: boolean;
@@ -86,7 +87,11 @@ export function NativeTranslationPanel() {
         <div className="setting-row">
           <div>
             <strong>{status.enabled ? t('自动划词已启用') : t('自动划词已暂停')}</strong>
-            <p>{t('Ctrl + Shift + T 翻译剪贴板中的文字。')}</p>
+            <p>
+              {isMacOS()
+                ? t('⌘⇧T 翻译剪贴板中的文字。')
+                : t('Ctrl + Shift + T 翻译剪贴板中的文字。')}
+            </p>
           </div>
           <Button
             disabled={busy}
@@ -98,7 +103,13 @@ export function NativeTranslationPanel() {
         </div>
       )}
       {status?.enabled && !status.running && (
-        <p role="status">{t('系统取词尚未就绪，请在翻译设置中检查权限或修复输入捕获。')}</p>
+        <p role="status">
+          {isMacOS()
+            ? t(
+                '系统取词尚未就绪：在“系统设置 → 隐私与安全性”的“辅助功能”和“输入监控”里允许 Capsio 和 Yita Native Helper，再重新打开 Capsio。',
+              )
+            : t('系统取词尚未就绪，请在翻译设置中检查权限或修复输入捕获。')}
+        </p>
       )}
       {status?.enabled && !status.hotkeyRunning && (
         <p role="status">{t('剪贴板快捷键尚未就绪，仍可使用下方按钮。')}</p>
