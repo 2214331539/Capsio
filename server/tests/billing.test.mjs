@@ -242,9 +242,14 @@ test('admins refill the period\'s points and reset the daily limit, each with a 
   assert.equal((await ask(token)).body.code, 'daily_limit');
   // The free month's 300 points expire first, so both requests came out of them.
   assert.equal((await act('refresh-period')).body.added, 0);
+  // The bar under the balance follows the refill, not only the number.
+  const used = async () =>
+    (await call('GET', '/v1/billing/summary', { token: user.token })).body.usedThisPeriod;
+  assert.equal(await used(), 2 * POINTS);
   const before = await balanceOf(user);
   assert.equal((await act('reset-period', { reason: '故障补偿' })).body.added, 2 * POINTS);
   assert.equal(await balanceOf(user), before + 2 * POINTS);
+  assert.equal(await used(), 0);
   assert.equal((await act('reset-period', { reason: '再点一次' })).body.added, 0);
   const audit = await db.query('SELECT action FROM admin_audit WHERE target_id = $1 ORDER BY created_at', [user.id]);
   assert.deepEqual(

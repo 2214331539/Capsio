@@ -67,6 +67,20 @@ export const grantView = (row) => ({
   expired: !!row.expired_at || new Date(row.expires_at) <= new Date(),
 });
 
+/**
+ * What the bar under the balance counts: the points used of this period's plan grant, so a
+ * refill ("重置本周期额度") empties it again. Without such a grant, all points spent since the
+ * period began.
+ */
+async function usedThisPeriod(db, userId, period) {
+  const grant = await db.query(
+    'SELECT points, points_left FROM credit_grants WHERE user_id = $1 AND source_key = $2',
+    [userId, period.key],
+  );
+  const row = grant.rows[0];
+  return row ? Number(row.points) - Number(row.points_left) : spentSince(db, userId, period.start);
+}
+
 /** Everything the desktop "账号与订阅" page shows. */
 export async function summary(db, userId, limitsFor, now = new Date()) {
   const current = await withTransaction(db, async (client) => {
@@ -82,7 +96,7 @@ export async function summary(db, userId, limitsFor, now = new Date()) {
     ),
     db.query('SELECT credit_debt FROM users WHERE id = $1', [userId]),
     usedToday(db, userId, now),
-    spentSince(db, userId, current.period.start),
+    usedThisPeriod(db, userId, current.period),
     storageUsed(db, userId),
     limitsFor(current.plan),
   ]);
