@@ -309,18 +309,26 @@ export function PdfPageSurface({
     }
     callbacks.current.onSelection(page, text.current, value, where);
   }
-  function open(event: ReactMouseEvent<HTMLDivElement>) {
+  /** The highlight or underline under the pointer, if any. */
+  function hitAt(event: ReactMouseEvent<HTMLDivElement>) {
     const layer = surface.current?.querySelector<HTMLElement>('.textLayer') ?? surface.current;
-    if (!onAnnotation || !annotations?.length || !unitRef.current || !layer) return;
-    if (window.getSelection()?.toString().trim()) return;
+    if (!onAnnotation || !annotations?.length || !unitRef.current || !layer) return undefined;
     const bounds = layer.getBoundingClientRect();
     const scaleNow = bounds.width / unitRef.current.width;
     const [x, y] = unitRef.current.convertToPdfPoint(
       (event.clientX - bounds.left) / scaleNow,
       (event.clientY - bounds.top) / scaleNow,
     );
-    const hit = annotationAt(annotations, page - 1, x, y);
-    if (hit) onAnnotation(hit.id, new DOMRect(event.clientX, event.clientY, 0, 0));
+    return annotationAt(annotations, page - 1, x, y);
+  }
+  function open(event: ReactMouseEvent<HTMLDivElement>) {
+    if (window.getSelection()?.toString().trim()) return;
+    const hit = hitAt(event);
+    if (hit) onAnnotation?.(hit.id, new DOMRect(event.clientX, event.clientY, 0, 0));
+  }
+  // The pointer over a highlight says it can be clicked open.
+  function hover(event: ReactMouseEvent<HTMLDivElement>) {
+    event.currentTarget.classList.toggle('is-over-annotation', !!hitAt(event));
   }
   return (
     <div
@@ -351,6 +359,7 @@ export function PdfPageSurface({
             onMouseUp={select}
             onKeyUp={select}
             onClick={open}
+            onMouseMove={hover}
           />
           {unit && annotations?.length ? (
             <div className="pdf-highlights">

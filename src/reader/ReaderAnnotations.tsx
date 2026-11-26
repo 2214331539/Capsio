@@ -236,10 +236,13 @@ export function AnnotationList({
   annotations,
   active,
   onOpen,
+  onDelete,
 }: {
   annotations: PaperAnnotation[];
   active: string | null;
   onOpen(annotation: PaperAnnotation): void;
+  /** Absent when the paper is read-only. */
+  onDelete?(annotation: PaperAnnotation): void;
 }) {
   return (
     <aside className="pdf-annotations" aria-label={t('批注列表')}>
@@ -268,6 +271,18 @@ export function AnnotationList({
                   {t('第 {page} 页', { page: annotation.page + 1 })}
                 </span>
               </button>
+              {onDelete ? (
+                <Button
+                  variant="ghost"
+                  iconOnly
+                  size="sm"
+                  className="pdf-annotation-delete"
+                  aria-label={t('删除批注')}
+                  onClick={() => onDelete(annotation)}
+                >
+                  <Trash2 />
+                </Button>
+              ) : null}
             </li>
           ))}
         </ol>

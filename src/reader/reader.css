@@ -527,6 +527,10 @@
 .pdf-highlight-group.is-active {
   opacity: 0.62;
 }
+.pdf-page-surface.is-over-annotation,
+.pdf-page-surface.is-over-annotation .textLayer span {
+  cursor: pointer;
+}
 .pdf-highlight {
   position: absolute;
   border-radius: 2px;
@@ -710,6 +714,28 @@
 .pdf-annotation-item:hover,
 .pdf-annotation-item.is-active {
   background: var(--sf-surface-hover);
+}
+/* Deleting from the list, shown on the item under the pointer or with the keyboard. */
+.pdf-annotations li {
+  position: relative;
+}
+.pdf-annotations li:has(.pdf-annotation-delete) .pdf-annotation-item {
+  padding-right: 32px;
+}
+.pdf-annotation-delete {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  opacity: 0;
+}
+.pdf-annotations li:hover .pdf-annotation-delete,
+.pdf-annotation-delete:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .pdf-annotation-delete {
+    opacity: 1;
+  }
 }
 .pdf-annotation-text {
   display: -webkit-box;

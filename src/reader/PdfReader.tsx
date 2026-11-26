@@ -155,6 +155,19 @@ export default function PdfReader({
     setPicked(null);
     if (edit) setOpened({ id: made.id, at: picked.box, edit: true });
   }
+  /** Takes a highlight or note off at once, with an offer to put it back where it was. */
+  function remove(id: string) {
+    const removed = annotations.find((a) => a.id === id);
+    if (!removed) return;
+    const index = annotations.indexOf(removed);
+    commit(annotations.filter((a) => a !== removed));
+    if (opened?.id === id) setOpened(null);
+    toastUndo(t('已删除批注'), () => {
+      const current = annotationsNow.current;
+      if (current.some((a) => a.id === removed.id)) return;
+      commit([...current.slice(0, index), removed, ...current.slice(index)]);
+    });
+  }
   const [pageText, setPageText] = useState('');
   const texts = useRef(new Map<number, string>());
   const position = useRef(initial),
@@ -673,15 +686,22 @@ export default function PdfReader({
             active={opened?.id ?? null}
             onOpen={(annotation) => {
               navigate(annotation.page + 1);
-              requestAnimationFrame(() => {
+              // A page far away is still being drawn: wait for its mark, up to a few seconds.
+              const started = performance.now();
+              const show = () => {
                 const mark = scroll.current?.querySelector(
                   `[data-annotation="${CSS.escape(annotation.id)}"]`,
                 );
-                mark?.scrollIntoView({ block: 'center' });
-                const at = mark?.getBoundingClientRect();
-                if (at) setOpened({ id: annotation.id, at, edit: false });
-              });
+                if (!mark) {
+                  if (performance.now() - started < 3000) requestAnimationFrame(show);
+                  return;
+                }
+                mark.scrollIntoView({ block: 'center' });
+                setOpened({ id: annotation.id, at: mark.getBoundingClientRect(), edit: false });
+              };
+              requestAnimationFrame(show);
             }}
+            onDelete={canAnnotate ? (annotation) => remove(annotation.id) : undefined}
           />
         ) : null}
       </div>
@@ -730,17 +750,7 @@ export default function PdfReader({
           readOnly={!canAnnotate}
           focusComment={opened.edit}
           onChange={(next) => commit(annotations.map((a) => (a.id === next.id ? next : a)))}
-          onDelete={() => {
-            const removed = annotations.find((a) => a.id === opened.id)!;
-            const index = annotations.indexOf(removed);
-            commit(annotations.filter((a) => a !== removed));
-            setOpened(null);
-            toastUndo(t('已删除批注'), () => {
-              const current = annotationsNow.current;
-              if (current.some((a) => a.id === removed.id)) return;
-              commit([...current.slice(0, index), removed, ...current.slice(index)]);
-            });
-          }}
+          onDelete={() => remove(opened.id)}
           onClose={() => setOpened(null)}
         />
       ) : null}
