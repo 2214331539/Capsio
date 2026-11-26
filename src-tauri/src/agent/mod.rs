@@ -1181,6 +1181,7 @@ pub async fn agent_interrupt(
 /// or token budget, `clear` removes it. While a goal is active the engine takes further turns
 /// on its own whenever the thread is idle; their events arrive like any other turn's.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)] // Flat IPC fields, as the other agent commands.
 pub async fn agent_goal(
     app: tauri::AppHandle,
     view: tauri::Webview,

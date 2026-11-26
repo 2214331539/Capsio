@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
@@ -43,12 +51,18 @@ const asset = `codex-package-${TRIPLE}`;
 // CODEX_VERSION adds that version's; a version without them downloads unchecked, with a warning.
 const DIGESTS = {
   '0.158.0': {
-    'codex-package-aarch64-apple-darwin.tar.gz': '09f2a9fde318fbcd384f15b4850c1b90930678f4805647b6bded196ccf32f590',
-    'codex-package-aarch64-apple-darwin.tar.zst': '1471748e293184db1aeaba943bf5e42d6621ac90ab0666f1b8e299339a922d51',
-    'codex-package-x86_64-apple-darwin.tar.gz': '46a687a4d52e2e935c23e3acaf1002a21ccfe4b6be918f407898438b5fd24b17',
-    'codex-package-x86_64-apple-darwin.tar.zst': '14f062a67977111d0e82e161e383136b23f42b814a82d819297fde91065db66d',
-    'codex-package-x86_64-pc-windows-msvc.tar.gz': '33f58ae85da6fc20db7d4a5190f3fec815dfc4473f558a522c7cf39bb3e88cf9',
-    'codex-package-x86_64-pc-windows-msvc.tar.zst': 'ec93f7253887410eea8876512ad1209ec4c4161d9513a95cf45caafa8061bc04',
+    'codex-package-aarch64-apple-darwin.tar.gz':
+      '09f2a9fde318fbcd384f15b4850c1b90930678f4805647b6bded196ccf32f590',
+    'codex-package-aarch64-apple-darwin.tar.zst':
+      '1471748e293184db1aeaba943bf5e42d6621ac90ab0666f1b8e299339a922d51',
+    'codex-package-x86_64-apple-darwin.tar.gz':
+      '46a687a4d52e2e935c23e3acaf1002a21ccfe4b6be918f407898438b5fd24b17',
+    'codex-package-x86_64-apple-darwin.tar.zst':
+      '14f062a67977111d0e82e161e383136b23f42b814a82d819297fde91065db66d',
+    'codex-package-x86_64-pc-windows-msvc.tar.gz':
+      '33f58ae85da6fc20db7d4a5190f3fec815dfc4473f558a522c7cf39bb3e88cf9',
+    'codex-package-x86_64-pc-windows-msvc.tar.zst':
+      'ec93f7253887410eea8876512ad1209ec4c4161d9513a95cf45caafa8061bc04',
   },
 };
 
