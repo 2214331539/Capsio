@@ -85,6 +85,50 @@ it('removes the visual exit layer immediately when reduced motion is requested',
   expect(screen.queryByRole('menu', { hidden: true })).toBeNull();
 });
 
+it('runs the item clicked before closing', async () => {
+  // In the app, React applies the capture phase's updates before a click bubbles; with
+  // reduced motion the menu then leaves at once. Closing in the capture phase meant the
+  // item's own handler never ran (the account menu's 设置 did nothing).
+  window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+  const order: string[] = [];
+  function Ordered() {
+    const [anchor, setAnchor] = useState<MenuAnchor | null>(null);
+    return (
+      <>
+        <Button onClick={(event) => setAnchor({ x: 10, y: 10, trigger: event.currentTarget })}>
+          Open
+        </Button>
+        <Menu
+          label="Actions"
+          anchor={anchor}
+          onClose={() => {
+            order.push('close');
+            setAnchor(null);
+          }}
+        >
+          <Button role="menuitem" onClick={() => order.push('item')}>
+            Settings
+          </Button>
+        </Menu>
+      </>
+    );
+  }
+  const user = userEvent.setup();
+  render(<Ordered />);
+  await user.click(screen.getByRole('button', { name: 'Open' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Settings' }));
+  expect(order).toEqual(['item', 'close']);
+  expect(screen.queryByRole('menu', { hidden: true })).toBeNull();
+});
+
+it('leaves focus where the item put it, such as a dialog it opened', async () => {
+  const user = userEvent.setup();
+  render(<Host action={() => screen.getByRole('textbox', { name: 'Outside' }).focus()} />);
+  await user.click(screen.getByRole('button', { name: 'Open' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Edit' }));
+  expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Outside' }));
+});
+
 it.each([90, 900])('keeps an upward menu above its anchor with content height %i', (height) => {
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
     this: HTMLElement,

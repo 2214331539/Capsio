@@ -160,15 +160,21 @@ export function Menu({
           reportError(new Error(`Menu item "${press.label}" was pressed but did not run`), 'menu');
         }, 1500);
       }}
-      onClickCapture={(event) => {
+      onClickCapture={() => {
         pressed.current = null;
+      }}
+      // Closing after the item's own handler: React applies the capture phase's updates
+      // before a click bubbles, and with reduced motion the menu then leaves at once, so
+      // closing first meant the item's action never ran.
+      onClick={(event) => {
         const item = (event.target as HTMLElement).closest<HTMLButtonElement>(
           'button[role^="menuitem"]',
         );
-        if (item && !item.disabled) {
-          restore();
-          close.current();
-        }
+        if (!item || item.disabled) return;
+        // Focus goes back to the trigger unless the item moved it on, to a dialog it opened.
+        const active = document.activeElement;
+        if (!active || active === document.body || ref.current?.contains(active)) restore();
+        close.current();
       }}
       onKeyDown={(event) => {
         if (event.key === 'Escape' || event.key === 'Tab') {
